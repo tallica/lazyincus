@@ -97,8 +97,12 @@ pkg/gui/
 
 The only panel in this MVP. Lists both containers and VMs
 (`GetInstances(api.InstanceTypeAny)`), columns: status, name, type
-(container/vm), IP addresses (from `InstanceFull.State.Network`, global-scope
-addresses only).
+(`vm` / `container` / `container (app)` for OCI-based application
+containers - matches `incus list`'s TYPE column, via the
+`volatile.container.oci` expanded-config key), IP addresses (from
+`InstanceFull.State.Network`, global-scope addresses only). The `(app)`
+suffix and IP addresses both only appear once `RefreshInstanceDetails` has
+fetched full details in the background.
 
 Keybindings are listed in [README.md](README.md#usage) (the canonical
 source — keep that table current when keybindings change, not this file).

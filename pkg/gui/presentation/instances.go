@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/lxc/incus/v7/shared/util"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -19,10 +20,22 @@ func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.I
 	}
 }
 
+// displayInstanceType mirrors the `incus list` TYPE column: "vm" or
+// "container", with an "(app)" suffix for OCI-based application containers
+// (`incus` itself checks the volatile.container.oci config key - see
+// cmd/incus/list.go's typeColumnData). That flag only appears in the
+// instance's expanded config, which we only have once RefreshInstanceDetails
+// has fetched full details in the background, so this shows the bare type
+// until then.
 func displayInstanceType(instance *commands.Instance) string {
 	if instance.IsVM() {
 		return "vm"
 	}
+
+	if full, ok := instance.Full(); ok && util.IsTrue(full.ExpandedConfig["volatile.container.oci"]) {
+		return "container (app)"
+	}
+
 	return "container"
 }
 
