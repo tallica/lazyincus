@@ -70,7 +70,7 @@ pkg/i18n/                      TranslationSet; English only for this MVP
 pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
 pkg/utils/                     string/table/color/yaml helpers, unchanged from lazydocker
 pkg/commands/
-  incus.go                     IncusCommand: connects via ConnectIncusUnix, lists/refreshes instances
+  incus.go                     IncusCommand: connects via cliconfig.LoadConfig + GetInstanceServer, lists/refreshes instances
   instance.go                  Instance: wraps api.Instance, start/stop/restart/freeze/delete/logs
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only; no windows)
   errors.go                    WrapError (go-errors stack-trace wrapping)
@@ -242,43 +242,9 @@ go vet ./...
 go test ./...
 ```
 
-No `vendor/` directory — plain module mode (`go.sum` committed once you
-`git add` it; nothing has been committed by this port, changes are left
-staged/unstaged for review).
+No `vendor/` directory — plain module mode.
 
-## Repository housekeeping (post-port)
-
-Added after the initial code port, not part of it — kept here so this file
-stays an accurate map of the repo root:
-
-- **LICENSE** — MIT, retains lazydocker's original 2018 Jesse Duffield
-  copyright notice (required since large portions of this codebase are
-  copied/adapted from lazydocker) plus a note that this is a derivative
-  work.
-- **THIRD_PARTY_NOTICES.md** — full license text for the two dependencies
-  that carry their own attribution obligations beyond lazydocker's MIT:
-  gocui (BSD-style — also embedded directly as a header in
-  `pkg/gui/confirmation_panel.go`, which lazydocker itself copied from a
-  gocui example) and the Incus client library (Apache-2.0). Confirmed via
-  `go list -deps ./...` that the ~40 modules actually compiled into the
-  binary are all permissive-licensed (MIT/BSD/Apache-2.0/ISC) — the ~200
-  entries in `go list -m all` are unused parts of Incus's monorepo module
-  graph (daemon/incus-osd dependencies like AWS SDK, cowsql, k8s.io/utils)
-  that never get linked in.
-- **README.md** — user-facing docs: requirements, install/run, keybinding
-  table, what's dropped from lazydocker, license.
-- **CHANGELOG.md** — Keep a Changelog format, `[Unreleased]` section for
-  the initial MVP port.
-- **.golangci.yml** — adapted from lazydocker's (same linters), migrated to
-  golangci-lint v2's config schema via `golangci-lint migrate` (v1's flat
-  `linters-settings`/`run.timeout` layout doesn't load under v2's
-  `version: "2"` schema, which also splits `gofumpt`/`goimports` into a
-  separate `formatters:` section). Running it surfaced 18 pre-existing
-  findings (mostly staticcheck style suggestions, a few genuinely dead
-  handlers left over from dropped panels — e.g. `editFile`/`openFile`,
-  vestigial since there's no config-open keybinding in this MVP) that
-  haven't been fixed yet.
-- **docs/Config.md** — rewritten (not copied) to document lazyincus's
-  actual, smaller `UserConfig` schema (`gui`/`confirmOnQuit`/`oS`/`ignore`)
-  instead of lazydocker's, which documents config keys (`customCommands`,
-  `stats`, compose command templates) that don't exist here.
+For the history of what's been added/changed since the initial port, see
+[CHANGELOG.md](CHANGELOG.md) and `git log` — this file documents the port's
+current architecture, not its change history, to avoid the two drifting out
+of sync with each other.
