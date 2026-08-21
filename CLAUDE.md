@@ -29,7 +29,16 @@ message, and exits 0.
 
 ## Source of the port
 
-Ported from a local clone of lazydocker. Naming conventions used throughout:
+Ported from a clone of lazydocker at commit
+[`7e7aadc2071d58031bf2daafca1fbd4093efc23f`](https://github.com/jesseduffield/lazydocker/commit/7e7aadc2071d58031bf2daafca1fbd4093efc23f)
+(2026-04-19). This repo intentionally has no shared git history with
+lazydocker — it's a rewrite targeting a different backend, not a fork, so
+grafting histories would imply a closer lineage than actually exists. This
+commit pin is the substitute: the way to check later whether a bugfix that
+landed in lazydocker's shared TUI/config plumbing after this date also
+applies here.
+
+Naming conventions used throughout:
 
 | lazydocker | lazyincus |
 |---|---|
