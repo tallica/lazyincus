@@ -14,14 +14,18 @@ import (
 
 // renderInstanceLogsToMain periodically re-fetches the instance's console log
 // and renders it to the main panel. Unlike Docker's `container logs --follow`,
-// Incus's console log endpoint is pull-based (it returns the current contents
-// of a ring buffer), so we poll it rather than streaming.
+// Incus's console log endpoint is pull-based and drains newly-buffered bytes
+// on each read rather than returning the full accumulated content (see
+// Instance.ConsoleLog's doc comment), so we accumulate client-side via
+// TailConsoleLog rather than replacing the display with each raw snapshot -
+// otherwise logs flicker to "nothing to display" on every tick where
+// nothing new happened to be buffered since the last poll.
 func (gui *Gui) renderInstanceLogsToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			content, err := instance.ConsoleLog()
+			content, err := instance.TailConsoleLog()
 			if err != nil {
-				content = err.Error()
+				gui.Log.Warn(err)
 			}
 			if content == "" {
 				content = gui.Tr.NothingToDisplay

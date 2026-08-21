@@ -148,9 +148,20 @@ Main panel has two tabs (down from lazydocker's five — logs/stats/env/config/t
 - **Logs**: `Client.GetInstanceConsoleLog(name, &incus.InstanceConsoleLogArgs{})`
   returns an `io.ReadCloser` over the console ring buffer. This is
   fundamentally different from Docker's `ContainerLogs(..., Follow: true)`
-  streaming API — Incus's console log is a pull-based snapshot, not a
-  stream. `renderInstanceLogsToMain` therefore polls it once a second and
-  replaces the main-panel content, rather than tailing.
+  streaming API — Incus's console log is pull-based, not a stream. It's
+  also **drain-on-read**: despite `incusd`'s handler requesting
+  `ClearLog: false` from liblxc (`cmd/incusd/instance_console.go`), each
+  successful read only returns bytes buffered since the *previous* read —
+  confirmed directly against the `incus` CLI, not just this client:
+  `incus console <name> --show-log` run twice in a row on a busy service
+  (nginx) shows real startup output on the first call and nothing on the
+  second, despite the instance still running and producing output.
+  `Instance.ConsoleLog()` exposes that raw one-shot behavior; `Instance.
+  TailConsoleLog()` accumulates successive reads into a capped
+  (256 KiB) in-memory buffer per instance, and `renderInstanceLogsToMain`
+  polls *that* once a second — a naive "replace displayed content with
+  each raw snapshot" loop (the original implementation) flickers to
+  "Nothing to display" on every tick where nothing new was buffered.
 - **Exec**: deliberately **not** implemented via the client library's
   `ExecInstance`/websocket API. That call needs the exec session's stdio
   wired directly into the terminal, which the client library exposes via
@@ -209,12 +220,13 @@ end-to-end against a real daemon (via `colima start --runtime incus`, two
 OCI-based containers: `alpine`, `nginx`) — see items below for what that
 did and didn't confirm.
 
-1. **Console log for containers without a capturing init** — confirmed:
-   both test containers (OCI-based, not systemd) showed "Nothing to
-   display" in the Logs tab. Consistent with the theory that Incus's
-   console log only has content when the instance's console device is
-   actually written to, but not conclusively proven — an instance that
-   *is* known to write to its console hasn't been tested yet.
+1. ~~Console log for containers without a capturing init~~ — **resolved**,
+   and the original theory was wrong. It wasn't that alpine/nginx weren't
+   writing to their console; it's that the console log endpoint drains on
+   read (see "Incus client integration details" above), so by the time a
+   1s-later poll asked again, there was nothing *new* since the previous
+   read. Fixed by accumulating reads client-side (`TailConsoleLog`)
+   instead of treating each snapshot as the full log.
 2. **Freeze/unfreeze on VMs** — still untested; only containers were
    available. `freeze`/`unfreeze` are documented as container-oriented
    actions. The Pause key (`p`) does not check `instance.IsVM()` before

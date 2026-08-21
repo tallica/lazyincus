@@ -23,9 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Footer connection indicator wasn't updating after startup — it was only rendered once (`setInitialViewContent`), so `IsConnected()` changes (e.g. stopping the Incus daemon) never reached the screen. Now redrawn on every background poll tick alongside the instance list refresh.
+- Logs tab would show real output right after selecting an instance, then flicker to "Nothing to display" on the next poll tick. Root cause: Incus's console log endpoint drains newly-buffered bytes on each read rather than returning the full accumulated content, so a "replace the display with the latest raw snapshot" polling loop only ever showed whatever arrived in the last second. `Instance.TailConsoleLog()` now accumulates successive reads into a capped per-instance buffer instead. (This also corrects the earlier "Verified" note below, which misdiagnosed empty logs as containers not writing to their console.)
 
 ### Verified
-- Tested end-to-end against a live Incus daemon (via colima): Instances panel lists real instances with live status/IP, navigation and tab switching work, Config tab renders full instance details correctly. Console log polling returned empty for the OCI-based test containers used — matches the documented caveat about consoles that don't capture init output, not a new bug.
+- Tested end-to-end against a live Incus daemon (via colima): Instances panel lists real instances with live status/IP, navigation and tab switching work, Config tab renders full instance details correctly.
 
 ### Known limitations
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, stats/top tabs, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
