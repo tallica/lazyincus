@@ -268,11 +268,16 @@ func (gui *Gui) updateInstanceDetails() error {
 // refreshInstancesQuiet re-fetches the instance list without logging errors
 // loudly; used for the periodic background poll (Incus has no daemon event
 // stream equivalent to Docker's /events endpoint that we make use of here).
+//
+// Also re-renders the footer's connection indicator on every tick,
+// regardless of whether the instance list refresh above succeeded - it's
+// the only place IncusCommand.IsConnected() gets checked, since the footer
+// is otherwise only drawn once at startup (setInitialViewContent).
 func (gui *Gui) refreshInstancesQuiet() error {
 	if err := gui.refreshInstances(); err != nil {
 		gui.Log.Warn(err)
 	}
-	return nil
+	return gui.renderString(gui.g, "information", gui.getInformationContent())
 }
 
 func (gui *Gui) quit(g *gocui.Gui, v *gocui.View) error {
