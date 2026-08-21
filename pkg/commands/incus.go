@@ -23,6 +23,17 @@ type IncusCommand struct {
 	ErrorChan     chan error
 	InstanceMutex deadlock.Mutex
 
+	// RemoteName is the Incus remote we connected to (e.g. "local", or a
+	// colima/lima remote name), taken from the CLI config's default-remote.
+	RemoteName string
+	// ServerVersion and ServerName are fetched once at connect time via
+	// GetServer(); empty if that call failed.
+	ServerVersion string
+	ServerName    string
+
+	connMutex deadlock.Mutex
+	connected bool
+
 	Closers []io.Closer
 }
 
@@ -58,18 +69,47 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 		return nil, err
 	}
 
-	return &IncusCommand{
-		Log:       log,
-		OSCommand: osCommand,
-		Tr:        tr,
-		Config:    cfg,
-		Client:    client,
-		ErrorChan: errorChan,
-	}, nil
+	command := &IncusCommand{
+		Log:        log,
+		OSCommand:  osCommand,
+		Tr:         tr,
+		Config:     cfg,
+		Client:     client,
+		ErrorChan:  errorChan,
+		RemoteName: cliCfg.DefaultRemote,
+		connected:  true,
+	}
+
+	// Best-effort: a failed GetServer() shouldn't prevent startup, since
+	// the instance list is what actually matters. The footer just shows
+	// no version if this fails.
+	if server, _, err := client.GetServer(); err == nil {
+		command.ServerVersion = server.Environment.ServerVersion
+		command.ServerName = server.Environment.ServerName
+	} else {
+		log.Warn(err)
+	}
+
+	return command, nil
 }
 
 func (c *IncusCommand) Close() error {
 	return utils.CloseMany(c.Closers)
+}
+
+// IsConnected reports whether the most recent request to the daemon
+// succeeded. Updated by GetInstances, which runs on a background poll, so
+// this reflects connection health without a dedicated heartbeat.
+func (c *IncusCommand) IsConnected() bool {
+	c.connMutex.Lock()
+	defer c.connMutex.Unlock()
+	return c.connected
+}
+
+func (c *IncusCommand) setConnected(connected bool) {
+	c.connMutex.Lock()
+	defer c.connMutex.Unlock()
+	c.connected = connected
 }
 
 // GetInstances lists all instances (containers and VMs). Existing Instance
@@ -80,8 +120,10 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 
 	apiInstances, err := c.Client.GetInstances(api.InstanceTypeAny)
 	if err != nil {
+		c.setConnected(false)
 		return nil, err
 	}
+	c.setConnected(true)
 
 	ownInstances := make([]*Instance, len(apiInstances))
 

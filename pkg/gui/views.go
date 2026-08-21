@@ -6,6 +6,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // See https://github.com/xtermjs/xterm.js/issues/4238
@@ -150,7 +151,7 @@ func (gui *Gui) setInitialViewContent() error {
 }
 
 func (gui *Gui) getInformationContent() string {
-	informationStr := gui.Config.Version
+	informationStr := gui.incusStatusContent() + gui.Config.Version
 	if !gui.g.Mouse {
 		return informationStr
 	}
@@ -162,6 +163,34 @@ func (gui *Gui) getInformationContent() string {
 
 	donate := color.New(attrs...).Sprint(gui.Tr.Donate)
 	return donate + " " + informationStr
+}
+
+// incusStatusContent renders the connected Incus remote/server version and
+// a connection indicator, e.g. "Incus v6.5 (colima) ● " (connected, green)
+// or "Incus (colima) ✗ " (disconnected, red) if the last background refresh
+// failed. Empty if we never managed to fetch a server version at all.
+func (gui *Gui) incusStatusContent() string {
+	remote := gui.IncusCommand.RemoteName
+	version := gui.IncusCommand.ServerVersion
+	if remote == "" && version == "" {
+		return ""
+	}
+
+	label := "Incus"
+	if version != "" {
+		label += " v" + version
+	}
+	if remote != "" {
+		label += " (" + remote + ")"
+	}
+
+	if gui.IncusCommand.IsConnected() {
+		label += " " + utils.ColoredString("●", color.FgGreen)
+	} else {
+		label += " " + utils.ColoredString("✗", color.FgRed)
+	}
+
+	return label + "  "
 }
 
 func (gui *Gui) popupViewNames() []string {
