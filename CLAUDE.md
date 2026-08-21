@@ -100,21 +100,12 @@ The only panel in this MVP. Lists both containers and VMs
 (container/vm), IP addresses (from `InstanceFull.State.Network`, global-scope
 addresses only).
 
-Keybindings (instances panel):
-
-| Key | Action |
-|---|---|
-| `S` | Start |
-| `s` | Stop (confirm) |
-| `r` | Restart |
-| `p` | Pause/freeze — toggles `freeze`/`unfreeze` based on current status |
-| `d` | Delete (confirm) |
-| `e` | Toggle showing/hiding Stopped instances |
-| `m` | Jump to the Logs tab in the main panel |
-| `E` | Exec a shell into the instance |
-| `enter` | Focus the main panel (tabs: Logs, Config) |
-| `[` / `]` | Previous/next main-panel tab |
-| `/` | Filter the list |
+Keybindings are listed in [README.md](README.md#usage) (the canonical
+source — keep that table current when keybindings change, not this file).
+Implementation details the README table doesn't cover:
+- `s` (Stop) and `d` (Delete) show a confirmation panel before acting.
+- `p` (Pause) toggles between `freeze` and `unfreeze` based on the
+  instance's current status, rather than being a single fixed action.
 
 Main panel has two tabs (down from lazydocker's five — logs/stats/env/config/top):
 - **Logs** — polls `Instance.ConsoleLog()` every second and re-renders.

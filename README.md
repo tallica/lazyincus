@@ -18,11 +18,11 @@ line-by-line account of what was carried over, adapted, or dropped.
 
 ## Status: MVP
 
-This is an early port covering a single panel. It builds and has a small
-test suite, but has not yet been exercised against a real Incus daemon.
-Feature parity with lazydocker (images/networks/volumes/services panels,
-custom commands, stats, non-English translations) is not there yet — see
-"What's not here yet" below.
+This is an early port covering a single panel. Feature parity with
+lazydocker (images/networks/volumes/services panels, custom commands,
+stats, non-English translations) is not there yet — see "What's not here
+yet" below. See [CLAUDE.md](CLAUDE.md#status) for current build/test status
+and what has and hasn't been verified against a real Incus daemon.
 
 ## Requirements
 
