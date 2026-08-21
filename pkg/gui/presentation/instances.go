@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -17,6 +18,7 @@ func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.I
 		instance.Name,
 		utils.ColoredString(displayInstanceType(instance), color.FgMagenta),
 		utils.ColoredString(displayInstanceAddresses(instance), color.FgYellow),
+		displayInstanceSnapshotCount(instance),
 	}
 }
 
@@ -60,7 +62,20 @@ func displayInstanceAddresses(instance *commands.Instance) string {
 
 	sort.Strings(addresses)
 
-	return strings.Join(addresses, ", ")
+	return strings.Join(addresses, " ")
+}
+
+// displayInstanceSnapshotCount mirrors `incus list`'s SNAPSHOTS column.
+// Snapshots only appear in InstanceFull, so like the type/address columns
+// this shows "0" until RefreshInstanceDetails has fetched full details in
+// the background.
+func displayInstanceSnapshotCount(instance *commands.Instance) string {
+	full, ok := instance.Full()
+	if !ok {
+		return "0"
+	}
+
+	return strconv.Itoa(len(full.Snapshots))
 }
 
 // getInstanceDisplayStatus returns the colored status of the instance

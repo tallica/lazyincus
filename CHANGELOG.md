@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Footer now shows the connected Incus daemon version, remote name, and a live connection indicator (e.g. `Incus v6.11 (colima) ●`), updated from the existing background instance-list poll.
 - `Makefile` with `run`, `build`, `test`, `vet`, `lint`, `clean` targets.
 - Instances panel's Type column now distinguishes OCI-based application containers from plain containers (`container (app)` vs `container`), matching `incus list`'s TYPE column (checks the `volatile.container.oci` expanded-config key). Populates once background instance-detail refresh has run, same as the IP column.
+- Instances panel now shows a snapshot count column, matching `incus list`'s SNAPSHOTS column.
+
+### Changed
+- Instances panel's IP addresses column now separates multiple addresses with a space instead of a comma, closer to `incus list`'s layout.
 
 ### Fixed
 - Footer connection indicator wasn't updating after startup — it was only rendered once (`setInitialViewContent`), so `IsConnected()` changes (e.g. stopping the Incus daemon) never reached the screen. Now redrawn on every background poll tick alongside the instance list refresh.
