@@ -45,6 +45,8 @@ or run directly without building a binary:
 
 ```sh
 go run .
+# or
+make run
 ```
 
 Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
@@ -103,6 +105,9 @@ go build ./...
 go vet ./...
 go test ./...
 ```
+
+or via the Makefile (`make build`, `make vet`, `make test`, `make lint`,
+`make run`, `make clean`).
 
 ## License
 
