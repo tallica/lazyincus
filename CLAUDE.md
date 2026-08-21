@@ -262,3 +262,16 @@ stays an accurate map of the repo root:
   table, what's dropped from lazydocker, license.
 - **CHANGELOG.md** — Keep a Changelog format, `[Unreleased]` section for
   the initial MVP port.
+- **.golangci.yml** — adapted from lazydocker's (same linters), migrated to
+  golangci-lint v2's config schema via `golangci-lint migrate` (v1's flat
+  `linters-settings`/`run.timeout` layout doesn't load under v2's
+  `version: "2"` schema, which also splits `gofumpt`/`goimports` into a
+  separate `formatters:` section). Running it surfaced 18 pre-existing
+  findings (mostly staticcheck style suggestions, a few genuinely dead
+  handlers left over from dropped panels — e.g. `editFile`/`openFile`,
+  vestigial since there's no config-open keybinding in this MVP) that
+  haven't been fixed yet.
+- **docs/Config.md** — rewritten (not copied) to document lazyincus's
+  actual, smaller `UserConfig` schema (`gui`/`confirmOnQuit`/`oS`/`ignore`)
+  instead of lazydocker's, which documents config keys (`customCommands`,
+  `stats`, compose command templates) that don't exist here.

@@ -71,7 +71,8 @@ and VMs.
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |
 
-Config file: `~/.config/lazyincus/config.yml`.
+Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
+for the full list of options and defaults.
 
 ## What's not here yet
 
