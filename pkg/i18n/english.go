@@ -55,14 +55,17 @@ type TranslationSet struct {
 	InstancesTitle             string
 	NoInstances                string
 	NoInstance                 string
+	NoSnapshots                string
 	RemoveWithForce            string
 	PressEnterToReturn         string
 	DetachFromInstanceShortCut string
 	FilterList                 string
 	SortInstancesByState       string
 
+	StatsTitle                string
 	LogsTitle                 string
 	ConfigTitle               string
+	SnapshotsTitle            string
 	CreditsTitle              string
 	NothingToDisplay          string
 	CannotDisplayEnvVariables string
@@ -131,14 +134,17 @@ func englishSet() TranslationSet {
 		MainTitle:      "Main",
 		InstancesTitle: "Instances",
 		ErrorTitle:     "Error",
+		StatsTitle:     "Stats",
 		LogsTitle:      "Logs",
 		ConfigTitle:    "Config",
+		SnapshotsTitle: "Snapshots",
 		CreditsTitle:   "About",
 
 		NothingToDisplay:          "Nothing to display",
 		CannotDisplayEnvVariables: "Something went wrong while displaying instance details",
 
 		NoInstances: "No instances",
+		NoSnapshots: "No snapshots",
 		NoInstance:  "No instance",
 
 		ConfirmQuit:                "Are you sure you want to quit?",

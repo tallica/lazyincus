@@ -114,10 +114,33 @@ Implementation details the README table doesn't cover:
 - `p` (Pause) toggles between `freeze` and `unfreeze` based on the
   instance's current status, rather than being a single fixed action.
 
-Main panel has two tabs (down from lazydocker's five — logs/stats/env/config/top):
-- **Logs** — polls `Instance.ConsoleLog()` every second and re-renders.
+Main panel has four tabs (down from lazydocker's five — logs/stats/env/config/top;
+roughly mirrors what `incus info <name>` prints in one shot, split across tabs
+instead):
+- **Stats** — CPU/memory/process count/disk/per-interface network usage
+  (type, state, host-side veth name, MAC, MTU, traffic counters, assigned
+  IP addresses with family/scope), read from `InstanceFull.State` (already
+  kept current by `RefreshInstanceDetails`'s background poll, so no extra
+  API calls needed) and re-rendered every second. CPU is shown as
+  cumulative usage time, not a percentage — Incus's API reports total
+  nanoseconds consumed since start, not an instantaneous rate, matching
+  what `incus info <name>` itself shows.
+- **Logs** — polls `Instance.TailConsoleLog()` every second and re-renders
+  the accumulated buffer (see "Incus client integration details" above for
+  why a raw per-poll snapshot doesn't work).
 - **Config** — YAML dump of `api.InstanceFull` (name/type/status/created/profiles
   header, then the full struct via `utils.MarshalIntoYaml`).
+- **Snapshots** — static (non-polling) table of `InstanceFull.Snapshots`:
+  name, taken-at, expires-at, stateful — matches `incus info`'s own
+  Snapshots table exactly, including the *absence* of a size column
+  (`InstanceSnapshot.Size` comes back as `-1`/unset from `GetInstanceFull`;
+  a real size would need a separate per-snapshot request we're not making).
+  Read-only for now: no create/restore/delete actions, since those need
+  per-row selection and keybindings that don't fit this plain-text
+  main-panel tab model — a real interactive Snapshots panel would need to
+  be a second **side panel** (like lazydocker's Images/Volumes/Networks),
+  not a main-panel tab, since the app currently only has one side panel
+  (Instances) and no panel-switching infrastructure yet.
 
 ## Incus client integration details
 
@@ -190,8 +213,11 @@ Per the brief, these lazydocker panels/features were **not** ported:
   compose-like grouping concept to map this onto anyway)
 - Custom commands system (`c` key, `config.CustomCommands`)
 - Bulk commands system (`b` key, `config.BulkCommands`)
-- Stats/Top tabs and the whole `ContainerStats`/`RecordedStats` monitoring
-  machinery (`CreateClientStatMonitor`, CPU/mem history, graphing config)
+- Top tab (per-instance process list) and the whole `ContainerStats`/
+  `RecordedStats` historical monitoring machinery (`CreateClientStatMonitor`,
+  CPU/mem history over time, graphing config). A point-in-time Stats tab
+  (current CPU/mem/disk/network usage, no history/graphing) was added
+  later - see CHANGELOG.md.
 - Non-English translations (only `pkg/i18n/english.go` was ported;
   `NewTranslationSetFromConfig` currently just returns the English set
   regardless of the configured language)

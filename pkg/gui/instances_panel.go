@@ -17,6 +17,11 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			GetMainTabs: func() []panels.MainTab[*commands.Instance] {
 				return []panels.MainTab[*commands.Instance]{
 					{
+						Key:    "stats",
+						Title:  gui.Tr.StatsTitle,
+						Render: gui.renderInstanceStatsToMain,
+					},
+					{
 						Key:    "logs",
 						Title:  gui.Tr.LogsTitle,
 						Render: gui.renderInstanceLogsToMain,
@@ -25,6 +30,11 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 						Key:    "config",
 						Title:  gui.Tr.ConfigTitle,
 						Render: gui.renderInstanceConfig,
+					},
+					{
+						Key:    "snapshots",
+						Title:  gui.Tr.SnapshotsTitle,
+						Render: gui.renderInstanceSnapshotsToMain,
 					},
 				}
 			},

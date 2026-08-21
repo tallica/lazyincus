@@ -59,7 +59,7 @@ and VMs.
 | Key | Action |
 |---|---|
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `enter` | Focus main panel (Logs / Config tabs) |
+| `enter` | Focus main panel (Stats / Logs / Config / Snapshots tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
 | `s` | Stop |
@@ -84,7 +84,7 @@ Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 - Services/Project panels (lazydocker's docker-compose view — Incus has no
   direct equivalent)
 - Custom and bulk commands
-- Stats/Top tabs and resource-usage graphing
+- Top tab (per-instance process list) and historical resource-usage graphing
 - Non-English translations
 - Windows support
 

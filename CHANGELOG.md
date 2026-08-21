@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial MVP port of [lazydocker](https://github.com/jesseduffield/lazydocker) targeting [Incus](https://linuxcontainers.org/incus/) instead of Docker.
 - Instances panel: list containers and VMs, start/stop/restart, pause/unfreeze, delete, view console logs, exec a shell into an instance.
 - Main panel Logs and Config tabs for the selected instance.
+- Main panel Stats tab: CPU (cumulative usage time), memory, process count, per-disk, and per-interface network usage (type, state, host-side veth, MAC, MTU, traffic counters, assigned IP addresses) for the selected instance, read from data the background instance-detail refresh already fetches.
+- Main panel Snapshots tab: read-only table of an instance's snapshots (name, taken-at, expires-at, stateful), matching `incus info`'s own Snapshots table.
 - YAML user config at `~/.config/lazyincus/config.yml`.
 - English-only i18n.
 - `LICENSE` (MIT, retaining lazydocker's original copyright as required for this derivative work) and `THIRD_PARTY_NOTICES.md` (gocui, BSD; Incus client, Apache-2.0).
@@ -34,6 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tested end-to-end against a live Incus daemon (via colima): Instances panel lists real instances with live status/IP, navigation and tab switching work, Config tab renders full instance details correctly.
 
 ### Known limitations
-- Images, Networks, Volumes, Services/Project panels, custom/bulk commands, stats/top tabs, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
+- Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
 
 [Unreleased]: https://github.com/tallica/lazyincus/compare/HEAD...HEAD
