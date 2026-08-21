@@ -43,11 +43,10 @@ type LimitedIncusCommand interface{}
 // and the "local" unix socket lives at a path recorded in that remote's
 // config (e.g. unix:///Users/you/.colima/default/incus.sock), not at any of
 // the standard Linux socket locations. Reimplementing just the bare
-// $INCUS_SOCKET/$INCUS_DIR/default-path resolution (as an earlier version of
-// this function did) misses that case entirely, so we defer to Incus's own
-// shared/cliconfig package, which already knows how to resolve remotes,
-// unix-socket paths, and TLS-authenticated connections consistently with
-// the CLI.
+// $INCUS_SOCKET/$INCUS_DIR/default-path resolution would miss that case
+// entirely, so we defer to Incus's own shared/cliconfig package, which
+// already knows how to resolve remotes, unix-socket paths, and
+// TLS-authenticated connections consistently with the CLI.
 func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, errorChan chan error) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {

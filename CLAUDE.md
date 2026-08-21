@@ -7,17 +7,18 @@ Docker built on [gocui](https://github.com/jesseduffield/gocui).
 
 This file documents the port itself: what was carried over, what was
 rewritten, what was dropped, and the decisions/assumptions made along the way
-(several of which are unverified against a live Incus daemon — see "Open
+(some of which are still unverified against a live Incus daemon — see "Open
 questions" at the bottom).
 
 ## Status
 
 MVP. Builds clean (`go build ./...`, `go vet ./...`), has a small unit test
-suite (`go test ./...`), but has **not** been run against a real Incus
-daemon — the sandbox this was built in had no `incusd` available. Startup
-against a missing/unreachable socket was verified: the app connects via
-`incus.ConnectIncusUnix`, fails gracefully, maps the error to a friendly
-message, and exits 0.
+suite (`go test ./...`), and has been run end-to-end against a real Incus
+daemon (via `colima start --runtime incus` on macOS): the Instances panel
+listed real containers with live status/IP, navigation and tab switching
+worked, and the Config tab rendered full instance details correctly. Some
+paths remain untested since only containers (no VMs) were available — see
+"Open questions" below.
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
@@ -122,13 +123,20 @@ Main panel has two tabs (down from lazydocker's five — logs/stats/env/config/t
 
 ## Incus client integration details
 
-- **Connection**: `incus.ConnectIncusUnix("", nil)` in
-  `pkg/commands/incus.go`. Empty path means Incus resolves the socket itself
-  (`$INCUS_SOCKET` → `$INCUS_DIR/unix.socket` → `/var/lib/incus/unix.socket`
-  → `/run/incus/unix.socket`). This replaces lazydocker's whole
-  `determineDockerHost()` / docker-context / `DOCKER_HOST` resolution dance —
-  Incus doesn't have an equivalent per-user remote-context system for the
-  *local* daemon, so there was nothing to port there.
+- **Connection**: `cliconfig.LoadConfig("")` + `cliCfg.GetInstanceServer(cliCfg.DefaultRemote)`
+  in `pkg/commands/incus.go`, using Incus's own `shared/cliconfig` package —
+  the same remote-resolution logic the `incus` CLI itself uses. It loads
+  `~/.config/incus/config.yml` (or the platform equivalent, or `$INCUS_CONF`)
+  and connects to whichever remote is marked as `default-remote` there,
+  handling unix-socket and TLS-authenticated remotes alike. This turned out
+  to matter beyond native Linux hosts: on setups where the daemon runs
+  inside a VM (e.g. `colima start --runtime incus` on macOS), the "local"
+  socket lives at a path recorded in that remote's config
+  (`unix:///Users/you/.colima/default/incus.sock`), not at any of the
+  standard Linux socket locations — so Incus *does* have a per-user
+  remote-context system analogous to lazydocker's `determineDockerHost()` /
+  docker-context / `DOCKER_HOST` dance, it just isn't needed on a native
+  Linux host talking to its own local daemon directly.
 - **List instances**: `Client.GetInstances(api.InstanceTypeAny)` returns
   `[]api.Instance` (name, status, status code, type, created-at). Existing
   `*Instance` objects are matched by name and reused across refreshes so any
@@ -204,27 +212,35 @@ Config file lives at `~/.config/lazyincus/config.yml` (via
 
 ## Open questions / unverified assumptions
 
-No Incus daemon was available while building this, so the following are
-plausible-but-unverified against real behavior:
+No Incus daemon was available while building the initial port, so several
+assumptions were plausible-but-unverified at first. It has since been run
+end-to-end against a real daemon (via `colima start --runtime incus`, two
+OCI-based containers: `alpine`, `nginx`) — see items below for what that
+did and didn't confirm.
 
-1. **Console log for containers without a capturing init** — Incus's
-   console log is populated by the instance's console device; a container
-   whose init doesn't write to the console (e.g. systemd on a normal tty)
-   may show an empty or sparse log. Untested.
-2. **Freeze/unfreeze on VMs** — `freeze`/`unfreeze` are documented as
-   container-oriented actions. The Pause key (`p`) does not check
-   `instance.IsVM()` before offering it; behavior against a VM (error vs.
-   silent no-op vs. actual suspend) is unconfirmed.
-3. **Exec into a VM** — `incus exec` requires the Incus guest agent to be
-   running inside the VM; if it isn't, the exec shell-out will simply fail
-   with whatever error the `incus` CLI prints. No special-casing was added.
-4. **Delete-while-running UX** — as noted above, a failed delete just shows
-   the raw API error rather than offering a force-stop-then-delete flow.
-   Worth revisiting once real error text from `DeleteInstance` on a running
-   instance is known.
-5. **IP address column** — pulled from `InstanceFull.State.Network`,
-   filtered to `scope == "global"`, excluding the `lo` interface. Not
-   validated against real network state output.
+1. **Console log for containers without a capturing init** — confirmed:
+   both test containers (OCI-based, not systemd) showed "Nothing to
+   display" in the Logs tab. Consistent with the theory that Incus's
+   console log only has content when the instance's console device is
+   actually written to, but not conclusively proven — an instance that
+   *is* known to write to its console hasn't been tested yet.
+2. **Freeze/unfreeze on VMs** — still untested; only containers were
+   available. `freeze`/`unfreeze` are documented as container-oriented
+   actions. The Pause key (`p`) does not check `instance.IsVM()` before
+   offering it; behavior against a VM (error vs. silent no-op vs. actual
+   suspend) is unconfirmed.
+3. **Exec into a VM** — still untested; only containers were available.
+   `incus exec` requires the Incus guest agent to be running inside the
+   VM; if it isn't, the exec shell-out will simply fail with whatever
+   error the `incus` CLI prints. No special-casing was added.
+4. **Delete-while-running UX** — still untested (didn't delete the test
+   containers). A failed delete just shows the raw API error rather than
+   offering a force-stop-then-delete flow. Worth revisiting once real
+   error text from `DeleteInstance` on a running instance is known.
+5. **IP address column** — confirmed working: both test containers showed
+   correct IPv4/IPv6 addresses (`InstanceFull.State.Network`, filtered to
+   `scope == "global"`, excluding `lo`), populated a second or so after
+   startup once the background refresh (`RefreshInstanceDetails`) ran.
 
 ## Building / testing
 
