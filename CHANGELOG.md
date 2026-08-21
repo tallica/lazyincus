@@ -13,9 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Main panel Logs and Config tabs for the selected instance.
 - YAML user config at `~/.config/lazyincus/config.yml`.
 - English-only i18n.
+- `LICENSE` (MIT, retaining lazydocker's original copyright as required for this derivative work) and `THIRD_PARTY_NOTICES.md` (gocui, BSD; Incus client, Apache-2.0).
+- `.gitignore` for build output and logs.
+- `.golangci.yml` lint config, adapted from lazydocker's linter set and migrated to golangci-lint v2's config schema.
+- `docs/Config.md` documenting lazyincus's actual (smaller) config schema.
+- Daemon connection uses Incus's own remote-resolution logic (`shared/cliconfig`, the same mechanism the `incus` CLI uses) rather than a bare local-unix-socket connect, so it works on non-Linux daemon setups (e.g. `colima start --runtime incus`) where the socket lives at a path recorded in the user's `~/.config/incus/config.yml` remote config instead of a standard Linux location.
+
+### Verified
+- Tested end-to-end against a live Incus daemon (via colima): Instances panel lists real instances with live status/IP, navigation and tab switching work, Config tab renders full instance details correctly. Console log polling returned empty for the OCI-based test containers used — matches the documented caveat about consoles that don't capture init output, not a new bug.
 
 ### Known limitations
-- Not yet tested against a live Incus daemon.
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, stats/top tabs, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
 
 [Unreleased]: https://github.com/tallica/lazyincus/compare/HEAD...HEAD
