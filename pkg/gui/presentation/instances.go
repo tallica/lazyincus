@@ -14,8 +14,8 @@ import (
 
 func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance) []string {
 	return []string{
-		getInstanceDisplayStatus(guiConfig, instance),
 		instance.Name,
+		getInstanceDisplayStatus(guiConfig, instance),
 		utils.ColoredString(displayInstanceType(instance), color.FgMagenta),
 		utils.ColoredString(displayInstanceAddresses(instance), color.FgYellow),
 		displayInstanceSnapshotCount(instance),
