@@ -55,7 +55,7 @@ gui:
   border: "rounded"
 
   # Which columns the Instances panel shows, and in what order. Valid
-  # values: name, state, type, ipv4, ipv6, snapshots. Unknown values are
+  # values: name, status, type, ipv4, ipv6, snapshots. Unknown values are
   # ignored; list any subset to hide the rest.
   instanceColumns:
     - name

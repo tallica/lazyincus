@@ -10,7 +10,7 @@ editor of choice instead.
 lazyincus creates the file automatically on first run if it doesn't exist
 yet. Changes only take effect after restarting lazyincus.
 
-See [config.yml.example](../config.yml.example) for a fully commented copy
+See [config.example.yml](../config.example.yml) for a fully commented copy
 of every default value, ready to copy from.
 
 ### Locations
@@ -27,7 +27,7 @@ The location can be overridden two ways, checked in this order:
    joined with `lazyincus` to form the directory.
 
 Only non-zero-value keys need to be set explicitly — omitted keys fall back
-to the defaults in [config.yml.example](../config.yml.example) (the struct
+to the defaults in [config.example.yml](../config.example.yml) (the struct
 tags use `omitempty`, so lazyincus never writes zero-value keys back to
 your file either).
 
