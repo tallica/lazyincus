@@ -100,15 +100,26 @@ pkg/gui/
 
 The only panel in this MVP. Lists both containers and VMs
 (`GetInstances(api.InstanceTypeAny)`), columns roughly mirroring `incus
-list`: status, name, type (`vm` / `container` / `container (app)` for
+list`: name, status, type (`vm` / `container` / `container (app)` for
 OCI-based application containers, via the `volatile.container.oci`
-expanded-config key), IP addresses (from `InstanceFull.State.Network`,
-global-scope addresses only, space-separated - not comma-separated, to
-match `incus list`'s own per-column layout more closely), and snapshot
-count (`len(InstanceFull.Snapshots)`). The `(app)` suffix, IP addresses,
-and snapshot count all only appear once `RefreshInstanceDetails` has
-fetched full details in the background (showing bare `container`/`vm`
-and `0` snapshots until then).
+expanded-config key), IPv4 and IPv6 addresses as two separate columns
+(from `InstanceFull.State.Network`, global-scope addresses only,
+space-separated within a column - not comma-separated, to match `incus
+list`'s own per-column layout more closely), and snapshot count
+(`len(InstanceFull.Snapshots)`). The `(app)` suffix, IP addresses, and
+snapshot count all only appear once `RefreshInstanceDetails` has fetched
+full details in the background (showing bare `container`/`vm` and `0`
+snapshots until then).
+
+Which of these columns are shown, and in what order, is user-configurable
+via `gui.instanceColumns` (`pkg/config/app_config.go`'s
+`GuiConfig.InstanceColumns`, defaulting to `config.DefaultInstanceColumns`;
+valid column keys are `name`, `status`, `type`, `ipv4`, `ipv6`, `snapshots`).
+`presentation.GetInstanceDisplayStrings` looks up each configured column
+name in an `instanceColumnRenderers` map (`pkg/gui/presentation/instances.go`)
+and skips anything unrecognized, so adding a new column means adding one
+entry to that map plus the default/valid-values list in
+`pkg/config/app_config.go`.
 
 Keybindings are listed in [README.md](README.md#usage) (the canonical
 source — keep that table current when keybindings change, not this file).

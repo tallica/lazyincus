@@ -54,7 +54,9 @@ Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
 ## Usage
 
 The app currently shows one panel: **Instances**, listing both containers
-and VMs.
+and VMs. Its columns (name, status, type, IPv4, IPv6, snapshot count) can be
+reordered or hidden via `gui.instanceColumns` in the config file - see
+[docs/Config.md](docs/Config.md).
 
 | Key | Action |
 |---|---|

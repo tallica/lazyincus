@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Instances panel's IP addresses column now separates multiple addresses with a space instead of a comma, closer to `incus list`'s layout.
 - Instances panel now shows name first and status second, instead of status first.
 - Instances panel's status column is now lowercased (e.g. `running` instead of `Running`).
+- Instances panel's columns (which ones are shown, and in what order) are now configurable via `gui.instanceColumns` (`name`, `status`, `type`, `ipv4`, `ipv6`, `snapshots`). The IP addresses column is now two separate columns, `ipv4` and `ipv6`, instead of one mixed column.
 
 ### Fixed
 - Footer connection indicator wasn't updating after startup — it was only rendered once (`setInitialViewContent`), so `IsConnected()` changes (e.g. stopping the Incus daemon) never reached the screen. Now redrawn on every background poll tick alongside the instance list refresh.

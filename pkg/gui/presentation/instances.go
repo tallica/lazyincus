@@ -12,14 +12,42 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+// instanceColumnRenderers maps each supported InstanceColumns value to the
+// function that renders it, so GetInstanceDisplayStrings can show and order
+// columns purely based on user config.
+var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Instance) string{
+	"name":   func(_ *config.GuiConfig, instance *commands.Instance) string { return instance.Name },
+	"status": getInstanceDisplayStatus,
+	"type": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(displayInstanceType(instance), color.FgMagenta)
+	},
+	"ipv4": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(displayInstanceAddresses(instance, "inet"), color.FgYellow)
+	},
+	"ipv6": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(displayInstanceAddresses(instance, "inet6"), color.FgYellow)
+	},
+	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return displayInstanceSnapshotCount(instance)
+	},
+}
+
 func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance) []string {
-	return []string{
-		instance.Name,
-		getInstanceDisplayStatus(guiConfig, instance),
-		utils.ColoredString(displayInstanceType(instance), color.FgMagenta),
-		utils.ColoredString(displayInstanceAddresses(instance), color.FgYellow),
-		displayInstanceSnapshotCount(instance),
+	columns := guiConfig.InstanceColumns
+	if len(columns) == 0 {
+		columns = config.DefaultInstanceColumns
 	}
+
+	cells := make([]string, 0, len(columns))
+	for _, column := range columns {
+		render, ok := instanceColumnRenderers[column]
+		if !ok {
+			continue
+		}
+		cells = append(cells, render(guiConfig, instance))
+	}
+
+	return cells
 }
 
 // displayInstanceType mirrors the `incus list` TYPE column: "vm" or
@@ -41,7 +69,10 @@ func displayInstanceType(instance *commands.Instance) string {
 	return "container"
 }
 
-func displayInstanceAddresses(instance *commands.Instance) string {
+// displayInstanceAddresses returns the instance's global-scope addresses for
+// the given address family ("inet" for IPv4, "inet6" for IPv6), matching
+// api.InstanceStateNetworkAddress.Family.
+func displayInstanceAddresses(instance *commands.Instance, family string) string {
 	full, ok := instance.Full()
 	if !ok || full.State == nil {
 		return ""
@@ -53,7 +84,7 @@ func displayInstanceAddresses(instance *commands.Instance) string {
 			continue
 		}
 		for _, addr := range network.Addresses {
-			if addr.Scope != "global" {
+			if addr.Scope != "global" || addr.Family != family {
 				continue
 			}
 			addresses = append(addresses, addr.Address)

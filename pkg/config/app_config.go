@@ -87,7 +87,17 @@ type GuiConfig struct {
 	// Window border style.
 	// One of 'rounded' (default) | 'single' | 'double' | 'hidden'
 	Border string `yaml:"border"`
+
+	// InstanceColumns controls which columns the Instances panel shows, and
+	// in what order. Valid values: "name", "status", "type", "ipv4", "ipv6",
+	// "snapshots". Unknown values are ignored; omitted values are simply
+	// not shown.
+	InstanceColumns []string `yaml:"instanceColumns,omitempty"`
 }
+
+// DefaultInstanceColumns is the Instances panel's column set/order when the
+// user hasn't customized InstanceColumns.
+var DefaultInstanceColumns = []string{"name", "status", "type", "ipv4", "ipv6", "snapshots"}
 
 // OSConfig contains config on the level of the os
 type OSConfig struct {
@@ -121,6 +131,7 @@ func GetDefaultConfig() UserConfig {
 			ShowBottomLine:      true,
 			ScreenMode:          "normal",
 			InstanceStatusStyle: "long",
+			InstanceColumns:     DefaultInstanceColumns,
 		},
 		ConfirmOnQuit: false,
 		OS:            GetPlatformDefaultConfig(),

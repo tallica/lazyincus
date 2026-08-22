@@ -48,6 +48,13 @@ gui:
   screenMode: "normal"
   instanceStatusStyle: "long"
   border: "rounded"
+  instanceColumns:
+    - name
+    - status
+    - type
+    - ipv4
+    - ipv6
+    - snapshots
 confirmOnQuit: false
 oS:
   openCommand: ""
@@ -80,6 +87,7 @@ writes zero-value keys back to your file either).
 | `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full`. |
 | `instanceStatusStyle` | string | `"long"` | Instance status display: `long` (full words), `short` (one/two characters), or `icon`. |
 | `border` | string | `"rounded"` | Panel border style: `rounded`, `single`, `double`, or `hidden`. |
+| `instanceColumns` | []string | `[name, status, type, ipv4, ipv6, snapshots]` | Which columns the Instances panel shows, and in what order. Valid values: `name`, `status`, `type`, `ipv4`, `ipv6`, `snapshots`. Unknown values are ignored; list any subset to hide the rest. |
 
 ### Top level
 
