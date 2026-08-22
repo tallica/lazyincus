@@ -176,13 +176,28 @@ func NewAppConfig(name, version, commit, date string, buildSource string, debugg
 	return appConfig, nil
 }
 
+// configDirForVendor picks the config directory to use, checked in order:
+// CONFIG_DIR, XDG_CONFIG_HOME, an existing ~/.config/<projectName> (even on
+// macOS, where xdg.New's ConfigHome() would otherwise only ever look at
+// ~/Library/Application Support - checking ~/.config first lets users who
+// already have a config there, e.g. via dotfiles synced from Linux, be
+// picked up without moving anything), and finally the platform default.
 func configDirForVendor(vendor string, projectName string) string {
 	envConfigDir := os.Getenv("CONFIG_DIR")
 	if envConfigDir != "" {
 		return envConfigDir
 	}
-	configDirs := xdg.New(vendor, projectName)
-	return configDirs.ConfigHome()
+
+	if os.Getenv("XDG_CONFIG_HOME") != "" {
+		return xdg.New(vendor, projectName).ConfigHome()
+	}
+
+	xdgDefault := filepath.Join(os.Getenv("HOME"), ".config", vendor, projectName)
+	if _, err := os.Stat(xdgDefault); err == nil {
+		return xdgDefault
+	}
+
+	return xdg.New(vendor, projectName).ConfigHome()
 }
 
 func configDir(projectName string) string {

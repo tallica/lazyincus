@@ -276,9 +276,14 @@ docker-compose command templates), `CustomCommands`, `BulkCommands`,
 `StatsConfig`/`GraphConfig`, `Replacements`, `LogsConfig` (Since/Tail/
 Timestamps don't map onto Incus's console-log snapshot model).
 
-Config file lives at `~/.config/lazyincus/config.yml` (via
-`xdg.New("", "lazyincus")`, same mechanism lazydocker uses minus the legacy
-`jesseduffield`-vendor fallback path).
+Config file lives at `~/.config/lazyincus/config.yml` - on Linux always,
+and on macOS too if that directory already exists (`configDirForVendor` in
+`pkg/config/app_config.go` checks for it explicitly before falling back to
+`xdg.New("", "lazyincus").ConfigHome()`, which on macOS would otherwise
+only ever resolve to `~/Library/Application Support/lazyincus`). See
+`docs/Config.md`'s Locations section for the full precedence order
+(`CONFIG_DIR` env, then `XDG_CONFIG_HOME` env, then existing
+`~/.config/lazyincus`, then the platform default).
 
 ## Open questions / unverified assumptions
 

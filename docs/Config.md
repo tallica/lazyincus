@@ -16,15 +16,21 @@ of every default value, ready to copy from.
 ### Locations
 
 - Linux: `~/.config/lazyincus/config.yml`
-- macOS: `~/Library/Application Support/lazyincus/config.yml`
+- macOS: `~/.config/lazyincus/config.yml` if that directory already exists,
+  otherwise `~/Library/Application Support/lazyincus/config.yml`
 
 (Windows isn't supported by this MVP — see CLAUDE.md.)
 
-The location can be overridden two ways, checked in this order:
+Checked in this order:
 1. The `CONFIG_DIR` environment variable, which points directly at the
    directory to use.
-2. The `XDG_CONFIG_HOME` environment variable (Linux/BSD only), which is
-   joined with `lazyincus` to form the directory.
+2. The `XDG_CONFIG_HOME` environment variable, which is joined with
+   `lazyincus` to form the directory.
+3. `~/.config/lazyincus`, if it already exists - so macOS users who already
+   have a config there (e.g. from dotfiles synced from a Linux machine)
+   get picked up without moving anything.
+4. The platform default: `~/.config/lazyincus` on Linux,
+   `~/Library/Application Support/lazyincus` on macOS.
 
 Only non-zero-value keys need to be set explicitly — omitted keys fall back
 to the defaults in [config.example.yml](../config.example.yml) (the struct
