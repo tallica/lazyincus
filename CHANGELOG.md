@@ -45,5 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known limitations
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
+- VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions).
 
 [Unreleased]: https://github.com/tallica/lazyincus/compare/HEAD...HEAD

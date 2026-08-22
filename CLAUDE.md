@@ -293,6 +293,16 @@ end-to-end against a real daemon (via `colima start --runtime incus`, two
 OCI-based containers: `alpine`, `nginx`) — see items below for what that
 did and didn't confirm.
 
+None of this has been verified against a real **VM** instance, and won't
+be from this machine: creating a VM via Incus requires nested
+virtualization (`/dev/kvm`) inside colima's Linux guest, which needs an
+Apple Silicon M3+ chip with macOS 15+ (`incus launch ... --vm` fails with
+`KVM support is missing (no /dev/kvm)` otherwise). This machine is an M1
+Pro, which has no hardware nested-virtualization support at all - no
+colima/Incus flag can work around it. Verifying items 2-4 below needs
+either different hardware or a real (non-nested) Linux host with Incus
+installed directly.
+
 1. ~~Console log for containers without a capturing init~~ — **resolved**,
    and the original theory was wrong. It wasn't that alpine/nginx weren't
    writing to their console; it's that the console log endpoint drains on

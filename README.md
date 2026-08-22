@@ -90,6 +90,11 @@ Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 - Non-English translations
 - Windows support
 
+VM instances are listed and can be started/stopped/deleted like containers,
+but freeze/unfreeze, exec, and delete-while-running are untested against a
+real VM — see [CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions)
+for why and what's needed to verify them.
+
 See [CLAUDE.md](CLAUDE.md) for the full rationale, the Incus API integration
 details, and known unverified assumptions (this was built without access to
 a live Incus daemon).
