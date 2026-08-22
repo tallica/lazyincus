@@ -31,8 +31,9 @@ type Instance struct {
 	// populated in the background by IncusCommand.RefreshInstanceDetails.
 	full *api.InstanceFull
 
-	logMutex  deadlock.Mutex
-	logBuffer strings.Builder
+	logMutex          deadlock.Mutex
+	logBuffer         strings.Builder
+	stoppedLogFetched bool
 }
 
 // maxConsoleLogBufferBytes caps how much accumulated console output
@@ -153,10 +154,32 @@ func (i *Instance) ConsoleLog() (string, error) {
 // see ConsoleLog's doc comment for why a plain repeated ConsoleLog call
 // doesn't work for that.
 //
+// That drain-on-read behavior only holds while the instance is actually
+// running: incusd reads the live console ring buffer in that case, but
+// once an instance is stopped it instead serves the persisted log file
+// as-is on every request - the same content back every time, not fresh
+// bytes. Naively re-fetching and re-appending every poll tick would flood
+// the buffer with duplicate messages once stopped, so once IsRunning() is
+// false we only fetch once (to pick up any final output) and then leave
+// the buffer alone until the instance starts running again -
+// GetInstanceConsoleLog doesn't expose response headers (e.g.
+// Last-Modified) through this client library to check staleness any
+// other way.
+//
 // A fetch error doesn't clear or replace the buffer - it's returned
 // alongside the last-known-good accumulated content, so a transient poll
 // failure doesn't blank out logs that were already visible.
 func (i *Instance) TailConsoleLog() (string, error) {
+	if !i.IsRunning() {
+		i.logMutex.Lock()
+		alreadyFetched := i.stoppedLogFetched
+		buffered := i.logBuffer.String()
+		i.logMutex.Unlock()
+		if alreadyFetched {
+			return buffered, nil
+		}
+	}
+
 	reader, err := i.Client.GetInstanceConsoleLog(i.Name, &incus.InstanceConsoleLogArgs{})
 	if err == nil {
 		var data []byte
@@ -168,6 +191,7 @@ func (i *Instance) TailConsoleLog() (string, error) {
 	}
 
 	i.logMutex.Lock()
+	i.stoppedLogFetched = !i.IsRunning()
 	buffered := i.logBuffer.String()
 	i.logMutex.Unlock()
 

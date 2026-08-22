@@ -203,6 +203,19 @@ across tabs instead):
   polls *that* once a second — a naive "replace displayed content with
   each raw snapshot" loop (the original implementation) flickers to
   "Nothing to display" on every tick where nothing new was buffered.
+  The drain-on-read behavior itself only holds while the instance is
+  running: incusd reads the live console ring buffer in that case, but
+  once stopped it instead serves the persisted log file as-is on every
+  request (see `instanceConsoleLogGet` in `cmd/incusd/instance_console.go`)
+  - the same content back every time, not fresh bytes. Blindly re-fetching
+  and re-appending every poll tick would flood the buffer with duplicate
+  messages once stopped, so `TailConsoleLog` checks `IsRunning()` and only
+  fetches once after the instance stops (to pick up any final output),
+  leaving the buffer alone until it starts running again. There's no
+  response-header-based way to detect staleness instead (e.g.
+  `Last-Modified`, which the daemon's `FileResponse` does set for the
+  stopped-instance path) - `GetInstanceConsoleLog` in the client library
+  returns only `resp.Body`, discarding the rest of the response.
 - **Exec**: deliberately **not** implemented via the client library's
   `ExecInstance`/websocket API. That call needs the exec session's stdio
   wired directly into the terminal, which the client library exposes via
