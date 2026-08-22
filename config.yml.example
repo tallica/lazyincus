@@ -1,4 +1,5 @@
-# Example lazyincus config, showing every option at its default value.
+# Example lazyincus config, showing every option at its default value
+# (except oS, which is commented out - see the note above that block).
 #
 # Copy what you need into your actual config file - you don't have to
 # specify everything; omitted keys fall back to these defaults. See
@@ -68,13 +69,17 @@ gui:
 # open.
 confirmOnQuit: false
 
-oS:
-  # Command used to open a file. Defaults: macOS "open {{filename}}",
-  # Linux 'sh -c "xdg-open {{filename}} >/dev/null"'.
-  openCommand: ""
-  # Command used to open a URL. Defaults: macOS "open {{link}}", Linux
-  # 'sh -c "xdg-open {{link}} >/dev/null"'.
-  openLinkCommand: ""
+# oS is commented out by default: its real default is platform-specific
+# (computed at startup, not a fixed zero value), so setting either key
+# here - even to "" - would override that with an empty command. Uncomment
+# and fill in only if you want a custom open command.
+# oS:
+#   # Command used to open a file. Platform defaults: macOS "open
+#   # {{filename}}", Linux 'sh -c "xdg-open {{filename}} >/dev/null"'.
+#   openCommand: ""
+#   # Command used to open a URL. Platform defaults: macOS "open {{link}}",
+#   # Linux 'sh -c "xdg-open {{link}} >/dev/null"'.
+#   openLinkCommand: ""
 
 # Instances whose name contains any of these substrings are hidden from
 # the list.

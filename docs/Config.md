@@ -11,7 +11,7 @@ lazyincus creates the file automatically on first run if it doesn't exist
 yet. Changes only take effect after restarting lazyincus.
 
 See [config.yml.example](../config.yml.example) for a fully commented copy
-of the defaults below that you can copy from.
+of every default value, ready to copy from.
 
 ### Locations
 
@@ -26,48 +26,10 @@ The location can be overridden two ways, checked in this order:
 2. The `XDG_CONFIG_HOME` environment variable (Linux/BSD only), which is
    joined with `lazyincus` to form the directory.
 
-## Default
-
-```yaml
-gui:
-  scrollHeight: 2
-  language: "en"
-  scrollPastBottom: false
-  mouseEvents: false
-  theme:
-    activeBorderColor:
-      - green
-      - bold
-    inactiveBorderColor:
-      - default
-    selectedLineBgColor:
-      - blue
-    optionsTextColor:
-      - blue
-  returnImmediately: false
-  wrapMainPanel: true
-  sidePanelWidth: 0.3333
-  showBottomLine: true
-  screenMode: "normal"
-  instanceStatusStyle: "long"
-  border: "rounded"
-  instanceColumns:
-    - name
-    - status
-    - type
-    - ipv4
-    - ipv6
-    - snapshots
-confirmOnQuit: false
-oS:
-  openCommand: ""
-  openLinkCommand: ""
-ignore: []
-```
-
 Only non-zero-value keys need to be set explicitly — omitted keys fall back
-to the defaults above (the struct tags use `omitempty`, so lazyincus never
-writes zero-value keys back to your file either).
+to the defaults in [config.yml.example](../config.yml.example) (the struct
+tags use `omitempty`, so lazyincus never writes zero-value keys back to
+your file either).
 
 ## Field reference
 
