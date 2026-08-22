@@ -121,7 +121,7 @@ func getInstanceDisplayStatus(guiConfig *config.GuiConfig, instance *commands.In
 		instanceState = instance.Instance.Status
 	}
 
-	return utils.ColoredString(instanceState, getInstanceColor(instance))
+	return utils.ColoredString(strings.ToLower(instanceState), getInstanceColor(instance))
 }
 
 // getInstanceColor returns the color to use for an instance's status
