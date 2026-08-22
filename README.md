@@ -59,7 +59,7 @@ and VMs.
 | Key | Action |
 |---|---|
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `enter` | Focus main panel (Stats / Logs / Config / Snapshots tabs) |
+| `enter` | Focus main panel (Stats / Logs / Config / Env / Snapshots tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
 | `s` | Stop |

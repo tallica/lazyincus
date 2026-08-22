@@ -84,6 +84,9 @@ pkg/gui/
   instances_panel.go           the Instances side panel: list, sort, filter, start/stop/restart/
                                 pause-freeze/delete/logs/exec handlers
   instance_logs.go             console-log polling into the main panel + promptToReturn()
+  instance_stats.go            Stats tab rendering
+  instance_env.go              Env tab rendering
+  instance_snapshots.go        Snapshots tab rendering
   confirmation_panel.go, menu_panel.go, options_menu_panel.go, filtering.go, main_panel.go,
   app_status_manager.go, tasks_adapter.go, subprocess.go, theme.go, window.go, gocui.go, panels.go
                                 generic gocui plumbing, ported near-verbatim from lazydocker
@@ -114,9 +117,10 @@ Implementation details the README table doesn't cover:
 - `p` (Pause) toggles between `freeze` and `unfreeze` based on the
   instance's current status, rather than being a single fixed action.
 
-Main panel has four tabs (down from lazydocker's five — logs/stats/env/config/top;
-roughly mirrors what `incus info <name>` prints in one shot, split across tabs
-instead):
+Main panel has five tabs (down from lazydocker's five — logs/stats/env/config/top,
+with top dropped and Env re-added later once instance state fetching was in
+place; roughly mirrors what `incus info <name>` prints in one shot, split
+across tabs instead):
 - **Stats** — CPU/memory/process count/disk/per-interface network usage
   (type, state, host-side veth name, MAC, MTU, traffic counters, assigned
   IP addresses with family/scope), read from `InstanceFull.State` (already
@@ -130,6 +134,13 @@ instead):
   why a raw per-poll snapshot doesn't work).
 - **Config** — YAML dump of `api.InstanceFull` (name/type/status/created/profiles
   header, then the full struct via `utils.MarshalIntoYaml`).
+- **Env** — static (non-polling) `KEY=value` list of the instance's
+  environment variables, read from `InstanceFull.ExpandedConfig` entries
+  prefixed `environment.` (Incus's own env-var config key, e.g. `incus
+  config set <name> environment.FOO=bar` — see `doc/instance-exec.md` in
+  the Incus source). Read from the *expanded* config rather than the raw
+  per-instance one so profile-inherited variables show up too, not just
+  ones set directly on the instance.
 - **Snapshots** — static (non-polling) table of `InstanceFull.Snapshots`:
   name, taken-at, expires-at, stateful — matches `incus info`'s own
   Snapshots table exactly, including the *absence* of a size column

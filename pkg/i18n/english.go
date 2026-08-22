@@ -65,6 +65,7 @@ type TranslationSet struct {
 	StatsTitle                string
 	LogsTitle                 string
 	ConfigTitle               string
+	EnvTitle                  string
 	SnapshotsTitle            string
 	CreditsTitle              string
 	NothingToDisplay          string
@@ -137,6 +138,7 @@ func englishSet() TranslationSet {
 		StatsTitle:     "Stats",
 		LogsTitle:      "Logs",
 		ConfigTitle:    "Config",
+		EnvTitle:       "Env",
 		SnapshotsTitle: "Snapshots",
 		CreditsTitle:   "About",
 

@@ -32,6 +32,11 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 						Render: gui.renderInstanceConfig,
 					},
 					{
+						Key:    "env",
+						Title:  gui.Tr.EnvTitle,
+						Render: gui.renderInstanceEnv,
+					},
+					{
 						Key:    "snapshots",
 						Title:  gui.Tr.SnapshotsTitle,
 						Render: gui.renderInstanceSnapshotsToMain,

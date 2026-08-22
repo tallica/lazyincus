@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Makefile` with `run`, `build`, `test`, `vet`, `lint`, `clean` targets.
 - Instances panel's Type column now distinguishes OCI-based application containers from plain containers (`container (app)` vs `container`), matching `incus list`'s TYPE column (checks the `volatile.container.oci` expanded-config key). Populates once background instance-detail refresh has run, same as the IP column.
 - Instances panel now shows a snapshot count column, matching `incus list`'s SNAPSHOTS column.
+- Main panel Env tab: `KEY=value` list of the instance's environment variables, read from `InstanceFull.ExpandedConfig`'s `environment.*` keys (so profile-inherited variables show up too).
 
 ### Changed
 - Instances panel's IP addresses column now separates multiple addresses with a space instead of a comma, closer to `incus list`'s layout.
