@@ -10,6 +10,9 @@ editor of choice instead.
 lazyincus creates the file automatically on first run if it doesn't exist
 yet. Changes only take effect after restarting lazyincus.
 
+See [config.yml.example](../config.yml.example) for a fully commented copy
+of the defaults below that you can copy from.
+
 ### Locations
 
 - Linux: `~/.config/lazyincus/config.yml`

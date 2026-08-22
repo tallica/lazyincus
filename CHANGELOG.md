@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.gitignore` for build output and logs.
 - `.golangci.yml` lint config, adapted from lazydocker's linter set and migrated to golangci-lint v2's config schema.
 - `docs/Config.md` documenting lazyincus's actual (smaller) config schema.
+- `config.yml.example`, a fully commented copy of the config defaults to copy from.
 - Daemon connection uses Incus's own remote-resolution logic (`shared/cliconfig`, the same mechanism the `incus` CLI uses) rather than a bare local-unix-socket connect, so it works on non-Linux daemon setups (e.g. `colima start --runtime incus`) where the socket lives at a path recorded in the user's `~/.config/incus/config.yml` remote config instead of a standard Linux location.
 - Footer now shows the connected Incus daemon version, remote name, and a live connection indicator (e.g. `Incus v6.11 (colima) ●`), updated from the existing background instance-list poll.
 - `Makefile` with `run`, `build`, `test`, `vet`, `lint`, `clean` targets.

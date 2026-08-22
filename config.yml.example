@@ -1,0 +1,81 @@
+# Example lazyincus config, showing every option at its default value.
+#
+# Copy what you need into your actual config file - you don't have to
+# specify everything; omitted keys fall back to these defaults. See
+# docs/Config.md for the full field reference, including config file
+# locations and how to override them.
+
+gui:
+  # Lines scrolled at a time in the main panel.
+  scrollHeight: 2
+
+  # Only English is supported by this MVP.
+  language: "en"
+
+  # Whether you can scroll the main panel past its last line.
+  scrollPastBottom: false
+
+  # Set true to DISABLE mouse interaction (yes, the key name is backwards -
+  # inherited as-is from lazydocker).
+  mouseEvents: false
+
+  theme:
+    activeBorderColor:
+      - green
+      - bold
+    inactiveBorderColor:
+      - default
+    selectedLineBgColor:
+      - blue
+    optionsTextColor:
+      - blue
+
+  # Skip the "press enter to return to lazyincus" prompt after a
+  # subprocess (e.g. incus exec) finishes.
+  returnImmediately: false
+
+  # Word-wrap the main panel's content.
+  wrapMainPanel: true
+
+  # Fraction of screen width used by the Instances side panel.
+  sidePanelWidth: 0.3333
+
+  # Show the bottom status/keybinding line.
+  showBottomLine: true
+
+  # Initial screen mode: "normal", "half", or "full".
+  screenMode: "normal"
+
+  # Instance state display: "long" (full words), "short" (one/two
+  # characters), or "icon".
+  instanceStatusStyle: "long"
+
+  # Panel border style: "rounded", "single", "double", or "hidden".
+  border: "rounded"
+
+  # Which columns the Instances panel shows, and in what order. Valid
+  # values: name, state, type, ipv4, ipv6, snapshots. Unknown values are
+  # ignored; list any subset to hide the rest.
+  instanceColumns:
+    - name
+    - status
+    - type
+    - ipv4
+    - ipv6
+    - snapshots
+
+# Prompt for confirmation when quitting with q/esc and no other panel is
+# open.
+confirmOnQuit: false
+
+oS:
+  # Command used to open a file. Defaults: macOS "open {{filename}}",
+  # Linux 'sh -c "xdg-open {{filename}} >/dev/null"'.
+  openCommand: ""
+  # Command used to open a URL. Defaults: macOS "open {{link}}", Linux
+  # 'sh -c "xdg-open {{link}} >/dev/null"'.
+  openLinkCommand: ""
+
+# Instances whose name contains any of these substrings are hidden from
+# the list.
+ignore: []
