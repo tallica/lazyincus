@@ -335,8 +335,10 @@ installed directly.
    the daemon really does refuse with the `Instance is running` message
    `asDeleteError` matches on — a match taken from the Incus source, so
    still the thing to re-check if the prompt ever stops appearing after an
-   Incus upgrade. One sub-case remains unverified: the early return for
-   **ephemeral** instances, which Incus discards on stop.
+   Incus upgrade. The ephemeral sub-case is confirmed too (tested with
+   `incus launch images:alpine/edge tmp --ephemeral`): `ForceDelete`'s
+   early return is correct, since Incus discards the instance on stop and
+   there's nothing left to delete.
 5. **IP address column** — confirmed working: both test containers showed
    correct IPv4/IPv6 addresses (`InstanceFull.State.Network`, filtered to
    `scope == "global"`, excluding `lo`), populated a second or so after
