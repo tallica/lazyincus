@@ -358,4 +358,6 @@ No `vendor/` directory — plain module mode.
 For the history of what's been added/changed since the initial port, see
 [CHANGELOG.md](CHANGELOG.md) and `git log` — this file documents the port's
 current architecture, not its change history, to avoid the two drifting out
-of sync with each other.
+of sync with each other. For what *hasn't* been built and why (including a
+panel-by-panel comparison against lazydocker at the pinned commit), see
+[BACKLOG.md](BACKLOG.md).
