@@ -193,10 +193,19 @@ across tabs instead):
   `unfreeze`. Stop/restart use a 30s timeout; start/freeze/unfreeze use -1
   (no timeout).
 - **Delete**: `Client.DeleteInstance(name)` + `op.Wait()`. Incus refuses to
-  delete a running instance; this MVP does **not** replicate lazydocker's
-  "force stop and retry" flow (`ComplexError`/`MustStopContainer`) — a
-  failed delete just surfaces the raw Incus error in the confirmation
-  panel. The user has to stop the instance first.
+  delete an instance that isn't stopped, rejecting it with a plain 400 whose
+  body is the string `Instance is running` (`instanceDelete` in
+  `cmd/incusd/instance_delete.go`). There's no dedicated error code for it,
+  so `asDeleteError` in `pkg/commands/instance.go` matches that message and
+  converts it to the `ErrInstanceRunning` sentinel; the panel then offers a
+  force-stop-then-delete (`Instance.ForceDelete`), lazydocker's
+  `ComplexError`/`MustStopContainer` flow rebuilt on a sentinel error
+  instead. `ForceDelete` mirrors `incus delete --force` (`deleteOne` in
+  `cmd/incus/delete.go`): stop with `Force: true` and no timeout, then
+  delete — skipping the delete for ephemeral instances, which Incus discards
+  on stop. Note the message match can't be replaced by an `IsRunning()`
+  pre-check on our side: the daemon counts a *frozen* instance as running
+  too, while our `IsRunning()` only matches status `Running`.
 - **Logs**: `Client.GetInstanceConsoleLog(name, &incus.InstanceConsoleLogArgs{})`
   returns an `io.ReadCloser` over the console ring buffer. This is
   fundamentally different from Docker's `ContainerLogs(..., Follow: true)`
@@ -299,7 +308,7 @@ virtualization (`/dev/kvm`) inside colima's Linux guest, which needs an
 Apple Silicon M3+ chip with macOS 15+ (`incus launch ... --vm` fails with
 `KVM support is missing (no /dev/kvm)` otherwise). This machine is an M1
 Pro, which has no hardware nested-virtualization support at all - no
-colima/Incus flag can work around it. Verifying items 2-4 below needs
+colima/Incus flag can work around it. Verifying items 2-3 below needs
 either different hardware or a real (non-nested) Linux host with Incus
 installed directly.
 
@@ -319,10 +328,15 @@ installed directly.
    `incus exec` requires the Incus guest agent to be running inside the
    VM; if it isn't, the exec shell-out will simply fail with whatever
    error the `incus` CLI prints. No special-casing was added.
-4. **Delete-while-running UX** — still untested (didn't delete the test
-   containers). A failed delete just shows the raw API error rather than
-   offering a force-stop-then-delete flow. Worth revisiting once real
-   error text from `DeleteInstance` on a running instance is known.
+4. ~~Delete-while-running UX~~ — **resolved**: the force-stop-then-delete
+   flow (see the Delete bullet above) has been confirmed working against a
+   live daemon (2026-08-25). Deleting a running instance raises the
+   force prompt, and confirming stops and deletes it. That also confirms
+   the daemon really does refuse with the `Instance is running` message
+   `asDeleteError` matches on — a match taken from the Incus source, so
+   still the thing to re-check if the prompt ever stops appearing after an
+   Incus upgrade. One sub-case remains unverified: the early return for
+   **ephemeral** instances, which Incus discards on stop.
 5. **IP address column** — confirmed working: both test containers showed
    correct IPv4/IPv6 addresses (`InstanceFull.State.Network`, filtered to
    `scope == "global"`, excluding `lo`), populated a second or so after

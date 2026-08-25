@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,4 +36,14 @@ func TestInstanceIsRunning(t *testing.T) {
 
 	inst.Instance.Status = "Stopped"
 	assert.False(t, inst.IsRunning())
+}
+
+func TestAsDeleteError(t *testing.T) {
+	assert.NoError(t, asDeleteError(nil))
+
+	// The daemon's exact refusal, as returned by instanceDelete.
+	assert.ErrorIs(t, asDeleteError(errors.New("Instance is running")), ErrInstanceRunning)
+
+	other := errors.New("Instance not found")
+	assert.ErrorIs(t, asDeleteError(other), other)
 }

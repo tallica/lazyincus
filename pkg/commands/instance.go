@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -105,15 +106,56 @@ func (i *Instance) Unfreeze() error {
 	return i.updateState("unfreeze", -1, false)
 }
 
-// Delete deletes the instance. Incus refuses to delete a running instance, so
-// callers should stop it first (or catch the error and offer to force-stop).
+// ErrInstanceRunning is what Delete returns when Incus refused to delete the
+// instance because it was still running. Callers can catch this to offer a
+// force-stop-then-delete flow (see ForceDelete).
+var ErrInstanceRunning = errors.New("instance is running")
+
+// Delete deletes the instance. Incus refuses to delete an instance that isn't
+// stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
+// stop it first.
 func (i *Instance) Delete() error {
 	i.Log.Warn(fmt.Sprintf("deleting instance %s", i.Name))
 	op, err := i.Client.DeleteInstance(i.Name)
 	if err != nil {
-		return err
+		return asDeleteError(err)
 	}
-	return op.Wait()
+
+	return asDeleteError(op.Wait())
+}
+
+// ForceDelete stops the instance without waiting for a clean shutdown and then
+// deletes it, mirroring `incus delete --force` (see deleteOne in
+// cmd/incus/delete.go).
+func (i *Instance) ForceDelete() error {
+	i.Log.Warn(fmt.Sprintf("force stopping instance %s before deleting it", i.Name))
+	if err := i.updateState("stop", -1, true); err != nil {
+		return fmt.Errorf("stopping the instance failed: %w", err)
+	}
+
+	// Incus discards ephemeral instances the moment they stop, so there's
+	// nothing left to delete and asking would just 404. `incus delete --force`
+	// returns early here too.
+	if i.Instance.Ephemeral {
+		return nil
+	}
+
+	return i.Delete()
+}
+
+// asDeleteError translates the daemon's refusal to delete a running instance
+// into ErrInstanceRunning. incusd rejects it with a plain 400 whose body is
+// "Instance is running" (see instanceDelete in cmd/incusd/instance_delete.go)
+// - there's no dedicated error code to check for, so matching that message is
+// the only way to tell this case apart from other delete failures. Note that
+// the daemon counts a frozen instance as running too, so this can't be
+// replaced with an IsRunning() pre-check on our side.
+func asDeleteError(err error) error {
+	if err != nil && strings.Contains(strings.ToLower(err.Error()), "instance is running") {
+		return ErrInstanceRunning
+	}
+
+	return err
 }
 
 // IsRunning tells us whether Incus considers this instance running.

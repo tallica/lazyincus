@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -210,9 +211,31 @@ func (gui *Gui) handleInstanceDelete(g *gocui.Gui, v *gocui.View) error {
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.DeleteInstance, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			if err := inst.Delete(); err != nil {
+			err := inst.Delete()
+			if errors.Is(err, commands.ErrInstanceRunning) {
+				return gui.promptToForceDeleteInstance(inst)
+			}
+
+			if err != nil {
 				return gui.createErrorPanel(err.Error())
 			}
+
+			return gui.refreshInstances()
+		})
+	}, nil)
+}
+
+// promptToForceDeleteInstance offers to stop the instance and delete it after
+// Incus refused to delete it while running. We only get here off the back of
+// a delete the user already confirmed, so this second prompt is about the
+// force-stop, not about the delete.
+func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
+	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.MustForceToRemove, func(g *gocui.Gui, v *gocui.View) error {
+		return gui.WithWaitingStatus(gui.Tr.ForceRemovingStatus, func() error {
+			if err := instance.ForceDelete(); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+
 			return gui.refreshInstances()
 		})
 	}, nil)

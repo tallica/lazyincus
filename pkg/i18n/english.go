@@ -43,6 +43,7 @@ type TranslationSet struct {
 	StoppingStatus             string
 	PausingStatus              string
 	RemovingStatus             string
+	ForceRemovingStatus        string
 	Stop                       string
 	Pause                      string
 	Restart                    string
@@ -86,11 +87,12 @@ type TranslationSet struct {
 
 func englishSet() TranslationSet {
 	return TranslationSet{
-		RestartingStatus: "restarting",
-		StartingStatus:   "starting",
-		StoppingStatus:   "stopping",
-		PausingStatus:    "pausing",
-		RemovingStatus:   "removing",
+		RestartingStatus:    "restarting",
+		StartingStatus:      "starting",
+		StoppingStatus:      "stopping",
+		PausingStatus:       "pausing",
+		RemovingStatus:      "removing",
+		ForceRemovingStatus: "stopping and deleting",
 
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
@@ -121,7 +123,7 @@ func englishSet() TranslationSet {
 		Remove:               "delete",
 		HideStopped:          "hide/show stopped instances",
 		ForceRemove:          "force delete",
-		MustForceToRemove:    "You cannot delete a running instance unless you force it. Do you want to force it?",
+		MustForceToRemove:    "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
 		Stop:                 "stop",
 		Pause:                "pause/freeze",
 		Restart:              "restart",

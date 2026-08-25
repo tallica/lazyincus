@@ -67,7 +67,7 @@ reordered or hidden via `gui.instanceColumns` in the config file - see
 | `s` | Stop |
 | `r` | Restart |
 | `p` | Pause/freeze (toggle) |
-| `d` | Delete |
+| `d` | Delete (offers to stop the instance first if it's running) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `E` | Exec a shell into the instance |
