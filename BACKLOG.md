@@ -51,9 +51,11 @@ panel-switching (above) first.
       credits tab, so dropping that panel left lazyincus with nowhere to put
       one (`CreditsTitle` is ported but unused).
 
-Not planned:
+Not planned as lazydocker has them:
 
-- **Services / Project panels** — docker-compose only, no Incus analog.
+- **Services / Project panels** — these were docker-compose specific, and the
+  port assumed Incus had nothing to map them onto. That assumption is now
+  wrong: see [incus-compose integration](#incus-compose-integration).
 
 ### Per-instance actions
 
@@ -118,7 +120,8 @@ own merits.
 - [ ] **Profiles / projects / remotes** — no panels or switching UI for any
       of them. The daemon connection uses whichever remote is
       `default-remote` in the user's Incus config and never offers to change
-      it.
+      it. Project switching in particular is now more pressing than it looks:
+      see [incus-compose integration](#incus-compose-integration).
 
 Deliberately deferred (don't re-pitch unprompted):
 
@@ -132,6 +135,90 @@ Deliberately deferred (don't re-pitch unprompted):
   `runSubprocessWithMessage`, mirroring `instanceExecShell`. That also shows
   image-download progress natively, which a `WithWaitingStatus` spinner would
   hide.
+
+## incus-compose integration
+
+[incus-compose](https://github.com/lxc/incus-compose) is a drop-in
+replacement for `docker compose` that runs an unmodified `compose.yaml`
+against Incus, pulling OCI images straight from docker.io/ghcr.io via Incus's
+native OCI support. It started as [bketelsen/incus-compose] and now lives
+under the LXC org; its docs call it stable, and it needs Incus 7.0.1 LTS or
+7.2+ (this port builds against client v7.3.0, so no version problem).
+Commands mirror compose: `up`, `down`, `start`, `stop`, `restart`,
+`list`/`ps`, `logs`, `exec`, `config`, `build`.
+
+[bketelsen/incus-compose]: https://github.com/bketelsen/incus-compose
+
+This is the missing piece that made lazydocker's Services/Project panels look
+unportable. It matters to lazyincus in two independent ways.
+
+### 1. Project awareness (needed first, useful on its own)
+
+**incus-compose creates one Incus project per compose project** — run
+`incus-compose -p myapp up` and you get an Incus project `myapp` holding that
+stack's instances, networks and volumes, plus a separate
+`incus-compose-cache` project for pulled images.
+
+lazyincus connects with `cliCfg.GetInstanceServer(cliCfg.DefaultRemote)` and
+never touches projects. `GetInstanceServer` does honor whatever project the
+user's remote is configured for (`remote.Project`, applied via `UseProject`
+inside `shared/cliconfig/remote.go`), but nothing else — so **every
+incus-compose stack is currently invisible in lazyincus** unless the user has
+switched their `incus` CLI remote to that project. That's a real usability
+hole today, independent of any compose features, since hand-made Incus
+projects have exactly the same problem.
+
+The client API needed is small: `GetProjectNames()` / `GetProjects()` to
+enumerate, and either `client.UseProject(name)` or `cliCfg.ProjectOverride`
+before `GetInstanceServer` to switch.
+
+- [ ] Show which project the instance list is scoped to (footer already shows
+      remote + daemon version — the natural place)
+- [ ] A project switcher (menu of `GetProjectNames()`, re-scoping the client)
+- [ ] Decide whether an "all projects" aggregate view is worth it, or whether
+      switching is enough
+
+### 2. Compose grouping on top
+
+Each instance incus-compose creates is stamped with config keys naming its
+origin, read from `project/instance.go` in the source:
+
+| Key | Holds |
+|---|---|
+| `user.label.incus-compose.project` | compose project name |
+| `user.label.incus-compose.service` | service name the instance came from |
+| `user.label.<compose label>` | each of the service's own compose labels |
+| `user.healthcheck.enabled` / `user.healthcheck.*` | healthcheck opt-in and its test/interval/retries, driven by an `ic-healthd` sidecar |
+| `user.incus-compose.oneoff` | marks a one-off (`run`-style) instance |
+| `environment.<KEY>` | the service's environment variables |
+
+Instances are named `<service>-<index>` (`web-1`, `app-1`).
+
+Two things fall out of this. Those keys live in `ExpandedConfig`, which
+`RefreshInstanceDetails` already fetches — so both are presentation work on
+data lazyincus has in hand, not new API calls.
+
+- [ ] **Service column / grouping** — read
+      `user.label.incus-compose.service` and show it, or group the instance
+      list by it. Cheap, and it's most of what lazydocker's Services panel
+      actually gave you.
+- [ ] **Health column** — `user.healthcheck.enabled` plus the healthd state
+      would give lazyincus a health indicator, which the port dropped along
+      with Docker's healthcheck support. Needs a look at where `ic-healthd`
+      writes results before this is more than a guess.
+- [ ] **`incus-compose` shell-outs** — `up`/`down`/`restart` on the selected
+      project, in the `instanceExecShell` subprocess style. Optional, and it
+      adds a second CLI dependency beyond `incus` itself.
+
+### Caveats
+
+- None of this is verified against a live incus-compose setup — the key
+  names above were read out of `project/instance.go` on GitHub, not observed
+  on a running instance. Confirm before building on them.
+- Those keys are internal to incus-compose and carry no compatibility
+  promise. If lazyincus depends on them, pin the commit they were read from
+  the way the lazydocker port pin works, so a drift has somewhere to be
+  checked against.
 
 ## Interactive Snapshots panel
 

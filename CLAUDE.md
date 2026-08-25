@@ -253,8 +253,11 @@ across tabs instead):
 Per the brief, these lazydocker panels/features were **not** ported:
 
 - Images, Networks, Volumes panels
-- Services / Project panels (docker-compose equivalent — Incus has no
-  compose-like grouping concept to map this onto anyway)
+- Services / Project panels (docker-compose equivalent). The port assumed
+  Incus had no compose-like grouping to map these onto; that's since turned
+  out to be wrong — `incus-compose` gives each compose project its own Incus
+  project and labels the instances it creates. See
+  [BACKLOG.md](BACKLOG.md#incus-compose-integration).
 - Custom commands system (`c` key, `config.CustomCommands`)
 - Bulk commands system (`b` key, `config.BulkCommands`)
 - Top tab (per-instance process list) and the whole `ContainerStats`/
