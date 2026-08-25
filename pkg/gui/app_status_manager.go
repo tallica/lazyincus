@@ -37,6 +37,16 @@ func (m *statusManager) addWaitingStatus(name string) {
 	m.statuses = append([]appStatus{newStatus}, m.statuses...)
 }
 
+func (m *statusManager) addTransientStatus(name string) {
+	m.removeStatus(name)
+	newStatus := appStatus{
+		name:       name,
+		statusType: "transient",
+		duration:   0,
+	}
+	m.statuses = append([]appStatus{newStatus}, m.statuses...)
+}
+
 func (m *statusManager) getStatusString() string {
 	if len(m.statuses) == 0 {
 		return ""
@@ -79,4 +89,25 @@ func (gui *Gui) WithWaitingStatus(name string, f func() error) error {
 	}()
 
 	return nil
+}
+
+// WithTransientStatus flashes a message in the app status view for the given
+// duration, for actions that complete instantly and so have no waiting status
+// of their own to show.
+func (gui *Gui) WithTransientStatus(name string, duration time.Duration) {
+	go func() {
+		gui.statusManager.addTransientStatus(name)
+		gui.renderAppStatus()
+
+		time.Sleep(duration)
+
+		gui.statusManager.removeStatus(name)
+		gui.renderAppStatus()
+	}()
+}
+
+func (gui *Gui) renderAppStatus() {
+	gui.g.Update(func(g *gocui.Gui) error {
+		return gui.renderString(g, "appStatus", gui.statusManager.getStatusString())
+	})
 }

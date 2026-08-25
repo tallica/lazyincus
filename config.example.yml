@@ -80,6 +80,11 @@ confirmOnQuit: false
 #   # Command used to open a URL. Platform defaults: macOS "open {{link}}",
 #   # Linux 'sh -c "xdg-open {{link}} >/dev/null"'.
 #   openLinkCommand: ""
+#   # Command that copied text (e.g. an instance's IPv4 address) is piped
+#   # into on its stdin. When unset, lazyincus uses the first of pbcopy,
+#   # wl-copy, "xclip -selection clipboard -in" or "xsel --clipboard --input"
+#   # that it finds on your PATH.
+#   copyToClipboardCommand: ""
 
 # Instances whose name contains any of these substrings are hidden from
 # the list.

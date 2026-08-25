@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -215,6 +216,30 @@ func (gui *Gui) handleInstanceDelete(g *gocui.Gui, v *gocui.View) error {
 			return gui.refreshInstances()
 		})
 	}, nil)
+}
+
+// handleInstanceCopyIPv4 copies the selected instance's IPv4 address to the
+// system clipboard. An instance can have several (one per interface); we copy
+// the first, which is the address people generally want to paste somewhere.
+func (gui *Gui) handleInstanceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
+	inst, err := gui.Panels.Instances.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	addresses := inst.Addresses("inet")
+	if len(addresses) == 0 {
+		return gui.createErrorPanel(gui.Tr.NoIPv4Address)
+	}
+
+	address := addresses[0]
+	if err := gui.OSCommand.CopyToClipboard(address); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	gui.WithTransientStatus(fmt.Sprintf("%s %s", gui.Tr.CopiedToClipboard, address), time.Second*2)
+
+	return nil
 }
 
 func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {

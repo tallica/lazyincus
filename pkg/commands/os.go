@@ -144,6 +144,48 @@ func (c *OSCommand) OpenLink(link string) error {
 	return err
 }
 
+// clipboardCommandCandidates are the clipboard tools we look for on PATH when
+// the user hasn't configured a copyToClipboardCommand of their own, in
+// priority order: macOS's pbcopy, then Wayland's wl-copy, then the two X11
+// ones.
+var clipboardCommandCandidates = []string{
+	"pbcopy",
+	"wl-copy",
+	"xclip -selection clipboard -in",
+	"xsel --clipboard --input",
+}
+
+// CopyToClipboard copies text to the system clipboard by piping it into the
+// configured copy-to-clipboard command, or - when none is configured - the
+// first of clipboardCommandCandidates found on PATH.
+func (c *OSCommand) CopyToClipboard(text string) error {
+	commandStr := c.Config.UserConfig.OS.CopyToClipboardCommand
+	if commandStr == "" {
+		commandStr = c.defaultClipboardCommand()
+	}
+
+	if commandStr == "" {
+		return errors.New("No clipboard command found. Install one of pbcopy, wl-copy, xclip or xsel, or set os.copyToClipboardCommand in your config")
+	}
+
+	cmd := c.ExecutableFromString(commandStr)
+	cmd.Stdin = strings.NewReader(text)
+
+	return c.RunPreparedCommand(cmd)
+}
+
+// defaultClipboardCommand returns the first clipboard tool available on PATH,
+// or an empty string if none of them are.
+func (c *OSCommand) defaultClipboardCommand() string {
+	for _, candidate := range clipboardCommandCandidates {
+		if _, err := exec.LookPath(str.ToArgv(candidate)[0]); err == nil {
+			return candidate
+		}
+	}
+
+	return ""
+}
+
 // EditFile opens a file in a subprocess using whatever editor is available,
 // falling back to core.editor, VISUAL, EDITOR, then vi
 func (c *OSCommand) EditFile(filename string) (*exec.Cmd, error) {

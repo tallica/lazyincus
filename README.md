@@ -71,6 +71,7 @@ reordered or hidden via `gui.instanceColumns` in the config file - see
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `E` | Exec a shell into the instance |
+| `y` | Copy the instance's IPv4 address to the clipboard |
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |

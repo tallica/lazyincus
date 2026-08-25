@@ -52,6 +52,9 @@ type TranslationSet struct {
 	Attach                     string
 	ViewLogs                   string
 	ExecShell                  string
+	CopyIPv4                   string
+	CopiedToClipboard          string
+	NoIPv4Address              string
 	InstancesTitle             string
 	NoInstances                string
 	NoInstance                 string
@@ -128,6 +131,9 @@ func englishSet() TranslationSet {
 		Attach:               "attach",
 		ViewLogs:             "view logs",
 		ExecShell:            "exec shell",
+		CopyIPv4:             "copy IPv4 address",
+		CopiedToClipboard:    "copied to clipboard:",
+		NoIPv4Address:        "This instance has no IPv4 address yet. It may still be starting up, or may not be running at all.",
 		FilterList:           "filter list",
 		SortInstancesByState: "sort instances by state",
 

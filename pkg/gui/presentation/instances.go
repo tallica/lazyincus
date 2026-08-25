@@ -1,7 +1,6 @@
 package presentation
 
 import (
-	"sort"
 	"strconv"
 	"strings"
 
@@ -69,31 +68,11 @@ func displayInstanceType(instance *commands.Instance) string {
 	return "container"
 }
 
-// displayInstanceAddresses returns the instance's global-scope addresses for
-// the given address family ("inet" for IPv4, "inet6" for IPv6), matching
-// api.InstanceStateNetworkAddress.Family.
+// displayInstanceAddresses renders the instance's global-scope addresses for
+// the given address family the way `incus list` does: space-separated within
+// the one column, rather than comma-separated.
 func displayInstanceAddresses(instance *commands.Instance, family string) string {
-	full, ok := instance.Full()
-	if !ok || full.State == nil {
-		return ""
-	}
-
-	addresses := []string{}
-	for name, network := range full.State.Network {
-		if name == "lo" {
-			continue
-		}
-		for _, addr := range network.Addresses {
-			if addr.Scope != "global" || addr.Family != family {
-				continue
-			}
-			addresses = append(addresses, addr.Address)
-		}
-	}
-
-	sort.Strings(addresses)
-
-	return strings.Join(addresses, " ")
+	return strings.Join(instance.Addresses(family), " ")
 }
 
 // displayInstanceSnapshotCount mirrors `incus list`'s SNAPSHOTS column.

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -118,6 +119,36 @@ func (i *Instance) Delete() error {
 // IsRunning tells us whether Incus considers this instance running.
 func (i *Instance) IsRunning() bool {
 	return strings.EqualFold(i.Instance.Status, "Running")
+}
+
+// Addresses returns the instance's global-scope IP addresses for the given
+// address family ("inet" for IPv4, "inet6" for IPv6, matching
+// api.InstanceStateNetworkAddress.Family), sorted and excluding loopback.
+// These live in the instance's state, so this is empty until
+// IncusCommand.RefreshInstanceDetails has fetched full details in the
+// background.
+func (i *Instance) Addresses(family string) []string {
+	full, ok := i.Full()
+	if !ok || full.State == nil {
+		return nil
+	}
+
+	addresses := []string{}
+	for name, network := range full.State.Network {
+		if name == "lo" {
+			continue
+		}
+		for _, addr := range network.Addresses {
+			if addr.Scope != "global" || addr.Family != family {
+				continue
+			}
+			addresses = append(addresses, addr.Address)
+		}
+	}
+
+	sort.Strings(addresses)
+
+	return addresses
 }
 
 // ConsoleLog returns the current contents of the instance's console log ring

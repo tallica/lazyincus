@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Instances panel: `y` copies the selected instance's IPv4 address to the system clipboard (the first address, if it has several). The clipboard tool is auto-detected from `pbcopy`/`wl-copy`/`xclip`/`xsel`, and can be overridden with the new `oS.copyToClipboardCommand` config option.
+
 ## [0.1.0] - 2026-08-22
 
 ### Added

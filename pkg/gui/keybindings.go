@@ -209,6 +209,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "instances",
+			Key:         'y',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleInstanceCopyIPv4,
+			Description: gui.Tr.CopyIPv4,
+		},
+		{
+			ViewName:    "instances",
 			Key:         'E',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleInstancesExecShell,

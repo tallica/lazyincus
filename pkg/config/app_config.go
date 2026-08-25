@@ -106,6 +106,11 @@ type OSConfig struct {
 
 	// OpenLinkCommand is the command for opening a link
 	OpenLinkCommand string `yaml:"openLinkCommand,omitempty"`
+
+	// CopyToClipboardCommand is the command that text to be copied is piped
+	// into (on its stdin). When left empty, lazyincus uses the first of
+	// pbcopy, wl-copy, xclip or xsel that it finds on your PATH.
+	CopyToClipboardCommand string `yaml:"copyToClipboardCommand,omitempty"`
 }
 
 // GetDefaultConfig returns the application default configuration NOTE (to
