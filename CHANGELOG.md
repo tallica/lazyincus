@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-25
+
 ### Added
 - Deleting a running instance now offers to stop it first and retry, instead of just surfacing Incus's refusal. Mirrors `incus delete --force`: stops without waiting for a clean shutdown, then deletes (skipping the delete for ephemeral instances, which Incus discards on stop).
 - Instances panel: `y` copies the selected instance's IPv4 address to the system clipboard (the first address, if it has several). The clipboard tool is auto-detected from `pbcopy`/`wl-copy`/`xclip`/`xsel`, and can be overridden with the new `oS.copyToClipboardCommand` config option.
@@ -53,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tallica/lazyincus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tallica/lazyincus/releases/tag/v0.1.0
