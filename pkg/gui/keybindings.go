@@ -30,6 +30,10 @@ func (b *Binding) GetKey() string {
 
 	// special keys
 	switch key {
+	case int(gocui.KeyTab):
+		return "tab"
+	case int(gocui.KeyBacktab):
+		return "shift+tab"
 	case 27:
 		return "esc"
 	case 13:
