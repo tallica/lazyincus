@@ -10,7 +10,9 @@ behaviors behind it. What shipped when is in [CHANGELOG.md](CHANGELOG.md);
 what hasn't been built and why (including the panel-by-panel comparison
 against lazydocker) is in [BACKLOG.md](BACKLOG.md); the rename map and
 package layout are in [docs/Port.md](docs/Port.md); the config schema is in
-[docs/Config.md](docs/Config.md).
+[docs/Config.md](docs/Config.md); connecting to a non-default remote, and the
+gotchas behind a daemon in a local VM, are in
+[docs/Remotes.md](docs/Remotes.md).
 
 ## Status
 
@@ -170,7 +172,9 @@ against a live daemon or read out of the Incus source, not inferred.
   beyond Linux hosts: under `colima start --runtime incus` the "local"
   socket lives at a path recorded in that remote's config
   (`unix:///Users/you/.colima/default/incus.sock`), not at any standard
-  Linux location.
+  Linux location. Which remote that is comes from the CLI config's
+  default-remote, overridable with `INCUS_REMOTE` — there's no flag of our
+  own; see [docs/Remotes.md](docs/Remotes.md).
 - **Projects**: Incus scopes instances (and networks, volumes, profiles) per
   project, and a client is scoped to one at a time. `UseProject` swaps
   `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor

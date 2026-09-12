@@ -25,9 +25,11 @@ below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 ## Requirements
 
-- An [Incus](https://linuxcontainers.org/incus/) daemon (`incusd`) running
-  locally, reachable via its unix socket.
-- Your user in the `incus`/`incus-admin` group (or root) for socket access.
+- An [Incus](https://linuxcontainers.org/incus/) daemon (`incusd`) to talk to —
+  local over its unix socket, or any remote your `incus` CLI is configured for
+  (see [docs/Remotes.md](docs/Remotes.md)).
+- Your user in the `incus`/`incus-admin` group (or root) for local socket
+  access.
 - The `incus` CLI on `PATH` — used for attaching to a console and for
   exec-into-instance.
 - Go 1.27+ to build from source.
@@ -50,6 +52,20 @@ make run
 ```
 
 Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
+
+## Remotes
+
+lazyincus talks to whichever remote the `incus` CLI treats as its default.
+Point it at a different one with:
+
+```sh
+INCUS_REMOTE=myserver lazyincus
+```
+
+The footer shows the remote you are on. [docs/Remotes.md](docs/Remotes.md)
+covers adding a remote and its token, reaching a daemon over SSH, and the
+gotchas behind running incusd in a local VM — macOS Local Network Privacy and
+guest clock skew both fail in ways that point at the wrong component.
 
 ## Usage
 

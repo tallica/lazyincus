@@ -97,6 +97,19 @@ own merits.
       daemon connection uses whichever remote is `default-remote` in the
       user's Incus config and never offers to change it. (Projects now have
       a switcher — see [incus-compose integration](#incus-compose-integration).)
+- [ ] **`--remote` flag** — selecting a remote means `INCUS_REMOTE=<name>
+      lazyincus` or changing the CLI's default; there's no flag of our own.
+      See [docs/Remotes.md](docs/Remotes.md). The connection side is small:
+      pass the name to `cliCfg.GetInstanceServer` instead of
+      `cliCfg.DefaultRemote` in `pkg/commands/incus.go`, plus a `flaggy`
+      entry in `main.go`. The catch is the shell-outs — `instanceCLIArgs`
+      (`pkg/gui/instances_panel.go`) passes `--project` but nothing about the
+      remote, and `a`/`E` invoke `incus` with a bare instance name, so they'd
+      still follow the CLI's own default. The flag has to set `INCUS_REMOTE`
+      in the child environment, or qualify the name as `<remote>:<instance>`,
+      or the panels and the console end up on different daemons. That's also
+      the argument for `INCUS_REMOTE` remaining the documented way in: it
+      already covers both halves.
 
 Deliberately deferred (don't re-pitch unprompted):
 

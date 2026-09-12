@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [docs/Remotes.md](docs/Remotes.md): connecting to a daemon that isn't the local one — picking a remote with `INCUS_REMOTE`, adding one with a trust token, reaching one over an SSH tunnel, and the three things that go wrong when incusd runs in a local VM. macOS Local Network Privacy and guest clock skew both fail with errors that accuse the wrong component. `scripts/check-local-network.sh` tells the first one apart from a genuinely unreachable host.
+
 ## [0.6.0] - 2026-09-12
 
 ### Fixed
