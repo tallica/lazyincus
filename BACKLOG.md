@@ -76,10 +76,8 @@ Not planned:
 
 ### Global
 
-- [ ] **Edit/open config (`e` / `o`)** — lazydocker binds these on its
-      Project panel. `OpenConfig`/`EditConfig` strings are ported and
-      `OSCommand.OpenFile`/`EditFile` both exist, but no keybinding calls
-      them. Cheapest real gap on this list.
+- [x] **Edit/open config (`e` / `o`)** — bound globally as `o` (open) and
+      `O` (edit).
 - [ ] **Cheatsheet generator** — lazydocker generates `docs/keybindings/*.md`
       from its i18n set via `scripts/cheatsheet`. Here the README keybinding
       table is hand-maintained, which is why CLAUDE.md has to carry a
@@ -97,14 +95,14 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — sixteen are defined but never
-      referenced: `MainTitle`, `GlobalTitle`, `OpenConfig`, `EditConfig`,
+- [ ] **Unused translation strings** — fourteen are defined but never
+      referenced: `MainTitle`, `GlobalTitle`,
       `ErrorOccurred`, `ConnectionFailed`, `UnattachableInstanceError`,
       `CannotKillChildError`, `ForceRemove`, `Attach`, `NoInstance`,
       `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
       `CreditsTitle`, `CannotDisplayEnvVariables`. Some mark genuinely
-      half-ported features (attach, open/edit config); the rest are dead
-      weight. Wire up or delete.
+      half-ported features (attach); the rest are dead weight. Wire up or
+      delete.
 
 ## Not lazydocker-shaped
 

@@ -290,6 +290,20 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "",
+			Key:         'o',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleOpenConfig,
+			Description: gui.Tr.OpenConfig,
+		},
+		{
+			ViewName:    "",
+			Key:         'O',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleEditConfig,
+			Description: gui.Tr.EditConfig,
+		},
+		{
+			ViewName:    "",
 			Key:         '+',
 			Handler:     wrappedHandler(gui.nextScreenMode),
 			Description: gui.Tr.LcNextScreenMode,

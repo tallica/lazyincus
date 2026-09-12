@@ -327,6 +327,14 @@ func (gui *Gui) openFile(filename string) error {
 	return nil
 }
 
+func (gui *Gui) handleOpenConfig(g *gocui.Gui, v *gocui.View) error {
+	return gui.openFile(gui.Config.ConfigFilename())
+}
+
+func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
+	return gui.editFile(gui.Config.ConfigFilename())
+}
+
 func (gui *Gui) ShouldRefresh(key string) bool {
 	if gui.State.Panels.Main.ObjectKey == key {
 		return false
