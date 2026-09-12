@@ -26,6 +26,9 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"ipv6": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return utils.ColoredString(displayInstanceAddresses(instance, "inet6"), color.FgYellow)
 	},
+	"service": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(instance.ComposeService(), color.FgGreen)
+	},
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
 	},

@@ -171,6 +171,23 @@ func (i *Instance) IsRunning() bool {
 	return strings.EqualFold(i.Instance.Status, "Running")
 }
 
+// composeServiceKey is the label incus-compose stamps on every instance it
+// creates, naming the compose service the instance came from (see
+// project/instance.go in lxc/incus-compose). It's a plain user config key
+// with no compatibility promise, so nothing here depends on it being set.
+const composeServiceKey = "user.label.incus-compose.service"
+
+// ComposeService is the incus-compose service this instance belongs to, or
+// an empty string for an instance nobody created through compose.
+func (i *Instance) ComposeService() string {
+	full, ok := i.Full()
+	if !ok {
+		return ""
+	}
+
+	return full.ExpandedConfig[composeServiceKey]
+}
+
 // Addresses returns the instance's global-scope IP addresses for an
 // api.InstanceStateNetworkAddress.Family ("inet"/"inet6"), sorted and
 // excluding loopback. Empty until RefreshInstanceDetails has run.
