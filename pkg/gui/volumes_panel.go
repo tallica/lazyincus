@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+
 	"github.com/samber/lo"
 
 	"github.com/jesseduffield/gocui"

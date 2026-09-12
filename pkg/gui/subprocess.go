@@ -17,8 +17,8 @@ func (gui *Gui) runSubprocess(cmd *exec.Cmd) error {
 }
 
 func (gui *Gui) runSubprocessWithMessage(cmd *exec.Cmd, msg string) error {
-	gui.Mutexes.SubprocessMutex.Lock()
-	defer gui.Mutexes.SubprocessMutex.Unlock()
+	gui.SubprocessMutex.Lock()
+	defer gui.SubprocessMutex.Unlock()
 
 	if err := gui.g.Suspend(); err != nil {
 		return gui.createErrorPanel(err.Error())

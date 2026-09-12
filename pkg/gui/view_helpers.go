@@ -121,7 +121,7 @@ func (gui *Gui) reRenderString(viewName, s string) {
 }
 
 func (gui *Gui) optionsMapToString(optionsMap map[string]string) string {
-	optionsArray := make([]string, 0)
+	optionsArray := make([]string, 0, len(optionsMap))
 	for key, description := range optionsMap {
 		optionsArray = append(optionsArray, key+": "+description)
 	}
@@ -135,10 +135,6 @@ func (gui *Gui) renderOptionsMap(optionsMap map[string]string) error {
 
 func (gui *Gui) GetMainView() *gocui.View {
 	return gui.Views.Main
-}
-
-func (gui *Gui) trimmedContent(v *gocui.View) string {
-	return strings.TrimSpace(v.Buffer())
 }
 
 func (gui *Gui) currentViewName() string {

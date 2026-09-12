@@ -68,7 +68,7 @@ func TestSelectionFollowsItemAcrossResort(t *testing.T) {
 	// alpha stops and sorts to the bottom; the cursor should go with it
 	// rather than stay on row 0, which bravo now occupies.
 	alpha.stopped = true
-	panel.RerenderList()
+	assert.NoError(t, panel.RerenderList())
 
 	assert.Equal(t, "alpha", selectedName(t, panel))
 	assert.Equal(t, 2, panel.SelectedIdx)

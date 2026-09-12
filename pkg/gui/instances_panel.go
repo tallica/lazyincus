@@ -3,9 +3,10 @@ package gui
 import (
 	"errors"
 	"fmt"
-	"github.com/samber/lo"
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
