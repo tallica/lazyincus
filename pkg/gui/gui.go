@@ -107,7 +107,7 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 		return SCREEN_NORMAL
 	case "half":
 		return SCREEN_HALF
-	case "fullscreen":
+	case "full", "fullscreen":
 		return SCREEN_FULL
 	default:
 		return SCREEN_NORMAL

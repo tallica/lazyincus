@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [docs/Port.md](docs/Port.md): the lazydocker rename map and package layout, moved out of CLAUDE.md.
 - Config changes now take effect without restarting lazyincus — an edit made with `O` as soon as the editor exits, any other edit within ~2s. `gui.screenMode` and `gui.language` still need a restart; see [docs/Config.md](docs/Config.md#reloading).
 
+### Fixed
+- `gui.screenMode: "full"` silently did nothing: the docs and `config.example.yml` documented `full` while the code only matched `fullscreen`, so `full` fell through to the default. Both spellings are now accepted.
+
 ### Changed
 - `docs/Config.md` and `config.example.yml` described `ignore` as matching instance names; it matches any displayed column, status and IP addresses included.
 - CLAUDE.md cut from 381 to ~180 lines: the "intentionally dropped" list and the unverified-VM questions now live only in BACKLOG.md (where the work items already were), the rename map and package layout moved to docs/Port.md, and resolved open questions were dropped in favour of the changelog entries that already describe them.
