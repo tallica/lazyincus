@@ -10,7 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Project awareness: `P` opens a menu of the server's Incus projects and re-scopes the instance list to the one picked, and the footer now shows which project it's scoped to alongside the remote (e.g. `Incus v6.11 (colima/default) ●`). Instances in any other project were previously invisible — including every `incus-compose` stack, since incus-compose gives each compose project an Incus project of its own.
 - `o` opens the lazyincus config file with the configured open command, and `O` opens it in `$VISUAL`/`$EDITOR`. Both are global keybindings.
+- [docs/Port.md](docs/Port.md): the lazydocker rename map and package layout, moved out of CLAUDE.md.
 - Config changes now take effect without restarting lazyincus — an edit made with `O` as soon as the editor exits, any other edit within ~2s. `gui.screenMode` and `gui.language` still need a restart; see [docs/Config.md](docs/Config.md#reloading).
+
+### Changed
+- `docs/Config.md` and `config.example.yml` described `ignore` as matching instance names; it matches any displayed column, status and IP addresses included.
+- CLAUDE.md cut from 381 to ~180 lines: the "intentionally dropped" list and the unverified-VM questions now live only in BACKLOG.md (where the work items already were), the rename map and package layout moved to docs/Port.md, and resolved open questions were dropped in favour of the changelog entries that already describe them.
 
 ## [0.2.0] - 2026-08-25
 
@@ -57,8 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tested end-to-end against a live Incus daemon (via colima): Instances panel lists real instances with live status/IP, navigation and tab switching work, Config tab renders full instance details correctly.
 
 ### Known limitations
-- Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [CLAUDE.md](CLAUDE.md).
-- VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions).
+- Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
+- VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
 [Unreleased]: https://github.com/tallica/lazyincus/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/tallica/lazyincus/compare/v0.1.0...v0.2.0

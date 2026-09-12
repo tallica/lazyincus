@@ -20,9 +20,8 @@ line-by-line account of what was carried over, adapted, or dropped.
 
 This is an early port covering a single panel. Feature parity with
 lazydocker (images/networks/volumes/services panels, custom commands,
-stats, non-English translations) is not there yet — see "What's not here
-yet" below. See [CLAUDE.md](CLAUDE.md#status) for current build/test status
-and what has and hasn't been verified against a real Incus daemon.
+non-English translations) is not there yet — see "What's not here yet"
+below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 ## Requirements
 
@@ -76,6 +75,7 @@ reordered or hidden via `gui.instanceColumns` in the config file - see
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
+| `+` / `_` | Next / previous screen mode |
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |
@@ -96,13 +96,11 @@ Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 - Windows support
 
 VM instances are listed and can be started/stopped/deleted like containers,
-but freeze/unfreeze, exec, and delete-while-running are untested against a
-real VM — see [CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions)
-for why and what's needed to verify them.
+but freeze/unfreeze and exec are untested against a real VM — see
+[BACKLOG.md](BACKLOG.md#blocked) for why and what's needed to verify them.
 
-See [CLAUDE.md](CLAUDE.md) for the full rationale, the Incus API integration
-details, and known unverified assumptions (this was built without access to
-a live Incus daemon).
+See [CLAUDE.md](CLAUDE.md) for the architecture and the Incus API
+integration details.
 
 ## Changelog
 

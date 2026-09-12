@@ -68,7 +68,7 @@ your file either).
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |
 | `sidePanelWidth` | float | `0.3333` | Fraction of screen width used by the Instances side panel. |
 | `showBottomLine` | bool | `true` | Show the bottom status/keybinding line. |
-| `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full`. |
+| `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full` (`fullscreen` is accepted as an alias). |
 | `instanceStatusStyle` | string | `"long"` | Instance status display: `long` (full words), `short` (one/two characters), or `icon`. |
 | `border` | string | `"rounded"` | Panel border style: `rounded`, `single`, `double`, or `hidden`. |
 | `instanceColumns` | []string | `[name, status, type, ipv4, ipv6, snapshots]` | Which columns the Instances panel shows, and in what order. Valid values: `name`, `status`, `type`, `ipv4`, `ipv6`, `snapshots`. Unknown values are ignored; list any subset to hide the rest. |
@@ -81,13 +81,13 @@ your file either).
 | `oS.openCommand` | string | macOS: `open {{filename}}`; Linux: `sh -c "xdg-open {{filename}} >/dev/null"` | Command used to open a file. |
 | `oS.openLinkCommand` | string | macOS: `open {{link}}`; Linux: `sh -c "xdg-open {{link}} >/dev/null"` | Command used to open a URL. |
 | `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used. |
-| `ignore` | []string | `[]` | Instances whose name contains any of these substrings are hidden from the list. |
+| `ignore` | []string | `[]` | List rows are hidden when any displayed column contains one of these substrings — status and IP addresses included, not just the name. |
 
 ## What's not here (yet)
 
 Ported from lazydocker's config in this MVP: `gui`, `confirmOnQuit`, `oS`,
 `ignore`. Deliberately **not** ported (see
-[CLAUDE.md](../CLAUDE.md#what-was-intentionally-dropped-for-this-mvp) for
+[BACKLOG.md](../BACKLOG.md#missing-vs-lazydocker) for
 why): `commandTemplates` (docker-compose command templates), `customCommands`,
 `bulkCommands`, `stats`/`graphs`, `replacements`, and `logs` (`since`/`tail`/
 `timestamps` don't map onto Incus's console-log snapshot model).

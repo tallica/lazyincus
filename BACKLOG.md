@@ -95,14 +95,13 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — fourteen are defined but never
-      referenced: `MainTitle`, `GlobalTitle`,
-      `ErrorOccurred`, `ConnectionFailed`, `UnattachableInstanceError`,
-      `CannotKillChildError`, `ForceRemove`, `Attach`, `NoInstance`,
-      `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
-      `CreditsTitle`, `CannotDisplayEnvVariables`. Some mark genuinely
-      half-ported features (attach); the rest are dead weight. Wire up or
-      delete.
+- [ ] **Unused translation strings** — thirteen are defined but never
+      referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`,
+      `ConnectionFailed`, `UnattachableInstanceError`, `ForceRemove`,
+      `Attach`, `NoInstance`, `RemoveWithForce`, `FilterList`,
+      `SortInstancesByState`, `CreditsTitle`, `CannotDisplayEnvVariables`.
+      Some mark genuinely half-ported features (attach); the rest are dead
+      weight. Wire up or delete.
 
 ## Not lazydocker-shaped
 
@@ -244,10 +243,16 @@ snapshots of the currently-selected instance. Gated on panel-switching.
 
 ## Blocked
 
-Needs an M3+ Apple Silicon machine or a native Linux host — nested
-virtualization isn't available on the M1 Pro this was developed on. See open
-questions 2 and 3 in
-[CLAUDE.md](CLAUDE.md#open-questions--unverified-assumptions).
+Everything here needs a real VM instance, so it needs a host that can
+provide one: a Linux machine running Incus directly, or — when the daemon
+runs inside a VM, as under colima on macOS — hardware nested virtualization,
+which on Apple Silicon means an M3 or later with macOS 15+. Without
+`/dev/kvm` inside the guest, `incus launch ... --vm` fails with `KVM support
+is missing (no /dev/kvm)` and no colima or Incus flag substitutes for it.
 
-- [ ] Verify freeze/unfreeze against a real VM
-- [ ] Verify exec into a real VM
+- [ ] Verify freeze/unfreeze against a real VM. Both are documented as
+      container-oriented actions, and `p` doesn't check `IsVM()` before
+      offering them — error, silent no-op or actual suspend is unconfirmed.
+- [ ] Verify exec into a real VM. `incus exec` needs the Incus guest agent
+      running inside the VM; without it the shell-out fails with whatever
+      the CLI prints. No special-casing was added.
