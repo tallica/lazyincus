@@ -237,10 +237,9 @@ snapshots of the currently-selected instance. Gated on panel-switching.
 
 ## Housekeeping
 
-- [x] **Backfill the GitHub release for v0.2.0** — cut from its changelog
-      section, and flagged not-latest so v0.3.0 keeps that badge. v0.1.0 is
-      still tag-only; backfill it the same way if the releases page should
-      be complete.
+- [x] **Backfill the GitHub releases for v0.1.0 and v0.2.0** — both cut
+      from their changelog sections, flagged not-latest so v0.3.0 keeps that
+      badge. Every tag now has a release.
 - [ ] **Attach built binaries to releases** — releases currently carry
       notes only, so installing still means `go build` from source. Needs a
       decision on which platforms to build for (linux/amd64 and
