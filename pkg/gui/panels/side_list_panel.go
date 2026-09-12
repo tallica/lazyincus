@@ -13,6 +13,7 @@ import (
 )
 
 type ISideListPanel interface {
+	ClearItems()
 	SetMainTabIndex(int)
 	SetMainTab(string) error
 	HandleSelect() error
@@ -194,6 +195,12 @@ func (self *SideListPanel[T]) HandlePrevMainTab() error {
 
 func (self *SideListPanel[T]) Refocus() {
 	self.Gui.FocusY(self.SelectedIdx, self.List.Len(), self.View)
+}
+
+// ClearItems empties the panel. Typed SetItems isn't reachable through
+// ISideListPanel, so this is how generic code drops a panel's contents.
+func (self *SideListPanel[T]) ClearItems() {
+	self.SetItems(nil)
 }
 
 func (self *SideListPanel[T]) SetItems(items []T) {

@@ -139,8 +139,8 @@ func (gui *Gui) sideViewNames() []string {
 func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
 	sideWindowNames := gui.sideViewNames()
 
-	// We only ever have a single side panel (instances) for this MVP, so it
-	// always gets the full weight of the side section.
+	// Equal weights: the side section splits evenly between however many
+	// panels are visible.
 	return lo.Map(sideWindowNames, func(window string, _ int) *boxlayout.Box {
 		return &boxlayout.Box{
 			Window: window,

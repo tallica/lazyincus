@@ -78,7 +78,7 @@ already resets the stack on a side view; `sideViewNames()` already honors
 - `+`/`_` screen modes change the side/main weights; the sizing policy has
   to hold under all three.
 
-- [ ] Stage 1: one definition the views, keys and layout all derive from
+- [x] Stage 1: one definition the views, keys and layout all derive from
 - [ ] Stage 2: Images panel
 - [ ] Stage 3: Volumes and Networks panels
 - [ ] Stage 4: Snapshots side panel

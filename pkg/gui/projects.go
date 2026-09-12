@@ -48,9 +48,13 @@ func (gui *Gui) switchToProject(name string) error {
 
 	gui.IncusCommand.UseProject(name)
 
-	// Dropped rather than left for the next refresh to match by name, which
-	// would carry stale details into a same-named instance over here.
-	gui.Panels.Instances.SetItems(nil)
+	// Everything the panels hold belongs to the project we just left. Dropping
+	// it also stops the next refresh matching new items against stale ones by
+	// name.
+	for _, panel := range gui.allSidePanels() {
+		panel.ClearItems()
+	}
+
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
 	if err := gui.refreshInstances(); err != nil {

@@ -57,9 +57,11 @@ type viewNameMapping struct {
 }
 
 func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
-	return []viewNameMapping{
-		{viewPtr: &gui.Views.Instances, name: "instances", autoPosition: true},
+	mappings := lo.Map(gui.sidePanelDefs(), func(def sidePanelDef, _ int) viewNameMapping {
+		return viewNameMapping{viewPtr: def.viewPtr, name: def.name, autoPosition: true}
+	})
 
+	return append(mappings, []viewNameMapping{
 		{viewPtr: &gui.Views.Main, name: "main", autoPosition: true},
 
 		// bottom line
@@ -75,7 +77,7 @@ func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
 
 		// this guy will cover everything else when it appears
 		{viewPtr: &gui.Views.Limit, name: "limit", autoPosition: true},
-	}
+	}...)
 }
 
 func (gui *Gui) createAllViews() error {
@@ -119,10 +121,13 @@ func (gui *Gui) styleAllViews() {
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel
 	gui.Views.Main.IgnoreCarriageReturns = true
 
-	gui.Views.Instances.Highlight = true
-	gui.Views.Instances.SelBgColor = selectedLineBgColor
-	gui.Views.Instances.Title = gui.Tr.InstancesTitle
-	gui.Views.Instances.TitlePrefix = "[1]"
+	for index, def := range gui.sidePanelDefs() {
+		view := *def.viewPtr
+		view.Highlight = true
+		view.SelBgColor = selectedLineBgColor
+		view.Title = def.title
+		view.TitlePrefix = gui.sidePanelTitlePrefix(index)
+	}
 
 	gui.Views.Options.Frame = false
 	gui.Views.Options.FgColor = gui.GetOptionsPanelTextColor()

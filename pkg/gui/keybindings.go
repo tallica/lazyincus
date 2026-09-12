@@ -335,9 +335,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		}...)
 	}
 
-	bindings = append(bindings, []*Binding{
-		{Handler: gui.handleGoTo(gui.Panels.Instances.View), Key: '1', Description: gui.Tr.FocusInstances},
-	}...)
+	for index, def := range gui.sidePanelDefs() {
+		bindings = append(bindings, &Binding{
+			Handler:     gui.handleGoTo(*def.viewPtr),
+			Key:         focusKey(index),
+			Description: gui.focusPanelDescription(def.title),
+		})
+	}
 
 	for _, panel := range gui.allListPanels() {
 		setUpDownClickBindings(panel.GetView().Name(), panel.HandlePrevLine, panel.HandleNextLine, panel.HandleClick)

@@ -400,7 +400,7 @@ func (gui *Gui) ShouldRefresh(key string) bool {
 }
 
 func (gui *Gui) initiallyFocusedViewName() string {
-	return "instances"
+	return gui.sidePanelDefs()[0].name
 }
 
 func (gui *Gui) IgnoreStrings() []string {

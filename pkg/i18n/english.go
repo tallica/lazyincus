@@ -86,9 +86,10 @@ type TranslationSet struct {
 	LcPrevScreenMode string
 	FilterPrompt     string
 
-	FocusInstances string
-	SwitchProject  string
-	ProjectsTitle  string
+	// FocusPanel takes the panel's lowercased title, e.g. "instances".
+	FocusPanel    string
+	SwitchProject string
+	ProjectsTitle string
 }
 
 func englishSet() TranslationSet {
@@ -180,8 +181,8 @@ func englishSet() TranslationSet {
 		LcPrevScreenMode: "prev screen mode",
 		FilterPrompt:     "filter",
 
-		FocusInstances: "focus instances panel",
-		SwitchProject:  "switch project",
-		ProjectsTitle:  "Projects",
+		FocusPanel:    "focus %s panel",
+		SwitchProject: "switch project",
+		ProjectsTitle: "Projects",
 	}
 }

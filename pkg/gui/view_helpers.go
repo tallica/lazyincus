@@ -307,16 +307,6 @@ func (gui *Gui) currentListPanel() (panels.ISideListPanel, bool) {
 	return nil, false
 }
 
-func (gui *Gui) allSidePanels() []panels.ISideListPanel {
-	return []panels.ISideListPanel{
-		gui.Panels.Instances,
-	}
-}
-
-func (gui *Gui) allListPanels() []panels.ISideListPanel {
-	return append(gui.allSidePanels(), gui.Panels.Menu)
-}
-
 func (gui *Gui) IsCurrentView(view *gocui.View) bool {
 	return view == gui.CurrentView()
 }
