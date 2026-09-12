@@ -113,7 +113,16 @@ func (self *SideListPanel[T]) HandleSelect() error {
 		}
 
 		if self.NoItemsMessage != "" {
-			self.Gui.NewSimpleRenderStringTask(func() string { return self.NoItemsMessage })
+			// Queued, not just built: an unqueued task renders nothing, which
+			// left the previous panel's content on screen when you focused an
+			// empty one.
+			task := self.Gui.NewSimpleRenderStringTask(func() string { return self.NoItemsMessage })
+
+			mainView := self.Gui.GetMainView()
+			mainView.Tabs = nil
+			mainView.TabIndex = 0
+
+			return self.Gui.QueueTask(task)
 		}
 
 		return nil

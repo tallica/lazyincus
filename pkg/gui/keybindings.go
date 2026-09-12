@@ -377,6 +377,23 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		}...)
 	}
 
+	bindings = append(bindings,
+		&Binding{
+			ViewName:    "",
+			Key:         gocui.KeyTab,
+			Modifier:    gocui.ModNone,
+			Handler:     wrappedHandler(gui.cycleSidePanel(1)),
+			Description: gui.Tr.NextPanel,
+		},
+		&Binding{
+			ViewName:    "",
+			Key:         gocui.KeyBacktab,
+			Modifier:    gocui.ModNone,
+			Handler:     wrappedHandler(gui.cycleSidePanel(-1)),
+			Description: gui.Tr.PrevPanel,
+		},
+	)
+
 	for index, def := range gui.sidePanelDefs() {
 		bindings = append(bindings, &Binding{
 			Handler:     gui.handleGoTo(*def.viewPtr),

@@ -76,6 +76,37 @@ func (gui *Gui) focusPanelDescription(title string) string {
 	return fmt.Sprintf(gui.Tr.FocusPanel, strings.ToLower(title))
 }
 
+// cycleSidePanel moves focus to the next (offset 1) or previous (offset -1)
+// visible side panel, wrapping at both ends. It steps from the last side
+// panel that had focus, so tabbing out of the main panel continues from the
+// list you were last in rather than jumping back to the first.
+func (gui *Gui) cycleSidePanel(offset int) func() error {
+	return func() error {
+		if gui.popupPanelFocused() {
+			return nil
+		}
+
+		names := gui.sideViewNames()
+		if len(names) == 0 {
+			return nil
+		}
+
+		index := lo.IndexOf(names, gui.currentSideWindowName())
+		if index < 0 {
+			index = 0
+		}
+
+		next := names[((index+offset)%len(names)+len(names))%len(names)]
+
+		view, err := gui.g.View(next)
+		if err != nil {
+			return err
+		}
+
+		return gui.switchFocus(view)
+	}
+}
+
 func (gui *Gui) allSidePanels() []panels.ISideListPanel {
 	return lo.Map(gui.sidePanelDefs(), func(def sidePanelDef, _ int) panels.ISideListPanel {
 		return def.panel()

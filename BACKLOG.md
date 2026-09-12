@@ -81,7 +81,7 @@ already resets the stack on a side view; `sideViewNames()` already honors
 - [x] Stage 2: Images panel
 - [x] Stage 3: Volumes and Networks panels
 - [x] Stage 4: Snapshots side panel
-- [ ] Decide on tab-cycling between side panels as well as number keys
+- [x] Decide on tab-cycling between side panels as well as number keys — `tab`/`shift+tab` cycle, wrapping at both ends
 
 ## Missing vs lazydocker
 

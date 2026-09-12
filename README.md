@@ -65,6 +65,7 @@ file - see [docs/Config.md](docs/Config.md).
 | Key | Action |
 |---|---|
 | `1` … `5` | Focus the Instances / Snapshots / Images / Volumes / Networks panel |
+| `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |

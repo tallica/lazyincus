@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `tab` and `shift+tab` cycle through the side panels, wrapping at both ends, as an alternative to the number keys.
 - `gui.expandFocusedSidePanel` gives the focused side panel the space the others aren't using, collapsing them to their title and first row — worth turning on now that there are five panels sharing the side column. Off by default; falls back to an even split on a terminal too short to fit them all collapsed.
 - Snapshots panel, showing the selected instance's snapshots and following that selection: `n` takes a new one, `r` restores, `d` deletes, each with a confirmation. This replaces the read-only Snapshots tab in the main panel, which showed the same table with nothing to do to it.
 - Images, Volumes and Networks panels, alongside Instances: `1`-`5` switch between them, `d` deletes the selected item after a confirmation, and the main panel shows its details. Side panels split the side column evenly. Only custom volumes and managed networks can be deleted — the rest belong to an instance or to the host, and say so rather than letting the daemon reject the attempt.
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config changes now take effect without restarting lazyincus — an edit made with `O` as soon as the editor exits, any other edit within ~2s. `gui.screenMode` and `gui.language` still need a restart; see [docs/Config.md](docs/Config.md#reloading).
 
 ### Fixed
+- Focusing a panel with nothing in it left the previous panel's content in the main panel: the "no items" message was built as a task and never queued. Most visible on the snapshots panel, which is empty for any instance that has none.
 - `m` opened the Stats tab, not Logs, despite being bound as "view logs" everywhere it's described. It selected main-panel tab 0, which stopped meaning Logs when the Stats tab was added ahead of it. Tabs are now selected by key.
 - `gui.screenMode: "full"` silently did nothing: the docs and `config.example.yml` documented `full` while the code only matched `fullscreen`, so `full` fell through to the default. Both spellings are now accepted.
 
