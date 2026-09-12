@@ -20,78 +20,17 @@ comparison if the pin ever moves.
 
 ## Panel-switching infrastructure
 
-The recurring blocker, and the highest-leverage work outstanding. The app has
-exactly one side panel (Instances) and a single `1` focus key; there's no
-machinery for a second side panel or for moving focus between panels. Every
-panel item below is gated on this, which is the reason to do it before the
-smaller features rather than after.
-
-lazydocker's model to copy: side panels each own a window, number keys
-`1`-`6` jump to a panel, and the generic `SideListPanel` machinery in
-`pkg/gui/panels` (already ported here) handles list behavior once a panel
-exists.
-
-Most of the surrounding code is already generic — `allSidePanels()` feeds
-the layout, the keybinding loops, focus resolution and filtering; `pushView`
-already resets the stack on a side view; `sideViewNames()` already honors
-`IsHidden()`. What's hardcoded to one panel is narrow:
-
-| Where | What |
-|---|---|
-| `view_helpers.go` | `allSidePanels()` returns a one-element slice |
-| `keybindings.go` | one literal binding for `1` |
-| `arrangement.go` | `sidePanelChildren` assumes a single full-weight panel |
-| `views.go` | `Views` fields, view ordering, and `styleAllViews`'s hardcoded `[1]` prefix |
-| `gui.go` | `initiallyFocusedViewName()`, `setPanels()`, one refresh loop |
-
-### Plan
-
-1. **Infrastructure only.** A single ordered definition of the side panels
-   (view name, title, view pointer) that view creation, styling, number keys
-   and layout all derive from. Still just Instances, so the screen doesn't
-   change — that's the acceptance test.
-2. **Images panel** as the first consumer (`GetImages()` + delete), proving
-   the layer.
-3. **Volumes and Networks**, largely copies of the pattern Stage 2 settles.
-4. **Snapshots side panel** last: it's the only one scoped to another
-   panel's selection rather than independent.
-
-### Decisions taken
-
-- **Equal weights** for the side column (each panel gets 1/N) by default,
-  matching lazydocker at the pinned commit, with `gui.expandFocusedSidePanel`
-  as the accordion alternative.
-- **Number keys stay fixed per panel** rather than renumbering over the
-  visible ones, so muscle memory holds; the key is a no-op while its panel
-  is hidden.
-- Not doing yet: config for which panels appear, reordering, accordion.
-
-### Watch out for
-
-- Refresh cost multiplies with each panel. Images and networks change
-  rarely, so they want a slower poll or a refresh-on-focus rather than the
-  instance list's 2s tick.
-- `switchToProject` clears only the instance list today. Images, volumes and
-  networks are project-scoped too, so every panel's items have to be dropped
-  on a switch.
-- `+`/`_` screen modes change the side/main weights; the sizing policy has
-  to hold under all three.
-
-- [x] Stage 1: one definition the views, keys and layout all derive from
-- [x] Stage 2: Images panel
-- [x] Stage 3: Volumes and Networks panels
-- [x] Stage 4: Snapshots side panel
-- [x] Decide on tab-cycling between side panels as well as number keys — `tab`/`shift+tab` cycle, wrapping at both ends
+Shipped. `sidePanelDefs()` is the ordered list every part of the side-panel
+machinery derives from — see CLAUDE.md; the staged plan that got there is in
+the git history. Five panels, number keys, `tab`/`shift+tab` cycling, and
+`gui.expandFocusedSidePanel` for when an even split is too cramped.
 
 ## Missing vs lazydocker
 
 ### Side panels
 
-lazydocker has six side panels; lazyincus has four.
+lazydocker has six side panels; lazyincus has five.
 
-- [x] **Images panel** — `incus image list` + delete.
-- [x] **Volumes panel** — volumes across every storage pool.
-- [x] **Networks panel** — networks, managed and unmanaged.
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
       credits tab, so dropping that panel left lazyincus with nowhere to put
       one (`CreditsTitle` is ported but unused).

@@ -36,21 +36,24 @@ pkg/i18n/                      TranslationSet; English only
 pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
 pkg/utils/                     string/table/color/yaml helpers, unchanged from lazydocker
 pkg/commands/
-  incus.go                     IncusCommand: connection, project scoping, instance list/refresh
-  instance.go                  Instance: wraps api.Instance, start/stop/restart/freeze/delete/logs
+  incus.go                     IncusCommand: connection, project scoping, list/refresh per resource
+  instance.go                  Instance: wraps api.Instance, start/stop/restart/freeze/delete/logs/exec
+  snapshot.go                  Snapshot: list, create, restore, delete
+  image.go, network.go, volume.go  the other resources the side panels list
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
   errors.go, dummies.go        error wrapping; NewDummy* constructors for tests
 pkg/gui/
   gui.go                       Gui struct, Run() main loop, background polls, config reload
+  side_panels.go               the ordered side panel definitions; number keys, tab cycling
   views.go                     view creation (createAllViews) and styling (styleAllViews)
-  layout.go, arrangement.go    boxlayout-driven positioning (single side panel: instances)
+  layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  instances_panel.go           the Instances side panel and its action handlers
-  instance_*.go                per-tab rendering: logs, stats, env, snapshots
+  *_panel.go                   one per side panel: instances, snapshots, images, volumes, networks
+  instance_*.go                per-tab rendering for the instance main panel: logs, stats, env, top
   projects.go                  project switcher menu
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
-  presentation/                table-cell rendering for instances and menu rows
+  presentation/                table-cell rendering, one file per side panel plus menu rows
 ```
 
 Everything in `pkg/gui` not listed above (`confirmation_panel.go`,

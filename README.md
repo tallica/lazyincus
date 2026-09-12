@@ -67,6 +67,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `1` … `5` | Focus the Instances / Snapshots / Images / Volumes / Networks panel |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
+| `PgUp`/`PgDn`, `J`/`K`, `H`/`L` | Scroll the main panel |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
@@ -94,8 +95,10 @@ for the full list of options and defaults.
 
 Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 
-- Services/Project panels (lazydocker's docker-compose view — Incus has no
-  direct equivalent)
+- Services/Project panels (lazydocker's docker-compose view). The Incus
+  analog would be [incus-compose](https://github.com/lxc/incus-compose),
+  whose stacks are visible today as Incus projects — see
+  [BACKLOG.md](BACKLOG.md#incus-compose-integration)
 - Custom and bulk commands
 - Historical resource-usage graphing (the Stats tab is point-in-time only)
 - Non-English translations
