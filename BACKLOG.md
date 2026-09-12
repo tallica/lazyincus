@@ -174,10 +174,11 @@ Two things fall out of this. Those keys live in `ExpandedConfig`, which
 `RefreshInstanceDetails` already fetches — so both are presentation work on
 data lazyincus has in hand, not new API calls.
 
-- [ ] **Service column / grouping** — read
-      `user.label.incus-compose.service` and show it, or group the instance
-      list by it. Cheap, and it's most of what lazydocker's Services panel
-      actually gave you.
+- [x] **Service column** — opt-in `service` column reading
+      `user.label.incus-compose.service`.
+- [ ] **Grouping by service** — the other half of what lazydocker's Services
+      panel gave you. Needs a think about how grouping fits a flat
+      SideListPanel.
 - [ ] **Health column** — `user.healthcheck.enabled` plus the healthd state
       would give lazyincus a health indicator, which the port dropped along
       with Docker's healthcheck support. Needs a look at where `ic-healthd`
@@ -188,9 +189,10 @@ data lazyincus has in hand, not new API calls.
 
 ### Caveats
 
-- None of this is verified against a live incus-compose setup — the key
-  names above were read out of `project/instance.go` on GitHub, not observed
-  on a running instance. Confirm before building on them.
+- The key names above were read out of `project/instance.go` on GitHub and
+  re-checked against `main` when the service column landed, but never
+  observed on a live incus-compose setup — the column was tested by setting
+  the label by hand. Worth confirming against a real stack.
 - Those keys are internal to incus-compose and carry no compatibility
   promise. If lazyincus depends on them, pin the commit they were read from
   the way the lazydocker port pin works, so a drift has somewhere to be

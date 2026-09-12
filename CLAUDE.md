@@ -65,7 +65,9 @@ index — otherwise stopping an instance moves it down the list and hands the
 selection to whatever took its place.
 
 Which columns show, and in what order, is user-configurable via
-`gui.instanceColumns`. `presentation.GetInstanceDisplayStrings` looks up
+`gui.instanceColumns`. One of them, `service`, is off by default: it reads
+incus-compose's `user.label.incus-compose.service` label and is blank for
+anything created another way. `presentation.GetInstanceDisplayStrings` looks up
 each configured name in the `instanceColumnRenderers` map
 (`pkg/gui/presentation/instances.go`) and skips anything unrecognized, so a
 new column means one entry in that map plus the default/valid-values list in

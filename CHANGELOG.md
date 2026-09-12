@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - All projects are now listed at once, and that's the default: instances, images, volumes and networks from every project, with `P` to scope down to a single one. Actions run against the project the item came from rather than whichever one the client is scoped to, so starting, deleting or snapshotting an instance from another project works from the aggregate view. A project column appears only on panels whose contents actually span projects, so a server with one project looks exactly as it did.
+- Optional `service` column for the instances panel, showing the [incus-compose](https://github.com/lxc/incus-compose) service an instance came from (`user.label.incus-compose.service`). Off by default — add it to `gui.instanceColumns` — and blank for instances created any other way.
 - `a` attaches to the selected instance's console, shelling out to `incus console` the way `E` does for exec. Detaching is Incus's own ctrl+a q, which it prints on connect.
 
 ### Fixed
