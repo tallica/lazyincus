@@ -54,9 +54,8 @@ the list you were reading.
 
 ### Instances
 
-Lists containers and VMs
-(`GetInstances(api.InstanceTypeAny)`) scoped to one Incus project at a time
-(`P` switches). Columns mirror `incus list`: name, status, type, IPv4, IPv6,
+Lists containers and VMs across every project by default, or one project
+when `P` scopes down. Columns mirror `incus list`: name, status, type, IPv4, IPv6,
 snapshot count. Type, addresses and snapshot count only appear once
 `RefreshInstanceDetails` has fetched full details in the background.
 
@@ -146,11 +145,11 @@ against a live daemon or read out of the Incus source, not inferred.
   (`unix:///Users/you/.colima/default/incus.sock`), not at any standard
   Linux location.
 - **Projects**: Incus scopes instances (and networks, volumes, profiles) per
-  project; the client is scoped to one at a time, `default` unless the
-  remote says otherwise. `UseProject` swaps `IncusCommand.client` under
-  `clientMutex`, hence the `Client()` accessor rather than a field, and
-  `GetInstances` reassigns `Instance.Client` on every refresh. `P`
-  (`handleSwitchProject` in `pkg/gui/projects.go`) switches.
+  project, and a client is scoped to one at a time. `UseProject` swaps
+  `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor
+  rather than a field, and `GetInstances` reassigns `Instance.Client` on
+  every refresh. `P` (`handleSwitchProject` in `pkg/gui/projects.go`) scopes
+  to a single project.
 - **All projects**: the default, and "all projects" in that menu returns to
   it. Lists every project at once through the `*AllProjects` endpoints. Each item then carries its own
   project-scoped client (`clientFor`), so actions go to the project the item

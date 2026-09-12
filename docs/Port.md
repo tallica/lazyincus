@@ -51,7 +51,7 @@ pkg/gui/
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
   *_panel.go                   one per side panel: instances, snapshots, images, volumes, networks
   instance_*.go                per-tab rendering for the instance main panel: logs, stats, env, top
-  projects.go                  project switcher menu
+  projects.go                  project scope menu (all projects, or one)
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel plus menu rows
 ```

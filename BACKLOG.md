@@ -75,7 +75,7 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — twelve are defined but never
+- [ ] **Unused translation strings** — eleven are defined but never
       referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`,
       `ConnectionFailed`, `ForceRemove`, `NoInstance`, `RemoveWithForce`,
       `FilterList`, `SortInstancesByState`, `CreditsTitle`,
