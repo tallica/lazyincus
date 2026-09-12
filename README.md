@@ -16,12 +16,14 @@ framework it's built on goes to Jesse and the lazydocker contributors. See
 for third-party attributions, and [docs/Port.md](docs/Port.md) for what was
 carried over and how it was renamed.
 
+![lazyincus](docs/screenshot.png)
+
 ## Status: MVP
 
-This is an early port covering a single panel. Feature parity with
-lazydocker (images/networks/volumes/services panels, custom commands,
-non-English translations) is not there yet — see "What's not here yet"
-below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
+An early port, with panels for instances, snapshots, images, volumes and
+networks. Feature parity with lazydocker (a services/compose panel, custom
+commands, non-English translations) is not there yet — see "What's not here
+yet" below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 ## Requirements
 
