@@ -47,6 +47,10 @@ type Views struct {
 	// popups
 	Confirmation *gocui.View
 	Menu         *gocui.View
+	// SnapshotOptions sits under the new-snapshot prompt. Its own view
+	// rather than the menu, so tab can move focus between the two without
+	// the menu panel's keybindings fighting over the same keys.
+	SnapshotOptions *gocui.View
 
 	// will cover everything when it appears
 	Limit *gocui.View
@@ -78,6 +82,7 @@ func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
 		// popups.
 		{viewPtr: &gui.Views.Menu, name: "menu", autoPosition: false},
 		{viewPtr: &gui.Views.Confirmation, name: "confirmation", autoPosition: false},
+		{viewPtr: &gui.Views.SnapshotOptions, name: "snapshotOptions", autoPosition: false},
 
 		// this guy will cover everything else when it appears
 		{viewPtr: &gui.Views.Limit, name: "limit", autoPosition: true},
@@ -95,6 +100,7 @@ func (gui *Gui) createAllViews() error {
 
 	gui.Views.Confirmation.Visible = false
 	gui.Views.Menu.Visible = false
+	gui.Views.SnapshotOptions.Visible = false
 	gui.Views.Limit.Visible = false
 
 	gui.styleAllViews()
@@ -144,6 +150,9 @@ func (gui *Gui) styleAllViews() {
 
 	gui.Views.Confirmation.Wrap = true
 	gui.Views.Menu.SelBgColor = selectedLineBgColor
+
+	gui.Views.SnapshotOptions.Highlight = true
+	gui.Views.SnapshotOptions.SelBgColor = selectedLineBgColor
 
 	gui.Views.Limit.Title = gui.Tr.NotEnoughSpace
 	gui.Views.Limit.Wrap = true
@@ -226,7 +235,7 @@ func (gui *Gui) incusStatusContent() string {
 }
 
 func (gui *Gui) popupViewNames() []string {
-	return []string{"confirmation", "menu"}
+	return []string{"confirmation", "menu", "snapshotOptions"}
 }
 
 // these views have their position and size determined by arrangement.go

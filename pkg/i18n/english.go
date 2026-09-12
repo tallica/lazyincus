@@ -65,6 +65,15 @@ type TranslationSet struct {
 	RestoreSnapshotShort      string
 	DeleteSnapshot            string
 	SnapshotNamePrompt        string
+	SnapshotOptionsTitle      string
+	SnapshotFocusName         string
+	SnapshotExpiryField       string
+	SnapshotStatefulField     string
+	SnapshotSwitchFocusHint   string
+	SnapshotChangeHint        string
+	SnapshotSubmitHint        string
+	SnapshotChangeValue       string
+	SnapshotCreate            string
 	SnapshottingStatus        string
 	RestoringStatus           string
 	VolumesTitle              string
@@ -184,7 +193,16 @@ func englishSet() TranslationSet {
 		RestoreSnapshot:              "Are you sure you want to restore %s to snapshot %s? Anything changed since is lost.",
 		RestoreSnapshotShort:         "restore snapshot",
 		DeleteSnapshot:               "Are you sure you want to delete snapshot %s?",
-		SnapshotNamePrompt:           "Name for the new snapshot of %s:",
+		SnapshotNamePrompt:           "New snapshot of %s",
+		SnapshotOptionsTitle:         "Options",
+		SnapshotFocusName:            "back to name",
+		SnapshotExpiryField:          "Expires in",
+		SnapshotStatefulField:        "Stateful",
+		SnapshotSwitchFocusHint:      "<tab> to toggle focus",
+		SnapshotChangeHint:           "<← →> to change",
+		SnapshotSubmitHint:           "<enter> or <ctrl+s> to create",
+		SnapshotChangeValue:          "change value",
+		SnapshotCreate:               "create",
 		SnapshottingStatus:           "snapshotting",
 		RestoringStatus:              "restoring",
 		VolumesTitle:                 "Volumes",

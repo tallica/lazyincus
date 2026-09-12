@@ -223,6 +223,10 @@ func (gui *Gui) Run() error {
 		g.Mouse = true
 	}
 
+	// Lets a view draw a hint in its bottom border; nothing here uses the
+	// list-position footer gocui named the flag after.
+	g.ShowListFooter = true
+
 	gui.g = g
 
 	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() {

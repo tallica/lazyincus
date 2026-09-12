@@ -139,8 +139,10 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  wrappedHandler(gui.handleMenuClose),
 		},
 		{
+			// gocui's tcell driver reports the spacebar as KeySpace with no
+			// rune, so a ' ' rune binding never matches it.
 			ViewName: "menu",
-			Key:      ' ',
+			Key:      gocui.KeySpace,
 			Modifier: gocui.ModNone,
 			Handler:  wrappedHandler(gui.handleMenuPress),
 		},

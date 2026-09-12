@@ -15,8 +15,19 @@ func GetSnapshotDisplayStrings(snapshot *commands.Snapshot) []string {
 		utils.Truncate(snapshot.Name, maxSnapshotNameWidth),
 		// Local time, matching `incus info`; the API reports UTC.
 		utils.ColoredString(snapshot.Snapshot.CreatedAt.Local().Format(dateTimeFormat), color.FgYellow),
+		displaySnapshotExpiry(snapshot),
 		displaySnapshotStateful(snapshot),
 	}
+}
+
+// displaySnapshotExpiry marks the snapshots that delete themselves, since
+// that's easy to forget having set. Blank for the ones that don't.
+func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
+	if snapshot.Snapshot.ExpiresAt.IsZero() {
+		return ""
+	}
+
+	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(dateTimeFormat), color.FgBlue)
 }
 
 const maxSnapshotNameWidth = 22

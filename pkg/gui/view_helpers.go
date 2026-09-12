@@ -151,6 +151,13 @@ func (gui *Gui) currentViewName() string {
 
 func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 	v := g.CurrentView()
+
+	// The snapshot options sit against the prompt above them rather than
+	// centred on the screen, so they size themselves.
+	if v.Name() == "snapshotOptions" {
+		return nil
+	}
+
 	if gui.isPopupPanel(v.Name()) {
 		return gui.resizePopupPanel(v)
 	}
@@ -175,6 +182,8 @@ func (gui *Gui) renderPanelOptions() error {
 		return gui.renderMenuOptions()
 	case "confirmation":
 		return gui.renderConfirmationOptions()
+	case "snapshotOptions":
+		return gui.renderSnapshotOptionsKeys()
 	}
 	return gui.renderGlobalOptions()
 }

@@ -107,7 +107,29 @@ instance's name since the rows alone don't say whose they are. Listing uses
 background poll already holds, because create and delete have to show up
 immediately. Snapshot names come back from the API prefixed with the
 instance (`alpine/snap0`); every other call wants the bare name, which
-`snapshotName` strips. Restore is an instance update carrying `Restore:
+`snapshotName` strips. `n` opens a two-view popup: the editable
+confirmation view as a name field, and a `snapshotOptions` view parked under
+it, with `tab` moving focus between them. Its own view rather than the menu,
+so the menu panel's keybindings don't fight the navigation - which means
+teaching `newLineFocused`, `renderPanelOptions` and `resizeCurrentPopupPanel`
+about it, the last so it keeps its position under the prompt instead of
+being centred.
+
+The options are fields rather than a list of actions: a row shows a value
+that `← →` cycle in place, and enter means create wherever the focus is.
+Modelling them as actions put a cursor on a checkbox, which reads as though
+the row were a thing to run. The selected row is the view's cursor line, so
+gocui's own highlight marks it while the options have focus; its value is
+also bracketed, which is what identifies the field `← →` would change when
+focus is in the name field and nothing is highlighted. Hints live in the borders the way
+lazygit does it - `Subtitle` on the top, `Footer` on the bottom, the latter
+needing gocui's `ShowListFooter` and skipped entirely on a view with no
+lines, which is why the empty name field carries only a subtitle. Stateful is a toggle there
+rather than another choice beside the expiries: the two are independent, and
+a flat list of both reads as though picking an expiry rules out stateful.
+Toggling reopens the menu, there being no widget with selection state -
+gocui has views and keybindings, and the menu itself is lazydocker's
+`SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
 <name>`, not a snapshot operation.
 
 ### Images

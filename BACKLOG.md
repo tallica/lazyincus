@@ -127,32 +127,17 @@ Commands mirror compose: `up`, `down`, `start`, `stop`, `restart`,
 This is the missing piece that made lazydocker's Services/Project panels look
 unportable. It matters to lazyincus in two independent ways.
 
-### 1. Project awareness (needed first, useful on its own)
+### 1. Project awareness (shipped)
 
 **incus-compose creates one Incus project per compose project** — run
 `incus-compose -p myapp up` and you get an Incus project `myapp` holding that
 stack's instances, networks and volumes, plus a separate
 `incus-compose-cache` project for pulled images.
 
-lazyincus connects with `cliCfg.GetInstanceServer(cliCfg.DefaultRemote)` and
-never touches projects. `GetInstanceServer` does honor whatever project the
-user's remote is configured for (`remote.Project`, applied via `UseProject`
-inside `shared/cliconfig/remote.go`), but nothing else — so **every
-incus-compose stack is currently invisible in lazyincus** unless the user has
-switched their `incus` CLI remote to that project. That's a real usability
-hole today, independent of any compose features, since hand-made Incus
-projects have exactly the same problem.
-
-The client API needed is small: `GetProjectNames()` / `GetProjects()` to
-enumerate, and either `client.UseProject(name)` or `cliCfg.ProjectOverride`
-before `GetInstanceServer` to switch.
-
-- [x] Show which project the instance list is scoped to (footer shows it
-      next to the remote, e.g. `Incus v6.11 (colima/default) ●`)
-- [x] A project switcher (`P`: menu of `GetProjectNames()`, re-scoping the
-      client via `UseProject`)
-- [x] Decide whether an "all projects" aggregate view is worth it — shipped;
-      "all projects" in the `P` menu, with a project column on every panel.
+That's why project awareness came first: without it a compose stack was
+invisible unless the user pointed their `incus` CLI remote at its project.
+Every project is listed by default now, `P` scopes to one, and the footer
+says which — see CLAUDE.md. Nothing outstanding here.
 
 ### 2. Compose grouping on top
 
@@ -204,12 +189,12 @@ Shipped as a side panel following the instances panel's selection, with
 create/restore/delete; the read-only main-panel tab it replaced is gone.
 What's left:
 
-- [ ] Stateful snapshots — `CreateSnapshot` always asks for a stateless one,
-      matching `incus snapshot`'s default. Stateful needs CRIU on the host
-      and a running instance, and fails loudly without it, so it wants a
-      prompt option rather than a silent default.
-- [ ] Expiry — `InstanceSnapshotsPost.ExpiresAt` is never set, so snapshots
-      taken here never expire.
+- [x] Stateful snapshots and expiry — both are fields in the `n` popup,
+      cycled with `← →`. The daemon's own refusal explains what stateful
+      wants beyond a running instance (`migration.stateful` on it).
+- [ ] Custom expiry — the field cycles never, 1, 7 and 30 days; anything
+      else needs the CLI. A free-text duration would want parsing and an
+      error path, or a `custom…` value that opens a prompt.
 - [ ] Rename (`RenameInstanceSnapshot`), if it turns out to be wanted.
 
 ## Housekeeping

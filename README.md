@@ -70,7 +70,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `1` … `5` | Focus the Instances / Snapshots / Images / Volumes / Networks panel |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `PgUp`/`PgDn`, `J`/`K`, `H`/`L` | Scroll the main panel |
+| `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
@@ -79,7 +79,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
-| `n` | New snapshot (snapshots panel) |
+| `n` | New snapshot (snapshots panel) — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |

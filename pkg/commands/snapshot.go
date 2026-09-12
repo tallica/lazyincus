@@ -2,6 +2,7 @@ package commands
 
 import (
 	"strings"
+	"time"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -92,14 +93,31 @@ func (i *Instance) Snapshots() ([]*Snapshot, error) {
 	return snapshots, nil
 }
 
-// CreateSnapshot takes a snapshot of the instance. Stateful snapshots need
-// CRIU on the host and a running instance, so this always takes a stateless
-// one - the same default as `incus snapshot`.
-func (i *Instance) CreateSnapshot(name string) error {
-	op, err := i.Client.CreateInstanceSnapshot(i.Name, api.InstanceSnapshotsPost{
+// SnapshotOptions are the choices `incus snapshot create` exposes beyond the
+// name.
+type SnapshotOptions struct {
+	// Stateful includes the instance's runtime state, which needs CRIU on
+	// the host and a running instance. Incus rejects it otherwise.
+	Stateful bool
+
+	// ExpiresIn deletes the snapshot after this long. Zero keeps it until
+	// something deletes it.
+	ExpiresIn time.Duration
+}
+
+// CreateSnapshot takes a snapshot of the instance.
+func (i *Instance) CreateSnapshot(name string, opts SnapshotOptions) error {
+	post := api.InstanceSnapshotsPost{
 		Name:     name,
-		Stateful: false,
-	})
+		Stateful: opts.Stateful,
+	}
+
+	if opts.ExpiresIn > 0 {
+		expiresAt := time.Now().Add(opts.ExpiresIn)
+		post.ExpiresAt = &expiresAt
+	}
+
+	op, err := i.Client.CreateInstanceSnapshot(i.Name, post)
 	if err != nil {
 		return err
 	}

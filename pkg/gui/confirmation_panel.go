@@ -59,16 +59,6 @@ func (gui *Gui) getConfirmationPanelDimensions(wrap bool, prompt string) (int, i
 		height/2 + panelHeight/2
 }
 
-func (gui *Gui) createPromptPanel(title string, handleConfirm func(*gocui.Gui, *gocui.View) error) error {
-	gui.onNewPopupPanel()
-	err := gui.prepareConfirmationPanel(title, "")
-	if err != nil {
-		return err
-	}
-	gui.Views.Confirmation.Editable = true
-	return gui.setKeyBindings(gui.g, handleConfirm, nil)
-}
-
 func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {
 	x0, y0, x1, y1 := gui.getConfirmationPanelDimensions(true, prompt)
 	confirmationView := gui.Views.Confirmation
@@ -87,6 +77,7 @@ func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {
 func (gui *Gui) onNewPopupPanel() {
 	gui.Views.Menu.Visible = false
 	gui.Views.Confirmation.Visible = false
+	gui.Views.SnapshotOptions.Visible = false
 }
 
 // It is very important that within this function we never include the original prompt in any error messages.
