@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-12
+
 ### Added
 - All projects are now listed at once, and that's the default: instances, images, volumes and networks from every project, with `P` to scope down to a single one. Actions run against the project the item came from rather than whichever one the client is scoped to, so starting, deleting or snapshotting an instance from another project works from the aggregate view. A project column appears only on panels whose contents actually span projects, so a server with one project looks exactly as it did.
 - Optional `service` column for the instances panel, showing the [incus-compose](https://github.com/lxc/incus-compose) service an instance came from (`user.label.incus-compose.service`). Off by default — add it to `gui.instanceColumns` — and blank for instances created any other way.
@@ -97,7 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/tallica/lazyincus/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tallica/lazyincus/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tallica/lazyincus/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tallica/lazyincus/compare/v0.1.0...v0.2.0
