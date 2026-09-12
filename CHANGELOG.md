@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Main panel Top tab: the processes running inside the selected instance, refreshed every two seconds. Incus's API only reports a process count, so this execs `ps` in the instance over the client's websocket exec — instances whose image has no `ps` (many OCI images), and VMs without the Incus guest agent, show the daemon's error instead of a list.
 
+### Changed
+- Instances now sort by name, with stopped ones last. Previously each status had its own rank, so a frozen instance sorted between running and stopped ones and the list reshuffled more than it needed to.
+
+### Fixed
+- Stopping an instance moved it down the list and left the selection on whatever row it had occupied, so a different instance silently became selected. The cursor now follows the selected instance across a re-sort.
+
 ## [0.3.0] - 2026-09-12
 
 ### Added

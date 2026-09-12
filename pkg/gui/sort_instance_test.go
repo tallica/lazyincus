@@ -23,16 +23,28 @@ func TestSortInstances(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "running before stopped",
-			a:        instanceWithStatus("b", "Running"),
+			name:     "running before stopped, whatever the names",
+			a:        instanceWithStatus("z", "Running"),
 			b:        instanceWithStatus("a", "Stopped"),
 			expected: true,
 		},
 		{
 			name:     "stopped after frozen",
 			a:        instanceWithStatus("a", "Stopped"),
-			b:        instanceWithStatus("b", "Frozen"),
+			b:        instanceWithStatus("z", "Frozen"),
 			expected: false,
+		},
+		{
+			name:     "running and frozen sort by name, not by status",
+			a:        instanceWithStatus("a", "Frozen"),
+			b:        instanceWithStatus("b", "Running"),
+			expected: true,
+		},
+		{
+			name:     "two stopped sort by name",
+			a:        instanceWithStatus("a", "Stopped"),
+			b:        instanceWithStatus("b", "Stopped"),
+			expected: true,
 		},
 		{
 			name:     "same status sorts by name",

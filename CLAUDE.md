@@ -45,6 +45,11 @@ The only side panel, listing containers and VMs
 snapshot count. Type, addresses and snapshot count only appear once
 `RefreshInstanceDetails` has fetched full details in the background.
 
+Rows sort by name, with stopped instances last (`sortInstances`), and the
+cursor follows the selected item across a re-sort rather than holding its
+index — otherwise stopping an instance moves it down the list and hands the
+selection to whatever took its place.
+
 Which columns show, and in what order, is user-configurable via
 `gui.instanceColumns`. `presentation.GetInstanceDisplayStrings` looks up
 each configured name in the `instanceColumnRenderers` map

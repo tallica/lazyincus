@@ -197,11 +197,21 @@ func (self *SideListPanel[T]) Refocus() {
 }
 
 func (self *SideListPanel[T]) SetItems(items []T) {
+	// Read the selection before the list is replaced, not after: by then the
+	// index points into the new items and would anchor on the wrong one.
+	selected, hadSelection := self.List.TryGet(self.SelectedIdx)
+
 	self.List.SetItems(items)
-	self.FilterAndSort()
+	self.filterAndSort(selected, hadSelection)
 }
 
 func (self *SideListPanel[T]) FilterAndSort() {
+	selected, hadSelection := self.List.TryGet(self.SelectedIdx)
+
+	self.filterAndSort(selected, hadSelection)
+}
+
+func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 	filterString := self.Gui.FilterString(self.View)
 
 	self.List.Filter(func(item T, index int) bool {
@@ -229,6 +239,15 @@ func (self *SideListPanel[T]) FilterAndSort() {
 	self.List.Sort(self.Sort)
 
 	self.clampSelectedLineIdx()
+
+	// Follow the selected item to wherever it sorted to. The list re-sorts on
+	// every background refresh, so holding the cursor at a fixed index would
+	// hand the selection to a different item the moment one changes state.
+	if hadSelection {
+		if index := self.List.GetIndex(selected); index >= 0 {
+			self.SelectedIdx = index
+		}
+	}
 }
 
 func (self *SideListPanel[T]) RerenderList() error {

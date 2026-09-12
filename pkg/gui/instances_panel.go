@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jesseduffield/gocui"
@@ -66,7 +67,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return sortInstances(a, b)
 		},
 		Filter: func(instance *commands.Instance) bool {
-			if !gui.State.ShowStoppedInstances && instance.Instance.Status == "Stopped" {
+			if !gui.State.ShowStoppedInstances && isStopped(instance) {
 				return false
 			}
 			return true
@@ -77,21 +78,20 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 	}
 }
 
-var instanceStates = map[string]int{
-	"Running": 1,
-	"Frozen":  2,
-	"Stopped": 3,
-	"Error":   4,
-}
-
+// sortInstances orders by name, with stopped instances after everything
+// else - a stopped instance is usually the one you're least interested in,
+// but sorting by status beyond that just shuffles the list around as
+// instances start and stop.
 func sortInstances(a *commands.Instance, b *commands.Instance) bool {
-	stateLeft := instanceStates[a.Instance.Status]
-	stateRight := instanceStates[b.Instance.Status]
-	if stateLeft == stateRight {
-		return a.Name < b.Name
+	if isStopped(a) != isStopped(b) {
+		return isStopped(b)
 	}
 
-	return stateLeft < stateRight
+	return a.Name < b.Name
+}
+
+func isStopped(instance *commands.Instance) bool {
+	return strings.EqualFold(instance.Instance.Status, "Stopped")
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {
