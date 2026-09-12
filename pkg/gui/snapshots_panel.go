@@ -256,12 +256,15 @@ func (gui *Gui) setSnapshotPromptKeyBindings(prompt *snapshotPrompt) error {
 	}
 
 	// Letters only on the options: the name field is editable, so these
-	// would be typed rather than navigating.
+	// would be typed rather than navigating. `q` included because the view
+	// isn't editable either, and the global quit binding would otherwise
+	// close the app from inside a modal.
 	for key, handler := range map[rune]func(*gocui.Gui, *gocui.View) error{
 		'j': moveField(1),
 		'k': moveField(-1),
 		'l': changeField(1),
 		'h': changeField(-1),
+		'q': closePrompt,
 	} {
 		if err := gui.g.SetKeybinding("snapshotOptions", key, gocui.ModNone, handler); err != nil {
 			return err
@@ -346,11 +349,7 @@ func (gui *Gui) yesNo(value bool) string {
 }
 
 func (gui *Gui) closeSnapshotPrompt() error {
-	gui.Views.SnapshotOptions.Visible = false
-	gui.g.DeleteViewKeybindings("snapshotOptions")
-
-	// Border hints belong to this popup; the confirmation view is shared.
-	gui.Views.Confirmation.Subtitle = ""
+	gui.dismissPrompt()
 
 	return gui.closeConfirmationPrompt()
 }

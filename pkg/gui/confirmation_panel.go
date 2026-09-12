@@ -27,6 +27,20 @@ func (gui *Gui) wrappedConfirmationFunction(function func(*gocui.Gui, *gocui.Vie
 	}
 }
 
+// dismissPrompt takes down a prompt and everything that came with it,
+// without touching focus: switchFocus calls it once focus has landed
+// somewhere else, so a popup can't be left on screen with no way back into
+// it. closeConfirmationPrompt calls it on the way out too, and running
+// twice over is harmless.
+func (gui *Gui) dismissPrompt() {
+	gui.Views.SnapshotOptions.Visible = false
+	gui.g.DeleteViewKeybindings("snapshotOptions")
+
+	gui.Views.Confirmation.Visible = false
+	gui.Views.Confirmation.Subtitle = ""
+	gui.g.DeleteViewKeybindings("confirmation")
+}
+
 func (gui *Gui) closeConfirmationPrompt() error {
 	if err := gui.returnFocus(); err != nil {
 		return err

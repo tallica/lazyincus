@@ -62,6 +62,14 @@ func (gui *Gui) switchFocusAux(newView *gocui.View) error {
 		gui.Views.Menu.Visible = false
 	}
 
+	// A prompt can be more than one view - the snapshot popup is a name
+	// field plus its options - and focus moving anywhere outside it, a
+	// number key reaching the panels say, has to take the whole thing down.
+	// Otherwise it sits there over a panel with no way back into it.
+	if !lo.Contains(newViewStack, "confirmation") && !lo.Contains(newViewStack, "snapshotOptions") {
+		gui.dismissPrompt()
+	}
+
 	return gui.newLineFocused(newView)
 }
 

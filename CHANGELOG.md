@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- A popup could be left stranded on screen: pressing a panel key while a confirmation was open moved focus behind it, with no way back into the dialog. Focus landing outside a prompt now takes the prompt down with it.
 - Text typed into a prompt stuck around for the next one, so naming two snapshots in a row produced the two names concatenated. An editable view keeps its contents in a text area that outlives the popup.
 
 ### Added
