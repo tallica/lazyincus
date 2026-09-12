@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-12
+
 ### Added
 - `tab` and `shift+tab` cycle through the side panels, wrapping at both ends, as an alternative to the number keys.
 - `gui.expandFocusedSidePanel` gives the focused side panel the space the others aren't using, collapsing them to their title and first row — worth turning on now that there are five panels sharing the side column. Off by default; falls back to an even split on a terminal too short to fit them all collapsed.
@@ -18,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Instances now sort by name, with stopped ones last. Previously each status had its own rank, so a frozen instance sorted between running and stopped ones and the list reshuffled more than it needed to.
 
 ### Fixed
+- Focusing a panel with nothing in it left the previous panel's content in the main panel: the "no items" message was built as a task and never queued. Most visible on the snapshots panel, which is empty for any instance that has none.
 - Stopping an instance moved it down the list and left the selection on whatever row it had occupied, so a different instance silently became selected. The cursor now follows the selected instance across a re-sort.
 
 ## [0.3.0] - 2026-09-12
@@ -29,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config changes now take effect without restarting lazyincus — an edit made with `O` as soon as the editor exits, any other edit within ~2s. `gui.screenMode` and `gui.language` still need a restart; see [docs/Config.md](docs/Config.md#reloading).
 
 ### Fixed
-- Focusing a panel with nothing in it left the previous panel's content in the main panel: the "no items" message was built as a task and never queued. Most visible on the snapshots panel, which is empty for any instance that has none.
 - `m` opened the Stats tab, not Logs, despite being bound as "view logs" everywhere it's described. It selected main-panel tab 0, which stopped meaning Logs when the Stats tab was added ahead of it. Tabs are now selected by key.
 - `gui.screenMode: "full"` silently did nothing: the docs and `config.example.yml` documented `full` while the code only matched `fullscreen`, so `full` fell through to the default. Both spellings are now accepted.
 
@@ -86,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/tallica/lazyincus/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tallica/lazyincus/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tallica/lazyincus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tallica/lazyincus/releases/tag/v0.1.0
