@@ -32,7 +32,7 @@ of every default value, ready to copy from.
 - macOS: `~/.config/lazyincus/config.yml` if that directory already exists,
   otherwise `~/Library/Application Support/lazyincus/config.yml`
 
-(Windows isn't supported by this MVP — see CLAUDE.md.)
+(Windows isn't supported — see [BACKLOG.md](../BACKLOG.md#missing-vs-lazydocker).)
 
 Checked in this order:
 1. The `CONFIG_DIR` environment variable, which points directly at the

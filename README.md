@@ -13,8 +13,8 @@ TUI this project's UI, keybindings, and overall structure are lifted from.
 Full credit for the original design and the [gocui](https://github.com/jesseduffield/gocui)
 framework it's built on goes to Jesse and the lazydocker contributors. See
 [LICENSE](LICENSE) (MIT, same as upstream), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
-for third-party attributions, and [CLAUDE.md](CLAUDE.md) for a detailed
-line-by-line account of what was carried over, adapted, or dropped.
+for third-party attributions, and [docs/Port.md](docs/Port.md) for what was
+carried over and how it was renamed.
 
 ## Status: MVP
 

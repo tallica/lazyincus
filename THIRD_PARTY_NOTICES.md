@@ -12,8 +12,8 @@ by Jesse Duffield — most of the non-Docker-specific code in this repository
 (the gocui TUI shell, config system, generic list/panel machinery, task
 manager, i18n scaffolding, utility helpers) is copied or adapted from it.
 The original MIT copyright notice is preserved in [LICENSE](LICENSE). See
-[CLAUDE.md](CLAUDE.md) for a detailed file-by-file account of what was
-carried over.
+[docs/Port.md](docs/Port.md) for the rename map and a package-by-package
+account of what was carried over.
 
 ## gocui (BSD-style)
 

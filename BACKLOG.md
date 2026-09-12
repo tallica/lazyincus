@@ -67,7 +67,8 @@ Not planned as lazydocker has them:
       `runSubprocessWithMessage`, so this is close to a copy of that handler.
 - [ ] **Open in browser (`w`)** — lazydocker opens the container's first HTTP
       port. Incus has no port-mapping concept, but "open `http://<ipv4>`" is
-      the obvious translation, and `OSCommand.OpenLink` already exists unused.
+      the obvious translation, and `OSCommand.OpenLink` already exists (the
+      footer's donate link uses it).
 
 Not planned:
 
