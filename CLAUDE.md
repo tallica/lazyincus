@@ -107,7 +107,10 @@ instance's name since the rows alone don't say whose they are. Listing uses
 background poll already holds, because create and delete have to show up
 immediately. Snapshot names come back from the API prefixed with the
 instance (`alpine/snap0`); every other call wants the bare name, which
-`snapshotName` strips. `n` opens a two-view popup: the editable
+`snapshotName` strips. `n` works from the instances panel as well as
+this one - it acts on the selected instance either way - and moves to the
+new snapshot once it exists, so taking one from the instances panel shows
+you the result. It opens a two-view popup: the editable
 confirmation view as a name field, and a `snapshotOptions` view parked under
 it, with `tab` moving focus between them. Its own view rather than the menu,
 so the menu panel's keybindings don't fight the navigation - which means

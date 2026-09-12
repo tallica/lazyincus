@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
@@ -372,8 +374,33 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 			return gui.createErrorPanel(err.Error())
 		}
 
-		return gui.refreshSnapshots()
+		if err := gui.refreshSnapshots(); err != nil {
+			return err
+		}
+
+		return gui.focusSnapshot(name)
 	})
+}
+
+// focusSnapshot moves to the snapshots panel and puts the cursor on the
+// named snapshot, so a snapshot taken from the instances panel lands you
+// where you can see it.
+func (gui *Gui) focusSnapshot(name string) error {
+	index := lo.IndexOf(lo.Map(gui.Panels.Snapshots.List.GetItems(),
+		func(snapshot *commands.Snapshot, _ int) string { return snapshot.Name }), name)
+	if index < 0 {
+		return nil
+	}
+
+	gui.Panels.Snapshots.SetSelectedLineIdx(index)
+
+	// This runs on the waiting-status goroutine; focus belongs to the main
+	// loop.
+	gui.g.Update(func(*gocui.Gui) error {
+		return gui.switchFocus(gui.Views.Snapshots)
+	})
+
+	return nil
 }
 
 func (gui *Gui) handleSnapshotRestore(g *gocui.Gui, v *gocui.View) error {

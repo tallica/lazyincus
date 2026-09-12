@@ -208,6 +208,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "instances",
+			Key:         'n',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSnapshotCreate,
+			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "instances",
 			Key:         'm',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleInstanceViewLogs,

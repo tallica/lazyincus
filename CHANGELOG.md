@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text typed into a prompt stuck around for the next one, so naming two snapshots in a row produced the two names concatenated. An editable view keeps its contents in a text area that outlives the popup.
 
 ### Added
+- `n` takes a snapshot from the instances panel as well as the snapshots one, and lands you on the new snapshot afterwards.
 - Snapshots can now carry an expiry (after which Incus deletes them) and include the instance's running state. `n` opens a name field with an options box under it — `tab` moves between them, `← →` change the focused field's value, and `enter` or `ctrl+s` creates from either box. Both fields default to off, so name-and-enter is the plain snapshot it always was. Snapshots that expire say so in the panel. Space activates a menu row too, which the binding carried since the port had never actually done.
 
 ## [0.5.0] - 2026-09-12
