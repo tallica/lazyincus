@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-12
+
 ### Fixed
 - A popup could be left stranded on screen: pressing a panel key while a confirmation was open moved focus behind it, with no way back into the dialog. Focus landing outside a prompt now takes the prompt down with it.
 - Text typed into a prompt stuck around for the next one, so naming two snapshots in a row produced the two names concatenated. An editable view keeps its contents in a text area that outlives the popup.
@@ -107,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/tallica/lazyincus/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tallica/lazyincus/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tallica/lazyincus/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tallica/lazyincus/compare/v0.2.0...v0.3.0
