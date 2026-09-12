@@ -39,6 +39,28 @@ func (i *Image) Alias() string {
 	return i.Image.Aliases[0].Name
 }
 
+// Description is the image's own description property, which is what
+// identifies a cached image in `incus image list` - those arrive without an
+// alias.
+func (i *Image) Description() string {
+	return i.Image.Properties["description"]
+}
+
+// Label is the best name available for the image, in the order a reader
+// would want it: its alias, the description an unaliased image carries, or
+// the fingerprint that always exists.
+func (i *Image) Label() string {
+	if alias := i.Alias(); alias != "" {
+		return alias
+	}
+
+	if description := i.Description(); description != "" {
+		return description
+	}
+
+	return i.ShortFingerprint()
+}
+
 func (i *Image) IsVM() bool {
 	return i.Image.Type == "virtual-machine"
 }

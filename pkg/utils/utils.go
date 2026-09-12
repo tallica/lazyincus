@@ -46,6 +46,17 @@ func WithPadding(str string, padding int) string {
 	return str + strings.Repeat(" ", padding-runewidth.StringWidth(uncoloredStr))
 }
 
+// Truncate shortens a string to the given display width, marking the cut
+// with an ellipsis. Widths below 2 return the string untouched, since
+// there's no room to say anything.
+func Truncate(str string, width int) string {
+	if width < 2 || runewidth.StringWidth(str) <= width {
+		return str
+	}
+
+	return runewidth.Truncate(str, width, "…")
+}
+
 // ColoredString takes a string and a colour attribute and returns a colored
 // string with that attribute
 func ColoredString(str string, colorAttribute color.Attribute) string {

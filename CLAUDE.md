@@ -101,9 +101,10 @@ up:
 
 ### Images
 
-Local images (`GetImages`), sorted with aliased ones first — the unaliased
-ones are cached dependencies nobody asked for by name. `d` deletes after a
-confirmation. Polled every 10s rather than the instance list's 2s: images
+Local images (`GetImages`), identified by `Image.Label()`: alias, else the
+description an unaliased cached image carries (what `incus image list` shows
+in its DESCRIPTION column), else the short fingerprint. Truncated to keep
+the columns after it on screen. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
 only change when someone pulls or deletes one.
 
 ## Incus client integration details

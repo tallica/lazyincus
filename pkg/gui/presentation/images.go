@@ -7,27 +7,21 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+// maxImageLabelWidth keeps a long description from pushing the columns after
+// it off the side panel. Cached images carry descriptions like "Alpine edge
+// arm64 (20260911_13:02)", which is informative well before its last word.
+const maxImageLabelWidth = 28
+
 // GetImageDisplayStrings renders one row of the images panel, roughly
 // `incus image list`'s columns minus the ones that are the same for every
 // local image.
 func GetImageDisplayStrings(image *commands.Image) []string {
 	return []string{
-		displayImageAlias(image),
+		utils.Truncate(image.Label(), maxImageLabelWidth),
 		utils.ColoredString(image.ShortFingerprint(), color.FgCyan),
 		utils.ColoredString(displayImageType(image), color.FgMagenta),
 		utils.ColoredString(displayImageSize(image), color.FgYellow),
 	}
-}
-
-func displayImageAlias(image *commands.Image) string {
-	alias := image.Alias()
-	if alias == "" {
-		// Images pulled in as a dependency have no alias; the fingerprint
-		// column still identifies them.
-		return utils.ColoredString("(no alias)", color.FgBlue)
-	}
-
-	return alias
 }
 
 func displayImageType(image *commands.Image) string {

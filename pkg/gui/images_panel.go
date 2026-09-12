@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -40,15 +41,13 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 	}
 }
 
-// sortImages puts aliased images first, then orders by alias or fingerprint -
-// the unaliased ones are usually cached dependencies nobody went looking for.
+// sortImages orders by the label the panel actually shows, so the list reads
+// in the order it's sorted; the fingerprint breaks ties between images
+// sharing a description.
 func sortImages(a *commands.Image, b *commands.Image) bool {
-	if (a.Alias() == "") != (b.Alias() == "") {
-		return b.Alias() == ""
-	}
-
-	if a.Alias() != b.Alias() {
-		return a.Alias() < b.Alias()
+	left, right := strings.ToLower(a.Label()), strings.ToLower(b.Label())
+	if left != right {
+		return left < right
 	}
 
 	return a.Fingerprint < b.Fingerprint
@@ -108,7 +107,7 @@ func (gui *Gui) handleImageDelete(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	prompt := fmt.Sprintf(gui.Tr.DeleteImage, imageLabel(image))
+	prompt := fmt.Sprintf(gui.Tr.DeleteImage, image.Label())
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
@@ -119,12 +118,4 @@ func (gui *Gui) handleImageDelete(g *gocui.Gui, v *gocui.View) error {
 			return gui.refreshImages()
 		})
 	}, nil)
-}
-
-func imageLabel(image *commands.Image) string {
-	if alias := image.Alias(); alias != "" {
-		return alias
-	}
-
-	return image.ShortFingerprint()
 }
