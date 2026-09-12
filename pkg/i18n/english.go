@@ -57,6 +57,9 @@ type TranslationSet struct {
 	CopiedToClipboard          string
 	NoIPv4Address              string
 	InstancesTitle             string
+	ImagesTitle                string
+	NoImages                   string
+	DeleteImage                string
 	NoInstances                string
 	NoInstance                 string
 	NoSnapshots                string
@@ -154,6 +157,9 @@ func englishSet() TranslationSet {
 		LogsTitle:      "Logs",
 		ConfigTitle:    "Config",
 		EnvTitle:       "Env",
+		ImagesTitle:    "Images",
+		NoImages:       "No images",
+		DeleteImage:    "Are you sure you want to delete image %s?",
 		SnapshotsTitle: "Snapshots",
 		TopTitle:       "Top",
 		CreditsTitle:   "About",

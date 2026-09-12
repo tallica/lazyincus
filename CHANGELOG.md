@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Images panel, the second side panel: `1` and `2` switch between Instances and Images, `d` deletes the selected image after a confirmation, and the main panel shows its details. Side panels split the side column evenly.
 - Main panel Top tab: the processes running inside the selected instance, refreshed every two seconds. Incus's API only reports a process count, so this execs `ps` in the instance over the client's websocket exec — instances whose image has no `ps` (many OCI images), and VMs without the Incus guest agent, show the daemon's error instead of a list.
 
 ### Changed

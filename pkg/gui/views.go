@@ -25,8 +25,9 @@ func hideUnderScores() bool {
 }
 
 type Views struct {
-	// side panel
+	// side panels
 	Instances *gocui.View
+	Images    *gocui.View
 
 	// main panel
 	Main *gocui.View

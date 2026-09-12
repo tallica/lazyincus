@@ -222,6 +222,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.ExecShell,
 		},
 		{
+			ViewName:    "images",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleImageDelete,
+			Description: gui.Tr.Remove,
+		},
+		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,

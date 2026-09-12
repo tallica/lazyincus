@@ -43,6 +43,7 @@ type Gui struct {
 
 type Panels struct {
 	Instances *panels.SideListPanel[*commands.Instance]
+	Images    *panels.SideListPanel[*commands.Image]
 	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 
@@ -228,10 +229,15 @@ func (gui *Gui) Run() error {
 			gui.Log.Error(err)
 		}
 
+		if err := gui.refreshImages(); err != nil {
+			gui.Log.Error(err)
+		}
+
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
 		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
+		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 	}()
 
 	err = g.MainLoop()
@@ -244,6 +250,7 @@ func (gui *Gui) Run() error {
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
+		Images:    gui.getImagesPanel(),
 		Menu:      gui.getMenuPanel(),
 	}
 }

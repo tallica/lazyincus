@@ -37,9 +37,20 @@ commit pin is the substitute: the way to check later whether a bugfix that
 landed in lazydocker's shared TUI/config plumbing after this date also
 applies here.
 
-## The one panel: Instances
+## Side panels
 
-The only side panel, listing containers and VMs
+`sidePanelDefs()` in `pkg/gui/side_panels.go` is the ordered list of side
+panels — view name, title, view pointer, panel accessor. View creation,
+styling (including the `[n]` title prefix), the number keys, the layout and
+`allSidePanels()` all derive from it, so a new panel is one entry there plus
+its own `*_panel.go`, presentation and refresh loop. Order is both the
+top-to-bottom layout order and the number-key order; the first panel is what
+the app focuses at startup. The side column splits evenly between whichever
+panels aren't hidden.
+
+### Instances
+
+Lists containers and VMs
 (`GetInstances(api.InstanceTypeAny)`) scoped to one Incus project at a time
 (`P` switches). Columns mirror `incus list`: name, status, type, IPv4, IPv6,
 snapshot count. Type, addresses and snapshot count only appear once
@@ -87,6 +98,13 @@ up:
   Create/restore/delete need per-row selection, which doesn't fit a
   plain-text tab — that's a second side panel, gated on panel-switching
   (see BACKLOG.md).
+
+### Images
+
+Local images (`GetImages`), sorted with aliased ones first — the unaliased
+ones are cached dependencies nobody asked for by name. `d` deletes after a
+confirmation. Polled every 10s rather than the instance list's 2s: images
+only change when someone pulls or deletes one.
 
 ## Incus client integration details
 

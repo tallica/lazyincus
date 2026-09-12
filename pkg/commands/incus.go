@@ -197,6 +197,48 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 	return ownInstances, nil
 }
 
+// GetImages lists the images stored on the server, reusing existing Image
+// objects by fingerprint the way GetInstances does.
+func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
+	client := c.Client()
+
+	apiImages, err := client.GetImages()
+	if err != nil {
+		c.setConnected(false)
+		return nil, err
+	}
+	c.setConnected(true)
+
+	ownImages := make([]*Image, len(apiImages))
+
+	for i := range apiImages {
+		apiImage := apiImages[i]
+
+		var image *Image
+		for _, existing := range existingImages {
+			if existing.Fingerprint == apiImage.Fingerprint {
+				image = existing
+				break
+			}
+		}
+
+		if image == nil {
+			image = &Image{
+				Fingerprint: apiImage.Fingerprint,
+				OSCommand:   c.OSCommand,
+				Log:         c.Log,
+				Tr:          c.Tr,
+			}
+		}
+
+		image.Client = client
+		image.Image = apiImage
+		ownImages[i] = image
+	}
+
+	return ownImages, nil
+}
+
 // RefreshInstanceDetails fetches the full details (including state) for each
 // instance in the background.
 func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {
