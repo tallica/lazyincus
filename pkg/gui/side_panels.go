@@ -35,6 +35,12 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			panel:   func() panels.ISideListPanel { return gui.Panels.Instances },
 		},
 		{
+			name:    "snapshots",
+			title:   gui.Tr.SnapshotsTitle,
+			viewPtr: &gui.Views.Snapshots,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Snapshots },
+		},
+		{
 			name:    "images",
 			title:   gui.Tr.ImagesTitle,
 			viewPtr: &gui.Views.Images,

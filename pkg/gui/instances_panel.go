@@ -40,11 +40,6 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 						Render: gui.renderInstanceEnv,
 					},
 					{
-						Key:    "snapshots",
-						Title:  gui.Tr.SnapshotsTitle,
-						Render: gui.renderInstanceSnapshotsToMain,
-					},
-					{
 						Key:    "top",
 						Title:  gui.Tr.TopTitle,
 						Render: gui.renderInstanceTopToMain,
@@ -63,6 +58,11 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		},
 		NoItemsMessage: gui.Tr.NoInstances,
 		Gui:            gui.intoInterface(),
+		// The snapshots panel shows whichever instance is selected here, so
+		// it reloads whenever that changes rather than on its poll alone.
+		OnSelect: func(instance *commands.Instance) error {
+			return gui.refreshSnapshots()
+		},
 		Sort: func(a *commands.Instance, b *commands.Instance) bool {
 			return sortInstances(a, b)
 		},

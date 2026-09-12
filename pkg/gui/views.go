@@ -30,6 +30,7 @@ type Views struct {
 	Images    *gocui.View
 	Volumes   *gocui.View
 	Networks  *gocui.View
+	Snapshots *gocui.View
 
 	// main panel
 	Main *gocui.View

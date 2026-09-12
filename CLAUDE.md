@@ -92,12 +92,18 @@ up:
   shell-out). Images without a `ps` and VMs without the guest agent get the
   daemon's error instead of a list; the flag set that works is cached per
   instance, since busybox and util-linux `ps` disagree on all of them.
-- **Snapshots** — read-only table of `InstanceFull.Snapshots`. No size
-  column, matching `incus info`: `InstanceSnapshot.Size` comes back unset
-  from `GetInstanceFull` and a real size needs a per-snapshot request.
-  Create/restore/delete need per-row selection, which doesn't fit a
-  plain-text tab — that's a second side panel, gated on panel-switching
-  (see BACKLOG.md).
+
+### Snapshots
+
+Follows the instances panel: its `OnSelect` calls `refreshSnapshots`, so the
+panel always shows the selected instance, and the view title carries that
+instance's name since the rows alone don't say whose they are. Listing uses
+`GetInstanceSnapshots` rather than the `InstanceFull.Snapshots` the
+background poll already holds, because create and delete have to show up
+immediately. Snapshot names come back from the API prefixed with the
+instance (`alpine/snap0`); every other call wants the bare name, which
+`snapshotName` strips. Restore is an instance update carrying `Restore:
+<name>`, not a snapshot operation.
 
 ### Images
 

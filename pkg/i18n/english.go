@@ -60,6 +60,13 @@ type TranslationSet struct {
 	ImagesTitle               string
 	NoImages                  string
 	DeleteImage               string
+	NewSnapshot               string
+	RestoreSnapshot           string
+	RestoreSnapshotShort      string
+	DeleteSnapshot            string
+	SnapshotNamePrompt        string
+	SnapshottingStatus        string
+	RestoringStatus           string
 	VolumesTitle              string
 	NoVolumes                 string
 	DeleteVolume              string
@@ -169,6 +176,13 @@ func englishSet() TranslationSet {
 		ImagesTitle:                  "Images",
 		NoImages:                     "No images",
 		DeleteImage:                  "Are you sure you want to delete image %s?",
+		NewSnapshot:                  "new snapshot",
+		RestoreSnapshot:              "Are you sure you want to restore %s to snapshot %s? Anything changed since is lost.",
+		RestoreSnapshotShort:         "restore snapshot",
+		DeleteSnapshot:               "Are you sure you want to delete snapshot %s?",
+		SnapshotNamePrompt:           "Name for the new snapshot of %s:",
+		SnapshottingStatus:           "snapshotting",
+		RestoringStatus:              "restoring",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",

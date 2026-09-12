@@ -81,7 +81,7 @@ already resets the stack on a side view; `sideViewNames()` already honors
 - [x] Stage 1: one definition the views, keys and layout all derive from
 - [x] Stage 2: Images panel
 - [x] Stage 3: Volumes and Networks panels
-- [ ] Stage 4: Snapshots side panel
+- [x] Stage 4: Snapshots side panel
 - [ ] Decide on tab-cycling between side panels as well as number keys
 
 ## Missing vs lazydocker
@@ -262,22 +262,19 @@ data lazyincus has in hand, not new API calls.
   the way the lazydocker port pin works, so a drift has somewhere to be
   checked against.
 
-## Interactive Snapshots panel
+## Snapshots panel
 
-The current Snapshots tab (main panel, alongside Stats/Logs/Config) is
-read-only: a static table of name/taken-at/expires-at/stateful, matching
-`incus info`'s own Snapshots table.
+Shipped as a side panel following the instances panel's selection, with
+create/restore/delete; the read-only main-panel tab it replaced is gone.
+What's left:
 
-Adding create/restore/delete actions doesn't fit that tab model — those need
-per-row selection and keybindings, which the plain-text main-panel tabs don't
-support. The right shape is a second **side panel** (the way lazydocker
-treats Images/Volumes/Networks as their own panels, not tabs), scoped to the
-snapshots of the currently-selected instance. Gated on panel-switching.
-
-- [ ] Side panel showing snapshots of the selected instance
-- [ ] Create (prompt for name)
-- [ ] Restore
-- [ ] Delete, with confirmation matching the Instances panel's pattern
+- [ ] Stateful snapshots — `CreateSnapshot` always asks for a stateless one,
+      matching `incus snapshot`'s default. Stateful needs CRIU on the host
+      and a running instance, and fails loudly without it, so it wants a
+      prompt option rather than a silent default.
+- [ ] Expiry — `InstanceSnapshotsPost.ExpiresAt` is never set, so snapshots
+      taken here never expire.
+- [ ] Rename (`RenameInstanceSnapshot`), if it turns out to be wanted.
 
 ## Housekeeping
 

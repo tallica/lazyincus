@@ -52,10 +52,11 @@ Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
 
 ## Usage
 
-Four side panels: **Instances** (`1`), listing both containers and VMs,
-**Images** (`2`), **Volumes** (`3`) and **Networks** (`4`). All are scoped to
-one Incus project at a time (`P` switches project; the footer shows the
-current remote and project).
+Five side panels: **Instances** (`1`), listing both containers and VMs,
+**Snapshots** (`2`) for whichever instance is selected, **Images** (`3`),
+**Volumes** (`4`) and **Networks** (`5`). All are scoped to one Incus project
+at a time (`P` switches project; the footer shows the current remote and
+project).
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -63,17 +64,18 @@ file - see [docs/Config.md](docs/Config.md).
 
 | Key | Action |
 |---|---|
-| `1` … `4` | Focus the Instances / Images / Volumes / Networks panel |
+| `1` … `5` | Focus the Instances / Snapshots / Images / Volumes / Networks panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `enter` | Focus main panel (Stats / Logs / Config / Env / Snapshots / Top tabs) |
+| `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
 | `s` | Stop |
-| `r` | Restart |
 | `p` | Pause/freeze (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
+| `n` | New snapshot (snapshots panel) |
+| `r` | Restart an instance, or restore a snapshot |
 | `E` | Exec a shell into the instance |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |

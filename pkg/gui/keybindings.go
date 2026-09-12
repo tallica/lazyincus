@@ -229,6 +229,27 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
+			ViewName:    "snapshots",
+			Key:         'n',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSnapshotCreate,
+			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "snapshots",
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSnapshotRestore,
+			Description: gui.Tr.RestoreSnapshotShort,
+		},
+		{
+			ViewName:    "snapshots",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSnapshotDelete,
+			Description: gui.Tr.Remove,
+		},
+		{
 			ViewName:    "volumes",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
