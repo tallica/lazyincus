@@ -72,6 +72,11 @@ type GuiConfig struct {
 	// If 0.333, then the side panel will be 1/3 of the screen's width
 	SidePanelWidth float64 `yaml:"sidePanelWidth"`
 
+	// ExpandFocusedSidePanel gives the focused side panel the space the
+	// others aren't using, collapsing them to their title. Useful once
+	// there are enough panels that an even split leaves each one short.
+	ExpandFocusedSidePanel bool `yaml:"expandFocusedSidePanel,omitempty"`
+
 	// Determines whether we show the bottom line (the one containing keybinding
 	// info and the status of the app).
 	ShowBottomLine bool `yaml:"showBottomLine"`
@@ -130,13 +135,14 @@ func GetDefaultConfig() UserConfig {
 				SelectedLineBgColor: []string{"blue"},
 				OptionsTextColor:    []string{"blue"},
 			},
-			ReturnImmediately:   false,
-			WrapMainPanel:       true,
-			SidePanelWidth:      0.3333,
-			ShowBottomLine:      true,
-			ScreenMode:          "normal",
-			InstanceStatusStyle: "long",
-			InstanceColumns:     DefaultInstanceColumns,
+			ReturnImmediately:      false,
+			ExpandFocusedSidePanel: false,
+			WrapMainPanel:          true,
+			SidePanelWidth:         0.3333,
+			ShowBottomLine:         true,
+			ScreenMode:             "normal",
+			InstanceStatusStyle:    "long",
+			InstanceColumns:        DefaultInstanceColumns,
 		},
 		ConfirmOnQuit: false,
 		OS:            GetPlatformDefaultConfig(),

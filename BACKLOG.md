@@ -58,10 +58,9 @@ already resets the stack on a side view; `sideViewNames()` already honors
 
 ### Decisions taken
 
-- **Equal weights** for the side column (each panel gets 1/N), matching
-  lazydocker at the pinned commit. Accordion — focused panel expands, others
-  collapse to their title — is a follow-up once it's possible to feel how
-  cramped four panels are on a short terminal.
+- **Equal weights** for the side column (each panel gets 1/N) by default,
+  matching lazydocker at the pinned commit, with `gui.expandFocusedSidePanel`
+  as the accordion alternative.
 - **Number keys stay fixed per panel** rather than renumbering over the
   visible ones, so muscle memory holds; the key is a no-op while its panel
   is hidden.

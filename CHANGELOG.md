@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `gui.expandFocusedSidePanel` gives the focused side panel the space the others aren't using, collapsing them to their title and first row — worth turning on now that there are five panels sharing the side column. Off by default; falls back to an even split on a terminal too short to fit them all collapsed.
 - Snapshots panel, showing the selected instance's snapshots and following that selection: `n` takes a new one, `r` restores, `d` deletes, each with a confirmation. This replaces the read-only Snapshots tab in the main panel, which showed the same table with nothing to do to it.
 - Images, Volumes and Networks panels, alongside Instances: `1`-`5` switch between them, `d` deletes the selected item after a confirmation, and the main panel shows its details. Side panels split the side column evenly. Only custom volumes and managed networks can be deleted — the rest belong to an instance or to the host, and say so rather than letting the daemon reject the attempt.
 - Main panel Top tab: the processes running inside the selected instance, refreshed every two seconds. Incus's API only reports a process count, so this execs `ps` in the instance over the client's websocket exec — instances whose image has no `ps` (many OCI images), and VMs without the Incus guest agent, show the daemon's error instead of a list.

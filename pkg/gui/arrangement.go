@@ -136,8 +136,16 @@ func (gui *Gui) sideViewNames() []string {
 	})
 }
 
+// collapsedSidePanelHeight is a title bar plus one row of content, so a
+// collapsed panel still shows what it is and whether it has anything in it.
+const collapsedSidePanelHeight = 3
+
 func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
 	sideWindowNames := gui.sideViewNames()
+
+	if gui.Config.UserConfig.Gui.ExpandFocusedSidePanel {
+		return gui.expandedSidePanelChildren(sideWindowNames, height)
+	}
 
 	// Equal weights: the side section splits evenly between however many
 	// panels are visible.
@@ -146,5 +154,29 @@ func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
 			Window: window,
 			Weight: 1,
 		}
+	})
+}
+
+// expandedSidePanelChildren gives the focused panel everything the collapsed
+// ones don't need. The focused panel is the last side panel that had focus,
+// so moving into the main panel doesn't collapse the list you were reading.
+//
+// Falls back to an even split when the panels can't all fit collapsed -
+// better a cramped list than panels squeezed out of existence.
+func (gui *Gui) expandedSidePanelChildren(sideWindowNames []string, height int) []*boxlayout.Box {
+	focused := gui.currentSideWindowName()
+
+	if height < len(sideWindowNames)*collapsedSidePanelHeight+collapsedSidePanelHeight {
+		return lo.Map(sideWindowNames, func(window string, _ int) *boxlayout.Box {
+			return &boxlayout.Box{Window: window, Weight: 1}
+		})
+	}
+
+	return lo.Map(sideWindowNames, func(window string, _ int) *boxlayout.Box {
+		if window == focused {
+			return &boxlayout.Box{Window: window, Weight: 1}
+		}
+
+		return &boxlayout.Box{Window: window, Size: collapsedSidePanelHeight}
 	})
 }
