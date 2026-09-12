@@ -151,8 +151,8 @@ before `GetInstanceServer` to switch.
       next to the remote, e.g. `Incus v6.11 (colima/default) ●`)
 - [x] A project switcher (`P`: menu of `GetProjectNames()`, re-scoping the
       client via `UseProject`)
-- [ ] Decide whether an "all projects" aggregate view is worth it, or whether
-      switching is enough
+- [x] Decide whether an "all projects" aggregate view is worth it — shipped;
+      "all projects" in the `P` menu, with a project column on every panel.
 
 ### 2. Compose grouping on top
 

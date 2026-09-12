@@ -21,9 +21,10 @@ type Volume struct {
 }
 
 // Key identifies the volume across refreshes and in the panel's context
-// cache.
+// cache. Project included: the all-projects view can hold two volumes with
+// the same name in the same pool, one per project.
 func (v *Volume) Key() string {
-	return v.Pool + "/" + v.Volume.Type + "/" + v.Name
+	return v.Volume.Project + "/" + v.Pool + "/" + v.Volume.Type + "/" + v.Name
 }
 
 // IsCustom reports whether this is a volume someone created, rather than one

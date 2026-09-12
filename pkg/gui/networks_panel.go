@@ -36,7 +36,9 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 		Sort: func(a *commands.Network, b *commands.Network) bool {
 			return a.Name < b.Name
 		},
-		GetTableCells: presentation.GetNetworkDisplayStrings,
+		GetTableCells: func(item *commands.Network) []string {
+			return presentation.GetNetworkDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+		},
 	}
 }
 

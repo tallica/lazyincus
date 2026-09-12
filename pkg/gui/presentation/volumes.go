@@ -8,13 +8,19 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func GetVolumeDisplayStrings(volume *commands.Volume) []string {
-	return []string{
+func GetVolumeDisplayStrings(volume *commands.Volume, showProject bool) []string {
+	cells := []string{
 		utils.Truncate(volume.Name, maxVolumeNameWidth),
 		utils.ColoredString(volume.Pool, color.FgCyan),
 		utils.ColoredString(volume.Volume.Type, color.FgMagenta),
 		utils.ColoredString(strconv.Itoa(volume.UsedByCount()), color.FgYellow),
 	}
+
+	if showProject {
+		cells = append([]string{utils.ColoredString(volume.Volume.Project, color.FgCyan)}, cells...)
+	}
+
+	return cells
 }
 
 // maxVolumeNameWidth keeps image-backed volumes, whose names are full

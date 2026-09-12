@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/fatih/color"
 	"github.com/lxc/incus/v7/shared/util"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -26,6 +28,9 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"ipv6": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return utils.ColoredString(displayInstanceAddresses(instance, "inet6"), color.FgYellow)
 	},
+	"project": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(instance.Project, color.FgCyan)
+	},
 	"service": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return utils.ColoredString(instance.ComposeService(), color.FgGreen)
 	},
@@ -34,11 +39,13 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	},
 }
 
-func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance) []string {
+func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool) []string {
 	columns := guiConfig.InstanceColumns
 	if len(columns) == 0 {
 		columns = config.DefaultInstanceColumns
 	}
+
+	columns = withProjectColumn(columns, showProject)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
@@ -50,6 +57,18 @@ func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.I
 	}
 
 	return cells
+}
+
+// withProjectColumn puts the project first when the list spans projects,
+// unless the user already placed it somewhere. Without it the rows of an
+// all-projects listing don't say which project they came from, and names
+// repeat across projects.
+func withProjectColumn(columns []string, spansProjects bool) []string {
+	if !spansProjects || lo.Contains(columns, "project") {
+		return columns
+	}
+
+	return append([]string{"project"}, columns...)
 }
 
 // displayInstanceType mirrors the `incus list` TYPE column, including the

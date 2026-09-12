@@ -36,7 +36,9 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 		Sort: func(a *commands.Volume, b *commands.Volume) bool {
 			return sortVolumes(a, b)
 		},
-		GetTableCells: presentation.GetVolumeDisplayStrings,
+		GetTableCells: func(item *commands.Volume) []string {
+			return presentation.GetVolumeDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+		},
 	}
 }
 

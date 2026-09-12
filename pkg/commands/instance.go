@@ -19,6 +19,11 @@ import (
 type Instance struct {
 	Name string
 
+	// Project the instance lives in. Only interesting in the all-projects
+	// view, where the list mixes projects; the CLI shell-outs need it to
+	// address the right instance.
+	Project string
+
 	// Instance holds the summary data returned by GetInstances (status, type,
 	// creation time, ...).
 	Instance api.Instance

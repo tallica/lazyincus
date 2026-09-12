@@ -72,7 +72,7 @@ your file either).
 | `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full` (`fullscreen` is accepted as an alias). |
 | `instanceStatusStyle` | string | `"long"` | Instance status display: `long` (full words), `short` (one/two characters), or `icon`. |
 | `border` | string | `"rounded"` | Panel border style: `rounded`, `single`, `double`, or `hidden`. |
-| `instanceColumns` | []string | `[name, status, type, ipv4, ipv6, snapshots]` | Which columns the Instances panel shows, and in what order. Valid values: `name`, `status`, `type`, `ipv4`, `ipv6`, `service`, `snapshots`. Unknown values are ignored; list any subset to hide the rest. `service` is off by default: it shows the [incus-compose](https://github.com/lxc/incus-compose) service an instance came from, and is blank for instances created any other way. |
+| `instanceColumns` | []string | `[name, status, type, ipv4, ipv6, snapshots]` | Which columns the Instances panel shows, and in what order. Valid values: `name`, `status`, `type`, `ipv4`, `ipv6`, `project`, `service`, `snapshots`. `project` is added automatically in the all-projects view. Unknown values are ignored; list any subset to hide the rest. `service` is off by default: it shows the [incus-compose](https://github.com/lxc/incus-compose) service an instance came from, and is blank for instances created any other way. |
 
 ### Top level
 

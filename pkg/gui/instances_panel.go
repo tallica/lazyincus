@@ -73,7 +73,8 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return true
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
-			return presentation.GetInstanceDisplayStrings(&gui.Config.UserConfig.Gui, instance)
+			return presentation.GetInstanceDisplayStrings(
+				&gui.Config.UserConfig.Gui, instance, gui.IncusCommand.IsAllProjects())
 		},
 	}
 }
@@ -82,7 +83,14 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 // else - a stopped instance is usually the one you're least interested in,
 // but sorting by status beyond that just shuffles the list around as
 // instances start and stop.
+//
+// In the all-projects view the project comes first, so the list reads as
+// one group per project rather than names interleaved across them.
 func sortInstances(a *commands.Instance, b *commands.Instance) bool {
+	if a.Project != b.Project {
+		return a.Project < b.Project
+	}
+
 	if isStopped(a) != isStopped(b) {
 		return isStopped(b)
 	}
@@ -287,6 +295,17 @@ func (gui *Gui) handleInstancesExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.instanceExecShell(inst)
 }
 
+// instanceCLIArgs carries the instance's project through to the `incus` CLI,
+// which otherwise uses whatever project the user's own remote is set to -
+// not necessarily the one the selected instance lives in.
+func instanceCLIArgs(instance *commands.Instance) []string {
+	if instance.Project == "" {
+		return nil
+	}
+
+	return []string{"--project", instance.Project}
+}
+
 func (gui *Gui) handleInstanceAttach(g *gocui.Gui, v *gocui.View) error {
 	inst, err := gui.Panels.Instances.GetSelectedItem()
 	if err != nil {
@@ -304,7 +323,7 @@ func (gui *Gui) instanceAttachConsole(instance *commands.Instance) error {
 		return gui.createErrorPanel(gui.Tr.CannotAttachStoppedInstanceError)
 	}
 
-	cmd := gui.OSCommand.NewCmd("incus", "console", instance.Name)
+	cmd := gui.OSCommand.NewCmd("incus", append(instanceCLIArgs(instance), "console", instance.Name)...)
 
 	// No detach hint from us: `incus console` prints its own on connect.
 	return gui.runSubprocess(cmd)
@@ -318,8 +337,10 @@ func (gui *Gui) instanceExecShell(instance *commands.Instance) error {
 		return gui.createErrorPanel(gui.Tr.CannotExecStoppedInstanceError)
 	}
 
-	cmd := gui.OSCommand.NewCmd("incus", "exec", instance.Name, "--", "sh", "-c",
+	args := append(instanceCLIArgs(instance), "exec", instance.Name, "--", "sh", "-c",
 		"exec $(command -v bash || command -v ash || command -v sh)")
+
+	cmd := gui.OSCommand.NewCmd("incus", args...)
 
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.ExitShellToReturn)
 }

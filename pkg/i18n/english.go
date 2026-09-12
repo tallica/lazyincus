@@ -112,6 +112,7 @@ type TranslationSet struct {
 	FocusPanel    string
 	SwitchProject string
 	ProjectsTitle string
+	AllProjects   string
 }
 
 func englishSet() TranslationSet {
@@ -226,5 +227,6 @@ func englishSet() TranslationSet {
 		FocusPanel:    "focus %s panel",
 		SwitchProject: "switch project",
 		ProjectsTitle: "Projects",
+		AllProjects:   "all projects",
 	}
 }

@@ -37,7 +37,9 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 		Sort: func(a *commands.Image, b *commands.Image) bool {
 			return sortImages(a, b)
 		},
-		GetTableCells: presentation.GetImageDisplayStrings,
+		GetTableCells: func(item *commands.Image) []string {
+			return presentation.GetImageDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+		},
 	}
 }
 

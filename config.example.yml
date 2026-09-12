@@ -60,7 +60,8 @@ gui:
   border: "rounded"
 
   # Which columns the Instances panel shows, and in what order. Valid
-  # values: name, status, type, ipv4, ipv6, service, snapshots. Unknown
+  # values: name, status, type, ipv4, ipv6, project, service, snapshots.
+  # Unknown
   # values are ignored; list any subset to hide the rest. "service" shows
   # the incus-compose service an instance came from, and is blank for
   # anything created another way.

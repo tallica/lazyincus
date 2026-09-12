@@ -34,6 +34,7 @@ type IncusCommand struct {
 	clientMutex deadlock.Mutex
 	client      incus.InstanceServer
 	projectName string
+	allProjects bool
 
 	connMutex deadlock.Mutex
 	connected bool
@@ -107,11 +108,49 @@ func (c *IncusCommand) Client() incus.InstanceServer {
 	return c.client
 }
 
-// ProjectName is the Incus project the instance list is currently scoped to.
+// ProjectName is the Incus project the panels are currently scoped to, or
+// an empty string when they're showing every project.
 func (c *IncusCommand) ProjectName() string {
 	c.clientMutex.Lock()
 	defer c.clientMutex.Unlock()
+
+	if c.allProjects {
+		return ""
+	}
+
 	return c.projectName
+}
+
+// IsAllProjects reports whether the panels are listing every project rather
+// than one. Actions still run against the project each item came from - see
+// clientFor.
+func (c *IncusCommand) IsAllProjects() bool {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	return c.allProjects
+}
+
+// UseAllProjects lists every project at once. The client itself stays
+// scoped to whatever project it had: the all-projects endpoints ignore that
+// scope, and per-item actions need a client scoped to the item's own
+// project anyway.
+func (c *IncusCommand) UseAllProjects() {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	c.allProjects = true
+}
+
+// clientFor returns a client scoped to the given project, so an action on an
+// item from an all-projects listing goes to the project that item lives in
+// rather than whichever one the client happens to be scoped to.
+func (c *IncusCommand) clientFor(project string) incus.InstanceServer {
+	client := c.Client()
+
+	if project == "" || !c.IsAllProjects() {
+		return client
+	}
+
+	return client.UseProject(project)
 }
 
 // GetProjectNames lists the projects on the server.
@@ -127,6 +166,7 @@ func (c *IncusCommand) UseProject(name string) {
 
 	c.client = c.client.UseProject(name)
 	c.projectName = name
+	c.allProjects = false
 }
 
 func (c *IncusCommand) Close() error {
@@ -156,7 +196,7 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 
 	client := c.Client()
 
-	apiInstances, err := client.GetInstances(api.InstanceTypeAny)
+	apiInstances, err := c.listInstances(client)
 	if err != nil {
 		c.setConnected(false)
 		return nil, err
@@ -170,7 +210,9 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 
 		var inst *Instance
 		for _, existing := range existingInstances {
-			if existing.Name == apiInstance.Name {
+			// Name alone isn't identity: the all-projects view can hold two
+			// instances of the same name from different projects.
+			if existing.Name == apiInstance.Name && existing.Project == apiInstance.Project {
 				inst = existing
 				break
 			}
@@ -189,7 +231,8 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 		// Reassigned every refresh, not just at construction: an instance
 		// reused by name across a project switch would otherwise keep a
 		// client pointed at the project it came from.
-		inst.Client = client
+		inst.Project = apiInstance.Project
+		inst.Client = c.clientFor(apiInstance.Project)
 		inst.Instance = apiInstance
 		ownInstances[i] = inst
 	}
@@ -202,7 +245,7 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 	client := c.Client()
 
-	apiImages, err := client.GetImages()
+	apiImages, err := c.listImages(client)
 	if err != nil {
 		c.setConnected(false)
 		return nil, err
@@ -216,7 +259,7 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 
 		var image *Image
 		for _, existing := range existingImages {
-			if existing.Fingerprint == apiImage.Fingerprint {
+			if existing.Fingerprint == apiImage.Fingerprint && existing.Image.Project == apiImage.Project {
 				image = existing
 				break
 			}
@@ -231,7 +274,7 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 			}
 		}
 
-		image.Client = client
+		image.Client = c.clientFor(apiImage.Project)
 		image.Image = apiImage
 		ownImages[i] = image
 	}
@@ -239,11 +282,19 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 	return ownImages, nil
 }
 
+func (c *IncusCommand) listImages(client incus.InstanceServer) ([]api.Image, error) {
+	if c.IsAllProjects() {
+		return client.GetImagesAllProjects()
+	}
+
+	return client.GetImages()
+}
+
 // GetNetworks lists the server's networks, managed and unmanaged alike.
 func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, error) {
 	client := c.Client()
 
-	apiNetworks, err := client.GetNetworks()
+	apiNetworks, err := c.listNetworks(client)
 	if err != nil {
 		c.setConnected(false)
 		return nil, err
@@ -257,7 +308,7 @@ func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, err
 
 		var network *Network
 		for _, existing := range existingNetworks {
-			if existing.Name == apiNetwork.Name {
+			if existing.Name == apiNetwork.Name && existing.Network.Project == apiNetwork.Project {
 				network = existing
 				break
 			}
@@ -272,12 +323,20 @@ func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, err
 			}
 		}
 
-		network.Client = client
+		network.Client = c.clientFor(apiNetwork.Project)
 		network.Network = apiNetwork
 		ownNetworks[i] = network
 	}
 
 	return ownNetworks, nil
+}
+
+func (c *IncusCommand) listNetworks(client incus.InstanceServer) ([]api.Network, error) {
+	if c.IsAllProjects() {
+		return client.GetNetworksAllProjects()
+	}
+
+	return client.GetNetworks()
 }
 
 // GetVolumes lists the volumes of every storage pool. The API is per-pool,
@@ -297,7 +356,7 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 	ownVolumes := []*Volume{}
 
 	for _, pool := range pools {
-		apiVolumes, err := client.GetStoragePoolVolumes(pool)
+		apiVolumes, err := c.listVolumes(client, pool)
 		if err != nil {
 			c.Log.Warn(err)
 			continue
@@ -314,6 +373,8 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 				Tr:        c.Tr,
 			}
 
+			volume.Volume = apiVolume
+
 			for _, existing := range existingVolumes {
 				if existing.Key() == volume.Key() {
 					volume = existing
@@ -321,7 +382,7 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 				}
 			}
 
-			volume.Client = client
+			volume.Client = c.clientFor(apiVolume.Project)
 			volume.Volume = apiVolume
 			ownVolumes = append(ownVolumes, volume)
 		}
@@ -330,15 +391,32 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 	return ownVolumes, nil
 }
 
+func (c *IncusCommand) listInstances(client incus.InstanceServer) ([]api.Instance, error) {
+	if c.IsAllProjects() {
+		return client.GetInstancesAllProjects(api.InstanceTypeAny)
+	}
+
+	return client.GetInstances(api.InstanceTypeAny)
+}
+
+func (c *IncusCommand) listVolumes(client incus.InstanceServer, pool string) ([]api.StorageVolume, error) {
+	if c.IsAllProjects() {
+		return client.GetStoragePoolVolumesAllProjects(pool)
+	}
+
+	return client.GetStoragePoolVolumes(pool)
+}
+
 // RefreshInstanceDetails fetches the full details (including state) for each
 // instance in the background.
 func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {
-	client := c.Client()
-
 	for _, inst := range instances {
 		inst := inst
 		go func() {
-			full, _, err := client.GetInstanceFull(inst.Name)
+			// The instance's own client, not the command's: in the
+			// all-projects view they're scoped to different projects, and
+			// asking the wrong one returns nothing.
+			full, _, err := inst.Client.GetInstanceFull(inst.Name)
 			if err != nil {
 				c.Log.Warn(err)
 				return

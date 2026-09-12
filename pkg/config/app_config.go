@@ -95,8 +95,9 @@ type GuiConfig struct {
 
 	// InstanceColumns controls which columns the Instances panel shows, and
 	// in what order. Valid values: "name", "status", "type", "ipv4", "ipv6",
-	// "service", "snapshots". Unknown values are ignored; omitted values are
-	// simply not shown.
+	// "project", "service", "snapshots". Unknown values are ignored; omitted
+	// values are simply not shown. "project" is added automatically in the
+	// all-projects view.
 	InstanceColumns []string `yaml:"instanceColumns,omitempty"`
 }
 

@@ -199,7 +199,13 @@ func (gui *Gui) incusStatusContent() string {
 		label += " v" + version
 	}
 	scope := remote
-	if project := gui.IncusCommand.ProjectName(); project != "" {
+	if gui.IncusCommand.IsAllProjects() {
+		if scope == "" {
+			scope = gui.Tr.AllProjects
+		} else {
+			scope += "/" + gui.Tr.AllProjects
+		}
+	} else if project := gui.IncusCommand.ProjectName(); project != "" {
 		if scope == "" {
 			scope = project
 		} else {

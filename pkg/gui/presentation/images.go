@@ -15,13 +15,19 @@ const maxImageLabelWidth = 28
 // GetImageDisplayStrings renders one row of the images panel, roughly
 // `incus image list`'s columns minus the ones that are the same for every
 // local image.
-func GetImageDisplayStrings(image *commands.Image) []string {
-	return []string{
+func GetImageDisplayStrings(image *commands.Image, showProject bool) []string {
+	cells := []string{
 		utils.Truncate(image.Label(), maxImageLabelWidth),
 		utils.ColoredString(image.ShortFingerprint(), color.FgCyan),
 		utils.ColoredString(displayImageType(image), color.FgMagenta),
 		utils.ColoredString(displayImageSize(image), color.FgYellow),
 	}
+
+	if showProject {
+		cells = append([]string{utils.ColoredString(image.Image.Project, color.FgCyan)}, cells...)
+	}
+
+	return cells
 }
 
 func displayImageType(image *commands.Image) string {

@@ -8,6 +8,13 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
+func instanceInProject(project, name, status string) *commands.Instance {
+	instance := instanceWithStatus(name, status)
+	instance.Project = project
+
+	return instance
+}
+
 func instanceWithStatus(name, status string) *commands.Instance {
 	return &commands.Instance{
 		Name:     name,
@@ -50,6 +57,18 @@ func TestSortInstances(t *testing.T) {
 			name:     "same status sorts by name",
 			a:        instanceWithStatus("a", "Running"),
 			b:        instanceWithStatus("b", "Running"),
+			expected: true,
+		},
+		{
+			name:     "project groups ahead of name, in the all-projects view",
+			a:        instanceInProject("default", "zzz", "Running"),
+			b:        instanceInProject("demo", "aaa", "Running"),
+			expected: true,
+		},
+		{
+			name:     "project groups ahead of status too",
+			a:        instanceInProject("default", "zzz", "Stopped"),
+			b:        instanceInProject("demo", "aaa", "Running"),
 			expected: true,
 		},
 		{

@@ -8,13 +8,19 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func GetNetworkDisplayStrings(network *commands.Network) []string {
-	return []string{
+func GetNetworkDisplayStrings(network *commands.Network, showProject bool) []string {
+	cells := []string{
 		network.Name,
 		utils.ColoredString(network.Network.Type, color.FgMagenta),
 		displayNetworkManaged(network),
 		utils.ColoredString(strconv.Itoa(network.UsedByCount()), color.FgYellow),
 	}
+
+	if showProject {
+		cells = append([]string{utils.ColoredString(network.Network.Project, color.FgCyan)}, cells...)
+	}
+
+	return cells
 }
 
 // displayNetworkManaged marks the networks Incus controls; the rest are
