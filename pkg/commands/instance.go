@@ -145,11 +145,9 @@ func (i *Instance) ForceDelete() error {
 
 // asDeleteError translates the daemon's refusal to delete a running instance
 // into ErrInstanceRunning. incusd rejects it with a plain 400 whose body is
-// "Instance is running" (see instanceDelete in cmd/incusd/instance_delete.go)
-// - there's no dedicated error code to check for, so matching that message is
-// the only way to tell this case apart from other delete failures. Note that
-// the daemon counts a frozen instance as running too, so this can't be
-// replaced with an IsRunning() pre-check on our side.
+// "Instance is running" (instanceDelete in cmd/incusd/instance_delete.go) and
+// no dedicated error code, so the message is all there is to match on. An
+// IsRunning() pre-check wouldn't do: the daemon counts frozen as running.
 func asDeleteError(err error) error {
 	if err != nil && strings.Contains(strings.ToLower(err.Error()), "instance is running") {
 		return ErrInstanceRunning
@@ -163,12 +161,9 @@ func (i *Instance) IsRunning() bool {
 	return strings.EqualFold(i.Instance.Status, "Running")
 }
 
-// Addresses returns the instance's global-scope IP addresses for the given
-// address family ("inet" for IPv4, "inet6" for IPv6, matching
-// api.InstanceStateNetworkAddress.Family), sorted and excluding loopback.
-// These live in the instance's state, so this is empty until
-// IncusCommand.RefreshInstanceDetails has fetched full details in the
-// background.
+// Addresses returns the instance's global-scope IP addresses for an
+// api.InstanceStateNetworkAddress.Family ("inet"/"inet6"), sorted and
+// excluding loopback. Empty until RefreshInstanceDetails has run.
 func (i *Instance) Addresses(family string) []string {
 	full, ok := i.Full()
 	if !ok || full.State == nil {
@@ -193,18 +188,9 @@ func (i *Instance) Addresses(family string) []string {
 	return addresses
 }
 
-// ConsoleLog returns the current contents of the instance's console log ring
-// buffer as returned by a single fetch. This is a raw snapshot: despite the
-// daemon requesting ClearLog: false, each HTTP read of Incus's console log
-// endpoint appears to drain newly-buffered bytes (much like reading a FIFO)
-// rather than peeking at accumulated content - confirmed directly against
-// the `incus` CLI, not just this client: `incus console <name> --show-log`
-// run twice in a row shows real output on the first call and nothing on the
-// second, even though the instance kept running and (for a busy service
-// like nginx) kept producing output. Prefer TailConsoleLog for anything
-// that polls repeatedly, since a naive "replace displayed content with the
-// latest snapshot" loop built on this method will flicker to empty on every
-// tick where nothing new happened to be buffered.
+// ConsoleLog returns one raw fetch of the console log. The endpoint drains
+// on read, so each call returns only what buffered since the last one -
+// anything polling repeatedly wants TailConsoleLog instead.
 func (i *Instance) ConsoleLog() (string, error) {
 	reader, err := i.Client.GetInstanceConsoleLog(i.Name, &incus.InstanceConsoleLogArgs{})
 	if err != nil {
@@ -220,28 +206,15 @@ func (i *Instance) ConsoleLog() (string, error) {
 	return string(data), nil
 }
 
-// TailConsoleLog fetches the latest console log chunk and appends it to a
-// per-instance in-memory buffer, returning the accumulated content so far.
-// This gives repeated callers (the Logs tab's polling loop) a stable,
-// growing view despite the underlying endpoint's drain-on-read behavior -
-// see ConsoleLog's doc comment for why a plain repeated ConsoleLog call
-// doesn't work for that.
+// TailConsoleLog accumulates successive ConsoleLog fetches into a capped
+// per-instance buffer, giving pollers a stable growing view.
 //
-// That drain-on-read behavior only holds while the instance is actually
-// running: incusd reads the live console ring buffer in that case, but
-// once an instance is stopped it instead serves the persisted log file
-// as-is on every request - the same content back every time, not fresh
-// bytes. Naively re-fetching and re-appending every poll tick would flood
-// the buffer with duplicate messages once stopped, so once IsRunning() is
-// false we only fetch once (to pick up any final output) and then leave
-// the buffer alone until the instance starts running again -
-// GetInstanceConsoleLog doesn't expose response headers (e.g.
-// Last-Modified) through this client library to check staleness any
-// other way.
-//
-// A fetch error doesn't clear or replace the buffer - it's returned
-// alongside the last-known-good accumulated content, so a transient poll
-// failure doesn't blank out logs that were already visible.
+// Drain-on-read only holds while the instance runs; once stopped, incusd
+// serves the whole persisted log file on every request, so we fetch once
+// after a stop and then leave the buffer alone - otherwise every tick
+// re-appends the entire log. A fetch error returns the last-known-good
+// buffer rather than clearing it, so a transient failure doesn't blank out
+// logs already on screen.
 func (i *Instance) TailConsoleLog() (string, error) {
 	if !i.IsRunning() {
 		i.logMutex.Lock()

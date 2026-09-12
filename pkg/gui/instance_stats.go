@@ -97,11 +97,8 @@ func formatNetworkInterface(network api.InstanceStateNetwork, padding int) strin
 	return output
 }
 
-// formatCPUUsage shows total CPU time consumed since the instance started,
-// not a percentage: Incus's API reports cumulative usage
-// (InstanceStateCPU.Usage, in nanoseconds), not an instantaneous rate, and
-// computing a rate would mean tracking deltas between polls ourselves. This
-// matches what `incus info <name>` itself shows ("CPU usage (in seconds)").
+// formatCPUUsage shows cumulative CPU time, not a percentage: the API
+// reports total nanoseconds since start, and `incus info` shows the same.
 func formatCPUUsage(cpu api.InstanceStateCPU) string {
 	if cpu.Usage <= 0 {
 		return "(no usage reported)"

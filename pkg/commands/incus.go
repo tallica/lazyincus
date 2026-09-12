@@ -48,20 +48,10 @@ var _ io.Closer = &IncusCommand{}
 // so that Instance doesn't need to import the whole command package.
 type LimitedIncusCommand interface{}
 
-// NewIncusCommand connects to Incus using the same remote-resolution logic
-// as the `incus` CLI itself: it loads ~/.config/incus/config.yml (or the
-// platform equivalent, or $INCUS_CONF) and connects to the configured
-// default remote.
-//
-// This matters beyond Linux hosts running incusd directly: on macOS/Windows
-// setups (e.g. `colima start --runtime incus`), the daemon runs inside a VM
-// and the "local" unix socket lives at a path recorded in that remote's
-// config (e.g. unix:///Users/you/.colima/default/incus.sock), not at any of
-// the standard Linux socket locations. Reimplementing just the bare
-// $INCUS_SOCKET/$INCUS_DIR/default-path resolution would miss that case
-// entirely, so we defer to Incus's own shared/cliconfig package, which
-// already knows how to resolve remotes, unix-socket paths, and
-// TLS-authenticated connections consistently with the CLI.
+// NewIncusCommand connects to the CLI's configured default remote via
+// Incus's own cliconfig. Resolving the socket path ourselves would miss
+// setups where the daemon runs in a VM (colima on macOS), whose socket
+// lives at a path recorded in the remote's config.
 func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, errorChan chan error) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {

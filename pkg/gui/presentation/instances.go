@@ -49,13 +49,10 @@ func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.I
 	return cells
 }
 
-// displayInstanceType mirrors the `incus list` TYPE column: "vm" or
-// "container", with an "(app)" suffix for OCI-based application containers
-// (`incus` itself checks the volatile.container.oci config key - see
-// cmd/incus/list.go's typeColumnData). That flag only appears in the
-// instance's expanded config, which we only have once RefreshInstanceDetails
-// has fetched full details in the background, so this shows the bare type
-// until then.
+// displayInstanceType mirrors the `incus list` TYPE column, including the
+// "(app)" suffix for OCI application containers that the CLI derives from
+// volatile.container.oci (cmd/incus/list.go, typeColumnData). That key is in
+// the expanded config, so the suffix appears only once details are fetched.
 func displayInstanceType(instance *commands.Instance) string {
 	if instance.IsVM() {
 		return "vm"

@@ -279,11 +279,9 @@ func (gui *Gui) handleInstancesExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.instanceExecShell(inst)
 }
 
-// instanceExecShell shells out to the incus CLI to exec an interactive shell
-// into the instance. We use the CLI here (mirroring how lazydocker shells out
-// to `docker exec`/`docker attach`) rather than driving the client library's
-// websocket-based ExecInstance directly, since that would require plumbing
-// the TUI's suspended terminal through as the exec session's stdio.
+// instanceExecShell shells out to the incus CLI rather than driving the
+// client library's websocket ExecInstance, which would mean plumbing the
+// suspended TUI's terminal through as the session's stdio.
 func (gui *Gui) instanceExecShell(instance *commands.Instance) error {
 	if !instance.IsRunning() {
 		return gui.createErrorPanel(gui.Tr.CannotAttachStoppedInstanceError)

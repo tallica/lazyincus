@@ -12,14 +12,9 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// renderInstanceLogsToMain periodically re-fetches the instance's console log
-// and renders it to the main panel. Unlike Docker's `container logs --follow`,
-// Incus's console log endpoint is pull-based and drains newly-buffered bytes
-// on each read rather than returning the full accumulated content (see
-// Instance.ConsoleLog's doc comment), so we accumulate client-side via
-// TailConsoleLog rather than replacing the display with each raw snapshot -
-// otherwise logs flicker to "nothing to display" on every tick where
-// nothing new happened to be buffered since the last poll.
+// renderInstanceLogsToMain polls TailConsoleLog rather than ConsoleLog: the
+// endpoint drains on read, so rendering each raw snapshot would blank the
+// panel on every tick with nothing new buffered.
 func (gui *Gui) renderInstanceLogsToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {

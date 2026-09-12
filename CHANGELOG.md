@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gui.screenMode: "full"` silently did nothing: the docs and `config.example.yml` documented `full` while the code only matched `fullscreen`, so `full` fell through to the default. Both spellings are now accepted.
 
 ### Changed
+- Trimmed the verbose comments carried over from the initial port — the console-log drain-on-read behavior alone was explained in three doc comments plus CLAUDE.md. Code comments now carry what the code can't say; the background lives in CLAUDE.md.
 - `docs/Config.md` and `config.example.yml` described `ignore` as matching instance names; it matches any displayed column, status and IP addresses included.
 - CLAUDE.md cut from 381 to ~180 lines: the "intentionally dropped" list and the unverified-VM questions now live only in BACKLOG.md (where the work items already were), the rename map and package layout moved to docs/Port.md, and resolved open questions were dropped in favour of the changelog entries that already describe them.
 

@@ -8,11 +8,8 @@ import (
 	"github.com/tallica/lazyincus/pkg/tasks"
 )
 
-// renderInstanceEnv shows the instance's environment variables, set via
-// Incus's `environment.*` config keys (e.g. `incus config set <name>
-// environment.FOO=bar`) - see doc/instance-exec.md. Read from
-// ExpandedConfig so profile-inherited variables show up too, not just
-// ones set directly on the instance.
+// renderInstanceEnv shows Incus's `environment.*` config keys, read from
+// ExpandedConfig so profile-inherited variables show up too.
 func (gui *Gui) renderInstanceEnv(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewSimpleRenderStringTask(func() string { return gui.instanceEnvStr(instance) })
 }

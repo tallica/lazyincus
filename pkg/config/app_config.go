@@ -181,12 +181,10 @@ func NewAppConfig(name, version, commit, date string, buildSource string, debugg
 	return appConfig, nil
 }
 
-// configDirForVendor picks the config directory to use, checked in order:
-// CONFIG_DIR, XDG_CONFIG_HOME, an existing ~/.config/<projectName> (even on
-// macOS, where xdg.New's ConfigHome() would otherwise only ever look at
-// ~/Library/Application Support - checking ~/.config first lets users who
-// already have a config there, e.g. via dotfiles synced from Linux, be
-// picked up without moving anything), and finally the platform default.
+// configDirForVendor checks CONFIG_DIR, XDG_CONFIG_HOME, an existing
+// ~/.config/<projectName>, then the platform default. The third case is why
+// macOS users with a config synced from Linux are picked up without moving
+// it: xdg.New would only ever look at ~/Library/Application Support.
 func configDirForVendor(vendor string, projectName string) string {
 	envConfigDir := os.Getenv("CONFIG_DIR")
 	if envConfigDir != "" {

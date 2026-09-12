@@ -12,12 +12,8 @@ import (
 // uses for snapshot timestamps.
 const dateTimeFormat = "2006/01/02 15:04 MST"
 
-// renderInstanceSnapshotsToMain is a static (non-polling) render, like the
-// Config tab: snapshots don't change from second to second the way logs or
-// resource usage do, so there's no need for a ticker here. Read-only for
-// now - no create/restore/delete actions, since those need per-row
-// selection and keybindings that don't fit this plain-text main-panel tab
-// model (see CLAUDE.md's Instances panel section for the reasoning).
+// renderInstanceSnapshotsToMain renders once rather than on a ticker, like
+// the Config tab: snapshots don't change second to second.
 func (gui *Gui) renderInstanceSnapshotsToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewSimpleRenderStringTask(func() string { return gui.instanceSnapshotsStr(instance) })
 }
