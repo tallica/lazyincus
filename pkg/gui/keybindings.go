@@ -216,6 +216,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "instances",
+			Key:         'a',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleInstanceAttach,
+			Description: gui.Tr.Attach,
+		},
+		{
+			ViewName:    "instances",
 			Key:         'E',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleInstancesExecShell,

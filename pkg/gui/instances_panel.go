@@ -287,16 +287,39 @@ func (gui *Gui) handleInstancesExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.instanceExecShell(inst)
 }
 
+func (gui *Gui) handleInstanceAttach(g *gocui.Gui, v *gocui.View) error {
+	inst, err := gui.Panels.Instances.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	return gui.instanceAttachConsole(inst)
+}
+
+// instanceAttachConsole shells out to `incus console`, the analog of
+// lazydocker's `docker attach`: it hands the terminal to the instance's
+// console rather than starting a process in it the way exec does.
+func (gui *Gui) instanceAttachConsole(instance *commands.Instance) error {
+	if !instance.IsRunning() {
+		return gui.createErrorPanel(gui.Tr.CannotAttachStoppedInstanceError)
+	}
+
+	cmd := gui.OSCommand.NewCmd("incus", "console", instance.Name)
+
+	// No detach hint from us: `incus console` prints its own on connect.
+	return gui.runSubprocess(cmd)
+}
+
 // instanceExecShell shells out to the incus CLI rather than driving the
 // client library's websocket ExecInstance, which would mean plumbing the
 // suspended TUI's terminal through as the session's stdio.
 func (gui *Gui) instanceExecShell(instance *commands.Instance) error {
 	if !instance.IsRunning() {
-		return gui.createErrorPanel(gui.Tr.CannotAttachStoppedInstanceError)
+		return gui.createErrorPanel(gui.Tr.CannotExecStoppedInstanceError)
 	}
 
 	cmd := gui.OSCommand.NewCmd("incus", "exec", instance.Name, "--", "sh", "-c",
 		"exec $(command -v bash || command -v ash || command -v sh)")
 
-	return gui.runSubprocessWithMessage(cmd, gui.Tr.DetachFromInstanceShortCut)
+	return gui.runSubprocessWithMessage(cmd, gui.Tr.ExitShellToReturn)
 }

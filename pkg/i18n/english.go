@@ -20,9 +20,9 @@ type TranslationSet struct {
 	ConfirmQuit                                string
 	ErrorOccurred                              string
 	ConnectionFailed                           string
-	UnattachableInstanceError                  string
 	WaitingForInstanceInfo                     string
 	CannotAttachStoppedInstanceError           string
+	CannotExecStoppedInstanceError             string
 	CannotAccessIncusSocketError               string
 	CannotKillChildError                       string
 
@@ -81,7 +81,7 @@ type TranslationSet struct {
 	NoSnapshots                  string
 	RemoveWithForce              string
 	PressEnterToReturn           string
-	DetachFromInstanceShortCut   string
+	ExitShellToReturn            string
 	FilterList                   string
 	SortInstancesByState         string
 
@@ -127,9 +127,9 @@ func englishSet() TranslationSet {
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
 		ConnectionFailed:                 "connection to the incus daemon failed. You may need to restart the incus daemon",
-		UnattachableInstanceError:        "Instance does not support attaching a shell",
 		WaitingForInstanceInfo:           "Cannot proceed until incus gives us more information about the instance. Please retry in a few moments.",
-		CannotAttachStoppedInstanceError: "You cannot exec into a stopped instance, you need to start it first (which you can do with the 'S' key)",
+		CannotAttachStoppedInstanceError: "You cannot attach to a stopped instance's console, you need to start it first (which you can do with the 'S' key)",
+		CannotExecStoppedInstanceError:   "You cannot exec into a stopped instance, you need to start it first (which you can do with the 'S' key)",
 		CannotAccessIncusSocketError:     "Can't access the incus socket.\nRun lazyincus as a user in the 'incus' group, or read https://linuxcontainers.org/incus/docs/main/installing/",
 		CannotKillChildError:             "Waited three seconds for child process to stop. There may be an orphan process that continues to run on your system.",
 
@@ -159,7 +159,7 @@ func englishSet() TranslationSet {
 		Start:                "start",
 		PreviousContext:      "previous tab",
 		NextContext:          "next tab",
-		Attach:               "attach",
+		Attach:               "attach to console",
 		ViewLogs:             "view logs",
 		ExecShell:            "exec shell",
 		CopyIPv4:             "copy IPv4 address",
@@ -207,12 +207,12 @@ func englishSet() TranslationSet {
 		NoSnapshots: "No snapshots",
 		NoInstance:  "No instance",
 
-		ConfirmQuit:                "Are you sure you want to quit?",
-		StopInstance:               "Are you sure you want to stop this instance?",
-		DeleteInstance:             "Are you sure you want to delete this instance?",
-		NotEnoughSpace:             "Not enough space to render panels",
-		PressEnterToReturn:         "Press enter to return to lazyincus (this prompt can be disabled in your config by setting `gui.returnImmediately: true`)",
-		DetachFromInstanceShortCut: "By default, to detach from the instance press ctrl-p then ctrl-q",
+		ConfirmQuit:        "Are you sure you want to quit?",
+		StopInstance:       "Are you sure you want to stop this instance?",
+		DeleteInstance:     "Are you sure you want to delete this instance?",
+		NotEnoughSpace:     "Not enough space to render panels",
+		PressEnterToReturn: "Press enter to return to lazyincus (this prompt can be disabled in your config by setting `gui.returnImmediately: true`)",
+		ExitShellToReturn:  "Exit the shell to return to lazyincus",
 
 		No:  "no",
 		Yes: "yes",

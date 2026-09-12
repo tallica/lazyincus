@@ -43,12 +43,9 @@ Not planned as lazydocker has them:
 
 ### Per-instance actions
 
-- [ ] **Attach (`a`)** — the most substantive missing action. The Incus
-      analog is `incus console <name>` (plus `--type vga` for VMs). Three
-      translation strings were ported for it (`Attach`,
-      `UnattachableInstanceError`, `DetachFromInstanceShortCut`) and none are
-      wired to anything. `instanceExecShell` already shells out via
-      `runSubprocessWithMessage`, so this is close to a copy of that handler.
+- [x] **Attach (`a`)** — `incus console <name>`. VMs can also take
+      `--type vga` for a graphical console; not offered, since it opens a
+      separate viewer rather than using the terminal.
 - [ ] **Open in browser (`w`)** — lazydocker opens the container's first HTTP
       port. Incus has no port-mapping concept, but "open `http://<ipv4>`" is
       the obvious translation, and `OSCommand.OpenLink` already exists (the
@@ -78,13 +75,12 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — thirteen are defined but never
+- [ ] **Unused translation strings** — twelve are defined but never
       referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`,
-      `ConnectionFailed`, `UnattachableInstanceError`, `ForceRemove`,
-      `Attach`, `NoInstance`, `RemoveWithForce`, `FilterList`,
-      `SortInstancesByState`, `CreditsTitle`, `CannotDisplayEnvVariables`.
-      Some mark genuinely half-ported features (attach); the rest are dead
-      weight. Wire up or delete.
+      `ConnectionFailed`, `ForceRemove`, `NoInstance`, `RemoveWithForce`,
+      `FilterList`, `SortInstancesByState`, `CreditsTitle`,
+      `CannotDisplayEnvVariables`. Dead weight now that attach is wired up.
+      Wire up or delete.
 
 ## Not lazydocker-shaped
 

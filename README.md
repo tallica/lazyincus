@@ -28,7 +28,8 @@ below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 - An [Incus](https://linuxcontainers.org/incus/) daemon (`incusd`) running
   locally, reachable via its unix socket.
 - Your user in the `incus`/`incus-admin` group (or root) for socket access.
-- The `incus` CLI on `PATH` — used for the exec-into-instance feature.
+- The `incus` CLI on `PATH` — used for attaching to a console and for
+  exec-into-instance.
 - Go 1.27+ to build from source.
 
 ## Install / run
@@ -78,6 +79,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `m` | Jump to Logs tab |
 | `n` | New snapshot (snapshots panel) |
 | `r` | Restart an instance, or restore a snapshot |
+| `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |

@@ -184,6 +184,9 @@ against a live daemon or read out of the Incus source, not inferred.
   fetches just once after a stop — otherwise every poll re-appends the whole
   log. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
+- **Attach**: `a` shells out to `incus console <name>`, the analog of
+  lazydocker's `docker attach`. No detach hint from us - the CLI prints its
+  own (`ctrl+a q`) on connect.
 - **Exec**: deliberately not the client library's `ExecInstance` websocket
   API — that needs the session's stdio wired into the terminal, which is
   nontrivial to thread through gocui's suspend/resume model (raw mode,

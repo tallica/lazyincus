@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `a` attaches to the selected instance's console, shelling out to `incus console` the way `E` does for exec. Detaching is Incus's own ctrl+a q, which it prints on connect.
+
+### Fixed
+- The message shown when exec'ing into an instance said to press ctrl-p then ctrl-q to detach — Docker's sequence, carried over by the port. Incus's exec ends when the shell exits, which is what it says now.
+
 ## [0.4.0] - 2026-09-12
 
 ### Added
