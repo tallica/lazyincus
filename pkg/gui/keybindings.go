@@ -304,6 +304,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "",
+			Key:         'P',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSwitchProject,
+			Description: gui.Tr.SwitchProject,
+		},
+		{
+			ViewName:    "",
 			Key:         '+',
 			Handler:     wrappedHandler(gui.nextScreenMode),
 			Description: gui.Tr.LcNextScreenMode,

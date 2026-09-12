@@ -19,7 +19,6 @@ type IncusCommand struct {
 	OSCommand     *OSCommand
 	Tr            *i18n.TranslationSet
 	Config        *config.AppConfig
-	Client        incus.InstanceServer
 	ErrorChan     chan error
 	InstanceMutex deadlock.Mutex
 
@@ -30,6 +29,11 @@ type IncusCommand struct {
 	// GetServer(); empty if that call failed.
 	ServerVersion string
 	ServerName    string
+
+	// Guarded by clientMutex: both change when the user switches project.
+	clientMutex deadlock.Mutex
+	client      incus.InstanceServer
+	projectName string
 
 	connMutex deadlock.Mutex
 	connected bool
@@ -70,14 +74,15 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 	}
 
 	command := &IncusCommand{
-		Log:        log,
-		OSCommand:  osCommand,
-		Tr:         tr,
-		Config:     cfg,
-		Client:     client,
-		ErrorChan:  errorChan,
-		RemoteName: cliCfg.DefaultRemote,
-		connected:  true,
+		Log:         log,
+		OSCommand:   osCommand,
+		Tr:          tr,
+		Config:      cfg,
+		client:      client,
+		ErrorChan:   errorChan,
+		RemoteName:  cliCfg.DefaultRemote,
+		projectName: clientProjectName(client),
+		connected:   true,
 	}
 
 	// Best-effort: a failed GetServer() shouldn't prevent startup, since
@@ -91,6 +96,47 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 	}
 
 	return command, nil
+}
+
+// clientProjectName reports the project a client is scoped to. An empty
+// project - a client that never had UseProject called on it - means default.
+func clientProjectName(client incus.InstanceServer) string {
+	info, err := client.GetConnectionInfo()
+	if err != nil || info.Project == "" {
+		return api.ProjectDefaultName
+	}
+
+	return info.Project
+}
+
+// Client returns the current instance server. A method rather than a field
+// because switching project swaps it out from under whoever holds it.
+func (c *IncusCommand) Client() incus.InstanceServer {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	return c.client
+}
+
+// ProjectName is the Incus project the instance list is currently scoped to.
+func (c *IncusCommand) ProjectName() string {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	return c.projectName
+}
+
+// GetProjectNames lists the projects on the server.
+func (c *IncusCommand) GetProjectNames() ([]string, error) {
+	return c.Client().GetProjectNames()
+}
+
+// UseProject re-scopes the client to the given project. Purely local: the
+// client just carries a different project in its requests, so nothing fails.
+func (c *IncusCommand) UseProject(name string) {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	c.client = c.client.UseProject(name)
+	c.projectName = name
 }
 
 func (c *IncusCommand) Close() error {
@@ -118,7 +164,9 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 	c.InstanceMutex.Lock()
 	defer c.InstanceMutex.Unlock()
 
-	apiInstances, err := c.Client.GetInstances(api.InstanceTypeAny)
+	client := c.Client()
+
+	apiInstances, err := client.GetInstances(api.InstanceTypeAny)
 	if err != nil {
 		c.setConnected(false)
 		return nil, err
@@ -141,7 +189,6 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 		if inst == nil {
 			inst = &Instance{
 				Name:         apiInstance.Name,
-				Client:       c.Client,
 				OSCommand:    c.OSCommand,
 				Log:          c.Log,
 				IncusCommand: c,
@@ -149,6 +196,10 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 			}
 		}
 
+		// Reassigned every refresh, not just at construction: an instance
+		// reused by name across a project switch would otherwise keep a
+		// client pointed at the project it came from.
+		inst.Client = client
 		inst.Instance = apiInstance
 		ownInstances[i] = inst
 	}
@@ -159,10 +210,12 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 // RefreshInstanceDetails fetches the full details (including state) for each
 // instance in the background.
 func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {
+	client := c.Client()
+
 	for _, inst := range instances {
 		inst := inst
 		go func() {
-			full, _, err := c.Client.GetInstanceFull(inst.Name)
+			full, _, err := client.GetInstanceFull(inst.Name)
 			if err != nil {
 				c.Log.Warn(err)
 				return

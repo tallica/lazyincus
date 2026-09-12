@@ -54,7 +54,8 @@ Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
 ## Usage
 
 The app currently shows one panel: **Instances**, listing both containers
-and VMs. Its columns (name, status, type, IPv4, IPv6, snapshot count) can be
+and VMs, scoped to one Incus project at a time (`P` switches project; the
+footer shows the current remote and project). Its columns (name, status, type, IPv4, IPv6, snapshot count) can be
 reordered or hidden via `gui.instanceColumns` in the config file - see
 [docs/Config.md](docs/Config.md).
 
@@ -72,6 +73,7 @@ reordered or hidden via `gui.instanceColumns` in the config file - see
 | `m` | Jump to Logs tab |
 | `E` | Exec a shell into the instance |
 | `y` | Copy the instance's IPv4 address to the clipboard |
+| `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
 | `/` | Filter |

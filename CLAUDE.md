@@ -121,6 +121,9 @@ and skips anything unrecognized, so adding a new column means adding one
 entry to that map plus the default/valid-values list in
 `pkg/config/app_config.go`.
 
+The list is scoped to one Incus project (see "Projects" below); `P` switches
+between them.
+
 Keybindings are listed in [README.md](README.md#usage) (the canonical
 source — keep that table current when keybindings change, not this file).
 Implementation details the README table doesn't cover:
@@ -180,6 +183,12 @@ across tabs instead):
   remote-context system analogous to lazydocker's `determineDockerHost()` /
   docker-context / `DOCKER_HOST` dance, it just isn't needed on a native
   Linux host talking to its own local daemon directly.
+- **Projects**: Incus scopes instances (and networks, volumes, profiles) per
+  project; the client is scoped to one at a time, `default` unless the
+  remote says otherwise. `UseProject` swaps `IncusCommand.client` under
+  `clientMutex`, hence the `Client()` accessor rather than a field, and
+  `GetInstances` reassigns `Instance.Client` on every refresh. `P`
+  (`handleSwitchProject` in `pkg/gui/projects.go`) switches.
 - **List instances**: `Client.GetInstances(api.InstanceTypeAny)` returns
   `[]api.Instance` (name, status, status code, type, created-at). Existing
   `*Instance` objects are matched by name and reused across refreshes so any

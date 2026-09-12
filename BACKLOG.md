@@ -115,11 +115,10 @@ own merits.
       a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
-- [ ] **Profiles / projects / remotes** — no panels or switching UI for any
-      of them. The daemon connection uses whichever remote is
-      `default-remote` in the user's Incus config and never offers to change
-      it. Project switching in particular is now more pressing than it looks:
-      see [incus-compose integration](#incus-compose-integration).
+- [ ] **Profiles / remotes** — no panels or switching UI for either. The
+      daemon connection uses whichever remote is `default-remote` in the
+      user's Incus config and never offers to change it. (Projects now have
+      a switcher — see [incus-compose integration](#incus-compose-integration).)
 
 Deliberately deferred (don't re-pitch unprompted):
 
@@ -170,9 +169,10 @@ The client API needed is small: `GetProjectNames()` / `GetProjects()` to
 enumerate, and either `client.UseProject(name)` or `cliCfg.ProjectOverride`
 before `GetInstanceServer` to switch.
 
-- [ ] Show which project the instance list is scoped to (footer already shows
-      remote + daemon version — the natural place)
-- [ ] A project switcher (menu of `GetProjectNames()`, re-scoping the client)
+- [x] Show which project the instance list is scoped to (footer shows it
+      next to the remote, e.g. `Incus v6.11 (colima/default) ●`)
+- [x] A project switcher (`P`: menu of `GetProjectNames()`, re-scoping the
+      client via `UseProject`)
 - [ ] Decide whether an "all projects" aggregate view is worth it, or whether
       switching is enough
 

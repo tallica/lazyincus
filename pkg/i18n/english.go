@@ -83,6 +83,8 @@ type TranslationSet struct {
 	FilterPrompt     string
 
 	FocusInstances string
+	SwitchProject  string
+	ProjectsTitle  string
 }
 
 func englishSet() TranslationSet {
@@ -172,5 +174,7 @@ func englishSet() TranslationSet {
 		FilterPrompt:     "filter",
 
 		FocusInstances: "focus instances panel",
+		SwitchProject:  "switch project",
+		ProjectsTitle:  "Projects",
 	}
 }

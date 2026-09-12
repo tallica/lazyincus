@@ -165,10 +165,9 @@ func (gui *Gui) getInformationContent() string {
 	return donate + " " + informationStr
 }
 
-// incusStatusContent renders the connected Incus remote/server version and
-// a connection indicator, e.g. "Incus v6.5 (colima) ● " (connected, green)
-// or "Incus (colima) ✗ " (disconnected, red) if the last background refresh
-// failed. Empty if we never managed to fetch a server version at all.
+// incusStatusContent renders the server version, the remote and project the
+// instance list is scoped to, and a connection indicator - e.g.
+// "Incus v6.5 (colima/default) ● ". Empty until we have a server version.
 func (gui *Gui) incusStatusContent() string {
 	remote := gui.IncusCommand.RemoteName
 	version := gui.IncusCommand.ServerVersion
@@ -180,8 +179,16 @@ func (gui *Gui) incusStatusContent() string {
 	if version != "" {
 		label += " v" + version
 	}
-	if remote != "" {
-		label += " (" + remote + ")"
+	scope := remote
+	if project := gui.IncusCommand.ProjectName(); project != "" {
+		if scope == "" {
+			scope = project
+		} else {
+			scope += "/" + project
+		}
+	}
+	if scope != "" {
+		label += " (" + scope + ")"
 	}
 
 	if gui.IncusCommand.IsConnected() {
