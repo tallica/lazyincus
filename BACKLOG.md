@@ -86,8 +86,6 @@ Not planned:
 
 Not planned:
 
-- **Top tab** (per-instance process list) — also awkward on Incus: the API
-  reports a process *count*, not a list.
 - **Stats history / graphing** — the Stats tab is point-in-time only;
   lazydocker's `RecordedStats`/graph config machinery wasn't ported.
 - **Non-English translations**, **Windows support**.

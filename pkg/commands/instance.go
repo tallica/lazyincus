@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +37,11 @@ type Instance struct {
 	logMutex          deadlock.Mutex
 	logBuffer         strings.Builder
 	stoppedLogFetched bool
+
+	topMutex deadlock.Mutex
+	// topCommand is whichever of topCommands last worked for this instance,
+	// so the Top tab's poll doesn't re-probe the ones that don't on every tick.
+	topCommand []string
 }
 
 // maxConsoleLogBufferBytes caps how much accumulated console output
@@ -110,6 +116,10 @@ func (i *Instance) Unfreeze() error {
 // instance because it was still running. Callers can catch this to offer a
 // force-stop-then-delete flow (see ForceDelete).
 var ErrInstanceRunning = errors.New("instance is running")
+
+// ErrInstanceNotRunning is returned by operations that need a running
+// instance, such as listing its processes.
+var ErrInstanceNotRunning = errors.New("instance is not running")
 
 // Delete deletes the instance. Incus refuses to delete an instance that isn't
 // stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
@@ -256,4 +266,105 @@ func (i *Instance) appendToLogBuffer(data []byte) {
 		i.logBuffer.Reset()
 		i.logBuffer.WriteString(trimmed)
 	}
+}
+
+// topCommands are tried in order until one exits cleanly with output. Full
+// `ps` flags aren't portable: busybox's ps (Alpine, most OCI images) ignores
+// BSD-style options and prints its own fixed columns, while util-linux's
+// needs them to show anything beyond the current terminal's processes.
+var topCommands = [][]string{
+	{"ps", "-eo", "pid,user,pcpu,pmem,args"},
+	{"ps", "aux"},
+	{"ps"},
+}
+
+// Top lists the processes running inside the instance. Incus's API only
+// reports a process count, so this execs `ps` in the instance itself -
+// which needs the guest agent on a VM, and a `ps` binary in the image.
+func (i *Instance) Top() (string, error) {
+	if !i.IsRunning() {
+		return "", ErrInstanceNotRunning
+	}
+
+	var lastErr error
+
+	for _, command := range i.candidateTopCommands() {
+		output, err := i.exec(command)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if strings.TrimSpace(output) != "" {
+			i.setTopCommand(command)
+			return output, nil
+		}
+	}
+
+	i.setTopCommand(nil)
+
+	if lastErr != nil {
+		return "", lastErr
+	}
+
+	return "", nil
+}
+
+func (i *Instance) candidateTopCommands() [][]string {
+	i.topMutex.Lock()
+	cached := i.topCommand
+	i.topMutex.Unlock()
+
+	if cached == nil {
+		return topCommands
+	}
+
+	return append([][]string{cached}, topCommands...)
+}
+
+func (i *Instance) setTopCommand(command []string) {
+	i.topMutex.Lock()
+	defer i.topMutex.Unlock()
+	i.topCommand = command
+}
+
+// exec runs a command in the instance and returns its stdout, using the
+// client library's websocket exec rather than the `incus` CLI: this runs on
+// a poll, so spawning a process per tick would be wasteful, and nothing here
+// needs a terminal attached.
+func (i *Instance) exec(command []string) (string, error) {
+	var stdout, stderr bytes.Buffer
+
+	dataDone := make(chan bool)
+
+	op, err := i.Client.ExecInstance(i.Name, api.InstanceExecPost{
+		Command:   command,
+		WaitForWS: true,
+	}, &incus.InstanceExecArgs{
+		Stdout:   &stdout,
+		Stderr:   &stderr,
+		DataDone: dataDone,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if err := op.Wait(); err != nil {
+		return "", err
+	}
+
+	// The websockets carrying stdout/stderr outlive the operation itself, so
+	// the buffers aren't complete until this closes.
+	<-dataDone
+
+	if code, ok := op.Get().Metadata["return"].(float64); ok && code != 0 {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = fmt.Sprintf("%s exited with status %d", command[0], int(code))
+		}
+
+		return "", errors.New(message)
+	}
+
+	return stdout.String(), nil
 }

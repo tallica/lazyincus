@@ -71,9 +71,13 @@ type TranslationSet struct {
 	ConfigTitle               string
 	EnvTitle                  string
 	SnapshotsTitle            string
+	TopTitle                  string
 	CreditsTitle              string
 	NothingToDisplay          string
 	CannotDisplayEnvVariables string
+
+	CannotListProcesses                string
+	CannotListProcessesStoppedInstance string
 
 	No  string
 	Yes string
@@ -150,10 +154,13 @@ func englishSet() TranslationSet {
 		ConfigTitle:    "Config",
 		EnvTitle:       "Env",
 		SnapshotsTitle: "Snapshots",
+		TopTitle:       "Top",
 		CreditsTitle:   "About",
 
-		NothingToDisplay:          "Nothing to display",
-		CannotDisplayEnvVariables: "Something went wrong while displaying instance details",
+		NothingToDisplay:                   "Nothing to display",
+		CannotListProcesses:                "Could not list processes.\n\n`ps` has to exist inside the instance, and a VM also\nneeds the Incus guest agent running.",
+		CannotListProcessesStoppedInstance: "You cannot list the processes of a stopped instance (start it with the 'S' key)",
+		CannotDisplayEnvVariables:          "Something went wrong while displaying instance details",
 
 		NoInstances: "No instances",
 		NoSnapshots: "No snapshots",

@@ -43,6 +43,11 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 						Title:  gui.Tr.SnapshotsTitle,
 						Render: gui.renderInstanceSnapshotsToMain,
 					},
+					{
+						Key:    "top",
+						Title:  gui.Tr.TopTitle,
+						Render: gui.renderInstanceTopToMain,
+					},
 				}
 			},
 			GetItemContextCacheKey: func(instance *commands.Instance) string {

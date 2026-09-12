@@ -61,7 +61,7 @@ reordered or hidden via `gui.instanceColumns` in the config file - see
 | Key | Action |
 |---|---|
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `enter` | Focus main panel (Stats / Logs / Config / Env / Snapshots tabs) |
+| `enter` | Focus main panel (Stats / Logs / Config / Env / Snapshots / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start |
 | `s` | Stop |
@@ -91,7 +91,7 @@ Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 - Services/Project panels (lazydocker's docker-compose view — Incus has no
   direct equivalent)
 - Custom and bulk commands
-- Top tab (per-instance process list) and historical resource-usage graphing
+- Historical resource-usage graphing (the Stats tab is point-in-time only)
 - Non-English translations
 - Windows support
 

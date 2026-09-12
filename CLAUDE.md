@@ -70,6 +70,12 @@ up:
 - **Config** — YAML dump of `api.InstanceFull`.
 - **Env** — `environment.*` entries from `ExpandedConfig` (expanded, so
   profile-inherited variables show up too).
+- **Top** — process list, polled every two seconds. Incus's API reports a
+  process *count* and nothing more, so this execs `ps` inside the instance
+  over the client's websocket exec (no terminal needed, unlike the `E`
+  shell-out). Images without a `ps` and VMs without the guest agent get the
+  daemon's error instead of a list; the flag set that works is cached per
+  instance, since busybox and util-linux `ps` disagree on all of them.
 - **Snapshots** — read-only table of `InstanceFull.Snapshots`. No size
   column, matching `incus info`: `InstanceSnapshot.Size` comes back unset
   from `GetInstanceFull` and a real size needs a per-snapshot request.
