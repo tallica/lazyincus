@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"fmt"
+	"github.com/samber/lo"
 	"strings"
 	"time"
 
@@ -74,7 +75,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
 			return presentation.GetInstanceDisplayStrings(
-				&gui.Config.UserConfig.Gui, instance, gui.IncusCommand.IsAllProjects())
+				&gui.Config.UserConfig.Gui, instance, gui.State.SpansProjects.Instances)
 		},
 	}
 }
@@ -139,6 +140,9 @@ func (gui *Gui) refreshInstances() error {
 	if err != nil {
 		return err
 	}
+
+	gui.State.SpansProjects.Instances = spansMultipleProjects(
+		lo.Map(instances, func(instance *commands.Instance, _ int) string { return instance.Project }))
 
 	gui.Panels.Instances.SetItems(instances)
 

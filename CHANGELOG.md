@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- "all projects" in the `P` menu lists every project's instances, images, volumes and networks at once, each row carrying the project it came from. Actions run against that project rather than whichever one the client is scoped to, so starting, deleting or snapshotting an instance from another project works from the aggregate view.
+- All projects are now listed at once, and that's the default: instances, images, volumes and networks from every project, with `P` to scope down to a single one. Actions run against the project the item came from rather than whichever one the client is scoped to, so starting, deleting or snapshotting an instance from another project works from the aggregate view. A project column appears only on panels whose contents actually span projects, so a server with one project looks exactly as it did.
 - `a` attaches to the selected instance's console, shelling out to `incus console` the way `E` does for exec. Detaching is Incus's own ctrl+a q, which it prints on connect.
 
 ### Fixed

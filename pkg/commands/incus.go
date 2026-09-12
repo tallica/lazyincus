@@ -73,6 +73,11 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 		ErrorChan:   errorChan,
 		RemoteName:  cliCfg.DefaultRemote,
 		projectName: clientProjectName(client),
+		// Every project by default: a server with one project looks the same
+		// either way, and on a server with several, scoping to whichever one
+		// the user's remote happens to point at hides the rest with no hint
+		// that they're there.
+		allProjects: true,
 		connected:   true,
 	}
 

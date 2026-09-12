@@ -151,14 +151,16 @@ against a live daemon or read out of the Incus source, not inferred.
   `clientMutex`, hence the `Client()` accessor rather than a field, and
   `GetInstances` reassigns `Instance.Client` on every refresh. `P`
   (`handleSwitchProject` in `pkg/gui/projects.go`) switches.
-- **All projects**: "all projects" in that menu lists every project at once
-  through the `*AllProjects` endpoints. Each item then carries its own
+- **All projects**: the default, and "all projects" in that menu returns to
+  it. Lists every project at once through the `*AllProjects` endpoints. Each item then carries its own
   project-scoped client (`clientFor`), so actions go to the project the item
   came from - including `RefreshInstanceDetails`, which asks each instance's
   client rather than the command's, and the `incus` CLI shell-outs, which
   pass `--project`. Identity includes the project everywhere items are
   matched across refreshes: two projects can hold an instance, image or
-  volume of the same name.
+  volume of the same name. The project column is per-panel and driven by
+  `State.SpansProjects`, recomputed each refresh: a server with one project
+  shouldn't carry a column repeating it on every row.
 - **List instances**: `GetInstances(api.InstanceTypeAny)` returns
   `[]api.Instance`. Existing `*Instance` objects are matched by name and
   reused across refreshes so cached `full` details survive.

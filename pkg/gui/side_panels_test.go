@@ -39,3 +39,11 @@ func TestFocusPanelDescription(t *testing.T) {
 
 	assert.Equal(t, "focus instances panel", gui.focusPanelDescription("Instances"))
 }
+
+func TestSpansMultipleProjects(t *testing.T) {
+	assert.False(t, spansMultipleProjects(nil))
+	assert.False(t, spansMultipleProjects([]string{"default", "default"}))
+	assert.False(t, spansMultipleProjects([]string{"", "default", ""}))
+	assert.True(t, spansMultipleProjects([]string{"default", "demo"}))
+	assert.True(t, spansMultipleProjects([]string{"demo", "", "default"}))
+}

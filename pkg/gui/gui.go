@@ -83,6 +83,39 @@ type guiState struct {
 	// Maintains the state of manual filtering i.e. typing in a substring
 	// to filter on in the current panel.
 	Filter filterState
+
+	// Whether each panel's current contents span more than one project, and
+	// so need a project column to stay unambiguous. Recomputed on refresh:
+	// the all-projects view of a server with a single project reads better
+	// without a column repeating that project on every row.
+	SpansProjects spansProjects
+}
+
+type spansProjects struct {
+	Instances bool
+	Images    bool
+	Volumes   bool
+	Networks  bool
+}
+
+// spansMultipleProjects reports whether the given projects include more than
+// one distinct non-empty name.
+func spansMultipleProjects(projects []string) bool {
+	seen := ""
+
+	for _, project := range projects {
+		if project == "" {
+			continue
+		}
+
+		if seen != "" && project != seen {
+			return true
+		}
+
+		seen = project
+	}
+
+	return false
 }
 
 type filterState struct {

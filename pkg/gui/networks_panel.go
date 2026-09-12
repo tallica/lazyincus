@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"github.com/samber/lo"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -37,7 +38,7 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 			return a.Name < b.Name
 		},
 		GetTableCells: func(item *commands.Network) []string {
-			return presentation.GetNetworkDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+			return presentation.GetNetworkDisplayStrings(item, gui.State.SpansProjects.Networks)
 		},
 	}
 }
@@ -73,6 +74,9 @@ func (gui *Gui) refreshNetworks() error {
 	if err != nil {
 		return err
 	}
+
+	gui.State.SpansProjects.Networks = spansMultipleProjects(
+		lo.Map(networks, func(network *commands.Network, _ int) string { return network.Network.Project }))
 
 	gui.Panels.Networks.SetItems(networks)
 

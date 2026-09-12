@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"github.com/samber/lo"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -37,7 +38,7 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 			return sortVolumes(a, b)
 		},
 		GetTableCells: func(item *commands.Volume) []string {
-			return presentation.GetVolumeDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+			return presentation.GetVolumeDisplayStrings(item, gui.State.SpansProjects.Volumes)
 		},
 	}
 }
@@ -92,6 +93,9 @@ func (gui *Gui) refreshVolumes() error {
 	if err != nil {
 		return err
 	}
+
+	gui.State.SpansProjects.Volumes = spansMultipleProjects(
+		lo.Map(volumes, func(volume *commands.Volume, _ int) string { return volume.Volume.Project }))
 
 	gui.Panels.Volumes.SetItems(volumes)
 

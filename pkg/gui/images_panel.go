@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"github.com/samber/lo"
 	"strings"
 
 	"github.com/jesseduffield/gocui"
@@ -38,7 +39,7 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 			return sortImages(a, b)
 		},
 		GetTableCells: func(item *commands.Image) []string {
-			return presentation.GetImageDisplayStrings(item, gui.IncusCommand.IsAllProjects())
+			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images)
 		},
 	}
 }
@@ -87,6 +88,9 @@ func (gui *Gui) refreshImages() error {
 	if err != nil {
 		return err
 	}
+
+	gui.State.SpansProjects.Images = spansMultipleProjects(
+		lo.Map(images, func(image *commands.Image, _ int) string { return image.Image.Project }))
 
 	gui.Panels.Images.SetItems(images)
 

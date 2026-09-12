@@ -55,10 +55,11 @@ Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
 
 Five side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance is selected, **Images** (`3`),
-**Volumes** (`4`) and **Networks** (`5`). All are scoped to one Incus project at a
-time, or to every project at once — `P` switches, and the footer shows the
-current remote and scope. In the all-projects view each row gains a project
-column, and actions run against the project the item came from.
+**Volumes** (`4`) and **Networks** (`5`). All list every Incus project by default;
+`P` scopes them to a single project instead, and the footer shows the current
+remote and scope. A project column appears on any panel whose contents
+actually span projects, and actions run against the project the item came
+from.
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
