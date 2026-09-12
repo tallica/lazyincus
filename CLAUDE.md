@@ -297,6 +297,12 @@ docker-compose command templates), `CustomCommands`, `BulkCommands`,
 `StatsConfig`/`GraphConfig`, `Replacements`, `LogsConfig` (Since/Tail/
 Timestamps don't map onto Incus's console-log snapshot model).
 
+The config reloads at runtime, from `handleEditConfig` and from a
+modification-time poll (`gui.configReloader`). `gui.reloadConfig` re-applies
+only what the app caches - theme, view styling (`styleAllViews`, split out
+of `createAllViews` for this), mouse support, columns; the rest is read at
+the point of use.
+
 Config file lives at `~/.config/lazyincus/config.yml` - on Linux always,
 and on macOS too if that directory already exists (`configDirForVendor` in
 `pkg/config/app_config.go` checks for it explicitly before falling back to

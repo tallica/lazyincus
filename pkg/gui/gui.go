@@ -231,6 +231,7 @@ func (gui *Gui) Run() error {
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
 		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
+		gui.goEvery(time.Second*2, gui.configReloader())
 	}()
 
 	err = g.MainLoop()
@@ -332,7 +333,64 @@ func (gui *Gui) handleOpenConfig(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
-	return gui.editFile(gui.Config.ConfigFilename())
+	if err := gui.editFile(gui.Config.ConfigFilename()); err != nil {
+		return err
+	}
+
+	if err := gui.reloadConfig(); err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	return nil
+}
+
+// reloadConfig re-applies the settings the app caches rather than reads at
+// the point of use. screenMode and language stay as they were - see
+// docs/Config.md.
+func (gui *Gui) reloadConfig() error {
+	if err := gui.Config.ReloadUserConfig(); err != nil {
+		return err
+	}
+
+	if err := gui.SetColorScheme(); err != nil {
+		return err
+	}
+
+	gui.styleAllViews()
+	gui.g.Mouse = !gui.Config.UserConfig.Gui.IgnoreMouseEvents
+
+	return gui.Panels.Instances.RerenderList()
+}
+
+// configReloader polls the config file's modification time. It covers the
+// edits handleEditConfig can't see: 'o' hands the file to an external app,
+// and people edit it in other terminals.
+func (gui *Gui) configReloader() func() error {
+	var lastModTime time.Time
+
+	return func() error {
+		info, err := os.Stat(gui.Config.ConfigFilename())
+		if err != nil {
+			return nil
+		}
+
+		modTime := info.ModTime()
+		if lastModTime.IsZero() || modTime.Equal(lastModTime) {
+			lastModTime = modTime
+			return nil
+		}
+		lastModTime = modTime
+
+		gui.g.Update(func(*gocui.Gui) error {
+			if err := gui.reloadConfig(); err != nil {
+				// Likely a half-written save; the next write reloads again.
+				gui.Log.Warn(err)
+			}
+			return nil
+		})
+
+		return nil
+	}
 }
 
 func (gui *Gui) ShouldRefresh(key string) bool {

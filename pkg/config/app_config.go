@@ -1,9 +1,9 @@
 // Package config handles all the user-configuration. The fields here are
 // all in PascalCase but in your actual config.yml they'll be in camelCase.
 // You can view the default config with `lazyincus --config`.
-// You can open your config file by going to the instances panel and
-// pressing 'o'. You can directly edit the file (e.g. in vim) by pressing
-// 'e' instead.
+// You can open your config file with 'o', or edit it in $VISUAL/$EDITOR
+// with 'O'. Changes are picked up without a restart, aside from the few
+// options noted in docs/Config.md as startup-only.
 package config
 
 import (
@@ -273,6 +273,19 @@ func (c *AppConfig) WriteToUserConfig(updateConfig func(*UserConfig) error) erro
 	}
 
 	return yaml.NewEncoder(file).Encode(userConfig)
+}
+
+// ReloadUserConfig re-reads the config file, layered over the defaults again
+// so that a removed key reverts to its default.
+func (c *AppConfig) ReloadUserConfig() error {
+	userConfig, err := loadUserConfigWithDefaults(c.ConfigDir)
+	if err != nil {
+		return err
+	}
+
+	c.UserConfig = userConfig
+
+	return nil
 }
 
 // ConfigFilename returns the filename of the current config file

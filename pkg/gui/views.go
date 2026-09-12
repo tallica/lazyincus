@@ -79,6 +79,26 @@ func (gui *Gui) orderedViewNameMappings() []viewNameMapping {
 }
 
 func (gui *Gui) createAllViews() error {
+	var err error
+	for _, mapping := range gui.orderedViewNameMappings() {
+		*mapping.viewPtr, err = gui.prepareView(mapping.name)
+		if err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+			return err
+		}
+	}
+
+	gui.Views.Confirmation.Visible = false
+	gui.Views.Menu.Visible = false
+	gui.Views.Limit.Visible = false
+
+	gui.styleAllViews()
+
+	return nil
+}
+
+// styleAllViews is split out of createAllViews so that reloadConfig can
+// re-apply an edited config without touching view lifecycle or visibility.
+func (gui *Gui) styleAllViews() {
 	frameRunes := []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	switch gui.Config.UserConfig.Gui.Border {
 	case "single":
@@ -89,12 +109,7 @@ func (gui *Gui) createAllViews() error {
 		frameRunes = []rune{' ', ' ', ' ', ' ', ' ', ' '}
 	}
 
-	var err error
 	for _, mapping := range gui.orderedViewNameMappings() {
-		*mapping.viewPtr, err = gui.prepareView(mapping.name)
-		if err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
-			return err
-		}
 		(*mapping.viewPtr).FrameRunes = frameRunes
 		(*mapping.viewPtr).FgColor = gocui.ColorDefault
 	}
@@ -118,12 +133,9 @@ func (gui *Gui) createAllViews() error {
 	gui.Views.Information.Frame = false
 	gui.Views.Information.FgColor = gocui.ColorGreen
 
-	gui.Views.Confirmation.Visible = false
 	gui.Views.Confirmation.Wrap = true
-	gui.Views.Menu.Visible = false
 	gui.Views.Menu.SelBgColor = selectedLineBgColor
 
-	gui.Views.Limit.Visible = false
 	gui.Views.Limit.Title = gui.Tr.NotEnoughSpace
 	gui.Views.Limit.Wrap = true
 
@@ -136,8 +148,6 @@ func (gui *Gui) createAllViews() error {
 	gui.Views.Filter.Editable = true
 	gui.Views.Filter.Frame = false
 	gui.Views.Filter.Editor = gocui.EditorFunc(gui.wrapEditor(gocui.SimpleEditor))
-
-	return nil
 }
 
 func (gui *Gui) setInitialViewContent() error {

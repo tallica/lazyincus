@@ -2,13 +2,26 @@
 
 ## Opening the user config
 
-There is currently no in-app keybinding to open the config file (lazydocker's
-`o`/`e` shortcuts lived in its Project panel, which lazyincus doesn't have in
-this MVP — see [CLAUDE.md](../CLAUDE.md)). Open `config.yml` directly in your
-editor of choice instead.
+`o` opens `config.yml` with the configured open command (`oS.openCommand`),
+and `O` opens it in `$VISUAL`/`$EDITOR`. Both are global keybindings — they
+work from any panel. You can equally well just open the file yourself.
 
 lazyincus creates the file automatically on first run if it doesn't exist
-yet. Changes only take effect after restarting lazyincus.
+yet.
+
+### Reloading
+
+Changes take effect without restarting lazyincus: an edit made with `O` as
+soon as the editor exits, any other edit within about two seconds. Two
+options are the exception and still need a restart:
+
+- `gui.screenMode` — it only seeds the initial screen mode, which `+`/`_`
+  then own.
+- `gui.language` — English is the only supported language anyway.
+
+A YAML error leaves the config in effect alone. An edit made with `O`
+reports it in a panel; the file watcher logs it quietly (it may have caught
+a half-written save) and retries on the next change.
 
 See [config.example.yml](../config.example.yml) for a fully commented copy
 of every default value, ready to copy from.
