@@ -239,6 +239,97 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 	return ownImages, nil
 }
 
+// GetNetworks lists the server's networks, managed and unmanaged alike.
+func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, error) {
+	client := c.Client()
+
+	apiNetworks, err := client.GetNetworks()
+	if err != nil {
+		c.setConnected(false)
+		return nil, err
+	}
+	c.setConnected(true)
+
+	ownNetworks := make([]*Network, len(apiNetworks))
+
+	for i := range apiNetworks {
+		apiNetwork := apiNetworks[i]
+
+		var network *Network
+		for _, existing := range existingNetworks {
+			if existing.Name == apiNetwork.Name {
+				network = existing
+				break
+			}
+		}
+
+		if network == nil {
+			network = &Network{
+				Name:      apiNetwork.Name,
+				OSCommand: c.OSCommand,
+				Log:       c.Log,
+				Tr:        c.Tr,
+			}
+		}
+
+		network.Client = client
+		network.Network = apiNetwork
+		ownNetworks[i] = network
+	}
+
+	return ownNetworks, nil
+}
+
+// GetVolumes lists the volumes of every storage pool. The API is per-pool,
+// so this is one request per pool on top of the pool listing; a pool that
+// errors is skipped rather than failing the whole list, since one broken
+// pool shouldn't empty the panel.
+func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) {
+	client := c.Client()
+
+	pools, err := client.GetStoragePoolNames()
+	if err != nil {
+		c.setConnected(false)
+		return nil, err
+	}
+	c.setConnected(true)
+
+	ownVolumes := []*Volume{}
+
+	for _, pool := range pools {
+		apiVolumes, err := client.GetStoragePoolVolumes(pool)
+		if err != nil {
+			c.Log.Warn(err)
+			continue
+		}
+
+		for i := range apiVolumes {
+			apiVolume := apiVolumes[i]
+
+			volume := &Volume{
+				Pool:      pool,
+				Name:      apiVolume.Name,
+				OSCommand: c.OSCommand,
+				Log:       c.Log,
+				Tr:        c.Tr,
+			}
+
+			for _, existing := range existingVolumes {
+				if existing.Key() == volume.Key() {
+					volume = existing
+					break
+				}
+			}
+
+			volume.Client = client
+			volume.Volume = apiVolume
+			ownVolumes = append(ownVolumes, volume)
+		}
+	}
+
+	return ownVolumes, nil
+}
+
 // RefreshInstanceDetails fetches the full details (including state) for each
 // instance in the background.
 func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {

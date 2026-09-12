@@ -107,6 +107,20 @@ in its DESCRIPTION column), else the short fingerprint. Truncated to keep
 the columns after it on screen. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
 only change when someone pulls or deletes one.
 
+### Volumes
+
+Every storage pool's volumes in one list (`GetVolumes` walks
+`GetStoragePoolNames` then `GetStoragePoolVolumes` per pool; a pool that
+errors is skipped rather than emptying the panel). Identity is
+pool+type+name, since an instance and a custom volume can share a name.
+Only `custom` volumes can be deleted — the rest go away with the instance or
+image they belong to.
+
+### Networks
+
+`GetNetworks`, managed and unmanaged alike. Only managed ones can be
+deleted; the unmanaged entries are host interfaces Incus merely reports.
+
 ## Incus client integration details
 
 The non-obvious parts of talking to Incus. Most of these were established

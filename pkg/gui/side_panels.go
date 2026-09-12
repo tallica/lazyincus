@@ -40,6 +40,18 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			viewPtr: &gui.Views.Images,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Images },
 		},
+		{
+			name:    "volumes",
+			title:   gui.Tr.VolumesTitle,
+			viewPtr: &gui.Views.Volumes,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Volumes },
+		},
+		{
+			name:    "networks",
+			title:   gui.Tr.NetworksTitle,
+			viewPtr: &gui.Views.Networks,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Networks },
+		},
 	}
 }
 

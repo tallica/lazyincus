@@ -52,9 +52,10 @@ Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
 
 ## Usage
 
-Two side panels: **Instances** (`1`), listing both containers and VMs, and
-**Images** (`2`). Both are scoped to one Incus project at a time (`P`
-switches project; the footer shows the current remote and project).
+Four side panels: **Instances** (`1`), listing both containers and VMs,
+**Images** (`2`), **Volumes** (`3`) and **Networks** (`4`). All are scoped to
+one Incus project at a time (`P` switches project; the footer shows the
+current remote and project).
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -62,7 +63,7 @@ file - see [docs/Config.md](docs/Config.md).
 
 | Key | Action |
 |---|---|
-| `1` / `2` | Focus the Instances / Images panel |
+| `1` … `4` | Focus the Instances / Images / Volumes / Networks panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Snapshots / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
@@ -70,7 +71,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `s` | Stop |
 | `r` | Restart |
 | `p` | Pause/freeze (toggle) |
-| `d` | Delete (instances: offers to stop first if running; images: deletes the image) |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `E` | Exec a shell into the instance |
@@ -90,7 +91,6 @@ for the full list of options and defaults.
 
 Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 
-- Networks and Volumes panels
 - Services/Project panels (lazydocker's docker-compose view — Incus has no
   direct equivalent)
 - Custom and bulk commands

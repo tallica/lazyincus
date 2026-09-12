@@ -80,7 +80,7 @@ already resets the stack on a side view; `sideViewNames()` already honors
 
 - [x] Stage 1: one definition the views, keys and layout all derive from
 - [x] Stage 2: Images panel
-- [ ] Stage 3: Volumes and Networks panels
+- [x] Stage 3: Volumes and Networks panels
 - [ ] Stage 4: Snapshots side panel
 - [ ] Decide on tab-cycling between side panels as well as number keys
 
@@ -88,11 +88,11 @@ already resets the stack on a side view; `sideViewNames()` already honors
 
 ### Side panels
 
-lazydocker has six side panels; lazyincus has two.
+lazydocker has six side panels; lazyincus has four.
 
 - [x] **Images panel** — `incus image list` + delete.
-- [ ] **Volumes panel** — storage pools / volumes.
-- [ ] **Networks panel** — networks.
+- [x] **Volumes panel** — volumes across every storage pool.
+- [x] **Networks panel** — networks, managed and unmanaged.
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
       credits tab, so dropping that panel left lazyincus with nowhere to put
       one (`CreditsTitle` is ported but unused).

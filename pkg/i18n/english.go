@@ -26,48 +26,57 @@ type TranslationSet struct {
 	CannotAccessIncusSocketError               string
 	CannotKillChildError                       string
 
-	Donate                     string
-	Cancel                     string
-	Remove                     string
-	HideStopped                string
-	ForceRemove                string
-	MustForceToRemove          string
-	Confirm                    string
-	Return                     string
-	FocusMain                  string
-	LcFilter                   string
-	StopInstance               string
-	DeleteInstance             string
-	RestartingStatus           string
-	StartingStatus             string
-	StoppingStatus             string
-	PausingStatus              string
-	RemovingStatus             string
-	ForceRemovingStatus        string
-	Stop                       string
-	Pause                      string
-	Restart                    string
-	Start                      string
-	PreviousContext            string
-	NextContext                string
-	Attach                     string
-	ViewLogs                   string
-	ExecShell                  string
-	CopyIPv4                   string
-	CopiedToClipboard          string
-	NoIPv4Address              string
-	InstancesTitle             string
-	ImagesTitle                string
-	NoImages                   string
-	DeleteImage                string
-	NoInstances                string
-	NoInstance                 string
-	NoSnapshots                string
-	RemoveWithForce            string
-	PressEnterToReturn         string
-	DetachFromInstanceShortCut string
-	FilterList                 string
-	SortInstancesByState       string
+	Donate                    string
+	Cancel                    string
+	Remove                    string
+	HideStopped               string
+	ForceRemove               string
+	MustForceToRemove         string
+	Confirm                   string
+	Return                    string
+	FocusMain                 string
+	LcFilter                  string
+	StopInstance              string
+	DeleteInstance            string
+	RestartingStatus          string
+	StartingStatus            string
+	StoppingStatus            string
+	PausingStatus             string
+	RemovingStatus            string
+	ForceRemovingStatus       string
+	Stop                      string
+	Pause                     string
+	Restart                   string
+	Start                     string
+	PreviousContext           string
+	NextContext               string
+	Attach                    string
+	ViewLogs                  string
+	ExecShell                 string
+	CopyIPv4                  string
+	CopiedToClipboard         string
+	NoIPv4Address             string
+	InstancesTitle            string
+	ImagesTitle               string
+	NoImages                  string
+	DeleteImage               string
+	VolumesTitle              string
+	NoVolumes                 string
+	DeleteVolume              string
+	CannotDeleteManagedVolume string
+	NetworksTitle             string
+	NoNetworks                string
+	DeleteNetwork             string
+
+	CannotDeleteUnmanagedNetwork string
+	NoInstances                  string
+	NoInstance                   string
+	NoSnapshots                  string
+	RemoveWithForce              string
+	PressEnterToReturn           string
+	DetachFromInstanceShortCut   string
+	FilterList                   string
+	SortInstancesByState         string
 
 	StatsTitle                string
 	LogsTitle                 string
@@ -149,20 +158,28 @@ func englishSet() TranslationSet {
 		FilterList:           "filter list",
 		SortInstancesByState: "sort instances by state",
 
-		GlobalTitle:    "Global",
-		MainTitle:      "Main",
-		InstancesTitle: "Instances",
-		ErrorTitle:     "Error",
-		StatsTitle:     "Stats",
-		LogsTitle:      "Logs",
-		ConfigTitle:    "Config",
-		EnvTitle:       "Env",
-		ImagesTitle:    "Images",
-		NoImages:       "No images",
-		DeleteImage:    "Are you sure you want to delete image %s?",
-		SnapshotsTitle: "Snapshots",
-		TopTitle:       "Top",
-		CreditsTitle:   "About",
+		GlobalTitle:                  "Global",
+		MainTitle:                    "Main",
+		InstancesTitle:               "Instances",
+		ErrorTitle:                   "Error",
+		StatsTitle:                   "Stats",
+		LogsTitle:                    "Logs",
+		ConfigTitle:                  "Config",
+		EnvTitle:                     "Env",
+		ImagesTitle:                  "Images",
+		NoImages:                     "No images",
+		DeleteImage:                  "Are you sure you want to delete image %s?",
+		VolumesTitle:                 "Volumes",
+		NoVolumes:                    "No volumes",
+		DeleteVolume:                 "Are you sure you want to delete volume %s?",
+		NetworksTitle:                "Networks",
+		NoNetworks:                   "No networks",
+		DeleteNetwork:                "Are you sure you want to delete network %s?",
+		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
+		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
+		SnapshotsTitle:               "Snapshots",
+		TopTitle:                     "Top",
+		CreditsTitle:                 "About",
 
 		NothingToDisplay:                   "Nothing to display",
 		CannotListProcesses:                "Could not list processes.\n\n`ps` has to exist inside the instance, and a VM also\nneeds the Incus guest agent running.",

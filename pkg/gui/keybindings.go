@@ -229,6 +229,20 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
+			ViewName:    "volumes",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleVolumeDelete,
+			Description: gui.Tr.Remove,
+		},
+		{
+			ViewName:    "networks",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleNetworkDelete,
+			Description: gui.Tr.Remove,
+		},
+		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,

@@ -28,6 +28,8 @@ type Views struct {
 	// side panels
 	Instances *gocui.View
 	Images    *gocui.View
+	Volumes   *gocui.View
+	Networks  *gocui.View
 
 	// main panel
 	Main *gocui.View

@@ -44,6 +44,8 @@ type Gui struct {
 type Panels struct {
 	Instances *panels.SideListPanel[*commands.Instance]
 	Images    *panels.SideListPanel[*commands.Image]
+	Volumes   *panels.SideListPanel[*commands.Volume]
+	Networks  *panels.SideListPanel[*commands.Network]
 	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 
@@ -233,11 +235,21 @@ func (gui *Gui) Run() error {
 			gui.Log.Error(err)
 		}
 
+		if err := gui.refreshVolumes(); err != nil {
+			gui.Log.Error(err)
+		}
+
+		if err := gui.refreshNetworks(); err != nil {
+			gui.Log.Error(err)
+		}
+
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
 		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
+		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
+		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
 	}()
 
 	err = g.MainLoop()
@@ -251,6 +263,8 @@ func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
 		Images:    gui.getImagesPanel(),
+		Volumes:   gui.getVolumesPanel(),
+		Networks:  gui.getNetworksPanel(),
 		Menu:      gui.getMenuPanel(),
 	}
 }
