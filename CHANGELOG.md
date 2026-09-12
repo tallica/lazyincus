@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config changes now take effect without restarting lazyincus — an edit made with `O` as soon as the editor exits, any other edit within ~2s. `gui.screenMode` and `gui.language` still need a restart; see [docs/Config.md](docs/Config.md#reloading).
 
 ### Fixed
+- `m` opened the Stats tab, not Logs, despite being bound as "view logs" everywhere it's described. It selected main-panel tab 0, which stopped meaning Logs when the Stats tab was added ahead of it. Tabs are now selected by key.
 - `gui.screenMode: "full"` silently did nothing: the docs and `config.example.yml` documented `full` while the code only matched `fullscreen`, so `full` fell through to the default. Both spellings are now accepted.
 
 ### Changed

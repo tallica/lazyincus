@@ -14,6 +14,7 @@ import (
 
 type ISideListPanel interface {
 	SetMainTabIndex(int)
+	SetMainTab(string) error
 	HandleSelect() error
 	GetView() *gocui.View
 	Refocus()
@@ -265,6 +266,14 @@ func (self *SideListPanel[T]) SetMainTabIndex(index int) {
 	}
 
 	self.ContextState.SetMainTabIndex(index)
+}
+
+func (self *SideListPanel[T]) SetMainTab(key string) error {
+	if self.ContextState == nil || !self.ContextState.SetMainTab(key) {
+		return nil
+	}
+
+	return self.HandleSelect()
 }
 
 func (self *SideListPanel[T]) IsFilterDisabled() bool {

@@ -65,3 +65,17 @@ func (self *ContextState[T]) HandlePrevMainTab() {
 func (self *ContextState[T]) SetMainTabIndex(index int) {
 	self.mainTabIdx = index
 }
+
+// SetMainTab selects the tab with the given key, reporting whether it was
+// found. Keyed rather than indexed so that reordering the tabs can't
+// silently repoint a jump-to-tab keybinding.
+func (self *ContextState[T]) SetMainTab(key string) bool {
+	for i, tab := range self.GetMainTabs() {
+		if tab.Key == key {
+			self.mainTabIdx = i
+			return true
+		}
+	}
+
+	return false
+}

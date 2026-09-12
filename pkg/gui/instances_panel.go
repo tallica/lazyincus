@@ -266,7 +266,10 @@ func (gui *Gui) handleInstanceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
 }
 
 func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
-	gui.Panels.Instances.SetMainTabIndex(0)
+	if err := gui.Panels.Instances.SetMainTab("logs"); err != nil {
+		return err
+	}
+
 	return gui.handleEnterMain(g, v)
 }
 
