@@ -237,10 +237,13 @@ snapshots of the currently-selected instance. Gated on panel-switching.
 
 ## Housekeeping
 
-- [ ] **GitHub release for v0.2.0** — the tag is pushed but no release was
-      cut, so the releases page has no entry and no built binaries. The
-      changelog section is ready to paste if that's wanted; worth deciding
-      once rather than per-tag.
+- [ ] **Backfill the GitHub release for v0.2.0** — v0.3.0 has one, v0.2.0
+      only has a tag. Its changelog section is ready to paste if that's
+      wanted.
+- [ ] **Attach built binaries to releases** — releases currently carry
+      notes only, so installing still means `go build` from source. Needs a
+      decision on which platforms to build for (linux/amd64 and
+      linux/arm64 at minimum) and whether that runs in CI.
 
 ## Blocked
 

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-12
+
 ### Added
 - Project awareness: `P` opens a menu of the server's Incus projects and re-scopes the instance list to the one picked, and the footer now shows which project it's scoped to alongside the remote (e.g. `Incus v6.11 (colima/default) ●`). Instances in any other project were previously invisible — including every `incus-compose` stack, since incus-compose gives each compose project an Incus project of its own.
 - `o` opens the lazyincus config file with the configured open command, and `O` opens it in `$VISUAL`/`$EDITOR`. Both are global keybindings.
@@ -70,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/tallica/lazyincus/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tallica/lazyincus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/tallica/lazyincus/releases/tag/v0.1.0
