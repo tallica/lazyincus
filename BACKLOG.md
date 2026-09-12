@@ -29,11 +29,59 @@ smaller features rather than after.
 lazydocker's model to copy: side panels each own a window, number keys
 `1`-`6` jump to a panel, and the generic `SideListPanel` machinery in
 `pkg/gui/panels` (already ported here) handles list behavior once a panel
-exists. The missing part is the arrangement/focus layer — `arrangement.go`,
-`focus.go` and `window.go` here were ported for the single-panel case.
+exists.
 
-- [ ] Generalize the arrangement/focus layer to more than one side panel
-- [ ] Focus keys per panel (`1`-`n`), replacing the hardcoded `1`
+Most of the surrounding code is already generic — `allSidePanels()` feeds
+the layout, the keybinding loops, focus resolution and filtering; `pushView`
+already resets the stack on a side view; `sideViewNames()` already honors
+`IsHidden()`. What's hardcoded to one panel is narrow:
+
+| Where | What |
+|---|---|
+| `view_helpers.go` | `allSidePanels()` returns a one-element slice |
+| `keybindings.go` | one literal binding for `1` |
+| `arrangement.go` | `sidePanelChildren` assumes a single full-weight panel |
+| `views.go` | `Views` fields, view ordering, and `styleAllViews`'s hardcoded `[1]` prefix |
+| `gui.go` | `initiallyFocusedViewName()`, `setPanels()`, one refresh loop |
+
+### Plan
+
+1. **Infrastructure only.** A single ordered definition of the side panels
+   (view name, title, view pointer) that view creation, styling, number keys
+   and layout all derive from. Still just Instances, so the screen doesn't
+   change — that's the acceptance test.
+2. **Images panel** as the first consumer (`GetImages()` + delete), proving
+   the layer.
+3. **Volumes and Networks**, largely copies of the pattern Stage 2 settles.
+4. **Snapshots side panel** last: it's the only one scoped to another
+   panel's selection rather than independent.
+
+### Decisions taken
+
+- **Equal weights** for the side column (each panel gets 1/N), matching
+  lazydocker at the pinned commit. Accordion — focused panel expands, others
+  collapse to their title — is a follow-up once it's possible to feel how
+  cramped four panels are on a short terminal.
+- **Number keys stay fixed per panel** rather than renumbering over the
+  visible ones, so muscle memory holds; the key is a no-op while its panel
+  is hidden.
+- Not doing yet: config for which panels appear, reordering, accordion.
+
+### Watch out for
+
+- Refresh cost multiplies with each panel. Images and networks change
+  rarely, so they want a slower poll or a refresh-on-focus rather than the
+  instance list's 2s tick.
+- `switchToProject` clears only the instance list today. Images, volumes and
+  networks are project-scoped too, so every panel's items have to be dropped
+  on a switch.
+- `+`/`_` screen modes change the side/main weights; the sizing policy has
+  to hold under all three.
+
+- [ ] Stage 1: one definition the views, keys and layout all derive from
+- [ ] Stage 2: Images panel
+- [ ] Stage 3: Volumes and Networks panels
+- [ ] Stage 4: Snapshots side panel
 - [ ] Decide on tab-cycling between side panels as well as number keys
 
 ## Missing vs lazydocker
