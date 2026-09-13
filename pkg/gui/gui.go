@@ -84,6 +84,8 @@ type guiState struct {
 	// to filter on in the current panel.
 	Filter filterState
 
+	Connection connectionState
+
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
 	// the all-projects view of a server with a single project reads better
@@ -237,6 +239,8 @@ func (gui *Gui) Run() error {
 		return err
 	}
 
+	g.ErrorHandler = gui.handleError
+
 	g.SetManager(gocui.ManagerFunc(gui.layout), gocui.ManagerFunc(gui.getFocusLayout()))
 
 	if err := gui.createAllViews(); err != nil {
@@ -298,6 +302,26 @@ func (gui *Gui) Run() error {
 	return err
 }
 
+// handleError keeps a failed keypress or refresh from taking the app down
+// with it: gocui ends the main loop on any error out of a keybinding or an
+// Update closure, and returning nil here means carry on instead. Quitting
+// is unaffected - gocui excludes ErrQuit before consulting this.
+func (gui *Gui) handleError(err error) error {
+	gui.Log.Error(err)
+
+	// The modal and the footer report an unreachable daemon already.
+	if commands.IsConnectionError(err) {
+		gui.IncusCommand.NoteError(err)
+		return nil
+	}
+
+	if err := gui.createErrorPanel(err.Error()); err != nil {
+		gui.Log.Error(err)
+	}
+
+	return nil
+}
+
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
@@ -328,14 +352,16 @@ func (gui *Gui) updateInstanceDetails() error {
 }
 
 // refreshInstancesQuiet drives the background poll (Incus has no event
-// stream to subscribe to). It also redraws the footer on every tick,
-// whether or not the refresh succeeded - that's the only place
-// IsConnected() is checked, and the footer is otherwise drawn once at
-// startup.
+// stream to subscribe to). It also reports on the connection every tick,
+// whether or not the refresh succeeded - this is what notices a daemon that
+// has gone away, and the footer is otherwise drawn once at startup.
 func (gui *Gui) refreshInstancesQuiet() error {
 	if err := gui.refreshInstances(); err != nil {
 		gui.Log.Warn(err)
 	}
+
+	gui.syncConnection()
+
 	return gui.renderString(gui.g, "information", gui.getInformationContent())
 }
 

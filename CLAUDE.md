@@ -175,6 +175,29 @@ against a live daemon or read out of the Incus source, not inferred.
   Linux location. Which remote that is comes from the CLI config's
   default-remote, overridable with `INCUS_REMOTE` — there's no flag of our
   own; see [docs/Remotes.md](docs/Remotes.md).
+- **Connection loss**: a daemon going away mid-session is routine, so
+  nothing treats it as fatal. `NoteError` classifies every error -
+  `IsConnectionError` takes a `*url.Error` to mean the request never
+  arrived, anything else to mean the daemon answered - and `IsConnected` is
+  that verdict. The 2s instance poll drives `gui.syncConnection`, which
+  raises a modal on the way down and closes it on the way back up; there's
+  nothing to reconnect, since the client dials per request. `esc` dismisses
+  the modal for the rest of the outage; the footer's `●`/`✗` stands either
+  way. Failing to connect at startup has no client to carry on with, so
+  `NewIncusCommand` returns a `ConnectError` and `App.KnownError` prints it
+  rather than a stack trace.
+- **Connection timeouts**: `capDialTimeout` caps both of the transport's
+  dialers at 5s (a unix socket gets `DialContext`, a TLS remote
+  `DialTLSContext`), the OS otherwise taking a minute or more on a host
+  that's gone. The startup connect needs its own bound
+  (`connectDefaultRemote`, 10s): cliconfig calls `GetServer()` before
+  handing back a client, so there's no transport of ours to cap yet.
+- **Errors from the main loop**: gocui ends it on any error out of a
+  keybinding or an `Update` closure, which is no way to end a session, so
+  `Run` sets gocui's `ErrorHandler` to `gui.handleError` - error panel for
+  most things, silence for a connection error the modal already covers,
+  `nil` returned either way so the loop carries on. Quitting is unaffected;
+  gocui excludes `ErrQuit` before consulting it.
 - **Projects**: Incus scopes instances (and networks, volumes, profiles) per
   project, and a client is scoped to one at a time. `UseProject` swaps
   `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor

@@ -122,18 +122,23 @@ func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClos
 }
 
 func (gui *Gui) setKeyBindings(g *gocui.Gui, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error) error {
-	if err := g.SetKeybinding("confirmation", gocui.KeyEnter, gocui.ModNone, gui.wrappedConfirmationFunction(handleConfirm)); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("confirmation", 'y', gocui.ModNone, gui.wrappedConfirmationFunction(handleConfirm)); err != nil {
-		return err
+	confirm := gui.wrappedConfirmationFunction(handleConfirm)
+	closeIt := gui.wrappedConfirmationFunction(handleClose)
+
+	bindings := []struct {
+		key     interface{}
+		handler func(*gocui.Gui, *gocui.View) error
+	}{
+		{gocui.KeyEnter, confirm},
+		{'y', confirm},
+		{gocui.KeyEsc, closeIt},
+		{'n', closeIt},
 	}
 
-	if err := g.SetKeybinding("confirmation", gocui.KeyEsc, gocui.ModNone, gui.wrappedConfirmationFunction(handleClose)); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("confirmation", 'n', gocui.ModNone, gui.wrappedConfirmationFunction(handleClose)); err != nil {
-		return err
+	for _, binding := range bindings {
+		if err := g.SetKeybinding("confirmation", binding.key, gocui.ModNone, binding.handler); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -146,6 +151,10 @@ func (gui *Gui) createErrorPanel(message string) error {
 }
 
 func (gui *Gui) renderConfirmationOptions() error {
+	if gui.connectionPopupShowing() {
+		return gui.renderConnectionLostOptions()
+	}
+
 	optionsMap := map[string]string{
 		"n/esc":   gui.Tr.No,
 		"y/enter": gui.Tr.Yes,

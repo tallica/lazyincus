@@ -1,7 +1,12 @@
 package commands
 
 import (
+	"context"
+	"fmt"
 	"io"
+	"net"
+	"net/http"
+	"time"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -22,8 +27,8 @@ type IncusCommand struct {
 	ErrorChan     chan error
 	InstanceMutex deadlock.Mutex
 
-	// RemoteName is the Incus remote we connected to (e.g. "local", or a
-	// colima/lima remote name), taken from the CLI config's default-remote.
+	// RemoteName is the Incus remote we connected to, taken from the CLI
+	// config's default-remote.
 	RemoteName string
 	// ServerVersion and ServerName are fetched once at connect time via
 	// GetServer(); empty if that call failed.
@@ -49,20 +54,32 @@ var _ io.Closer = &IncusCommand{}
 // so that Instance doesn't need to import the whole command package.
 type LimitedIncusCommand interface{}
 
+// dialTimeout bounds the connection attempt, which the client otherwise
+// leaves to the OS - a minute or more on a remote that has gone away.
+const dialTimeout = 5 * time.Second
+
+// connectTimeout is the same bound for the startup connect. cliconfig calls
+// GetServer() before handing back a client, so that first request is made
+// on a transport we don't have yet, and the call is the only thing left to
+// bound.
+const connectTimeout = 10 * time.Second
+
 // NewIncusCommand connects to the CLI's configured default remote via
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
-// setups where the daemon runs in a VM (colima on macOS), whose socket
-// lives at a path recorded in the remote's config.
+// every remote that doesn't keep it where we'd look - a daemon in a VM
+// records its own path in the remote's config.
 func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, errorChan chan error) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {
-		return nil, err
+		return nil, &ConnectError{Err: err}
 	}
 
-	client, err := cliCfg.GetInstanceServer(cliCfg.DefaultRemote)
+	client, err := connectDefaultRemote(cliCfg)
 	if err != nil {
-		return nil, err
+		return nil, &ConnectError{Remote: cliCfg.DefaultRemote, Err: err}
 	}
+
+	capDialTimeout(client)
 
 	command := &IncusCommand{
 		Log:         log,
@@ -103,6 +120,68 @@ func clientProjectName(client incus.InstanceServer) string {
 	}
 
 	return info.Project
+}
+
+// connectDefaultRemote is GetInstanceServer under connectTimeout. The
+// goroutine outlives a timeout, which only happens on a startup we abandon
+// anyway.
+func connectDefaultRemote(cliCfg *cliconfig.Config) (incus.InstanceServer, error) {
+	type result struct {
+		client incus.InstanceServer
+		err    error
+	}
+
+	done := make(chan result, 1)
+
+	go func() {
+		client, err := cliCfg.GetInstanceServer(cliCfg.DefaultRemote)
+		done <- result{client: client, err: err}
+	}()
+
+	select {
+	case res := <-done:
+		return res.client, res.err
+	case <-time.After(connectTimeout):
+		return nil, fmt.Errorf("no answer within %s", connectTimeout)
+	}
+}
+
+// capDialTimeout bounds the dial alone, not the request: a console log or
+// an image transfer takes as long as it takes once the daemon is answering.
+func capDialTimeout(client incus.InstanceServer) {
+	httpClient, err := client.GetHTTPClient()
+	if err != nil {
+		return
+	}
+
+	transport, ok := httpClient.Transport.(*http.Transport)
+	if !ok {
+		return
+	}
+
+	capTransportDial(transport)
+}
+
+type dialFunc func(ctx context.Context, network, addr string) (net.Conn, error)
+
+// capTransportDial covers both dialers: the client sets DialContext for a
+// unix socket and DialTLSContext for a TLS remote, never both.
+func capTransportDial(transport *http.Transport) {
+	transport.DialContext = withDialTimeout(transport.DialContext)
+	transport.DialTLSContext = withDialTimeout(transport.DialTLSContext)
+}
+
+func withDialTimeout(dial dialFunc) dialFunc {
+	if dial == nil {
+		return nil
+	}
+
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		ctx, cancel := context.WithTimeout(ctx, dialTimeout)
+		defer cancel()
+
+		return dial(ctx, network, addr)
+	}
 }
 
 // Client returns the current instance server. A method rather than a field
@@ -178,13 +257,19 @@ func (c *IncusCommand) Close() error {
 	return utils.CloseMany(c.Closers)
 }
 
-// IsConnected reports whether the most recent request to the daemon
-// succeeded. Updated by GetInstances, which runs on a background poll, so
-// this reflects connection health without a dedicated heartbeat.
+// IsConnected reports whether the daemon is reachable, as of the most
+// recent request. Updated by the list calls, which run on a background
+// poll, so this reflects connection health without a dedicated heartbeat.
 func (c *IncusCommand) IsConnected() bool {
 	c.connMutex.Lock()
 	defer c.connMutex.Unlock()
 	return c.connected
+}
+
+// NoteError records what an error says about the connection. Anything the
+// daemon answered - an error of its own included - means it's reachable.
+func (c *IncusCommand) NoteError(err error) {
+	c.setConnected(!IsConnectionError(err))
 }
 
 func (c *IncusCommand) setConnected(connected bool) {
@@ -202,11 +287,11 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 	client := c.Client()
 
 	apiInstances, err := c.listInstances(client)
+	c.NoteError(err)
+
 	if err != nil {
-		c.setConnected(false)
 		return nil, err
 	}
-	c.setConnected(true)
 
 	ownInstances := make([]*Instance, len(apiInstances))
 
@@ -251,11 +336,11 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 	client := c.Client()
 
 	apiImages, err := c.listImages(client)
+	c.NoteError(err)
+
 	if err != nil {
-		c.setConnected(false)
 		return nil, err
 	}
-	c.setConnected(true)
 
 	ownImages := make([]*Image, len(apiImages))
 
@@ -300,11 +385,11 @@ func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, err
 	client := c.Client()
 
 	apiNetworks, err := c.listNetworks(client)
+	c.NoteError(err)
+
 	if err != nil {
-		c.setConnected(false)
 		return nil, err
 	}
-	c.setConnected(true)
 
 	ownNetworks := make([]*Network, len(apiNetworks))
 
@@ -352,11 +437,11 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 	client := c.Client()
 
 	pools, err := client.GetStoragePoolNames()
+	c.NoteError(err)
+
 	if err != nil {
-		c.setConnected(false)
 		return nil, err
 	}
-	c.setConnected(true)
 
 	ownVolumes := []*Volume{}
 
@@ -422,6 +507,8 @@ func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {
 			// all-projects view they're scoped to different projects, and
 			// asking the wrong one returns nothing.
 			full, _, err := inst.Client.GetInstanceFull(inst.Name)
+			c.NoteError(err)
+
 			if err != nil {
 				c.Log.Warn(err)
 				return

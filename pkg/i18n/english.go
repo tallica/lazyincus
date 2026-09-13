@@ -19,7 +19,9 @@ type TranslationSet struct {
 	EditConfig                                 string
 	ConfirmQuit                                string
 	ErrorOccurred                              string
-	ConnectionFailed                           string
+	CannotReachDaemonError                     string
+	ConnectionLost                             string
+	ConnectionLostTitle                        string
 	WaitingForInstanceInfo                     string
 	CannotAttachStoppedInstanceError           string
 	CannotExecStoppedInstanceError             string
@@ -136,7 +138,9 @@ func englishSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
-		ConnectionFailed:                 "connection to the incus daemon failed. You may need to restart the incus daemon",
+		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that INCUS_REMOTE or the CLI's default-remote names the one you meant.",
+		ConnectionLost:                   "Lost the connection to '%s'.\n\nStill trying - this closes itself once the daemon answers again.",
+		ConnectionLostTitle:              "Connection lost",
 		WaitingForInstanceInfo:           "Cannot proceed until incus gives us more information about the instance. Please retry in a few moments.",
 		CannotAttachStoppedInstanceError: "You cannot attach to a stopped instance's console, you need to start it first (which you can do with the 'S' key)",
 		CannotExecStoppedInstanceError:   "You cannot exec into a stopped instance, you need to start it first (which you can do with the 'S' key)",

@@ -14,7 +14,11 @@ INCUS_REMOTE=myserver lazyincus
 ```
 
 The footer shows the remote you ended up on, so you can tell at a glance
-which daemon you are looking at.
+which daemon you are looking at, and whether it is currently answering.
+
+The built-in `local` remote is the daemon's own unix socket, so it only
+works on a Linux host running incusd. Anywhere else, name the remote for
+wherever the daemon actually lives.
 
 `incus remote switch myserver` works too, and persists. Prefer `INCUS_REMOTE`
 when you have more than one daemon: `a` (console) and `E` (exec) shell out to
@@ -182,3 +186,4 @@ point assumes the host can reach the guest.
 | `channel N: open failed: connect failed` | The forwarded unix socket path does not exist on the server |
 | `not authorized` on `remote add` | The token was already used or has expired; mint a new one |
 | lazyincus shows a different daemon than `incus` does | `INCUS_REMOTE` and the CLI's default remote disagree |
+| `Can't connect to a local server on a non-Linux system` | The `local` remote is Linux-only; name the daemon's own remote |

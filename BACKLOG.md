@@ -75,12 +75,11 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — eleven are defined but never
-      referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`,
-      `ConnectionFailed`, `ForceRemove`, `NoInstance`, `RemoveWithForce`,
-      `FilterList`, `SortInstancesByState`, `CreditsTitle`,
-      `CannotDisplayEnvVariables`. Dead weight now that attach is wired up.
-      Wire up or delete.
+- [ ] **Unused translation strings** — nine are defined but never
+      referenced: `MainTitle`, `GlobalTitle`, `ForceRemove`, `NoInstance`,
+      `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
+      `CreditsTitle`, `CannotDisplayEnvVariables`. Dead weight now that
+      attach is wired up. Wire up or delete.
 
 ## Not lazydocker-shaped
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Losing the connection to the daemon crashed the app. It now says so in a modal and keeps polling, closing the modal once the daemon answers again; `esc` dismisses it in the meantime. Nothing reconnects — the client dials per request — so recovery is just the poll getting through.
+- No failed action can end the app any more. An error out of a keybinding or a background refresh went straight to gocui's main loop, which exits on it; anything that isn't the daemon being unreachable now opens the usual error panel.
+- Requests wait five seconds on the dial, and the connect at startup ten, rather than however long the OS takes to give up on a host that has gone away — which froze the panel for a minute or more. Only the connection is capped; transfers take as long as they take.
+- Failing to connect at startup prints the remote and what went wrong with it, instead of a stack trace.
+
 ### Added
 - [docs/Remotes.md](docs/Remotes.md): connecting to a daemon that isn't the local one — picking a remote with `INCUS_REMOTE`, adding one with a trust token, reaching one over an SSH tunnel, and the three things that go wrong when incusd runs in a local VM. macOS Local Network Privacy and guest clock skew both fail with errors that accuse the wrong component. `scripts/check-local-network.sh` tells the first one apart from a genuinely unreachable host.
 

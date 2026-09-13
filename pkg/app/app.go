@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -72,13 +73,11 @@ type errorMapping struct {
 func (app *App) KnownError(err error) (string, bool) {
 	errorMessage := err.Error()
 
+	// A socket we're not allowed to open is the one connection failure with
+	// advice of its own, so the mappings come before the general case.
 	mappings := []errorMapping{
 		{
 			originalError: "permission denied",
-			newError:      app.Tr.CannotAccessIncusSocketError,
-		},
-		{
-			originalError: "no such file or directory",
 			newError:      app.Tr.CannotAccessIncusSocketError,
 		},
 	}
@@ -87,6 +86,12 @@ func (app *App) KnownError(err error) (string, bool) {
 		if strings.Contains(errorMessage, mapping.originalError) {
 			return mapping.newError, true
 		}
+	}
+
+	// A stack trace says nothing about an unreachable daemon that the
+	// address doesn't.
+	if commands.IsConnectError(err) {
+		return fmt.Sprintf(app.Tr.CannotReachDaemonError, err), true
 	}
 
 	return "", false
