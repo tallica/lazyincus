@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-13
+
 ### Fixed
 - Losing the connection to the daemon crashed the app. It now says so in a modal and keeps polling, closing the modal once the daemon answers again; `esc` dismisses it in the meantime. Nothing reconnects — the client dials per request — so recovery is just the poll getting through.
 - No failed action can end the app any more. An error out of a keybinding or a background refresh went straight to gocui's main loop, which exits on it; anything that isn't the daemon being unreachable now opens the usual error panel.
@@ -118,7 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/tallica/lazyincus/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/tallica/lazyincus/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tallica/lazyincus/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tallica/lazyincus/compare/v0.3.0...v0.4.0
