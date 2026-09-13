@@ -113,6 +113,20 @@ file - see [docs/Config.md](docs/Config.md).
 Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
 for the full list of options and defaults.
 
+## Supporting upstream
+
+lazyincus is a thin layer over other people's work — Incus does everything
+that matters here, and lazydocker is what it was ported from. Neither asks
+anything of you for that, but the people behind them take sponsorships:
+
+- [Stéphane Graber](https://github.com/sponsors/stgraber) — project leader
+  of [Linux Containers](https://linuxcontainers.org/), the umbrella over
+  Incus, IncusOS, LXC and more.
+- [Jesse Duffield](https://github.com/sponsors/jesseduffield) — author of
+  lazydocker, lazygit and more.
+
+If lazyincus is useful to you, that money is better spent there than here.
+
 ## What's not here yet
 
 Ported deliberately as an MVP, not full parity with lazydocker. Not included:
