@@ -10,11 +10,13 @@ container/VM manager (LXD fork).
 This is a port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by [Jesse Duffield](https://github.com/jesseduffield) — the excellent Docker
 TUI this project's UI, keybindings, and overall structure are lifted from.
-Full credit for the original design and the [gocui](https://github.com/jesseduffield/gocui)
-framework it's built on goes to Jesse and the lazydocker contributors. See
-[LICENSE](LICENSE) (MIT, same as upstream), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
-for third-party attributions, and [docs/Port.md](docs/Port.md) for what was
-carried over and how it was renamed.
+Full credit for the original design goes to Jesse and the lazydocker
+contributors. The framework underneath is [gocui](https://github.com/jroimartin/gocui)
+by Roi Martin, used here through [Jesse's fork](https://github.com/jesseduffield/gocui).
+See [LICENSE](LICENSE) (MIT, same as upstream),
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party
+attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
+how it was renamed.
 
 ![lazyincus](docs/screenshot.png)
 
