@@ -4,8 +4,9 @@
 > **AI-assisted project**
 > This codebase was built with [Claude Code](https://claude.com/claude-code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
 
-A terminal UI for [Incus](https://linuxcontainers.org/incus/), the system
-container/VM manager (LXD fork).
+A terminal UI for [Incus](https://linuxcontainers.org/incus/) — a
+next-generation system container, application container, and virtual
+machine manager.
 
 This is a port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by [Jesse Duffield](https://github.com/jesseduffield) — the excellent Docker
