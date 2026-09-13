@@ -93,10 +93,30 @@ own merits.
       a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
-- [ ] **Profiles / remotes** — no panels or switching UI for either. The
-      daemon connection uses whichever remote is `default-remote` in the
-      user's Incus config and never offers to change it. (Projects now have
-      a switcher — see [incus-compose integration](#incus-compose-integration).)
+- [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
+      mirroring `P` for projects. `pkg/gui/remotes.go` alongside
+      `projects.go`: the menu lists `cliconfig.Config.Remotes`, marked with
+      `marker()`, and the reload afterwards is exactly
+      `reloadAfterProjectChange` (which wants a scope-neutral name), since
+      clearing every panel is also what drops the per-item clients pointing
+      at the previous daemon. `NewIncusCommand` has to keep `cliCfg` rather
+      than dropping it after connecting, and a `UseRemote` swaps `client` and
+      `RemoteName`, re-runs `GetServer()` for the footer, and resets to
+      all-projects — the new server's project list has nothing to do with the
+      old one's. Three parts that aren't just copying the project switcher:
+      the list needs filtering, since `GetInstanceServer` rejects anything
+      with `Public` set or `Protocol != "incus"` (`cliconfig/remote.go`), so
+      `images:` and OCI remotes would be entries that only ever error;
+      connecting can hang or fail where switching project can't, so it wants
+      `WithWaitingStatus` off the main goroutine and must keep the existing
+      client on failure rather than leaving the app with none; and it should
+      stay session-only, leaving `incus remote switch` as the persistent
+      path. The shell-out problem below is shared, and has to be solved for
+      either. Verifying the failure paths needs a second reachable daemon,
+      so the unreachable-remote case is the part likeliest to ship untested.
+- [ ] **Profiles** — no panel. (Projects have a switcher — see
+      [incus-compose integration](#incus-compose-integration); remotes are
+      above.)
 - [ ] **`--remote` flag** — selecting a remote means `INCUS_REMOTE=<name>
       lazyincus` or changing the CLI's default; there's no flag of our own.
       See [docs/Remotes.md](docs/Remotes.md). The connection side is small:
@@ -105,11 +125,13 @@ own merits.
       entry in `main.go`. The catch is the shell-outs — `instanceCLIArgs`
       (`pkg/gui/instances_panel.go`) passes `--project` but nothing about the
       remote, and `a`/`E` invoke `incus` with a bare instance name, so they'd
-      still follow the CLI's own default. The flag has to set `INCUS_REMOTE`
-      in the child environment, or qualify the name as `<remote>:<instance>`,
-      or the panels and the console end up on different daemons. That's also
-      the argument for `INCUS_REMOTE` remaining the documented way in: it
-      already covers both halves.
+      still follow the CLI's own default. Setting `INCUS_REMOTE` on the child
+      in `runSubprocess` covers every shell-out at once and can't collide
+      with instance names the way qualifying them as `<remote>:<instance>`
+      could; without it the panels and the console end up on different
+      daemons. Same fix the switcher above needs, so whichever lands first
+      pays for it. That's also the argument for `INCUS_REMOTE` remaining the
+      documented way in: it already covers both halves.
 
 Deliberately deferred (don't re-pitch unprompted):
 
