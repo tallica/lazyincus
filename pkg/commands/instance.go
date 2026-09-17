@@ -185,12 +185,42 @@ const composeServiceKey = "user.label.incus-compose.service"
 // ComposeService is the incus-compose service this instance belongs to, or
 // an empty string for an instance nobody created through compose.
 func (i *Instance) ComposeService() string {
+	return i.config(composeServiceKey)
+}
+
+// healthStatusKey is where ic-healthd writes its verdict; the opt-in key can
+// sit on the project, which ExpandedConfig doesn't expand.
+const healthStatusKey = "user.healthcheck.status"
+
+// The values ic-healthd writes to healthStatusKey (shared/health.go).
+const (
+	HealthUnknown   = "unknown"
+	HealthStarting  = "starting"
+	HealthHealthy   = "healthy"
+	HealthUnhealthy = "unhealthy"
+	HealthStopped   = "stopped"
+)
+
+// HealthStatus is the instance's ic-healthd health, empty when unchecked.
+func (i *Instance) HealthStatus() string {
+	return i.config(healthStatusKey)
+}
+
+const composeImageKey = "user.image_alias"
+
+// ComposeImage is the image reference the compose file named.
+func (i *Instance) ComposeImage() string {
+	return i.config(composeImageKey)
+}
+
+// config is empty until RefreshInstanceDetails has run.
+func (i *Instance) config(key string) string {
 	full, ok := i.Full()
 	if !ok {
 		return ""
 	}
 
-	return full.ExpandedConfig[composeServiceKey]
+	return full.ExpandedConfig[key]
 }
 
 // Addresses returns the instance's global-scope IP addresses for an

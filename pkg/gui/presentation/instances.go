@@ -34,6 +34,12 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"service": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return utils.ColoredString(instance.ComposeService(), color.FgGreen)
 	},
+	"health": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return displayInstanceHealth(instance)
+	},
+	"image": func(_ *config.GuiConfig, instance *commands.Instance) string {
+		return utils.ColoredString(utils.Truncate(instance.ComposeImage(), maxImageAliasWidth), color.FgBlue)
+	},
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
 	},
@@ -105,6 +111,30 @@ func displayInstanceSnapshotCount(instance *commands.Instance) string {
 	}
 
 	return strconv.Itoa(len(full.Snapshots))
+}
+
+// maxImageAliasWidth keeps the columns after it on screen.
+const maxImageAliasWidth = 28
+
+// "unknown" stays neutral: no healthcheck was declared, not a failed check.
+func displayInstanceHealth(instance *commands.Instance) string {
+	health := instance.HealthStatus()
+
+	var healthColor color.Attribute
+	switch health {
+	case commands.HealthHealthy:
+		healthColor = color.FgGreen
+	case commands.HealthUnhealthy:
+		healthColor = color.FgRed
+	case commands.HealthStarting:
+		healthColor = color.FgBlue
+	case commands.HealthStopped:
+		healthColor = color.FgYellow
+	default:
+		healthColor = color.FgWhite
+	}
+
+	return utils.ColoredString(health, healthColor)
 }
 
 // getInstanceDisplayStatus returns the colored status of the instance

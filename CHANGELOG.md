@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Optional `health` and `image` columns in the instances panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. Off by default; see [docs/Config.md](docs/Config.md).
+
 ## [0.6.1] - 2026-09-13
 
 ### Fixed

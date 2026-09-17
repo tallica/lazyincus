@@ -198,7 +198,9 @@ origin, read from `project/instance.go` in the source:
 | `user.label.incus-compose.project` | compose project name |
 | `user.label.incus-compose.service` | service name the instance came from |
 | `user.label.<compose label>` | each of the service's own compose labels |
-| `user.healthcheck.enabled` / `user.healthcheck.*` | healthcheck opt-in and its test/interval/retries, driven by an `ic-healthd` sidecar |
+| `user.healthcheck.enabled` / `user.healthcheck.*` | healthcheck opt-in and its test/interval/retries, driven by an `ic-healthd` sidecar; `user.healthcheck.status` is where that sidecar writes its verdict |
+| `user.incus-compose.managed` | marks every instance and project compose owns |
+| `user.image_alias` | the image reference the compose file named |
 | `user.incus-compose.oneoff` | marks a one-off (`run`-style) instance |
 | `environment.<KEY>` | the service's environment variables |
 
@@ -210,27 +212,53 @@ data lazyincus has in hand, not new API calls.
 
 - [x] **Service column** — opt-in `service` column reading
       `user.label.incus-compose.service`.
+- [x] **Health column** — opt-in `health` column. `ic-healthd` writes its
+      verdict straight onto the instance as `user.healthcheck.status`, which
+      is the only key it writes; the opt-in it consults
+      (`user.healthcheck.enabled`) can sit on the Incus project instead, and
+      `ExpandedConfig` expands profiles rather than projects, so status's
+      presence is the signal and the opt-in is no use for this.
+- [x] **Image column** — opt-in `image` column reading `user.image_alias`,
+      the reference the compose file named. Incus's own
+      `volatile.base_image` is a fingerprint, so this is the only place an
+      instance's image appears by name.
 - [ ] **Grouping by service** — the other half of what lazydocker's Services
-      panel gave you. Needs a think about how grouping fits a flat
-      SideListPanel.
-- [ ] **Health column** — `user.healthcheck.enabled` plus the healthd state
-      would give lazyincus a health indicator, which the port dropped along
-      with Docker's healthcheck support. Needs a look at where `ic-healthd`
-      writes results before this is more than a guess.
+      panel gave you. The think it needed, done against a live stack: most
+      of it is already there. `sortInstances` puts project first, and
+      incus-compose names instances `<service>-<index>`, so the existing
+      name sort groups a service's replicas as a side effect — a stack
+      already reads as a block, and the `service` column labels it. Adding
+      service as a sort key before name would change nothing.
+
+      What's actually missing is a visual break and collapsing, and that's
+      where the flat panel resists: `SelectedIdx` indexes
+      `List.GetItems()`, so every rendered line has to be an item. Headers
+      mean `SideListPanel[*commands.Instance]` becomes a panel over a
+      header-or-instance row, and then every keybinding in
+      `instances_panel.go`, `OnSelect`/`OnClick`, and the snapshots panel
+      that follows the selection all have to no-op on a header and skip it
+      when navigating. That's the whole cost, and it buys a separator on a
+      list that's already ordered — worth doing only if collapsing comes
+      with it.
 - [ ] **`incus-compose` shell-outs** — `up`/`down`/`restart` on the selected
       project, in the `instanceExecShell` subprocess style. Optional, and it
-      adds a second CLI dependency beyond `incus` itself.
+      adds a second CLI dependency beyond `incus` itself — one that, unlike
+      `incus`, need not be on the machine running lazyincus at all: a remote
+      daemon's stacks are managed from wherever `incus-compose` runs.
 
 ### Caveats
 
-- The key names above were read out of `project/instance.go` on GitHub and
-  re-checked against `main` when the service column landed, but never
-  observed on a live incus-compose setup — the column was tested by setting
-  the label by hand. Worth confirming against a real stack.
 - Those keys are internal to incus-compose and carry no compatibility
-  promise. If lazyincus depends on them, pin the commit they were read from
-  the way the lazydocker port pin works, so a drift has somewhere to be
-  checked against.
+  promise, so they're pinned the way the lazydocker port is: everything
+  above was read from
+  [`f350005`](https://github.com/lxc/incus-compose/commit/f35000561ac2065435a45116e169b4cbe7612173)
+  (2026-09-17), the health constants from `shared/health.go`. Re-check
+  against that commit if a column ever goes blank.
+- The keys were also confirmed on a live stack at that point, which the
+  service column never had been — it was tested by setting the label by
+  hand. Two keys the table above missed turned up there:
+  `user.incus-compose.managed` on every instance and project compose owns,
+  and `user.image_alias`, now the image column.
 
 ## Snapshots panel
 
