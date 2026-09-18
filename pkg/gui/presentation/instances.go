@@ -38,7 +38,8 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 		return displayInstanceHealth(instance)
 	},
 	"image": func(_ *config.GuiConfig, instance *commands.Instance) string {
-		return utils.ColoredString(utils.Truncate(instance.ComposeImage(), maxImageAliasWidth), color.FgBlue)
+		image := shortImageRef(instance.ComposeImage())
+		return utils.ColoredString(utils.Truncate(image, maxImageAliasWidth), color.FgBlue)
 	},
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
@@ -115,6 +116,18 @@ func displayInstanceSnapshotCount(instance *commands.Instance) string {
 
 // maxImageAliasWidth keeps the columns after it on screen.
 const maxImageAliasWidth = 28
+
+// shortImageRef keeps a registry reference's last segment; an Incus alias has
+// no dotted host and keeps its slashes, so alpine/3.20 stays whole.
+func shortImageRef(ref string) string {
+	host, _, ok := strings.Cut(ref, "/")
+	hostname, _, _ := strings.Cut(host, ":")
+	if !ok || (!strings.Contains(host, ".") && hostname != "localhost") {
+		return ref
+	}
+
+	return ref[strings.LastIndex(ref, "/")+1:]
+}
 
 // "unknown" stays neutral: no healthcheck was declared, not a failed check.
 func displayInstanceHealth(instance *commands.Instance) string {
