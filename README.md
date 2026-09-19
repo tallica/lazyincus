@@ -23,10 +23,11 @@ how it was renamed.
 
 ## Status: MVP
 
-An early port, with panels for instances, snapshots, images, volumes and
-networks. Feature parity with lazydocker (a services/compose panel, custom
-commands, non-English translations) is not there yet — see "What's not here
-yet" below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
+An early port, with panels for instances, snapshots, images, volumes,
+networks and — in a directory with a compose file — services. Feature parity
+with lazydocker (custom commands, non-English translations) is not there yet
+— see "What's not here yet" below, and [BACKLOG.md](BACKLOG.md) for the
+panel-by-panel comparison.
 
 ## Requirements
 
@@ -40,11 +41,11 @@ yet" below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus. It's what the optional `service`, `health` and `image`
-  columns describe ([docs/Config.md](docs/Config.md)) and what the Compose
-  panel lists; the columns read the daemon, so stacks show up there from
-  another machine entirely, but `u`/`d` need the `incus-compose` binary on
-  `PATH` and the compose file in the current directory. Not in Homebrew
-  core — on macOS, `brew install tallica/tap/incus-compose`.
+  columns describe ([docs/Config.md](docs/Config.md)); those columns read
+  the daemon, so a stack shows up in them from another machine entirely,
+  while the Services panel needs the `incus-compose` binary on `PATH` and
+  the compose file in the current directory. Not in Homebrew core — on
+  macOS, `brew install tallica/tap/incus-compose`.
 
 ## Install / run
 
@@ -81,20 +82,26 @@ guest clock skew both fail in ways that point at the wrong component.
 
 ## Usage
 
-Six side panels: **Instances** (`1`), listing both containers and VMs,
+Five side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance is selected, **Images** (`3`),
-**Volumes** (`4`), **Networks** (`5`) and **Compose** (`6`) for
-[incus-compose](https://incus-compose.org) stacks. All list every Incus
-project by default; `P` scopes them to a single project instead, and the
-footer shows the current remote and scope. Starting lazyincus from a
-directory with a compose file scopes to its project automatically, the
-same as picking it with `P` — "directory" here follows incus-compose's own
-resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY` in the environment works
-too, not just the current directory (lazyincus shells out to incus-compose
-without passing its own `-P`, so the flag itself isn't reachable this way).
-A project column appears on any panel whose
+**Volumes** (`4`) and **Networks** (`5`). All list every Incus project by
+default; `P` scopes them to a single project instead, and the footer shows
+the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
+
+Start lazyincus from a directory holding an
+[incus-compose](https://incus-compose.org) file and a sixth panel appears
+above the others: **Services** (`1`), one row per service that file
+declares, with the other panels shifting down a number. A service the file
+declares but nothing is running still gets a row, in state `none` — the
+compose file is what the list comes from, not the daemon. The stack's own
+instances move out of the instances panel, which becomes **Standalone
+Instances** (`2`); every other project's instances stay there. "Directory"
+follows incus-compose's own resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY`
+in the environment works too, not just the current directory (lazyincus
+shells out to incus-compose without passing its own `-P`, so the flag itself
+isn't reachable this way).
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -102,25 +109,25 @@ file - see [docs/Config.md](docs/Config.md).
 
 | Key | Action |
 |---|---|
-| `1` … `6` | Focus the Instances / Snapshots / Images / Volumes / Networks / Compose panel |
+| `1` … `6` | Focus a side panel, numbered top to bottom as shown in its title |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
-| `S` | Start; on the Compose panel, `incus-compose start` for the local project |
-| `s` | Stop; on the Compose panel, `incus-compose stop` for the local project (confirms first) |
+| `S` | Start; on the Services panel, `incus-compose start` for the selected service |
+| `s` | Stop; on the Services panel, `incus-compose stop` for the selected service (confirms first) |
 | `p` | Pause/freeze (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Compose panel, bring the local project down (menu: plain or with volumes) |
-| `u` | Compose panel: bring the local compose project up (`incus-compose up --detach`) |
-| `U` | Compose panel: pull the latest images and recreate the local project's instances (confirms first) |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down (menu: plain or with volumes) |
+| `u` | Services panel: bring the service up (`incus-compose up --detach <service>`) |
+| `U` | Services panel: pull the latest image and recreate the service's instances (confirms first) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
-| `r` | Restart an instance, or restore a snapshot; on the Compose panel, `incus-compose restart` for the local project |
+| `r` | Restart an instance, or restore a snapshot; on the Services panel, `incus-compose restart` for the selected service |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
-| `C` | Instances panel: compose actions menu (up / pull & recreate / start / stop / restart / down / down --volumes) for the local compose project, when there is one |
+| `C` | Services panel: the compose verbs without a key of their own — kill, pause, unpause, build, pull, `logs --follow` — each for the selected service and for the whole project |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
@@ -129,6 +136,9 @@ file - see [docs/Config.md](docs/Config.md).
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |
+
+On the Services panel the per-instance keys - `m`, `n`, `a`, `E`, `y` - act
+on the service's instance, asking which one when it has replicas.
 
 Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
 for the full list of options and defaults.
@@ -151,9 +161,9 @@ If lazyincus is useful to you, that money is better spent there than here.
 
 Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 
-- The compose config, credits and aggregate-log tabs lazydocker's
-  Services/Project panel had — the panel itself and `u`/`d` are covered by
-  the Compose panel above; see
+- The credits and aggregate-log tabs lazydocker's Services/Project panel
+  had — the panel itself and the compose verbs are covered by the Services
+  panel above; see
   [BACKLOG.md](BACKLOG.md#incus-compose-integration) for what's left
 - Custom and bulk commands
 - Historical resource-usage graphing (the Stats tab is point-in-time only)

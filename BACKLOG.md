@@ -31,13 +31,16 @@ derive from it automatically.
 
 ### Side panels
 
-Both have six now — the sixth, Compose, shipped as the Incus analog of
-lazydocker's docker-compose-specific Services/Project panels; see
+Both have six, and both only when a compose file is local: Services is the
+Incus analog of lazydocker's docker-compose-specific Services/Project
+panels, and like lazydocker's it pushes the plain instance list down to
+"Standalone Instances". See
 [incus-compose integration](#incus-compose-integration).
 
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
-      credits tab; the Compose panel is where it would go here too, as
-      upstream (`CreditsTitle` is ported but unused).
+      credits tab (`CreditsTitle` is ported but unused). Ours has no
+      always-present panel to host it: Services is absent without a compose
+      file, so this needs somewhere else.
 
 ### Per-instance actions
 
@@ -225,48 +228,40 @@ data lazyincus has in hand, not new API calls.
       the reference the compose file named. Incus's own
       `volatile.base_image` is a fingerprint, so this is the only place an
       instance's image appears by name.
-- [ ] **Grouping by service** — the other half of what lazydocker's Services
-      panel gave you. The think it needed, done against a live stack: most
-      of it is already there. `sortInstances` puts project first, and
-      incus-compose names instances `<service>-<index>`, so the existing
-      name sort groups a service's replicas as a side effect — a stack
-      already reads as a block, and the `service` column labels it. Adding
-      service as a sort key before name would change nothing.
+- [x] **A services panel** — the other half of what lazydocker's Services
+      panel gave you, shipped: when a compose file is in the working
+      directory, one row per service it declares, and the instances panel
+      becomes "Standalone Instances" without them. See
+      [CLAUDE.md](CLAUDE.md#services).
 
-      What's actually missing is a visual break and collapsing, and that's
-      where the flat panel resists: `SelectedIdx` indexes
-      `List.GetItems()`, so every rendered line has to be an item. Headers
-      mean `SideListPanel[*commands.Instance]` becomes a panel over a
-      header-or-instance row, and then every keybinding in
-      `instances_panel.go`, `OnSelect`/`OnClick`, and the snapshots panel
-      that follows the selection all have to no-op on a header and skip it
-      when navigating. That's the whole cost, and it buys a separator on a
-      list that's already ordered — worth doing only if collapsing comes
-      with it.
-
-      The one thing that panel bought which no column can is a service with
-      no instance behind it: lazydocker reads the compose file, so a service
-      that's down still gets a row, in state `none`. Ours sees only what the
-      daemon holds, so that service is simply absent. Surfacing it means
-      reading the compose file too — `incus-compose config --services`, and
-      with it the local-project gate below.
+      The panel reads the compose file rather than the daemon, which is what
+      buys the thing no column could: a service that's down still gets a
+      row, in state `none`. Grouping a stack inside the flat instances panel
+      is what this makes unnecessary — headers there would have meant
+      `SideListPanel[*commands.Instance]` becoming a panel over a
+      header-or-instance row, with every keybinding, `OnSelect`/`OnClick`
+      and the snapshots panel having to no-op on a header, for a separator
+      on a list the name sort already orders.
 
 ### 3. Project panel
 
-lazydocker's sixth side panel, and the home for everything compose-shaped
-that isn't a column. The panel itself, and the local-project gate on `u`/`d`
-lazydocker also enforces (`CannotManageNonLocalService`), shipped - see
-[CLAUDE.md](CLAUDE.md#compose) and CHANGELOG.md. What's left is the part of
-lazydocker's panel that was a main-panel tab rather than the list itself:
+lazydocker's sixth side panel. Its list, its local-project gate
+(`CannotManageNonLocalService`) and its compose verbs all live in the
+Services panel now — a list of every compose project on the server was rows
+nothing could act on, so it went with the rewrite. What's left is the part
+of lazydocker's panel that was a main-panel tab rather than the list:
 
-- [x] **The panel**, **`u` / `d`** and **the compose config tab** — shipped
-      as the sixth side panel, Compose.
+- [x] **The verbs** and **the compose config tab** — shipped on the
+      Services panel, per-service.
 - [ ] **Credits tab** — the home the
-      [missing credits surface](#side-panels) is waiting for.
+      [missing credits surface](#side-panels) is waiting for. It lost the
+      panel it was going to live on, so it needs somewhere else.
 - [ ] **Aggregate logs tab** — lazydocker tails every container in the
-      project at once. `incus-compose logs -f` is the analog, but
-      `TailConsoleLog` is per-instance and drain-on-read, so merging the
-      streams ourselves is work; a subprocess is the cheap version.
+      project at once. `incus-compose logs -f` is the analog and is in the
+      Services panel's `C` menu as a subprocess; an in-panel tab still
+      wants merged streams, and `TailConsoleLog` is per-instance and
+      drain-on-read. The same gap makes a replicated service's Logs tab a
+      hint rather than output.
 
 ### Caveats
 

@@ -242,13 +242,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.ExecShell,
 		},
 		{
-			ViewName:    "instances",
-			Key:         'C',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstancesComposeMenu,
-			Description: gui.Tr.ComposeActions,
-		},
-		{
 			ViewName:    "images",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
@@ -291,46 +284,88 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         'u',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeUp,
 			Description: gui.Tr.ComposeUp,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeDown,
 			Description: gui.Tr.ComposeDown,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         'U',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeUpPullRecreate,
 			Description: gui.Tr.ComposeUpPullRecreate,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         'S',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeStart,
 			Description: gui.Tr.ComposeStart,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         's',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeStop,
 			Description: gui.Tr.ComposeStop,
 		},
 		{
-			ViewName:    "composeProjects",
+			ViewName:    "services",
 			Key:         'r',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeRestart,
 			Description: gui.Tr.ComposeRestart,
+		},
+		{
+			ViewName:    "services",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeMenu,
+			Description: gui.Tr.ComposeActions,
+		},
+		{
+			ViewName:    "services",
+			Key:         'm',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceViewLogs,
+			Description: gui.Tr.ViewLogs,
+		},
+		{
+			ViewName:    "services",
+			Key:         'n',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceSnapshotCreate,
+			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "services",
+			Key:         'a',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceAttach,
+			Description: gui.Tr.Attach,
+		},
+		{
+			ViewName:    "services",
+			Key:         'E',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceExecShell,
+			Description: gui.Tr.ExecShell,
+		},
+		{
+			ViewName:    "services",
+			Key:         'y',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceCopyIPv4,
+			Description: gui.Tr.CopyIPv4,
 		},
 		{
 			ViewName:    "main",
@@ -463,7 +498,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 	)
 
-	for index, def := range gui.sidePanelDefs() {
+	for index, def := range gui.visibleSidePanelDefs() {
 		bindings = append(bindings, &Binding{
 			Handler:     gui.handleGoTo(*def.viewPtr),
 			Key:         focusKey(index),

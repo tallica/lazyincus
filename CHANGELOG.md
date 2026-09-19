@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Optional `health` and `image` columns in the instances panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. Off by default; see [docs/Config.md](docs/Config.md).
-- Sixth side panel, **Compose** (`6`), listing incus-compose's managed projects: an Info tab with its description, healthcheck opt-in, resource counts and a service table (`incus-compose ps`'s own columns), `u`/`U`/`d` to start, pull-and-recreate, or stop the local one, and a Config tab showing its rendered compose file — see [CLAUDE.md](CLAUDE.md#compose). The credits/aggregate-log tabs from BACKLOG.md's [project panel](BACKLOG.md#3-project-panel) plan are still deferred.
-- Starting lazyincus from a directory with a compose file now scopes every panel to that project by default, the same as picking it with `P`.
-- `S`/`s`/`r` on the Compose panel run `incus-compose start`/`stop`/`restart` for the local project, confirmed the same way the instances panel's own `S`/`s`/`r` are.
-- `C` on the instances panel opens the local compose project's up/pull-recreate/start/stop/restart/down actions as one menu, without switching to the Compose panel first.
+- **Services** side panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. It appears only when a compose file is in the working directory, and then it's panel `1` — one row per service that file declares, with everything else shifting down a number. Because the rows come from the compose file rather than the daemon, a service that's declared but not running still gets one, in state `none`. Tabs: Info (replica count against what the file asked for, the project's healthcheck and resource counts, and the service's instances as `incus-compose ps` prints them), Logs, and Config (that service's slice of `incus-compose config`). See [CLAUDE.md](CLAUDE.md#services).
+- `u`/`U`/`S`/`s`/`r`/`d` on the Services panel run `incus-compose up`/`up --pull always --recreate`/`start`/`stop`/`restart`/`down` for the selected service, confirmed the way the instances panel's own keys are. `C` holds the verbs without a key of their own — `kill`, `pause`, `unpause`, `build`, `pull`, `logs --follow` — each listed for the service and for the whole project.
+- `m`/`n`/`a`/`E`/`y` work on the Services panel too, acting on the service's instance and asking which one when it has replicas.
+- Optional `health` and `image` columns in the instances panel. Off by default; see [docs/Config.md](docs/Config.md).
+
+### Changed
+- The instances panel is titled **Standalone Instances** and leaves out the local stack's instances whenever the Services panel is holding them, mirroring lazydocker. Another project's compose instances stay put — they have no panel of their own.
+- Starting lazyincus from a directory with a compose file no longer scopes every panel to that project. The stack has its own panel now, so the instances panel spans projects like the rest; `P` still narrows.
 
 ## [0.6.1] - 2026-09-13
 

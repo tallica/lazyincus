@@ -72,7 +72,8 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			if !gui.State.ShowStoppedInstances && isStopped(instance) {
 				return false
 			}
-			return true
+
+			return !gui.isLocalComposeInstance(instance)
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
 			return presentation.GetInstanceDisplayStrings(
@@ -102,6 +103,26 @@ func sortInstances(a *commands.Instance, b *commands.Instance) bool {
 
 func isStopped(instance *commands.Instance) bool {
 	return strings.EqualFold(instance.Instance.Status, "Stopped")
+}
+
+// isLocalComposeInstance reports whether the services panel already has this
+// instance, which is what makes this panel the standalone one. Only the
+// local stack moves: another project's compose instances have no panel of
+// their own, so they stay here.
+func (gui *Gui) isLocalComposeInstance(instance *commands.Instance) bool {
+	if gui.noLocalComposeProject() {
+		return false
+	}
+
+	if instance.Project != gui.State.LocalComposeProject {
+		return false
+	}
+
+	// ComposeService() reads ExpandedConfig, which RefreshInstanceDetails
+	// fills in the background - so until it has, assume an instance in the
+	// stack's project is the stack's, rather than showing its rows here for
+	// a second and then taking them away.
+	return !instance.DetailsLoaded() || instance.ComposeService() != ""
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {
@@ -142,8 +163,15 @@ func (gui *Gui) refreshInstances() error {
 		return err
 	}
 
+	// Computed over what the panel will actually show: with the local stack
+	// gone to the services panel, the instances left can sit in one project
+	// even when the server's don't.
+	standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
+		return gui.isLocalComposeInstance(instance)
+	})
+
 	gui.State.SpansProjects.Instances = spansMultipleProjects(
-		lo.Map(instances, func(instance *commands.Instance, _ int) string { return instance.Project }))
+		lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
 
 	gui.Panels.Instances.SetItems(instances)
 
@@ -268,6 +296,10 @@ func (gui *Gui) handleInstanceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	return gui.instanceCopyIPv4(inst)
+}
+
+func (gui *Gui) instanceCopyIPv4(inst *commands.Instance) error {
 	addresses := inst.Addresses("inet")
 	if len(addresses) == 0 {
 		return gui.createErrorPanel(gui.Tr.NoIPv4Address)

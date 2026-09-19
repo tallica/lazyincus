@@ -170,6 +170,10 @@ func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	return gui.snapshotCreatePrompt(instance)
+}
+
+func (gui *Gui) snapshotCreatePrompt(instance *commands.Instance) error {
 	prompt := &snapshotPrompt{instance: instance}
 
 	gui.onNewPopupPanel()

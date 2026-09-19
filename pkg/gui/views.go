@@ -26,12 +26,12 @@ func hideUnderScores() bool {
 
 type Views struct {
 	// side panels
-	Instances       *gocui.View
-	Images          *gocui.View
-	Volumes         *gocui.View
-	Networks        *gocui.View
-	Snapshots       *gocui.View
-	ComposeProjects *gocui.View
+	Instances *gocui.View
+	Images    *gocui.View
+	Volumes   *gocui.View
+	Networks  *gocui.View
+	Snapshots *gocui.View
+	Services  *gocui.View
 
 	// main panel
 	Main *gocui.View
@@ -132,7 +132,7 @@ func (gui *Gui) styleAllViews() {
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel
 	gui.Views.Main.IgnoreCarriageReturns = true
 
-	for index, def := range gui.sidePanelDefs() {
+	for index, def := range gui.visibleSidePanelDefs() {
 		view := *def.viewPtr
 		view.Highlight = true
 		view.SelBgColor = selectedLineBgColor

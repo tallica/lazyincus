@@ -46,18 +46,110 @@ panels — view name, title, view pointer, panel accessor. View creation,
 styling (including the `[n]` title prefix), the number keys, the layout and
 `allSidePanels()` all derive from it, so a new panel is one entry there plus
 its own `*_panel.go`, presentation and refresh loop. Order is both the
-top-to-bottom layout order and the number-key order; the first panel is what
-the app focuses at startup; `tab`/`shift+tab` cycle through them in that
-order, stepping from the last side panel to have focus. The side column splits evenly between whichever
-panels aren't hidden, or — with `gui.expandFocusedSidePanel` — gives the
+top-to-bottom layout order and the number-key order. A panel can be absent
+for the session (`hidden` on the def); everything user-facing is numbered
+over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
+what the app focuses at startup. `tab`/`shift+tab` cycle through them in
+that order, stepping from the last side panel to have focus. The side column
+splits evenly between whichever panels aren't hidden, or — with `gui.expandFocusedSidePanel` — gives the
 focused one everything the others don't need. "Focused" there means the last
 side panel to have focus, so stepping into the main panel doesn't collapse
 the list you were reading.
 
+### Services
+
+Only there when there's a compose file in lazyincus's own working directory,
+and then it's the first side panel — the shape lazydocker takes when a
+`compose.yaml` is local. `SideListPanel.Hide` is what removes it (its first
+caller), and the layout already copes: `setViewFromDimensions` marks a view
+with no box invisible.
+
+That gate means panel numbering can't index `sidePanelDefs()` — a hidden
+first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
+number keys, the title prefixes, `sideViewNames` and the startup focus all
+run over instead. Hidden-ness is a `hidden` func on the def rather than the
+panel's own `Hide`, because views are styled and keys bound before
+`setPanels` has built any panel to ask.
+
+It also means the lookup runs before anything else: `Run` calls
+`localComposeProject` at the top, ahead of `createAllViews`, since it
+decides whether the panel exists at all. One `incus-compose config --format
+json` shell-out, once — the working directory doesn't change mid-session.
+No compose file means the command exits 1 and there's no local project; not
+treated as an error, since most servers with compose stacks aren't
+administered from this directory.
+
+Rows come from that same JSON, not from the daemon: `parseComposeConfig`
+reads `.name` and `.services`, so a service the compose file declares but
+nothing is running still gets a row, in state `none`.
+`GetComposeServices` then pairs each declared service with the project's
+instances, matching on `user.label.incus-compose.service` via
+`Instance.ComposeService()`. It fetches with `GetProjectInstances` rather
+than reading the instances panel's list, since the panels can be scoped
+anywhere. An instance whose label names no declared service — a one-off
+from `incus-compose run` — matches no row and stays in the instances panel.
+
+`ComposeService.Status` rolls the instances up to
+running/stopped/partial/none, counting anything that isn't `Running` as
+stopped: a frozen replica beside a running one makes the service partial,
+which is the distinction that matters at this altitude. `Health` rolls up
+ic-healthd's verdict worst-first.
+
+The instances panel is the other half of the split: its filter drops the
+local project's compose instances, and its title becomes "Standalone
+Instances". Another project's compose instances stay — they have no panel
+of their own. `isLocalComposeInstance` treats an instance whose details
+haven't loaded yet as the stack's, because `ComposeService()` reads
+`ExpandedConfig` and would otherwise show the stack's rows for a second and
+then take them away. `SpansProjects.Instances` is computed over what's left
+after that filter, not over everything the daemon returned.
+
+Because the stack has a panel of its own, startup no longer scopes the
+client to it — the instances panel spans projects like every other panel,
+and `P` still narrows.
+
+Keys act on the selected service, passing its name as the `SERVICE`
+argument every incus-compose verb takes: `u` runs `up --detach`, `U` adds
+`--pull always --recreate` to pick up an image the compose file's tag now
+resolves to, `S`/`s`/`r` run `start`/`stop`/`restart`, `d` opens a menu for
+`down` or `down --volumes`. `s` and `d` confirm, `S`/`r`/`u` don't — same
+rule as the instances panel. `C` holds the verbs that don't warrant a key
+(`kill`, `pause`, `unpause`, `build`, `pull`, `logs --follow`), each listed
+twice: once for the service, once for the project, which is the same command
+with the argument left off. `composeRun` is all of them, and refreshes the
+instances and services panels once the subprocess returns rather than
+waiting for the poll. `U` can fail on a non-local daemon for reasons that
+are incus-compose's, not ours — see [BACKLOG.md](BACKLOG.md#caveats).
+
+The per-instance keys (`m`, `n`, `a`, `E`, `y`) reach the service's
+instance through `withServiceInstance`, which acts directly on the only one
+and otherwise asks which — the reason `handleSnapshotCreate` and
+`handleInstanceCopyIPv4` were split into handler and action.
+
+Main panel tabs:
+
+- **Info** — the service, its replica count against what the compose file
+  asked for, and its instances as `incus-compose ps` prints them. The
+  Healthcheck and Resources lines are the project's, from
+  `State.ComposeProject` (`GetComposeProject` fetches it during
+  `refreshServices`, so rendering makes no API call).
+- **Logs** — delegates to the instance logs renderer for a single-instance
+  service; merging several replicas' drain-on-read buffers into one ordered
+  stream is a different problem, so a replicated service points at `C`'s
+  `logs --follow` instead.
+- **Config** — the service's slice of `incus-compose config --format json`,
+  handed to `yaml.JSONToYAML` untouched. Decoding through `map[string]any`
+  first would turn every count into a float64 and render `replicas: 2` as
+  `2.0`.
+
+The credits tab and aggregate-logs tab from lazydocker's Project panel
+aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
+
 ### Instances
 
 Lists containers and VMs across every project by default, or one project
-when `P` scopes down. Columns mirror `incus list`: name, status, type, IPv4, IPv6,
+when `P` scopes down - minus the local stack's, when there's a services
+panel holding those. Columns mirror `incus list`: name, status, type, IPv4, IPv6,
 snapshot count. Type, addresses and snapshot count only appear once
 `RefreshInstanceDetails` has fetched full details in the background.
 
@@ -158,72 +250,6 @@ image they belong to.
 
 `GetNetworks`, managed and unmanaged alike. Only managed ones can be
 deleted; the unmanaged entries are host interfaces Incus merely reports.
-
-### Compose
-
-Lists the Incus projects [incus-compose](https://github.com/lxc/incus-compose)
-manages: `GetComposeProjects` fetches every project (`GetProjects`, not
-`GetProjectNames` — the config and `UsedBy` are what's needed) and keeps the
-ones carrying `user.incus-compose.managed`, which excludes
-`incus-compose-cache` and any plain Incus project.
-
-The Info tab's Healthcheck and Resources lines both come from that one
-fetch, no extra call: healthcheck from `user.healthcheck.enabled`/`.scope`
-in the project's config, and the resource counts from `ComposeProject.
-ResourceCounts` (`pkg/commands/incus_compose.go`), tallying `UsedBy`.
-
-Below that, a table of the project's instances - service, instance, image,
-status, addresses, the columns `incus-compose ps` itself prints - does need
-its own fetch, `IncusCommand.GetProjectInstances`, rather than filtering the
-instances panel's already-loaded list: that list only holds whichever
-project the panels are currently scoped to, which isn't necessarily the one
-whose Info tab is open, and quietly showing nothing for a project's
-services just because a different one is focused would be worse than the
-extra call.
-
-`u`/`U`/`d` only work on the one project whose compose file lives in
-lazyincus's own working directory — the same local-project gate lazydocker
-enforces on its Services panel. That project is found once at startup
-(`localComposeProjectName`, `pkg/gui/compose_projects_panel.go`), by
-shelling out to `incus-compose config --format json` and reading `.name`,
-the project name incus-compose itself would act on. No compose file here
-means the command exits 1 and nothing is local — not treated as an error,
-since most servers with compose stacks aren't administered from this
-directory.
-
-Finding the local project also decides the startup scope: `Run` calls
-`UseProject` with it, ahead of the first refresh, before falling back to
-every project when there isn't one. `UseProject` is purely local
-(`pkg/commands/incus.go`), so this costs nothing beyond the one
-`incus-compose config` shell-out already needed for the gate, and the
-panels never render an all-projects flash before narrowing.
-
-`u` runs `incus-compose up --detach`; `U` adds `--pull always
---recreate`, to pick up an image the compose file's tag now resolves to
-without waiting for the daemon to notice on its own; `S`/`s`/`r` run
-`start`/`stop`/`restart` - the project-wide equivalent of the same keys on
-the instances panel, and confirmed the same way: `s` asks first since it
-interrupts something running, `S`/`r` don't; `d` opens a menu for `down` or
-`down --volumes`, both confirmed. All six shell out via `runSubprocess`,
-the same pattern instance exec/attach use, and refresh the instances and
-compose-projects panels once the subprocess returns. `U` can fail on a
-non-local daemon for reasons that are incus-compose's, not ours — see
-[BACKLOG.md](BACKLOG.md#caveats).
-
-`C` on the instances panel opens the same seven actions as one flat menu.
-It acts on `State.LocalComposeProject` directly rather than a panel
-selection, which is also why the underlying actions (`composeUp`,
-`composeUpPullRecreate`, `confirmComposeDown`, ...) take a project name
-rather than a `*ComposeProject` - there's no selected item to read one from
-here. `composeLocalProjectSelection` is the shared gate the composeProjects
-panel's own six keybindings use instead.
-
-The main panel's Config tab applies the same gate to a read: `incus-compose
-config`'s plain YAML for the local project, and the same non-local hint
-otherwise.
-
-The credits tab and aggregate-logs tab from lazydocker's Project panel
-aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
 
 ## Incus client integration details
 

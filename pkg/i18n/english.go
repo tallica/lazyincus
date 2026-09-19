@@ -86,19 +86,28 @@ type TranslationSet struct {
 	NoNetworks                string
 	DeleteNetwork             string
 
-	ComposeProjectsTitle          string
-	NoComposeProjects             string
-	NoComposeServices             string
+	ServicesTitle                 string
+	NoServices                    string
+	ServiceNotRunning             string
+	ServiceNotInComposeFile       string
+	ServiceLogsMultipleInstances  string
+	StandaloneInstancesTitle      string
 	InfoTitle                     string
 	ComposeManageHint             string
-	ComposeNotLocalHint           string
-	ComposeCannotManageNonLocal   string
+	ComposeTargetService          string
+	ComposeTargetProject          string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
 	ComposeStart                  string
 	ComposeStop                   string
 	ComposeRestart                string
 	ComposeDown                   string
+	ComposeKill                   string
+	ComposePause                  string
+	ComposeUnpause                string
+	ComposeBuild                  string
+	ComposePull                   string
+	ComposeLogs                   string
 	ComposeDownMenuTitle          string
 	ComposeMenuTitle              string
 	ComposeActions                string
@@ -108,6 +117,7 @@ type TranslationSet struct {
 	ConfirmComposeDownWithVolumes string
 	ConfirmComposeUpPullRecreate  string
 	ConfirmComposeStop            string
+	ConfirmComposeKill            string
 
 	CannotDeleteUnmanagedNetwork string
 	NoInstances                  string
@@ -241,28 +251,38 @@ func englishSet() TranslationSet {
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
 
-		ComposeProjectsTitle:          "Compose",
-		NoComposeProjects:             "No compose projects",
-		NoComposeServices:             "No instances found for this project",
+		ServicesTitle:                 "Services",
+		NoServices:                    "No services",
+		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up.",
+		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
+		ServiceLogsMultipleInstances:  "This service has more than one instance. Pick one in the Standalone Instances panel, or press 'C' for `incus-compose logs`.",
+		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
-		ComposeManageHint:             "This is the compose project in the current directory - press 'u' to run `incus-compose up`, 'U' to pull the latest images and recreate it, or 'd' to bring it down.",
-		ComposeNotLocalHint:           "This project was found on the server, but its compose file isn't in the current directory, so it can't be managed from here.",
-		ComposeCannotManageNonLocal:   "Only the compose project in the current directory can be managed from here.",
+		ComposeManageHint:             "'u' brings this service up, 'S'/'s'/'r' start, stop and restart it, 'd' brings it down, and 'C' has the rest - each of them for the whole project too.",
+		ComposeTargetService:          "service %s",
+		ComposeTargetProject:          "project %s",
 		ComposeUp:                     "compose up",
 		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeStart:                  "compose start",
 		ComposeStop:                   "compose stop",
 		ComposeRestart:                "compose restart",
 		ComposeDown:                   "compose down",
+		ComposeKill:                   "kill",
+		ComposePause:                  "pause",
+		ComposeUnpause:                "unpause",
+		ComposeBuild:                  "build",
+		ComposePull:                   "pull",
+		ComposeLogs:                   "logs --follow",
 		ComposeDownMenuTitle:          "Down",
 		ComposeMenuTitle:              "Compose",
 		ComposeActions:                "compose actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
-		ConfirmComposeDown:            "Are you sure you want to bring down compose project %s?",
-		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down compose project %s and delete its volumes?",
-		ConfirmComposeUpPullRecreate:  "Are you sure you want to pull the latest images and recreate compose project %s? Running instances will be replaced.",
-		ConfirmComposeStop:            "Are you sure you want to stop compose project %s?",
+		ConfirmComposeDown:            "Are you sure you want to bring down %s?",
+		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down %s and delete its volumes?",
+		ConfirmComposeUpPullRecreate:  "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
+		ConfirmComposeStop:            "Are you sure you want to stop %s?",
+		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 
 		SnapshotsTitle: "Snapshots",
 		TopTitle:       "Top",

@@ -22,7 +22,7 @@ type ComposeProject struct {
 	UsedBy []string
 
 	// Local is true when this project matches the compose file in the
-	// directory lazyincus was started from - see (*Gui).localComposeProjectName
+	// directory lazyincus was started from - see (*Gui).localComposeProject
 	// and CLAUDE.md's "Compose" section for what that gates.
 	Local bool
 }
@@ -95,31 +95,6 @@ func composeResourceKind(url string) string {
 	}
 }
 
-// GetComposeProjects lists the Incus projects incus-compose manages.
-func (c *IncusCommand) GetComposeProjects() ([]*ComposeProject, error) {
-	projects, err := c.Client().GetProjects()
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*ComposeProject, 0, len(projects))
-
-	for _, project := range projects {
-		if !isComposeManagedProject(project.Config) {
-			continue
-		}
-
-		result = append(result, &ComposeProject{
-			Name:        project.Name,
-			Description: project.Description,
-			Config:      project.Config,
-			UsedBy:      project.UsedBy,
-		})
-	}
-
-	return result, nil
-}
-
 // GetProjectInstances lists one project's instances directly, regardless of
 // which project the panels are currently scoped to.
 func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) {
@@ -151,4 +126,133 @@ func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) 
 	}
 
 	return instances, nil
+}
+
+// ComposeService is one service of the local compose file, together with
+// whatever instances the daemon currently holds for it. The service list
+// comes from the compose file rather than from the daemon, so a service
+// nothing is running still gets an entry - with no instances, and status
+// ServiceNone. That's the one thing the panel shows which no instance
+// column can.
+type ComposeService struct {
+	Name string
+
+	// Image and Replicas are what the compose file asked for, not what the
+	// daemon ended up with; Instances is the latter.
+	Image    string
+	Replicas int
+
+	// Project is the Incus project incus-compose created for the stack.
+	Project string
+
+	Instances []*Instance
+}
+
+// The aggregate states a service's instances roll up to.
+const (
+	ServiceRunning = "running"
+	ServiceStopped = "stopped"
+	ServicePartial = "partial"
+	ServiceNone    = "none"
+)
+
+// Status rolls the service's instances up to one state. Anything that isn't
+// running counts as stopped here - a frozen or starting replica alongside a
+// running one makes the service partial, which is the distinction that
+// matters at this altitude; the per-instance status is a row below.
+func (s *ComposeService) Status() string {
+	if len(s.Instances) == 0 {
+		return ServiceNone
+	}
+
+	running := 0
+
+	for _, instance := range s.Instances {
+		if instance.IsRunning() {
+			running++
+		}
+	}
+
+	switch running {
+	case 0:
+		return ServiceStopped
+	case len(s.Instances):
+		return ServiceRunning
+	default:
+		return ServicePartial
+	}
+}
+
+// Health rolls up ic-healthd's per-instance verdict, worst first: one
+// unhealthy replica makes the service unhealthy. Empty when no replica has
+// been checked, which is also what an instance with no healthcheck reports.
+func (s *ComposeService) Health() string {
+	worst := ""
+
+	for _, instance := range s.Instances {
+		switch instance.HealthStatus() {
+		case HealthUnhealthy:
+			return HealthUnhealthy
+		case HealthStarting:
+			worst = HealthStarting
+		case HealthHealthy:
+			if worst == "" {
+				worst = HealthHealthy
+			}
+		}
+	}
+
+	return worst
+}
+
+// GetComposeServices pairs the services the compose file declares with the
+// project's instances, matching on the label incus-compose stamps on each
+// (Instance.ComposeService). Instances whose label names no declared service
+// - a one-off from `incus-compose run`, say - belong to no row and are left
+// out.
+func (c *IncusCommand) GetComposeServices(project string, declared []ComposeService) ([]*ComposeService, error) {
+	instances, err := c.GetProjectInstances(project)
+	if err != nil {
+		return nil, err
+	}
+
+	services := make([]*ComposeService, 0, len(declared))
+	byName := make(map[string]*ComposeService, len(declared))
+
+	for _, service := range declared {
+		service.Project = project
+		services = append(services, &service)
+		byName[service.Name] = services[len(services)-1]
+	}
+
+	for _, instance := range instances {
+		if service, ok := byName[instance.ComposeService()]; ok {
+			service.Instances = append(service.Instances, instance)
+		}
+	}
+
+	return services, nil
+}
+
+// GetComposeProject fetches the one compose-managed project by name, for the
+// header the services panel draws above its rows. A project that exists but
+// isn't compose-managed reads as absent: nothing else here would know what
+// to do with it.
+func (c *IncusCommand) GetComposeProject(name string) (*ComposeProject, error) {
+	project, _, err := c.Client().GetProject(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isComposeManagedProject(project.Config) {
+		return nil, nil
+	}
+
+	return &ComposeProject{
+		Name:        project.Name,
+		Description: project.Description,
+		Config:      project.Config,
+		UsedBy:      project.UsedBy,
+		Local:       true,
+	}, nil
 }

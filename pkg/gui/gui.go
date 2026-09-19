@@ -42,13 +42,13 @@ type Gui struct {
 }
 
 type Panels struct {
-	Instances       *panels.SideListPanel[*commands.Instance]
-	Images          *panels.SideListPanel[*commands.Image]
-	Snapshots       *panels.SideListPanel[*commands.Snapshot]
-	Volumes         *panels.SideListPanel[*commands.Volume]
-	Networks        *panels.SideListPanel[*commands.Network]
-	ComposeProjects *panels.SideListPanel[*commands.ComposeProject]
-	Menu            *panels.SideListPanel[*types.MenuItem]
+	Instances *panels.SideListPanel[*commands.Instance]
+	Images    *panels.SideListPanel[*commands.Image]
+	Snapshots *panels.SideListPanel[*commands.Snapshot]
+	Volumes   *panels.SideListPanel[*commands.Volume]
+	Networks  *panels.SideListPanel[*commands.Network]
+	Services  *panels.SideListPanel[*commands.ComposeService]
+	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 
 type Mutexes struct {
@@ -88,10 +88,20 @@ type guiState struct {
 	Connection connectionState
 
 	// The compose project whose compose file lives in lazyincus's own
-	// working directory - see (*Gui).localComposeProjectName. Empty if
-	// there isn't one; resolved once at startup, since the working
-	// directory doesn't change mid-session.
+	// working directory - see (*Gui).localComposeProject. Empty if there
+	// isn't one, which is what hides the services panel; resolved once at
+	// startup, since the working directory doesn't change mid-session.
 	LocalComposeProject string
+
+	// ComposeServiceDefs is what that compose file declares, which is what
+	// lets a service with nothing running still have a row. Resolved with
+	// the project name, from the same output.
+	ComposeServiceDefs []commands.ComposeService
+
+	// ComposeProject is the local project as the daemon holds it, backing
+	// the healthcheck and resource lines of the services panel's Info tab.
+	// Refreshed with the services, so rendering makes no API calls.
+	ComposeProject *commands.ComposeProject
 
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
@@ -219,6 +229,12 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 func (gui *Gui) Run() error {
 	defer gui.taskManager.Close()
 
+	// Before any view exists: whether there's a compose file in the working
+	// directory decides whether the services panel is there at all, and so
+	// which panels get styled, numbered and focused first. One fast
+	// subprocess, once - the working directory doesn't change mid-session.
+	gui.State.LocalComposeProject, gui.State.ComposeServiceDefs = gui.localComposeProject()
+
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
 		OutputMode:       gocui.OutputTrue,
 		RuneReplacements: map[rune]string{},
@@ -276,11 +292,6 @@ func (gui *Gui) Run() error {
 	}
 
 	go func() {
-		gui.State.LocalComposeProject = gui.localComposeProjectName()
-		if gui.State.LocalComposeProject != "" {
-			gui.IncusCommand.UseProject(gui.State.LocalComposeProject)
-		}
-
 		if err := gui.refreshInstances(); err != nil {
 			gui.Log.Error(err)
 		}
@@ -297,7 +308,7 @@ func (gui *Gui) Run() error {
 			gui.Log.Error(err)
 		}
 
-		if err := gui.refreshComposeProjects(); err != nil {
+		if err := gui.refreshServices(); err != nil {
 			gui.Log.Error(err)
 		}
 
@@ -309,7 +320,7 @@ func (gui *Gui) Run() error {
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
-		gui.goEvery(time.Second*10, gui.refreshComposeProjectsQuiet)
+		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 
 	err = g.MainLoop()
@@ -341,13 +352,13 @@ func (gui *Gui) handleError(err error) error {
 
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
-		Instances:       gui.getInstancesPanel(),
-		Snapshots:       gui.getSnapshotsPanel(),
-		Images:          gui.getImagesPanel(),
-		Volumes:         gui.getVolumesPanel(),
-		Networks:        gui.getNetworksPanel(),
-		ComposeProjects: gui.getComposeProjectsPanel(),
-		Menu:            gui.getMenuPanel(),
+		Instances: gui.getInstancesPanel(),
+		Snapshots: gui.getSnapshotsPanel(),
+		Images:    gui.getImagesPanel(),
+		Volumes:   gui.getVolumesPanel(),
+		Networks:  gui.getNetworksPanel(),
+		Services:  gui.getServicesPanel(),
+		Menu:      gui.getMenuPanel(),
 	}
 }
 
@@ -505,7 +516,7 @@ func (gui *Gui) ShouldRefresh(key string) bool {
 }
 
 func (gui *Gui) initiallyFocusedViewName() string {
-	return gui.sidePanelDefs()[0].name
+	return gui.visibleSidePanelDefs()[0].name
 }
 
 func (gui *Gui) IgnoreStrings() []string {

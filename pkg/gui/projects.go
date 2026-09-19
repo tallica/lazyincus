@@ -87,7 +87,7 @@ func (gui *Gui) reloadAfterProjectChange() error {
 		gui.refreshImages,
 		gui.refreshVolumes,
 		gui.refreshNetworks,
-		gui.refreshComposeProjects,
+		gui.refreshServices,
 	} {
 		if err := refresh(); err != nil {
 			return gui.createErrorPanel(err.Error())

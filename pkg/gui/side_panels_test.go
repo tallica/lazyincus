@@ -3,6 +3,7 @@ package gui
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/i18n"
@@ -32,6 +33,25 @@ func TestFocusKeysStartAtOne(t *testing.T) {
 	gui := &Gui{}
 	assert.Equal(t, "[1]", gui.sidePanelTitlePrefix(0))
 	assert.Equal(t, "[3]", gui.sidePanelTitlePrefix(2))
+}
+
+func TestServicesPanelHiddenWithoutALocalComposeProject(t *testing.T) {
+	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
+
+	names := func() []string {
+		return lo.Map(gui.visibleSidePanelDefs(), func(def sidePanelDef, _ int) string { return def.name })
+	}
+
+	// No compose file in the working directory: the panel isn't there, and
+	// instances is `1` rather than leaving a gap at it.
+	assert.NotContains(t, names(), "services")
+	assert.Equal(t, "instances", names()[0])
+	assert.Equal(t, gui.Tr.InstancesTitle, gui.sidePanelDefs()[1].title)
+
+	gui.State.LocalComposeProject = "playground"
+
+	assert.Equal(t, "services", names()[0])
+	assert.Equal(t, gui.Tr.StandaloneInstancesTitle, gui.sidePanelDefs()[1].title)
 }
 
 func TestFocusPanelDescription(t *testing.T) {

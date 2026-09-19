@@ -24,13 +24,24 @@ type sidePanelDef struct {
 	// panel returns the panel object for this definition, once setPanels has
 	// built them.
 	panel func() panels.ISideListPanel
+	// hidden reports whether this panel is absent for the session. Read
+	// while styling views and binding keys, both of which happen before
+	// setPanels, so it can't go through the panel's own Hide.
+	hidden func() bool
 }
 
 func (gui *Gui) sidePanelDefs() []sidePanelDef {
 	return []sidePanelDef{
 		{
+			name:    "services",
+			title:   gui.Tr.ServicesTitle,
+			viewPtr: &gui.Views.Services,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Services },
+			hidden:  gui.noLocalComposeProject,
+		},
+		{
 			name:    "instances",
-			title:   gui.Tr.InstancesTitle,
+			title:   gui.instancesPanelTitle(),
 			viewPtr: &gui.Views.Instances,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Instances },
 		},
@@ -58,18 +69,27 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			viewPtr: &gui.Views.Networks,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Networks },
 		},
-		{
-			name:    "composeProjects",
-			title:   gui.Tr.ComposeProjectsTitle,
-			viewPtr: &gui.Views.ComposeProjects,
-			panel:   func() panels.ISideListPanel { return gui.Panels.ComposeProjects },
-		},
 	}
 }
 
-// focusKey is the key that jumps to the panel at this index: `1` for the
-// first, and so on. Panels keep their key when another one is hidden, so the
-// keys don't shuffle under the user.
+// noLocalComposeProject is the services panel's whole reason to exist or
+// not: no compose file in lazyincus's working directory, no services to act
+// on. Resolved once at startup, so it doesn't change mid-session.
+func (gui *Gui) noLocalComposeProject() bool {
+	return gui.State.LocalComposeProject == ""
+}
+
+// visibleSidePanelDefs drops the panels this session doesn't have. Both the
+// number keys and the layout are numbered over this rather than over every
+// definition, so a hidden panel leaves no gap at `1`.
+func (gui *Gui) visibleSidePanelDefs() []sidePanelDef {
+	return lo.Filter(gui.sidePanelDefs(), func(def sidePanelDef, _ int) bool {
+		return def.hidden == nil || !def.hidden()
+	})
+}
+
+// focusKey is the key that jumps to the visible panel at this index: `1` for
+// the first, and so on.
 func focusKey(index int) rune {
 	return rune('1' + index)
 }
@@ -111,6 +131,17 @@ func (gui *Gui) cycleSidePanel(offset int) func() error {
 
 		return gui.switchFocus(view)
 	}
+}
+
+// instancesPanelTitle marks the panel as holding what's left once the
+// services panel has taken the local stack, the way lazydocker's Containers
+// panel becomes "Standalone Containers" alongside its Services panel.
+func (gui *Gui) instancesPanelTitle() string {
+	if gui.noLocalComposeProject() {
+		return gui.Tr.InstancesTitle
+	}
+
+	return gui.Tr.StandaloneInstancesTitle
 }
 
 func (gui *Gui) allSidePanels() []panels.ISideListPanel {
