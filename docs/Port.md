@@ -49,8 +49,8 @@ pkg/gui/
   layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  *_panel.go                   one per side panel: instances, snapshots, images, volumes, networks
-  instance_*.go                per-tab rendering for the instance main panel: logs, stats, env, top
+  *_panel.go                   one per side panel: services, instances, snapshots, images, volumes, networks
+  instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
   projects.go                  project scope menu (all projects, or one)
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel plus menu rows

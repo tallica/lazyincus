@@ -16,10 +16,11 @@ gotchas behind a daemon in a local VM, are in
 
 ## Status
 
-MVP, run end-to-end against a real daemon (via `colima start --runtime
-incus` on macOS). VM-specific paths and the compose verbs remain unverified
-— that colima daemon is Incus 6.11, below the 7.0.1 incus-compose requires,
-and it can't run a nested VM. See BACKLOG.md's Blocked section.
+Past the MVP it started as and in daily use; still pre-1.0. Developed
+against Incus 7.4 in an Alpine VM, which is new enough for incus-compose,
+so the Services panel's verbs run there for real. What that host can't
+provide is a nested VM instance, leaving the VM-specific paths —
+freeze/unfreeze, exec — unverified. See BACKLOG.md's Blocked section.
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27

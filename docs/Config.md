@@ -57,7 +57,7 @@ your file either).
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `scrollHeight` | int | `2` | Lines scrolled at a time in the main panel. |
-| `language` | string | `"en"` | Only English is supported by this MVP; the field exists for forward-compatibility with lazydocker's i18n scaffolding. |
+| `language` | string | `"en"` | Only English is supported; the field exists for forward-compatibility with lazydocker's i18n scaffolding. |
 | `scrollPastBottom` | bool | `false` | Whether you can scroll the main panel past its last line. |
 | `mouseEvents` | bool | `false` | Set `true` to **disable** mouse interaction (the YAML key is `mouseEvents` even though it toggles ignoring them — inherited as-is from lazydocker). |
 | `theme.activeBorderColor` | []string | `[green, bold]` | Border color/attributes for the focused panel. |
@@ -87,7 +87,7 @@ your file either).
 
 ## What's not here (yet)
 
-Ported from lazydocker's config in this MVP: `gui`, `confirmOnQuit`, `oS`,
+Ported from lazydocker's config so far: `gui`, `confirmOnQuit`, `oS`,
 `ignore`. Deliberately **not** ported (see
 [BACKLOG.md](../BACKLOG.md#missing-vs-lazydocker) for
 why): `commandTemplates` (docker-compose command templates), `customCommands`,

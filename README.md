@@ -21,12 +21,14 @@ how it was renamed.
 
 ![lazyincus](docs/screenshot.png)
 
-## Status: MVP
+## Status
 
-An early port, with panels for instances, snapshots, images, volumes,
-networks and — in a directory with a compose file — services. Feature parity
-with lazydocker (custom commands, non-English translations) is not there yet
-— see "What's not here yet" below, and [BACKLOG.md](BACKLOG.md) for the
+Past the MVP it started as, and in daily use — still pre-1.0. Panels for
+instances, snapshots, images, volumes, networks and — in a directory with a
+compose file — services, plus the Incus concepts lazydocker has no analog
+for: projects and remotes. Parity with lazydocker in the corners —
+custom and bulk commands, non-English translations — isn't there; see
+"What's not here yet" below, and [BACKLOG.md](BACKLOG.md) for the
 panel-by-panel comparison.
 
 ## Requirements
@@ -163,7 +165,7 @@ If lazyincus is useful to you, that money is better spent there than here.
 
 ## What's not here yet
 
-Ported deliberately as an MVP, not full parity with lazydocker. Not included:
+Not full parity with lazydocker. Not included:
 
 - The credits and aggregate-log tabs lazydocker's Services/Project panel
   had — the panel itself and the compose verbs are covered by the Services
