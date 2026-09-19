@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `--remote <name>` (`-r`) picks the daemon for the session, an alternative to `INCUS_REMOTE=<name> lazyincus` and to changing the CLI's default. The flag sets that same variable at startup, so `incus console`, `incus exec` and every incus-compose verb — subprocesses that read the environment themselves — land on the daemon the panels are showing. See [docs/Remotes.md](docs/Remotes.md).
+- `--project-directory <dir>` (`-P`) points the Services panel at a compose file somewhere other than the working directory, an alternative to `INCUS_COMPOSE_PROJECT_DIRECTORY`, whose name it borrows and whose variable it sets. A path that isn't a directory is refused at startup rather than showing up as a missing panel.
 
 ## [0.7.0] - 2026-09-19
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 
@@ -23,9 +24,33 @@ var (
 	date        string
 	buildSource = "unknown"
 
-	debuggingFlag = false
-	remoteFlag    = ""
+	debuggingFlag    = false
+	remoteFlag       = ""
+	projectDirectory = ""
 )
+
+// composeProjectDirectory resolves the --project-directory flag to an
+// absolute path, and refuses one that isn't a directory: incus-compose
+// answers a bad path by reporting no compose project at all, which
+// lazyincus reads as "no stack here" and shows as a missing Services panel
+// - a typo would look like the feature not working.
+func composeProjectDirectory(dir string) string {
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	info, err := os.Stat(absolute)
+	if err != nil {
+		log.Fatalf("--project-directory %s: %v", dir, err)
+	}
+
+	if !info.IsDir() {
+		log.Fatalf("--project-directory %s: not a directory", dir)
+	}
+
+	return absolute
+}
 
 func main() {
 	updateBuildInfo()
@@ -46,17 +71,25 @@ func main() {
 
 	flaggy.Bool(&debuggingFlag, "d", "debug", "a boolean")
 	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
+	flaggy.String(&projectDirectory, "P", "project-directory", "Directory to look for the compose file in, overriding INCUS_COMPOSE_PROJECT_DIRECTORY")
 	flaggy.SetVersion(info)
 
 	flaggy.Parse()
 
-	// The flag is applied as INCUS_REMOTE rather than threaded through to
-	// the client, because the client is only half of it: `incus console`,
-	// `incus exec` and every incus-compose verb are subprocesses that read
-	// the environment themselves. Setting it here puts the panels and every
-	// shell-out on the same daemon, which passing a name inward wouldn't.
+	// Both flags are applied as the environment variables they name rather
+	// than threaded inward, because the client is only half of the app:
+	// `incus console`, `incus exec` and every incus-compose verb are
+	// subprocesses that resolve the remote and the compose file themselves.
+	// Setting the variables here puts the panels and every shell-out on the
+	// same daemon and the same stack, which passing values inward wouldn't.
 	if remoteFlag != "" {
 		if err := os.Setenv("INCUS_REMOTE", remoteFlag); err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	if projectDirectory != "" {
+		if err := os.Setenv("INCUS_COMPOSE_PROJECT_DIRECTORY", composeProjectDirectory(projectDirectory)); err != nil {
 			log.Fatal(err.Error())
 		}
 	}

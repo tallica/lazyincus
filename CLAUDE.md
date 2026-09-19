@@ -73,6 +73,11 @@ run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask.
 
+`--project-directory` reaches this the way `--remote` reaches the daemon:
+`main` sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, and incus-compose resolves
+it. It's validated there, since a bad path comes back as no compose project
+at all and would read as the panel simply not appearing.
+
 It also means the lookup runs before anything else: `Run` calls
 `localComposeProject` at the top, ahead of `createAllViews`, since it
 decides whether the panel exists at all. One `incus-compose config --format

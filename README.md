@@ -149,10 +149,16 @@ default; the other two you add through `gui.instanceColumns` — see
 **As a panel, from the compose file.** Start lazyincus from a directory
 holding a compose file and a **Services** panel appears above the others as
 `1`, titled with the compose project, with every other panel shifting down
-a number. It needs the `incus-compose` binary on `PATH`. "Directory"
-follows incus-compose's own resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY`
-works too (lazyincus shells out without passing its own `-P`, so that flag
-isn't reachable this way).
+a number. It needs the `incus-compose` binary on `PATH`. To run from
+somewhere else, name the directory:
+
+```sh
+lazyincus --project-directory ~/stacks/zigbee2mqtt
+```
+
+`-P` is the short form, and `INCUS_COMPOSE_PROJECT_DIRECTORY` in the
+environment does the same — the flag sets that variable, so incus-compose
+resolves the stack exactly as it would on its own command line.
 
 The rows come from the compose file rather than the daemon, so a service
 the file declares but nothing is running still gets one, in state `none`.
