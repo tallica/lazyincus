@@ -168,9 +168,11 @@ replacement for `docker compose` that runs an unmodified `compose.yaml`
 against Incus, pulling OCI images straight from docker.io/ghcr.io via Incus's
 native OCI support. It started as [bketelsen/incus-compose] and now lives
 under the LXC org; its docs call it stable, and it needs Incus 7.0.1 LTS or
-7.2+ (this port builds against client v7.3.0, so no version problem).
-Commands mirror compose: `up`, `down`, `start`, `stop`, `restart`,
-`list`/`ps`, `logs`, `exec`, `config`, `build`.
+7.2+ — of the *daemon*, not the client library this port builds against, so
+v7.3.0 on our side doesn't clear it and a 6.11 server leaves every verb
+refused ([Blocked](#needs-a-newer-daemon)). Commands mirror compose: `up`,
+`down`, `start`, `stop`, `restart`, `list`/`ps`, `logs`, `exec`, `config`,
+`build`.
 
 [bketelsen/incus-compose]: https://github.com/bketelsen/incus-compose
 
@@ -267,7 +269,10 @@ of lazydocker's panel that was a main-panel tab rather than the list:
 
 - The CLI surface above was read off `incus-compose 1.3.4` on macOS, where
   `--remote` takes `$INCUS_REMOTE`, `-p` is the project name and `-P` the
-  project directory.
+  project directory. The daemon floor above costs only the verbs:
+  `incus-compose config` resolves the compose file without touching the
+  daemon, so the panel's rows, tabs and hidden-ness are unaffected by it and
+  were confirmed on 6.11.
 - Those keys are internal to incus-compose and carry no compatibility
   promise, so they're pinned the way the lazydocker port is: everything
   above was read from
@@ -313,12 +318,44 @@ What's left:
 
 ## Blocked
 
-Everything here needs a real VM instance, so it needs a host that can
-provide one: a Linux machine running Incus directly, or — when the daemon
-runs inside a VM, as under colima on macOS — hardware nested virtualization,
-which on Apple Silicon means an M3 or later with macOS 15+. Without
-`/dev/kvm` inside the guest, `incus launch ... --vm` fails with `KVM support
-is missing (no /dev/kvm)` and no colima or Incus flag substitutes for it.
+Shipped, but never seen working end to end: each of these needs something
+the development machine can't provide — a newer daemon in one case, a host
+that can run a real VM in the other.
+
+### Needs a newer daemon
+
+`incus-compose` refuses any server below Incus 7.0.1 (LTS) or 7.2:
+
+```
+Error: the incus server has no oci_network_config API, incus-compose needs
+Incus 7.0.1 (LTS) or 7.2 and newer: (this one reports 6.11)
+```
+
+colima's Incus is 6.11, so every compose verb fails at that check on the
+macOS development setup. Unblocking means a daemon on 7.0.1+ — a Linux host
+running Incus directly, or a colima image that ships it.
+
+- [ ] Verify the Services panel's verbs actually succeed. The argv, the
+      `runSubprocess` suspend/resume and the error path were confirmed
+      against the refusal above; the success path wasn't. `u`, `U`, `S`,
+      `s`, `r`, `d` and the six in the `C` menu are all the same
+      `composeRun` call, so confirming a couple covers the shape.
+- [ ] Verify the panel against a stack incus-compose itself created. The
+      live check used an Incus project and instances labelled by hand to
+      match what incus-compose stamps (`user.incus-compose.managed` on the
+      project, `user.label.incus-compose.service` and `user.image_alias` on
+      each instance). The labels are right — see the Caveats above — but a
+      real `incus-compose up` is what proves the pairing, the replica
+      naming and the `none` state on a service that's genuinely down.
+
+### Needs a real VM instance
+
+So it needs a host that can provide one: a Linux machine running Incus
+directly, or — when the daemon runs inside a VM, as under colima on macOS —
+hardware nested virtualization, which on Apple Silicon means an M3 or later
+with macOS 15+. Without `/dev/kvm` inside the guest, `incus launch ... --vm`
+fails with `KVM support is missing (no /dev/kvm)` and no colima or Incus
+flag substitutes for it.
 
 - [ ] Verify freeze/unfreeze against a real VM. Both are documented as
       container-oriented actions, and `p` doesn't check `IsVM()` before

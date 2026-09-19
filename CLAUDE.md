@@ -17,8 +17,9 @@ gotchas behind a daemon in a local VM, are in
 ## Status
 
 MVP, run end-to-end against a real daemon (via `colima start --runtime
-incus` on macOS). VM-specific paths remain unverified — see BACKLOG.md's
-Blocked section.
+incus` on macOS). VM-specific paths and the compose verbs remain unverified
+— that colima daemon is Incus 6.11, below the 7.0.1 incus-compose requires,
+and it can't run a nested VM. See BACKLOG.md's Blocked section.
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
@@ -149,8 +150,8 @@ aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
 
 Lists containers and VMs across every project by default, or one project
 when `P` scopes down - minus the local stack's, when there's a services
-panel holding those. Columns mirror `incus list`: name, status, type, IPv4, IPv6,
-snapshot count. Type, addresses and snapshot count only appear once
+panel holding those. Columns mirror `incus list`: name, status, type, IPv4,
+IPv6, snapshot count. Type, addresses and snapshot count only appear once
 `RefreshInstanceDetails` has fetched full details in the background.
 
 Rows sort by name, with stopped instances last (`sortInstances`), and the
