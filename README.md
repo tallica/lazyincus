@@ -88,7 +88,11 @@ Six side panels: **Instances** (`1`), listing both containers and VMs,
 project by default; `P` scopes them to a single project instead, and the
 footer shows the current remote and scope. Starting lazyincus from a
 directory with a compose file scopes to its project automatically, the
-same as picking it with `P`. A project column appears on any panel whose
+same as picking it with `P` — "directory" here follows incus-compose's own
+resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY` in the environment works
+too, not just the current directory (lazyincus shells out to incus-compose
+without passing its own `-P`, so the flag itself isn't reachable this way).
+A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
 
