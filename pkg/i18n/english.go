@@ -58,6 +58,7 @@ type TranslationSet struct {
 	CopyIPv4                  string
 	CopiedToClipboard         string
 	NoIPv4Address             string
+	InstanceTitle             string
 	InstancesTitle            string
 	ImagesTitle               string
 	NoImages                  string
@@ -86,14 +87,16 @@ type TranslationSet struct {
 	NoNetworks                string
 	DeleteNetwork             string
 
+	ComposeTitle                  string
 	ServicesTitle                 string
+	ServicesTitleProject          string
 	NoServices                    string
 	ServiceNotRunning             string
 	ServiceNotInComposeFile       string
 	ServiceLogsMultipleInstances  string
+	ServiceMultipleInstances      string
 	StandaloneInstancesTitle      string
 	InfoTitle                     string
-	ComposeManageHint             string
 	ComposeTargetService          string
 	ComposeTargetProject          string
 	ComposeUp                     string
@@ -217,6 +220,7 @@ func englishSet() TranslationSet {
 
 		GlobalTitle:                  "Global",
 		MainTitle:                    "Main",
+		InstanceTitle:                "Instance",
 		InstancesTitle:               "Instances",
 		ErrorTitle:                   "Error",
 		StatsTitle:                   "Stats",
@@ -251,14 +255,16 @@ func englishSet() TranslationSet {
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
 
+		ComposeTitle:                  "Compose",
 		ServicesTitle:                 "Services",
+		ServicesTitleProject:          "Services (%s)",
 		NoServices:                    "No services",
 		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
-		ServiceLogsMultipleInstances:  "This service has more than one instance. Pick one in the Standalone Instances panel, or press 'C' for `incus-compose logs`.",
+		ServiceLogsMultipleInstances:  "This service has more than one instance. Press 'm' for one instance's logs, or 'C' for `incus-compose logs`.",
+		ServiceMultipleInstances:      "This service has more than one instance, and this tab shows one.",
 		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
-		ComposeManageHint:             "'u' brings this service up, 'S'/'s'/'r' start, stop and restart it, 'd' brings it down, and 'C' has the rest - each of them for the whole project too.",
 		ComposeTargetService:          "service %s",
 		ComposeTargetProject:          "project %s",
 		ComposeUp:                     "compose up",

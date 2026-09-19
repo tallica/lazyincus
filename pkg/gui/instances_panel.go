@@ -22,9 +22,9 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			GetMainTabs: func() []panels.MainTab[*commands.Instance] {
 				return []panels.MainTab[*commands.Instance]{
 					{
-						Key:    "stats",
-						Title:  gui.Tr.StatsTitle,
-						Render: gui.renderInstanceStatsToMain,
+						Key:    "info",
+						Title:  gui.Tr.InfoTitle,
+						Render: gui.renderInstanceInfoToMain,
 					},
 					{
 						Key:    "logs",
@@ -63,7 +63,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		// The snapshots panel shows whichever instance is selected here, so
 		// it reloads whenever that changes rather than on its poll alone.
 		OnSelect: func(instance *commands.Instance) error {
-			return gui.refreshSnapshots()
+			return gui.refreshSnapshotsFor(instance)
 		},
 		Sort: func(a *commands.Instance, b *commands.Instance) bool {
 			return sortInstances(a, b)
@@ -129,28 +129,20 @@ func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc
 	return gui.NewSimpleRenderStringTask(func() string { return gui.instanceConfigStr(instance) })
 }
 
+// instanceConfigStr is the dump alone: what used to head it - name, type,
+// status, created, profiles - is the Info tab's identity block now.
 func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
 	full, ok := instance.Full()
 	if !ok {
 		return gui.Tr.WaitingForInstanceInfo
 	}
 
-	padding := 10
-	output := ""
-	output += utils.WithPadding("Name: ", padding) + full.Name + "\n"
-	output += utils.WithPadding("Type: ", padding) + full.Type + "\n"
-	output += utils.WithPadding("Status: ", padding) + full.Status + "\n"
-	output += utils.WithPadding("Created: ", padding) + full.CreatedAt.String() + "\n"
-	output += utils.WithPadding("Profiles: ", padding) + fmt.Sprint(full.Profiles) + "\n"
-
 	data, err := utils.MarshalIntoYaml(full)
 	if err != nil {
 		return fmt.Sprintf("Error marshalling instance details: %v", err)
 	}
 
-	output += fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
-
-	return output
+	return utils.ColoredYamlString(string(data))
 }
 
 func (gui *Gui) refreshInstances() error {

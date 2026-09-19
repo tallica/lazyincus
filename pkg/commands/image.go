@@ -20,13 +20,15 @@ type Image struct {
 	Tr        *i18n.TranslationSet
 }
 
-// ShortFingerprint is the 12-character form `incus image list` shows.
+// shortFingerprintLength is the 12-character form `incus image list` shows.
+const shortFingerprintLength = 12
+
 func (i *Image) ShortFingerprint() string {
-	if len(i.Fingerprint) < 12 {
+	if len(i.Fingerprint) < shortFingerprintLength {
 		return i.Fingerprint
 	}
 
-	return i.Fingerprint[:12]
+	return i.Fingerprint[:shortFingerprintLength]
 }
 
 // Alias is the first alias, or an empty string for an image that has none -

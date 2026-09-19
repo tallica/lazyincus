@@ -68,7 +68,7 @@ Not planned:
 
 Not planned:
 
-- **Stats history / graphing** — the Stats tab is point-in-time only;
+- **Stats history / graphing** — the Info tab's stats are point-in-time only;
   lazydocker's `RecordedStats`/graph config machinery wasn't ported.
 - **Non-English translations**, **Windows support**.
 - **Event stream** — lazydocker consumes Docker's `/events`; lazyincus polls

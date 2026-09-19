@@ -127,21 +127,49 @@ instance through `withServiceInstance`, which acts directly on the only one
 and otherwise asks which — the reason `handleSnapshotCreate` and
 `handleInstanceCopyIPv4` were split into handler and action.
 
+Columns work the way the instances panel's do: `gui.serviceColumns` over
+`serviceColumnRenderers` in `pkg/gui/presentation/services.go`, taking the
+instance column names rendered from the service's instances rolled up, plus
+`replicas`. That one is blank unless what's running differs from what the
+compose file declared — `presentation.ServiceReplicas` is the rule, and the
+Info tab's line calls it too. `gui.instanceStatusStyle` reaches the
+rolled-up status as well; `serviceStatusStyles` supplies the glyphs for
+`partial` and `none`, which no instance state has. There's no project
+column: every row shares the one project, so `servicesPanelTitle` puts it
+in the title instead.
+
 Main panel tabs:
 
-- **Info** — the service, its replica count against what the compose file
-  asked for, and its instances as `incus-compose ps` prints them. The
-  Healthcheck and Resources lines are the project's, from
-  `State.ComposeProject` (`GetComposeProject` fetches it during
-  `refreshServices`, so rendering makes no API call).
+- **Info** — what the compose file declares for the service, then each
+  instance's own Info tab, `instanceInfoStr` and all, which is why this
+  renders on a ticker. `instanceInfoStr` takes the identity lines to leave
+  out, the service having just said them: project and image always, health
+  for a lone instance, and the name when the instance carries the service's
+  own. The compose fields are parsed once at startup by
+  `parseComposeConfig` and stored rendered, only display wanting them; the
+  Healthcheck line is the project's, from `State.ComposeProject`
+  (`GetComposeProject` fetches it during `refreshServices`, so rendering
+  makes no API call). The image is `ComposeService.ResolvedImage`, a
+  running instance's reference before the compose file's, whose own value
+  may carry no registry host. Each refresh builds new `ComposeService`
+  values, so the instance count is part of `GetItemContextCacheKey` —
+  otherwise the ticker goes on rendering the service object the tab opened
+  with.
 - **Logs** — delegates to the instance logs renderer for a single-instance
   service; merging several replicas' drain-on-read buffers into one ordered
   stream is a different problem, so a replicated service points at `C`'s
   `logs --follow` instead.
-- **Config** — the service's slice of `incus-compose config --format json`,
-  handed to `yaml.JSONToYAML` untouched. Decoding through `map[string]any`
-  first would turn every count into a float64 and render `replicas: 2` as
-  `2.0`.
+- **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
+  the service's only instance answers for it, and replicas say so instead,
+  the same split the per-instance keys make through `withServiceInstance`.
+- **Config** — both halves: a Compose section, the service's slice of
+  `incus-compose config --format json` handed to `yaml.JSONToYAML`
+  untouched (decoding through `map[string]any` first would turn every count
+  into a float64 and render `replicas: 2` as `2.0`), then one
+  `instanceConfigStr` dump per instance. Those are headed `Instance`, named
+  `Instance (web-1)` only when there are replicas to tell apart: a lone
+  instance carries the service's own name, which under "Compose" reads as
+  another view of the compose file.
 
 The credits tab and aggregate-logs tab from lazydocker's Project panel
 aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
@@ -150,8 +178,8 @@ aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
 
 Lists containers and VMs across every project by default, or one project
 when `P` scopes down - minus the local stack's, when there's a services
-panel holding those. Columns mirror `incus list`: name, status, type, IPv4,
-IPv6, snapshot count. Type, addresses and snapshot count only appear once
+panel holding those. Columns mirror `incus list`'s, with health beside
+status. Type, addresses and snapshot count only appear once
 `RefreshInstanceDetails` has fetched full details in the background.
 
 Rows sort by name, with stopped instances last (`sortInstances`), and the
@@ -160,9 +188,14 @@ index — otherwise stopping an instance moves it down the list and hands the
 selection to whatever took its place.
 
 Which columns show, and in what order, is user-configurable via
-`gui.instanceColumns`. One of them, `service`, is off by default: it reads
-incus-compose's `user.label.incus-compose.service` label and is blank for
-anything created another way. `presentation.GetInstanceDisplayStrings` looks up
+`gui.instanceColumns`. `service`, `health` and `image` read incus-compose
+config keys, so all three are blank for anything created another way.
+
+The `image` column is that compose reference alone, having no room for
+more; `Instance.Image`, which the Info tab shows, falls back to the
+`image.description` the image left behind ("Alpine 3.21 arm64
+(20260825_13:00)") and then to the short `volatile.base_image` fingerprint.
+`presentation.GetInstanceDisplayStrings` looks up
 each configured name in the `instanceColumnRenderers` map
 (`pkg/gui/presentation/instances.go`) and skips anything unrecognized, so a
 new column means one entry in that map plus the default/valid-values list in
@@ -176,14 +209,17 @@ doesn't convey: `s`/`d` confirm before acting, and `p` toggles between
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
 
-- **Stats** — CPU/memory/process count/disk/network from
-  `InstanceFull.State`, re-rendered every second (no extra API calls: the
+- **Info** — what the instance is (name, status, type, project, image,
+  health where it has one, architecture, dates, addresses, snapshot count),
+  then a **Stats** section: CPU/memory/process count/disk/network from
+  `InstanceFull.State`. Re-rendered every second (no extra API calls: the
   background poll already keeps that current). CPU is cumulative usage
   time, not a percentage — the API reports total nanoseconds since start,
   not a rate, and `incus info` shows the same.
 - **Logs** — polls `Instance.TailConsoleLog()` and re-renders the
   accumulated buffer. See "Logs" below for why a raw snapshot doesn't work.
-- **Config** — YAML dump of `api.InstanceFull`.
+- **Config** — YAML dump of `api.InstanceFull`, nothing above it: identity
+  is the Info tab's.
 - **Env** — `environment.*` entries from `ExpandedConfig` (expanded, so
   profile-inherited variables show up too).
 - **Top** — process list, polled every two seconds. Incus's API reports a
@@ -195,9 +231,14 @@ up:
 
 ### Snapshots
 
-Follows the instances panel: its `OnSelect` calls `refreshSnapshots`, so the
-panel always shows the selected instance, and the view title carries that
-instance's name since the rows alone don't say whose they are. Listing uses
+Follows whichever list you're in: the instances panel's `OnSelect` hands
+over its instance, the services panel's the service's own — none while it
+has replicas, no one of them being the service's snapshots — and the view
+title carries that instance's name since the rows alone don't say whose
+they are. Each panel hands the instance over rather than `refreshSnapshots`
+reading the focused view, because that read takes `ViewStackMutex`, which
+`switchFocus` holds while it runs an `OnSelect`: reading it there deadlocks
+the app. Listing uses
 `GetInstanceSnapshots` rather than the `InstanceFull.Snapshots` the
 background poll already holds, because create and delete have to show up
 immediately. Snapshot names come back from the API prefixed with the

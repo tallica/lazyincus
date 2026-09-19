@@ -20,7 +20,7 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"name":   func(_ *config.GuiConfig, instance *commands.Instance) string { return instance.Name },
 	"status": getInstanceDisplayStatus,
 	"type": func(_ *config.GuiConfig, instance *commands.Instance) string {
-		return utils.ColoredString(displayInstanceType(instance), color.FgMagenta)
+		return utils.ColoredString(InstanceType(instance), color.FgMagenta)
 	},
 	"ipv4": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return utils.ColoredString(displayInstanceAddresses(instance, "inet"), color.FgYellow)
@@ -78,11 +78,11 @@ func withProjectColumn(columns []string, spansProjects bool) []string {
 	return append([]string{"project"}, columns...)
 }
 
-// displayInstanceType mirrors the `incus list` TYPE column, including the
+// InstanceType mirrors the `incus list` TYPE column, including the
 // "(app)" suffix for OCI application containers that the CLI derives from
 // volatile.container.oci (cmd/incus/list.go, typeColumnData). That key is in
 // the expanded config, so the suffix appears only once details are fetched.
-func displayInstanceType(instance *commands.Instance) string {
+func InstanceType(instance *commands.Instance) string {
 	if instance.IsVM() {
 		return "vm"
 	}
@@ -129,10 +129,12 @@ func shortImageRef(ref string) string {
 	return ref[strings.LastIndex(ref, "/")+1:]
 }
 
-// "unknown" stays neutral: no healthcheck was declared, not a failed check.
 func displayInstanceHealth(instance *commands.Instance) string {
-	health := instance.HealthStatus()
+	return displayHealth(instance.HealthStatus())
+}
 
+// "unknown" stays neutral: no healthcheck was declared, not a failed check.
+func displayHealth(health string) string {
 	var healthColor color.Attribute
 	switch health {
 	case commands.HealthHealthy:

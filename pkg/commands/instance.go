@@ -206,11 +206,37 @@ func (i *Instance) HealthStatus() string {
 	return i.config(healthStatusKey)
 }
 
-const composeImageKey = "user.image_alias"
+const (
+	composeImageKey     = "user.image_alias"
+	imageDescriptionKey = "image.description"
+	baseImageKey        = "volatile.base_image"
+)
 
 // ComposeImage is the image reference the compose file named.
 func (i *Instance) ComposeImage() string {
 	return i.config(composeImageKey)
+}
+
+// Image is what the instance was created from, the way the Images panel
+// labels the same thing: the compose file's reference when there is one,
+// else the description the image left in the instance's config ("Alpine
+// 3.21 arm64 (20260825_13:00)"), else the short fingerprint of the image
+// itself, for one that carried no description.
+func (i *Instance) Image() string {
+	if image := i.ComposeImage(); image != "" {
+		return image
+	}
+
+	if description := i.config(imageDescriptionKey); description != "" {
+		return description
+	}
+
+	fingerprint := i.config(baseImageKey)
+	if len(fingerprint) < shortFingerprintLength {
+		return fingerprint
+	}
+
+	return fingerprint[:shortFingerprintLength]
 }
 
 // config is empty until RefreshInstanceDetails has run.

@@ -92,9 +92,10 @@ item came from.
 
 Start lazyincus from a directory holding an
 [incus-compose](https://incus-compose.org) file and a sixth panel appears
-above the others: **Services** (`1`), one row per service that file
-declares, with the other panels shifting down a number. A service the file
-declares but nothing is running still gets a row, in state `none` — the
+above the others: **Services** (`1`), titled with the compose project, one
+row per service that file declares, with the other panels shifting down a
+number. A service the file declares but nothing is running still gets a
+row, in state `none` — the
 compose file is what the list comes from, not the daemon. The stack's own
 instances move out of the instances panel, which becomes **Standalone
 Instances** (`2`); every other project's instances stay there. "Directory"
@@ -103,9 +104,12 @@ in the environment works too, not just the current directory (lazyincus
 shells out to incus-compose without passing its own `-P`, so the flag itself
 isn't reachable this way).
 
-The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
+The instances panel's columns (name, status, health, type, IPv4, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
-file - see [docs/Config.md](docs/Config.md).
+file, and the Services panel's (name, status, health, IPv4, snapshot count) via
+`gui.serviceColumns` - see [docs/Config.md](docs/Config.md). Health comes
+from `ic-healthd`, so it's blank for anything created outside
+incus-compose.
 
 | Key | Action |
 |---|---|
@@ -113,7 +117,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
-| `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
+| `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, `incus-compose start` for the selected service |
 | `s` | Stop; on the Services panel, `incus-compose stop` for the selected service (confirms first) |
@@ -166,7 +170,7 @@ Ported deliberately as an MVP, not full parity with lazydocker. Not included:
   panel above; see
   [BACKLOG.md](BACKLOG.md#incus-compose-integration) for what's left
 - Custom and bulk commands
-- Historical resource-usage graphing (the Stats tab is point-in-time only)
+- Historical resource-usage graphing (the Info tab's stats are point-in-time only)
 - Non-English translations
 - Windows support
 

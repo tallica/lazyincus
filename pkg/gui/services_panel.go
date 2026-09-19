@@ -1,10 +1,13 @@
 package gui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/jesseduffield/gocui"
@@ -36,10 +39,25 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeServic
 						Title:  gui.Tr.ConfigTitle,
 						Render: gui.renderServiceConfig,
 					},
+					{
+						Key:    "env",
+						Title:  gui.Tr.EnvTitle,
+						Render: gui.serviceInstanceTab(gui.renderInstanceEnv),
+					},
+					{
+						Key:    "top",
+						Title:  gui.Tr.TopTitle,
+						Render: gui.serviceInstanceTab(gui.renderInstanceTopToMain),
+					},
 				}
 			},
 			GetItemContextCacheKey: func(service *commands.ComposeService) string {
-				return "services-" + service.Name + "-" + service.Status()
+				// Each refresh builds new ComposeService values, so the
+				// instance count is part of the key: without it a replica
+				// coming or going leaves the main panel rendering the
+				// service object the tab opened with.
+				return "services-" + service.Name + "-" + service.Status() +
+					"-" + strconv.Itoa(len(service.Instances))
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.ComposeService]{
@@ -48,6 +66,15 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeServic
 		},
 		NoItemsMessage: gui.Tr.NoServices,
 		Gui:            gui.intoInterface(),
+		// The snapshots panel shows the selected service's instance while
+		// this panel has focus, the way it follows the instances panel. A
+		// replicated service points at none: showing one replica's
+		// snapshots under the service's name would be a lie.
+		OnSelect: func(service *commands.ComposeService) error {
+			instance, _ := singleInstance(service)
+
+			return gui.refreshSnapshotsFor(instance)
+		},
 		// No compose file in the working directory means no services to act
 		// on, and the panel would be a title over an empty list.
 		Hide: gui.noLocalComposeProject,
@@ -56,7 +83,9 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeServic
 		Sort: func(a, b *commands.ComposeService) bool {
 			return a.Name < b.Name
 		},
-		GetTableCells: presentation.GetComposeServiceDisplayStrings,
+		GetTableCells: func(service *commands.ComposeService) []string {
+			return presentation.GetComposeServiceDisplayStrings(&gui.Config.UserConfig.Gui, service)
+		},
 	}
 }
 
@@ -71,66 +100,81 @@ func singleInstance(service *commands.ComposeService) (*commands.Instance, bool)
 	return nil, false
 }
 
+// renderServiceInfo ticks like the instances panel's Stats tab, the two
+// being one tab here: the identity half is static, the counters underneath
+// it aren't.
 func (gui *Gui) renderServiceInfo(service *commands.ComposeService) tasks.TaskFunc {
-	return gui.NewSimpleRenderStringTask(func() string { return gui.serviceInfoStr(service) })
+	return gui.NewTickerTask(TickerTaskOpts{
+		Func: func(ctx context.Context, notifyStopped chan struct{}) {
+			gui.reRenderStringMain(gui.serviceInfoStr(service))
+		},
+		Duration:   time.Second,
+		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
+		Autoscroll: false,
+	})
 }
 
 func (gui *Gui) serviceInfoStr(service *commands.ComposeService) string {
 	padding := 14
 
-	output := utils.WithPadding("Service: ", padding) + service.Name + "\n"
-	output += utils.WithPadding("Project: ", padding) + service.Project + "\n"
+	line := func(label, value string) string {
+		if value == "" {
+			return ""
+		}
 
-	if service.Image != "" {
-		output += utils.WithPadding("Image: ", padding) + service.Image + "\n"
+		return utils.WithPadding(label+": ", padding) + value + "\n"
 	}
 
-	output += utils.WithPadding("Replicas: ", padding) + serviceReplicasStr(service) + "\n"
-
-	if health := service.Health(); health != "" {
-		output += utils.WithPadding("Health: ", padding) + health + "\n"
-	}
+	output := line("Service", service.Name)
+	output += line("Image", service.ResolvedImage())
+	output += line("Replicas", presentation.ServiceReplicas(service))
+	output += line("Health", service.Health())
 
 	if project := gui.State.ComposeProject; project != nil {
-		output += utils.WithPadding("Healthcheck: ", padding) + gui.composeHealthcheckStr(project) + "\n"
-		output += utils.WithPadding("Resources: ", padding) + composeResourceCountsStr(project) + "\n"
+		output += line("Healthcheck", gui.composeHealthcheckStr(project))
 	}
 
-	return output + "\n" + gui.Tr.ComposeManageHint + "\n\n" + gui.serviceInstancesStr(service)
-}
+	output += line("Command", service.Command)
+	output += line("Restart", service.Restart)
+	output += line("Ports", strings.Join(service.Ports, ", "))
+	output += line("Volumes", strings.Join(service.Volumes, ", "))
+	output += line("Devices", strings.Join(service.Devices, ", "))
+	output += line("Depends on", strings.Join(service.DependsOn, ", "))
 
-// serviceReplicasStr shows what's running against what the compose file
-// asked for, since the two disagreeing is the reason to look.
-func serviceReplicasStr(service *commands.ComposeService) string {
-	return fmt.Sprintf("%d/%d", len(service.Instances), service.Replicas)
-}
-
-// serviceInstancesStr is the `incus-compose ps` table, narrowed to one
-// service - so no SERVICE column, unlike the command's own output.
-func (gui *Gui) serviceInstancesStr(service *commands.ComposeService) string {
 	if len(service.Instances) == 0 {
-		return gui.Tr.ServiceNotRunning
+		return output + "\n" + gui.Tr.ServiceNotRunning
 	}
 
+	// Each instance's own Info tab under that, minus the lines the service
+	// has just shown: project and image are the same for every replica, and
+	// a lone instance's health is what the service's rolls up to.
+	omit := []string{"Project", "Image"}
+	if _, single := singleInstance(service); single {
+		omit = append(omit, "Health")
+	}
+
+	for _, instance := range sortedInstances(service) {
+		instanceOmit := omit
+		// A compose file with a container_name gets an instance named after
+		// the service, and the Service line above has already said it.
+		if instance.Name == service.Name {
+			instanceOmit = append(instanceOmit, "Name")
+		}
+
+		output += "\n" + gui.instanceInfoStr(instance, instanceOmit...)
+	}
+
+	return output
+}
+
+// sortedInstances orders a service's replicas by name, the order they're
+// listed in being otherwise whatever the daemon returned.
+func sortedInstances(service *commands.ComposeService) []*commands.Instance {
 	instances := append([]*commands.Instance(nil), service.Instances...)
 	sort.Slice(instances, func(i, j int) bool { return instances[i].Name < instances[j].Name })
 
-	rows := [][]string{{"INSTANCE", "IMAGE", "STATUS", "ADDRESSES"}}
-	for _, instance := range instances {
-		rows = append(rows, []string{
-			instance.Name,
-			instance.ComposeImage(),
-			strings.ToLower(instance.Instance.Status),
-			strings.Join(instance.Addresses("inet"), " "),
-		})
-	}
-
-	table, err := utils.RenderTable(rows)
-	if err != nil {
-		return err.Error()
-	}
-
-	return table
+	return instances
 }
 
 func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
@@ -145,40 +189,32 @@ func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
 	return gui.Tr.Yes
 }
 
-// composeResourceKinds orders ResourceCounts for display; a kind absent
-// from the project's UsedBy is skipped rather than shown as zero.
-var composeResourceKinds = []struct{ key, singular string }{
-	{"instances", "instance"},
-	{"images", "image"},
-	{"volumes", "volume"},
-	{"networks", "network"},
-	{"profiles", "profile"},
+// serviceInstanceTab is a tab that is really the instance's: the service's
+// only one answers for it, and replicas have no single answer - the same
+// split the per-instance keys make through withServiceInstance.
+func (gui *Gui) serviceInstanceTab(
+	render func(*commands.Instance) tasks.TaskFunc,
+) func(*commands.ComposeService) tasks.TaskFunc {
+	return func(service *commands.ComposeService) tasks.TaskFunc {
+		instance, ok := singleInstance(service)
+		if !ok {
+			return gui.NewSimpleRenderStringTask(func() string {
+				return gui.serviceNoSingleInstanceStr(service)
+			})
+		}
+
+		return render(instance)
+	}
 }
 
-func composeResourceCountsStr(project *commands.ComposeProject) string {
-	counts := project.ResourceCounts()
-
-	var parts []string
-
-	for _, kind := range composeResourceKinds {
-		n, ok := counts[kind.key]
-		if !ok {
-			continue
-		}
-
-		label := kind.singular
-		if n != 1 {
-			label += "s"
-		}
-
-		parts = append(parts, fmt.Sprintf("%d %s", n, label))
+// serviceNoSingleInstanceStr says which of the two reasons there's no
+// instance to show: nothing running, or too many to pick from.
+func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) string {
+	if len(service.Instances) == 0 {
+		return gui.Tr.ServiceNotRunning
 	}
 
-	if len(parts) == 0 {
-		return "none"
-	}
-
-	return strings.Join(parts, ", ")
+	return gui.Tr.ServiceMultipleInstances
 }
 
 // renderServiceLogs delegates to the instance logs renderer, which owns the
@@ -204,10 +240,34 @@ func (gui *Gui) renderServiceConfig(service *commands.ComposeService) tasks.Task
 	return gui.NewSimpleRenderStringTask(func() string { return gui.serviceConfigStr(service) })
 }
 
-// serviceConfigStr is the selected service's slice of `incus-compose
+// serviceConfigStr is both halves of a service's configuration: what the
+// compose file declares, then what the daemon made of it.
+func (gui *Gui) serviceConfigStr(service *commands.ComposeService) string {
+	output := sectionHeading(gui.Tr.ComposeTitle) + "\n\n" + gui.composeServiceConfigStr(service)
+
+	// Then what the daemon made of it: the same dump the instances panel's
+	// Config tab shows, one per replica. The heading says what the section
+	// is rather than just naming it - a lone instance usually carries the
+	// service's own name, and "mosquitto" under "Compose" reads as another
+	// view of the compose file.
+	_, single := singleInstance(service)
+
+	for _, instance := range sortedInstances(service) {
+		heading := gui.Tr.InstanceTitle
+		if !single {
+			heading += " (" + instance.Name + ")"
+		}
+
+		output += "\n\n" + sectionHeading(heading) + "\n\n" + gui.instanceConfigStr(instance)
+	}
+
+	return output
+}
+
+// composeServiceConfigStr is the selected service's slice of `incus-compose
 // config`, re-rendered as YAML: the command prints the whole project, and
 // the panel is already one row per service.
-func (gui *Gui) serviceConfigStr(service *commands.ComposeService) string {
+func (gui *Gui) composeServiceConfigStr(service *commands.ComposeService) string {
 	cmd := gui.OSCommand.NewCmd("incus-compose", "config", "--format", "json")
 
 	output, err := gui.OSCommand.RunExecutableWithOutput(cmd)
@@ -278,13 +338,115 @@ func (gui *Gui) refreshServicesQuiet() error {
 // lazyincus reads: the project name it would act on, and the services it
 // declares.
 type composeConfigOutput struct {
-	Name     string `json:"name"`
-	Services map[string]struct {
-		Image  string `json:"image"`
-		Deploy struct {
-			Replicas *int `json:"replicas"`
-		} `json:"deploy"`
-	} `json:"services"`
+	Name     string                       `json:"name"`
+	Services map[string]composeServiceDef `json:"services"`
+}
+
+// composeServiceDef is one service as `incus-compose config` prints it.
+// Compose normalizes every short form to these long ones, so a port is
+// always an object and depends_on always a map, whatever the file said.
+type composeServiceDef struct {
+	Image string `json:"image"`
+	// Command is a list once normalized, but a file compose can't normalize
+	// leaves a string through; RawMessage so neither shape fails the parse
+	// and empties the panel.
+	Command json.RawMessage `json:"command"`
+	Restart string          `json:"restart"`
+	Deploy  struct {
+		Replicas *int `json:"replicas"`
+	} `json:"deploy"`
+	Ports []struct {
+		Target    int    `json:"target"`
+		Published string `json:"published"`
+		Protocol  string `json:"protocol"`
+	} `json:"ports"`
+	Volumes []struct {
+		Source   string `json:"source"`
+		Target   string `json:"target"`
+		ReadOnly bool   `json:"read_only"`
+	} `json:"volumes"`
+	Devices []struct {
+		Source string `json:"source"`
+		Target string `json:"target"`
+	} `json:"devices"`
+	DependsOn map[string]struct{} `json:"depends_on"`
+}
+
+// commandStr is the command as a shell line, from either shape.
+func (def composeServiceDef) commandStr() string {
+	if len(def.Command) == 0 {
+		return ""
+	}
+
+	var list []string
+	if err := json.Unmarshal(def.Command, &list); err == nil {
+		return strings.Join(list, " ")
+	}
+
+	var line string
+	if err := json.Unmarshal(def.Command, &line); err == nil {
+		return line
+	}
+
+	return ""
+}
+
+// portsStr renders published:target, the way `docker compose ps` prints a
+// mapping, with the protocol only when it isn't the tcp default.
+func (def composeServiceDef) portsStr() []string {
+	ports := make([]string, 0, len(def.Ports))
+
+	for _, port := range def.Ports {
+		mapping := fmt.Sprintf("%s:%d", port.Published, port.Target)
+		if port.Protocol != "" && port.Protocol != "tcp" {
+			mapping += "/" + port.Protocol
+		}
+
+		ports = append(ports, mapping)
+	}
+
+	return ports
+}
+
+// volumesStr renders source:target - a volume name or a host path on the
+// left, whichever the compose file used.
+func (def composeServiceDef) volumesStr() []string {
+	volumes := make([]string, 0, len(def.Volumes))
+
+	for _, volume := range def.Volumes {
+		mount := volume.Source + ":" + volume.Target
+		if volume.ReadOnly {
+			mount += " (ro)"
+		}
+
+		volumes = append(volumes, mount)
+	}
+
+	return volumes
+}
+
+func (def composeServiceDef) devicesStr() []string {
+	devices := make([]string, 0, len(def.Devices))
+
+	for _, device := range def.Devices {
+		devices = append(devices, device.Source+":"+device.Target)
+	}
+
+	return devices
+}
+
+// dependsOnStr is sorted: the map the JSON decodes to has no order of its
+// own, and a list that reshuffles between refreshes reads as a change.
+func (def composeServiceDef) dependsOnStr() []string {
+	names := make([]string, 0, len(def.DependsOn))
+
+	for name := range def.DependsOn {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	return names
 }
 
 // parseComposeConfig extracts the project name and the declared services
@@ -306,9 +468,15 @@ func parseComposeConfig(output string) (string, []commands.ComposeService, error
 		}
 
 		services = append(services, commands.ComposeService{
-			Name:     name,
-			Image:    definition.Image,
-			Replicas: replicas,
+			Name:      name,
+			Image:     definition.Image,
+			Replicas:  replicas,
+			Command:   definition.commandStr(),
+			Restart:   definition.Restart,
+			Ports:     definition.portsStr(),
+			Volumes:   definition.volumesStr(),
+			Devices:   definition.devicesStr(),
+			DependsOn: definition.dependsOnStr(),
 		})
 	}
 

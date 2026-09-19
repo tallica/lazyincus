@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"strings"
-
 	"github.com/lxc/incus/v7/shared/api"
 )
 
@@ -15,11 +13,6 @@ type ComposeProject struct {
 	Name        string
 	Description string
 	Config      map[string]string
-
-	// UsedBy lists the project's resources as the API returns them
-	// (/1.0/instances/web-1?project=..., one entry per instance, image,
-	// volume, network and profile) - see ResourceCounts.
-	UsedBy []string
 
 	// Local is true when this project matches the compose file in the
 	// directory lazyincus was started from - see (*Gui).localComposeProject
@@ -50,49 +43,6 @@ func (p *ComposeProject) HealthcheckEnabled() bool {
 // in practice), or empty when unset.
 func (p *ComposeProject) HealthcheckScope() string {
 	return p.Config[projectHealthcheckScopeKey]
-}
-
-// ResourceCounts tallies UsedBy by kind - instances, images, volumes,
-// networks, profiles - the same categories `incus project show` groups its
-// used_by field into.
-func (p *ComposeProject) ResourceCounts() map[string]int {
-	counts := map[string]int{}
-
-	for _, url := range p.UsedBy {
-		if kind := composeResourceKind(url); kind != "" {
-			counts[kind]++
-		}
-	}
-
-	return counts
-}
-
-// composeResourceKind extracts the resource kind from one UsedBy URL, e.g.
-// "/1.0/instances/web-1?project=x" -> "instances", or
-// "/1.0/storage-pools/default/volumes/custom/data?project=x" -> "volumes".
-func composeResourceKind(url string) string {
-	url = strings.TrimPrefix(url, "/1.0/")
-	if idx := strings.Index(url, "?"); idx >= 0 {
-		url = url[:idx]
-	}
-
-	segments := strings.Split(url, "/")
-	if len(segments) == 0 {
-		return ""
-	}
-
-	switch segments[0] {
-	case "instances", "images", "networks", "profiles":
-		return segments[0]
-	case "storage-pools":
-		if len(segments) >= 3 && segments[2] == "volumes" {
-			return "volumes"
-		}
-
-		return ""
-	default:
-		return ""
-	}
 }
 
 // GetProjectInstances lists one project's instances directly, regardless of
@@ -142,6 +92,15 @@ type ComposeService struct {
 	Image    string
 	Replicas int
 
+	// The rest of what the compose file declares for this service, as the
+	// Info tab prints it: already rendered, since only display wants them.
+	Command   string
+	Restart   string
+	Ports     []string
+	Volumes   []string
+	Devices   []string
+	DependsOn []string
+
 	// Project is the Incus project incus-compose created for the stack.
 	Project string
 
@@ -181,6 +140,21 @@ func (s *ComposeService) Status() string {
 	default:
 		return ServicePartial
 	}
+}
+
+// ResolvedImage is the image reference with its registry host, which the
+// compose file's own value may lack (`eclipse-mosquitto:2.1-alpine` in the
+// file, `docker.io/library/eclipse-mosquitto:2.1-alpine` once incus-compose
+// has pulled it). Every replica came from the same image, so the first one
+// answers; until any is running, the file's value is all there is.
+func (s *ComposeService) ResolvedImage() string {
+	for _, instance := range s.Instances {
+		if image := instance.ComposeImage(); image != "" {
+			return image
+		}
+	}
+
+	return s.Image
 }
 
 // Health rolls up ic-healthd's per-instance verdict, worst first: one
@@ -252,7 +226,6 @@ func (c *IncusCommand) GetComposeProject(name string) (*ComposeProject, error) {
 		Name:        project.Name,
 		Description: project.Description,
 		Config:      project.Config,
-		UsedBy:      project.UsedBy,
 		Local:       true,
 	}, nil
 }

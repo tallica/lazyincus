@@ -75,8 +75,8 @@ func (gui *Gui) refreshSnapshots() error {
 		return nil
 	}
 
-	instance, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
+	instance := gui.State.SnapshotsInstance
+	if instance == nil {
 		gui.Panels.Snapshots.ClearItems()
 		gui.setSnapshotsTitle("")
 
@@ -93,6 +93,17 @@ func (gui *Gui) refreshSnapshots() error {
 	gui.Panels.Snapshots.SetItems(snapshots)
 
 	return gui.Panels.Snapshots.RerenderList()
+}
+
+// refreshSnapshotsFor points the panel at an instance and reloads it. The
+// panel follows whichever list you're in, so each of those hands its own
+// selection over rather than the snapshots panel reaching for the focused
+// view - reading that takes ViewStackMutex, which switchFocus is holding
+// when it runs a panel's OnSelect.
+func (gui *Gui) refreshSnapshotsFor(instance *commands.Instance) error {
+	gui.State.SnapshotsInstance = instance
+
+	return gui.refreshSnapshots()
 }
 
 // setSnapshotsTitle names the instance the panel is showing, since the list
@@ -378,7 +389,9 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 			return gui.createErrorPanel(err.Error())
 		}
 
-		if err := gui.refreshSnapshots(); err != nil {
+		// Points the panel at this instance: taken from a replicated
+		// service, the one just picked isn't what the panel was showing.
+		if err := gui.refreshSnapshotsFor(instance); err != nil {
 			return err
 		}
 

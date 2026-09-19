@@ -53,7 +53,7 @@ gui:
   screenMode: "normal"
 
   # Instance state display: "long" (full words), "short" (one/two
-  # characters), or "icon".
+  # characters), or "icon". Covers the Services panel's status too.
   instanceStatusStyle: "long"
 
   # Panel border style: "rounded", "single", "double", or "hidden".
@@ -67,9 +67,21 @@ gui:
   instanceColumns:
     - name
     - status
+    - health
     - type
     - ipv4
-    - ipv6
+    - snapshots
+
+  # Which columns the Services panel shows, and in what order. Valid
+  # values: the instance column names rendered from the service's instances
+  # rolled up - name, status, type, ipv4, ipv6, health, image, snapshots -
+  # plus "replicas", which is blank unless what's running differs from what
+  # the compose file declared.
+  serviceColumns:
+    - name
+    - status
+    - health
+    - ipv4
     - snapshots
 
 # Prompt for confirmation when quitting with q/esc and no other panel is

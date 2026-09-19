@@ -99,11 +99,21 @@ type GuiConfig struct {
 	// are ignored; omitted values are simply not shown. "project" is added
 	// automatically whenever the list spans more than one project.
 	InstanceColumns []string `yaml:"instanceColumns,omitempty"`
+
+	// ServiceColumns controls which columns the Services panel shows, and in
+	// what order. Valid values: "name", "status", "replicas", "type", "ipv4",
+	// "ipv6", "health", "image", "snapshots". Everything but "replicas" rolls
+	// the service's instances up the way the Instances panel renders one.
+	ServiceColumns []string `yaml:"serviceColumns,omitempty"`
 }
 
 // DefaultInstanceColumns is the Instances panel's column set/order when the
 // user hasn't customized InstanceColumns.
-var DefaultInstanceColumns = []string{"name", "status", "type", "ipv4", "ipv6", "snapshots"}
+var DefaultInstanceColumns = []string{"name", "status", "health", "type", "ipv4", "snapshots"}
+
+// DefaultServiceColumns is the Services panel's column set/order when the
+// user hasn't customized ServiceColumns.
+var DefaultServiceColumns = []string{"name", "status", "health", "ipv4", "snapshots"}
 
 // OSConfig contains config on the level of the os
 type OSConfig struct {
@@ -144,6 +154,7 @@ func GetDefaultConfig() UserConfig {
 			ScreenMode:             "normal",
 			InstanceStatusStyle:    "long",
 			InstanceColumns:        DefaultInstanceColumns,
+			ServiceColumns:         DefaultServiceColumns,
 		},
 		ConfirmOnQuit: false,
 		OS:            GetPlatformDefaultConfig(),

@@ -4,7 +4,13 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/fatih/color"
+	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/units"
@@ -13,20 +19,78 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// renderInstanceStatsToMain periodically re-renders CPU/memory/network/disk
-// usage from the instance's last-fetched full details (InstanceFull.State),
-// which IncusCommand.RefreshInstanceDetails already keeps current in the
+// renderInstanceInfoToMain periodically re-renders what the instance is and
+// what it's doing: identity, then the Stats section underneath. Both come
+// from the instance's last-fetched full details (InstanceFull.State), which
+// IncusCommand.RefreshInstanceDetails already keeps current in the
 // background - no extra API calls needed here, unlike the Logs tab.
-func (gui *Gui) renderInstanceStatsToMain(instance *commands.Instance) tasks.TaskFunc {
+func (gui *Gui) renderInstanceInfoToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.instanceStatsStr(instance))
+			gui.reRenderStringMain(gui.instanceInfoStr(instance))
 		},
 		Duration:   time.Second,
 		Before:     func(ctx context.Context) { gui.clearMainView() },
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})
+}
+
+// instanceInfoStr takes the labels of any identity lines to leave out: the
+// services panel stacks this under a service that has already said those.
+func (gui *Gui) instanceInfoStr(instance *commands.Instance, omit ...string) string {
+	return gui.instanceIdentityStr(instance, omit...) + "\n" +
+		sectionHeading(gui.Tr.StatsTitle) + "\n" + gui.instanceStatsStr(instance)
+}
+
+// sectionHeading marks off the blocks an Info tab is made of, the tab being
+// several things stacked rather than one table.
+func sectionHeading(title string) string {
+	return utils.ColoredString(title, color.FgCyan)
+}
+
+// instanceIdentityStr is what `incus info` prints before the counters,
+// minus what's a tab of its own: no config, no profiles list, no snapshot
+// dates. Fields an instance may not have - a compose image, a health
+// verdict, addresses - are left out rather than shown empty.
+func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string) string {
+	padding := 14
+
+	line := func(label, value string) string {
+		if value == "" || lo.Contains(omit, label) {
+			return ""
+		}
+
+		return utils.WithPadding(label+": ", padding) + value + "\n"
+	}
+
+	output := line("Name", instance.Name)
+	output += line("Status", strings.ToLower(instance.Instance.Status))
+	output += line("Type", presentation.InstanceType(instance))
+	output += line("Project", instance.Project)
+	output += line("Image", instance.Image())
+	output += line("Health", instance.HealthStatus())
+	output += line("Architecture", instance.Instance.Architecture)
+	output += line("Created", localTime(instance.Instance.CreatedAt))
+	output += line("Last used", localTime(instance.Instance.LastUsedAt))
+	output += line("IPv4", strings.Join(instance.Addresses("inet"), " "))
+	output += line("IPv6", strings.Join(instance.Addresses("inet6"), " "))
+
+	if full, ok := instance.Full(); ok {
+		output += line("Snapshots", strconv.Itoa(len(full.Snapshots)))
+	}
+
+	return output
+}
+
+// localTime is blank for the zero time an instance that has never run
+// reports as its last use.
+func localTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+
+	return t.Local().Format(presentation.DateTimeFormat)
 }
 
 func (gui *Gui) instanceStatsStr(instance *commands.Instance) string {

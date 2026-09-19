@@ -34,7 +34,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 	return []sidePanelDef{
 		{
 			name:    "services",
-			title:   gui.Tr.ServicesTitle,
+			title:   gui.servicesPanelTitle(),
 			viewPtr: &gui.Views.Services,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Services },
 			hidden:  gui.noLocalComposeProject,
@@ -131,6 +131,17 @@ func (gui *Gui) cycleSidePanel(offset int) func() error {
 
 		return gui.switchFocus(view)
 	}
+}
+
+// servicesPanelTitle names the compose project the panel acts on. It's the
+// same one on every row, so it belongs in the title rather than in a column
+// - the reasoning the instances panel's project column already follows.
+func (gui *Gui) servicesPanelTitle() string {
+	if gui.noLocalComposeProject() {
+		return gui.Tr.ServicesTitle
+	}
+
+	return fmt.Sprintf(gui.Tr.ServicesTitleProject, gui.State.LocalComposeProject)
 }
 
 // instancesPanelTitle marks the panel as holding what's left once the

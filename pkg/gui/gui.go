@@ -98,6 +98,11 @@ type guiState struct {
 	// the project name, from the same output.
 	ComposeServiceDefs []commands.ComposeService
 
+	// SnapshotsInstance is the instance the snapshots panel is showing:
+	// whatever the list you were last in had selected, a service standing
+	// for its own instance - see refreshSnapshotsFor.
+	SnapshotsInstance *commands.Instance
+
 	// ComposeProject is the local project as the daemon holds it, backing
 	// the healthcheck and resource lines of the services panel's Info tab.
 	// Refreshed with the services, so rendering makes no API calls.
@@ -472,7 +477,15 @@ func (gui *Gui) reloadConfig() error {
 	gui.styleAllViews()
 	gui.g.Mouse = !gui.Config.UserConfig.Gui.IgnoreMouseEvents
 
-	return gui.Panels.Instances.RerenderList()
+	if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return err
+	}
+
+	if gui.noLocalComposeProject() {
+		return nil
+	}
+
+	return gui.Panels.Services.RerenderList()
 }
 
 // configReloader polls the config file's modification time. It covers the
