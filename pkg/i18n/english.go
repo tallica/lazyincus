@@ -93,12 +93,14 @@ type TranslationSet struct {
 	ComposeNotLocalHint           string
 	ComposeCannotManageNonLocal   string
 	ComposeUp                     string
+	ComposeUpPullRecreate         string
 	ComposeDown                   string
 	ComposeDownMenuTitle          string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
 	ConfirmComposeDown            string
 	ConfirmComposeDownWithVolumes string
+	ConfirmComposeUpPullRecreate  string
 
 	CannotDeleteUnmanagedNetwork string
 	NoInstances                  string
@@ -235,16 +237,18 @@ func englishSet() TranslationSet {
 		ComposeProjectsTitle:          "Compose",
 		NoComposeProjects:             "No compose projects",
 		InfoTitle:                     "Info",
-		ComposeManageHint:             "This is the compose project in the current directory - press 'u' to run `incus-compose up`, or 'd' to bring it down.",
+		ComposeManageHint:             "This is the compose project in the current directory - press 'u' to run `incus-compose up`, 'U' to pull the latest images and recreate it, or 'd' to bring it down.",
 		ComposeNotLocalHint:           "This project was found on the server, but its compose file isn't in the current directory, so it can't be managed from here.",
 		ComposeCannotManageNonLocal:   "Only the compose project in the current directory can be managed from here.",
 		ComposeUp:                     "compose up",
+		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeDown:                   "compose down",
 		ComposeDownMenuTitle:          "Down",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down compose project %s?",
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down compose project %s and delete its volumes?",
+		ConfirmComposeUpPullRecreate:  "Are you sure you want to pull the latest images and recreate compose project %s? Running instances will be replaced.",
 
 		SnapshotsTitle: "Snapshots",
 		TopTitle:       "Top",

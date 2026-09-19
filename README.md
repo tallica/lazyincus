@@ -107,6 +107,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `p` | Pause/freeze (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Compose panel, bring the local project down (menu: plain or with volumes) |
 | `u` | Compose panel: bring the local compose project up (`incus-compose up --detach`) |
+| `U` | Compose panel: pull the latest images and recreate the local project's instances (confirms first) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |

@@ -167,16 +167,19 @@ manages: `GetComposeProjects` fetches every project (`GetProjects`, not
 `user.incus-compose.managed`, which excludes `incus-compose-cache` and any
 plain Incus project.
 
-`u`/`d` only work on the one project whose compose file lives in lazyincus's
-own working directory — the same local-project gate lazydocker enforces on
-its Services panel. That project is found once at startup
+`u`/`U`/`d` only work on the one project whose compose file lives in
+lazyincus's own working directory — the same local-project gate lazydocker
+enforces on its Services panel. That project is found once at startup
 (`localComposeProjectName`, `pkg/gui/compose_projects_panel.go`), by
 shelling out to `incus-compose config --format json` and reading `.name`,
 the project name incus-compose itself would act on. No compose file here
 means the command exits 1 and nothing is local — not treated as an error,
 since most servers with compose stacks aren't administered from this
-directory. `u` runs `incus-compose up --detach`; `d` opens a menu for `down`
-or `down --volumes`, each confirmed before running. Both shell out via
+directory. `u` runs `incus-compose up --detach`; `U` adds `--pull always
+--recreate`, to pick up an image the compose file's tag now resolves to
+without waiting for the daemon to notice on its own; `d` opens a menu for
+`down` or `down --volumes`. Everything but plain `u` is confirmed first,
+since it replaces or removes running instances. All three shell out via
 `runSubprocess`, the same pattern instance exec/attach use, and refresh the
 instances and compose-projects panels once the subprocess returns.
 

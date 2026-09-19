@@ -176,6 +176,30 @@ func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
 	return gui.refreshAfterCompose()
 }
 
+// handleComposeUpPullRecreate is `U`: `incus-compose up --pull always
+// --recreate`, replacing any instance already running an older image.
+func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
+	project, err := gui.Panels.ComposeProjects.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	if !project.Local {
+		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
+	}
+
+	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeUpPullRecreate, project.Name)
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
+		cmd := gui.OSCommand.NewCmd("incus-compose", "up", "--pull", "always", "--recreate", "--detach")
+		if err := gui.runSubprocess(cmd); err != nil {
+			return err
+		}
+
+		return gui.refreshAfterCompose()
+	}, nil)
+}
+
 func (gui *Gui) handleComposeDown(g *gocui.Gui, v *gocui.View) error {
 	project, err := gui.Panels.ComposeProjects.GetSelectedItem()
 	if err != nil {
