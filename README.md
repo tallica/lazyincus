@@ -38,6 +38,11 @@ yet" below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 - The `incus` CLI on `PATH` — used for attaching to a console and for
   exec-into-instance.
 - Go 1.27+ to build from source.
+- Optional: [incus-compose](https://incus-compose.org), if you run compose
+  stacks on Incus. It's what the optional `service`, `health` and `image`
+  columns describe ([docs/Config.md](docs/Config.md)); those read the
+  daemon, so the stacks can be managed from another machine entirely. Not in
+  Homebrew core — on macOS, `brew install tallica/tap/incus-compose`.
 
 ## Install / run
 
