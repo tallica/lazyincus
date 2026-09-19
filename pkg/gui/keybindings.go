@@ -242,6 +242,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.ExecShell,
 		},
 		{
+			ViewName:    "instances",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleInstancesComposeMenu,
+			Description: gui.Tr.ComposeActions,
+		},
+		{
 			ViewName:    "images",
 			Key:         'd',
 			Modifier:    gocui.ModNone,

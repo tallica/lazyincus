@@ -264,6 +264,12 @@ func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
 	}
 
+	return gui.composeUp()
+}
+
+// composeUp always acts on the local project: incus-compose resolves the
+// compose file from the working directory, so there's nothing to name.
+func (gui *Gui) composeUp() error {
 	// --detach: without it, `up` stays attached tailing every service's logs,
 	// which would leave the keypress looking hung until the user Ctrl-C's it.
 	if err := gui.runSubprocess(gui.OSCommand.NewCmd("incus-compose", "up", "--detach")); err != nil {
@@ -285,7 +291,11 @@ func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
 	}
 
-	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeUpPullRecreate, project.Name)
+	return gui.composeUpPullRecreate(project.Name)
+}
+
+func (gui *Gui) composeUpPullRecreate(projectName string) error {
+	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeUpPullRecreate, projectName)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		cmd := gui.OSCommand.NewCmd("incus-compose", "up", "--pull", "always", "--recreate", "--detach")
@@ -307,27 +317,31 @@ func (gui *Gui) handleComposeDown(g *gocui.Gui, v *gocui.View) error {
 		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
 	}
 
+	return gui.composeDownMenu(project.Name)
+}
+
+func (gui *Gui) composeDownMenu(projectName string) error {
 	return gui.Menu(CreateMenuOptions{
 		Title: gui.Tr.ComposeDownMenuTitle,
 		Items: []*types.MenuItem{
 			{
 				Label:   gui.Tr.ComposeDownOption,
-				OnPress: func() error { return gui.confirmComposeDown(project, false) },
+				OnPress: func() error { return gui.confirmComposeDown(projectName, false) },
 			},
 			{
 				Label:   gui.Tr.ComposeDownWithVolumesOption,
-				OnPress: func() error { return gui.confirmComposeDown(project, true) },
+				OnPress: func() error { return gui.confirmComposeDown(projectName, true) },
 			},
 		},
 	})
 }
 
-func (gui *Gui) confirmComposeDown(project *commands.ComposeProject, withVolumes bool) error {
-	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeDown, project.Name)
+func (gui *Gui) confirmComposeDown(projectName string, withVolumes bool) error {
+	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeDown, projectName)
 	args := []string{"down"}
 
 	if withVolumes {
-		prompt = fmt.Sprintf(gui.Tr.ConfirmComposeDownWithVolumes, project.Name)
+		prompt = fmt.Sprintf(gui.Tr.ConfirmComposeDownWithVolumes, projectName)
 		args = append(args, "--volumes")
 	}
 
@@ -338,6 +352,26 @@ func (gui *Gui) confirmComposeDown(project *commands.ComposeProject, withVolumes
 
 		return gui.refreshAfterCompose()
 	}, nil)
+}
+
+// handleInstancesComposeMenu is `C` on the instances panel. Flattened into
+// one menu rather than composeDownMenu's own nested one, since this is
+// meant to save a step, not add one.
+func (gui *Gui) handleInstancesComposeMenu(g *gocui.Gui, v *gocui.View) error {
+	projectName := gui.State.LocalComposeProject
+	if projectName == "" {
+		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
+	}
+
+	return gui.Menu(CreateMenuOptions{
+		Title: gui.Tr.ComposeMenuTitle,
+		Items: []*types.MenuItem{
+			{Label: gui.Tr.ComposeUp, OnPress: gui.composeUp},
+			{Label: gui.Tr.ComposeUpPullRecreate, OnPress: func() error { return gui.composeUpPullRecreate(projectName) }},
+			{Label: gui.Tr.ComposeDownOption, OnPress: func() error { return gui.confirmComposeDown(projectName, false) }},
+			{Label: gui.Tr.ComposeDownWithVolumesOption, OnPress: func() error { return gui.confirmComposeDown(projectName, true) }},
+		},
+	})
 }
 
 // refreshAfterCompose re-lists instances and compose projects once

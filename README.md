@@ -116,6 +116,7 @@ file - see [docs/Config.md](docs/Config.md).
 | `r` | Restart an instance, or restore a snapshot |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
+| `C` | Instances panel: compose actions menu (up / pull & recreate / down / down --volumes) for the local compose project, when there is one |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |

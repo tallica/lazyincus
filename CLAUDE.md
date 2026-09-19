@@ -208,6 +208,12 @@ instances and compose-projects panels once the subprocess returns. `U` can
 fail on a non-local daemon for reasons that are incus-compose's, not ours —
 see [BACKLOG.md](BACKLOG.md#caveats).
 
+`C` on the instances panel opens the same four actions as one flat menu. It
+acts on `State.LocalComposeProject` directly rather than a panel selection,
+which is also why the underlying actions (`composeUp`,
+`composeUpPullRecreate`, `confirmComposeDown`) take a project name rather
+than a `*ComposeProject` - there's no selected item to read one from here.
+
 The main panel's Config tab applies the same gate to a read: `incus-compose
 config`'s plain YAML for the local project, and the same non-local hint
 otherwise.

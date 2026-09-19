@@ -97,6 +97,8 @@ type TranslationSet struct {
 	ComposeUpPullRecreate         string
 	ComposeDown                   string
 	ComposeDownMenuTitle          string
+	ComposeMenuTitle              string
+	ComposeActions                string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
 	ConfirmComposeDown            string
@@ -246,6 +248,8 @@ func englishSet() TranslationSet {
 		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeDown:                   "compose down",
 		ComposeDownMenuTitle:          "Down",
+		ComposeMenuTitle:              "Compose",
+		ComposeActions:                "compose actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down compose project %s?",
