@@ -90,11 +90,11 @@ than reading the instances panel's list, since the panels can be scoped
 anywhere. An instance whose label names no declared service — a one-off
 from `incus-compose run` — matches no row and stays in the instances panel.
 
-`ComposeService.Status` rolls the instances up to
-running/stopped/partial/none, counting anything that isn't `Running` as
-stopped: a frozen replica beside a running one makes the service partial,
-which is the distinction that matters at this altitude. `Health` rolls up
-ic-healthd's verdict worst-first.
+`ComposeService.Status` is an instance status — the daemon's own spelling,
+rendered by the instances panel's own `presentation.DisplayStatus`, a
+service being the instances underneath it. Only two values are the
+service's own: `partial` when replicas disagree, `none` when it has no
+instances. `Health` rolls up ic-healthd's verdict worst-first.
 
 The instances panel is the other half of the split: its filter drops the
 local project's compose instances, and its title becomes "Standalone
@@ -132,9 +132,9 @@ Columns work the way the instances panel's do: `gui.serviceColumns` over
 instance column names rendered from the service's instances rolled up, plus
 `replicas`. That one is blank unless what's running differs from what the
 compose file declared — `presentation.ServiceReplicas` is the rule, and the
-Info tab's line calls it too. `gui.instanceStatusStyle` reaches the
-rolled-up status as well; `serviceStatusStyles` supplies the glyphs for
-`partial` and `none`, which no instance state has. There's no project
+Info tab's line calls it too. `gui.instanceStatusStyle` covers the status column
+either way; `serviceStatusStyles` supplies the glyphs for `partial` and
+`none`, which no instance state has. There's no project
 column: every row shares the one project, so `servicesPanelTitle` puts it
 in the title instead.
 

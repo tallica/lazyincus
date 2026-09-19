@@ -36,10 +36,13 @@ func TestComposeServiceStatus(t *testing.T) {
 		want      string
 	}{
 		{"nothing running", nil, ServiceNone},
-		{"all running", []*Instance{running, running}, ServiceRunning},
-		{"all stopped", []*Instance{stopped}, ServiceStopped},
+		{"all running", []*Instance{running, running}, "Running"},
+		{"all stopped", []*Instance{stopped}, "Stopped"},
+		// A service is its instances: frozen stays frozen rather than
+		// flattening into stopped.
+		{"all frozen", []*Instance{frozen, frozen}, "Frozen"},
 		{"one of two", []*Instance{running, stopped}, ServicePartial},
-		{"frozen counts as not running", []*Instance{running, frozen}, ServicePartial},
+		{"frozen beside running", []*Instance{running, frozen}, ServicePartial},
 	}
 
 	for _, tt := range tests {

@@ -154,6 +154,13 @@ func displayHealth(health string) string {
 
 // getInstanceDisplayStatus returns the colored status of the instance
 func getInstanceDisplayStatus(guiConfig *config.GuiConfig, instance *commands.Instance) string {
+	return DisplayStatus(guiConfig, instance.Instance.Status)
+}
+
+// DisplayStatus renders an instance status the way gui.instanceStatusStyle
+// asks for. The services panel renders the same values through it: a
+// service is its instances, so its status is one of theirs.
+func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 	shortStatusMap := map[string]string{
 		"Running":  "R",
 		"Stopped":  "X",
@@ -176,39 +183,31 @@ func getInstanceDisplayStatus(guiConfig *config.GuiConfig, instance *commands.In
 		"Thawed":   '▶',
 	}
 
-	var instanceState string
+	display := status
+
 	switch guiConfig.InstanceStatusStyle {
 	case "short":
-		instanceState = shortStatusMap[instance.Instance.Status]
-		if instanceState == "" {
-			instanceState = instance.Instance.Status
+		if short, ok := shortStatusMap[status]; ok {
+			display = short
 		}
 	case "icon":
-		if icon, ok := iconStatusMap[instance.Instance.Status]; ok {
-			instanceState = string(icon)
-		} else {
-			instanceState = instance.Instance.Status
+		if icon, ok := iconStatusMap[status]; ok {
+			display = string(icon)
 		}
-	case "long":
-		fallthrough
-	default:
-		instanceState = instance.Instance.Status
 	}
 
-	return utils.ColoredString(strings.ToLower(instanceState), getInstanceColor(instance))
+	return utils.ColoredString(strings.ToLower(display), StatusColor(status))
 }
 
-// getInstanceColor returns the color to use for an instance's status
-func getInstanceColor(instance *commands.Instance) color.Attribute {
-	switch instance.Instance.Status {
+// StatusColor is the color a status carries in either panel.
+func StatusColor(status string) color.Attribute {
+	switch status {
 	case "Running":
 		return color.FgGreen
-	case "Stopped":
+	case "Stopped", "Error":
 		return color.FgRed
 	case "Frozen":
 		return color.FgYellow
-	case "Error":
-		return color.FgRed
 	case "Starting", "Stopping", "Freezing", "Thawed":
 		return color.FgBlue
 	default:

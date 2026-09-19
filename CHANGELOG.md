@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - The instances panel's **Stats** tab is now **Info**: what the instance is — name, status, type, project, the image it was created from, architecture, created and last-used dates, addresses, snapshot count, and its health where it has one — then those counters under a Stats heading. The Config tab is the YAML dump alone, that identity having moved.
 - The snapshots panel follows the Services panel the way it follows the instances panel: the selected service's instance, and none at all while it has replicas.
-- `gui.instanceStatusStyle` covers the Services panel's rolled-up status too, with glyphs of its own for `partial` and `none`.
+- `gui.instanceStatusStyle` covers the Services panel's status too, that status being an instance's: a frozen service reads `frozen`, not `stopped`. Only `partial` (replicas disagreeing) and `none` (no instances) are the service's own, with glyphs of their own.
 - `ipv6` is no longer one of the instances panel's default columns; `gui.instanceColumns` puts it back.
 - The instances panel is titled **Standalone Instances** and leaves out the local stack's instances whenever the Services panel is holding them, mirroring lazydocker. Another project's compose instances stay put — they have no panel of their own.
 - Starting lazyincus from a directory with a compose file no longer scopes every panel to that project. The stack has its own panel now, so the instances panel spans projects like the rest; `P` still narrows.

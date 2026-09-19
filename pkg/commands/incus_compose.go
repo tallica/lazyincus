@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strings"
+
 	"github.com/lxc/incus/v7/shared/api"
 )
 
@@ -107,39 +109,32 @@ type ComposeService struct {
 	Instances []*Instance
 }
 
-// The aggregate states a service's instances roll up to.
+// The two states a service can be in that no instance can: its instances
+// disagree, or it has none.
 const (
-	ServiceRunning = "running"
-	ServiceStopped = "stopped"
 	ServicePartial = "partial"
 	ServiceNone    = "none"
 )
 
-// Status rolls the service's instances up to one state. Anything that isn't
-// running counts as stopped here - a frozen or starting replica alongside a
-// running one makes the service partial, which is the distinction that
-// matters at this altitude; the per-instance status is a row below.
+// Status is an instance status: a service is its instances, so a frozen
+// one reads frozen here rather than being flattened into stopped. It's the
+// daemon's own spelling, the same value the instances panel renders.
+// Replicas that disagree make the service ServicePartial, and no instances
+// at all ServiceNone.
 func (s *ComposeService) Status() string {
 	if len(s.Instances) == 0 {
 		return ServiceNone
 	}
 
-	running := 0
+	status := s.Instances[0].Instance.Status
 
-	for _, instance := range s.Instances {
-		if instance.IsRunning() {
-			running++
+	for _, instance := range s.Instances[1:] {
+		if !strings.EqualFold(instance.Instance.Status, status) {
+			return ServicePartial
 		}
 	}
 
-	switch running {
-	case 0:
-		return ServiceStopped
-	case len(s.Instances):
-		return ServiceRunning
-	default:
-		return ServicePartial
-	}
+	return status
 }
 
 // ResolvedImage is the image reference with its registry host, which the

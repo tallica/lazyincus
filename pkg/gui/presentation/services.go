@@ -101,46 +101,34 @@ func ServiceReplicas(service *commands.ComposeService) string {
 	return strconv.Itoa(len(service.Instances)) + "/" + strconv.Itoa(service.Replicas)
 }
 
-// serviceStatusStyles renders a rolled-up service state the three ways
-// gui.instanceStatusStyle renders an instance's, so one setting covers both
-// panels. Partial and none are the service's own: no instance is ever in
-// either state, so the instance map has nothing to borrow for them.
+// serviceStatusStyles covers the two states no instance is ever in; the
+// short and icon spellings have nothing to borrow for them.
 var serviceStatusStyles = map[string]map[string]string{
-	"short": {
-		commands.ServiceRunning: "R",
-		commands.ServiceStopped: "X",
-		commands.ServicePartial: "P",
-		commands.ServiceNone:    "-",
-	},
-	"icon": {
-		commands.ServiceRunning: "▶",
-		commands.ServiceStopped: "⨯",
-		commands.ServicePartial: "◐",
-		commands.ServiceNone:    "·",
-	},
+	"short": {commands.ServicePartial: "P", commands.ServiceNone: "-"},
+	"icon":  {commands.ServicePartial: "◐", commands.ServiceNone: "·"},
 }
 
-// "none" is white rather than red: a service the compose file declares and
-// nothing is running is the normal state of a stack that's down, not a fault.
+// displayServiceStatus hands an instance status to the instances panel's
+// own renderer, a service being its instances, and styles the two states
+// that are the service's alone. "none" is white rather than red: a service
+// the compose file declares and nothing is running is the normal state of
+// a stack that's down, not a fault.
 func displayServiceStatus(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
 	status := service.Status()
+
+	statusColor := color.FgWhite
+
+	switch status {
+	case commands.ServicePartial:
+		statusColor = color.FgYellow
+	case commands.ServiceNone:
+	default:
+		return DisplayStatus(guiConfig, status)
+	}
 
 	display := status
 	if styled, ok := serviceStatusStyles[guiConfig.InstanceStatusStyle][status]; ok {
 		display = styled
-	}
-
-	var statusColor color.Attribute
-
-	switch status {
-	case commands.ServiceRunning:
-		statusColor = color.FgGreen
-	case commands.ServicePartial:
-		statusColor = color.FgYellow
-	case commands.ServiceStopped:
-		statusColor = color.FgRed
-	default:
-		statusColor = color.FgWhite
 	}
 
 	return utils.ColoredString(display, statusColor)
