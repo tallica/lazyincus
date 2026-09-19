@@ -254,14 +254,26 @@ func (gui *Gui) localComposeProjectName() string {
 	return name
 }
 
-func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
-	project, err := gui.Panels.ComposeProjects.GetSelectedItem()
-	if err != nil {
-		return nil
+// composeLocalProjectSelection is the local-project gate every
+// composeProjects-panel action needs: ok is false when there's no
+// selection (a silent no-op, matching other panel handlers) or the
+// selection isn't local, in which case err is already a shown error panel.
+func (gui *Gui) composeLocalProjectSelection() (name string, ok bool, err error) {
+	project, itemErr := gui.Panels.ComposeProjects.GetSelectedItem()
+	if itemErr != nil {
+		return "", false, nil
 	}
 
 	if !project.Local {
-		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
+		return "", false, gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
+	}
+
+	return project.Name, true, nil
+}
+
+func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
+	if _, ok, err := gui.composeLocalProjectSelection(); !ok {
+		return err
 	}
 
 	return gui.composeUp()
@@ -282,16 +294,12 @@ func (gui *Gui) composeUp() error {
 // handleComposeUpPullRecreate is `U`: `incus-compose up --pull always
 // --recreate`, replacing any instance already running an older image.
 func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
-	project, err := gui.Panels.ComposeProjects.GetSelectedItem()
-	if err != nil {
-		return nil
+	name, ok, err := gui.composeLocalProjectSelection()
+	if !ok {
+		return err
 	}
 
-	if !project.Local {
-		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
-	}
-
-	return gui.composeUpPullRecreate(project.Name)
+	return gui.composeUpPullRecreate(name)
 }
 
 func (gui *Gui) composeUpPullRecreate(projectName string) error {
@@ -307,17 +315,68 @@ func (gui *Gui) composeUpPullRecreate(projectName string) error {
 	}, nil)
 }
 
+func (gui *Gui) handleComposeStart(g *gocui.Gui, v *gocui.View) error {
+	if _, ok, err := gui.composeLocalProjectSelection(); !ok {
+		return err
+	}
+
+	return gui.composeStart()
+}
+
+// composeStart runs `incus-compose start` - already-created instances only,
+// unlike `u`, which also creates whatever's missing.
+func (gui *Gui) composeStart() error {
+	if err := gui.runSubprocess(gui.OSCommand.NewCmd("incus-compose", "start")); err != nil {
+		return err
+	}
+
+	return gui.refreshAfterCompose()
+}
+
+func (gui *Gui) handleComposeStop(g *gocui.Gui, v *gocui.View) error {
+	name, ok, err := gui.composeLocalProjectSelection()
+	if !ok {
+		return err
+	}
+
+	return gui.composeStop(name)
+}
+
+func (gui *Gui) composeStop(projectName string) error {
+	prompt := fmt.Sprintf(gui.Tr.ConfirmComposeStop, projectName)
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
+		if err := gui.runSubprocess(gui.OSCommand.NewCmd("incus-compose", "stop")); err != nil {
+			return err
+		}
+
+		return gui.refreshAfterCompose()
+	}, nil)
+}
+
+func (gui *Gui) handleComposeRestart(g *gocui.Gui, v *gocui.View) error {
+	if _, ok, err := gui.composeLocalProjectSelection(); !ok {
+		return err
+	}
+
+	return gui.composeRestart()
+}
+
+func (gui *Gui) composeRestart() error {
+	if err := gui.runSubprocess(gui.OSCommand.NewCmd("incus-compose", "restart")); err != nil {
+		return err
+	}
+
+	return gui.refreshAfterCompose()
+}
+
 func (gui *Gui) handleComposeDown(g *gocui.Gui, v *gocui.View) error {
-	project, err := gui.Panels.ComposeProjects.GetSelectedItem()
-	if err != nil {
-		return nil
+	name, ok, err := gui.composeLocalProjectSelection()
+	if !ok {
+		return err
 	}
 
-	if !project.Local {
-		return gui.createErrorPanel(gui.Tr.ComposeCannotManageNonLocal)
-	}
-
-	return gui.composeDownMenu(project.Name)
+	return gui.composeDownMenu(name)
 }
 
 func (gui *Gui) composeDownMenu(projectName string) error {
@@ -368,6 +427,9 @@ func (gui *Gui) handleInstancesComposeMenu(g *gocui.Gui, v *gocui.View) error {
 		Items: []*types.MenuItem{
 			{Label: gui.Tr.ComposeUp, OnPress: gui.composeUp},
 			{Label: gui.Tr.ComposeUpPullRecreate, OnPress: func() error { return gui.composeUpPullRecreate(projectName) }},
+			{Label: gui.Tr.ComposeStart, OnPress: gui.composeStart},
+			{Label: gui.Tr.ComposeStop, OnPress: func() error { return gui.composeStop(projectName) }},
+			{Label: gui.Tr.ComposeRestart, OnPress: gui.composeRestart},
 			{Label: gui.Tr.ComposeDownOption, OnPress: func() error { return gui.confirmComposeDown(projectName, false) }},
 			{Label: gui.Tr.ComposeDownWithVolumesOption, OnPress: func() error { return gui.confirmComposeDown(projectName, true) }},
 		},

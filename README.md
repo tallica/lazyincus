@@ -108,8 +108,8 @@ file - see [docs/Config.md](docs/Config.md).
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
 | `enter` | Focus main panel (Stats / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
-| `S` | Start |
-| `s` | Stop |
+| `S` | Start; on the Compose panel, `incus-compose start` for the local project |
+| `s` | Stop; on the Compose panel, `incus-compose stop` for the local project (confirms first) |
 | `p` | Pause/freeze (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Compose panel, bring the local project down (menu: plain or with volumes) |
 | `u` | Compose panel: bring the local compose project up (`incus-compose up --detach`) |
@@ -117,10 +117,10 @@ file - see [docs/Config.md](docs/Config.md).
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
-| `r` | Restart an instance, or restore a snapshot |
+| `r` | Restart an instance, or restore a snapshot; on the Compose panel, `incus-compose restart` for the local project |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
-| `C` | Instances panel: compose actions menu (up / pull & recreate / down / down --volumes) for the local compose project, when there is one |
+| `C` | Instances panel: compose actions menu (up / pull & recreate / start / stop / restart / down / down --volumes) for the local compose project, when there is one |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |

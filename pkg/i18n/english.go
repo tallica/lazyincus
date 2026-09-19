@@ -95,6 +95,9 @@ type TranslationSet struct {
 	ComposeCannotManageNonLocal   string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
+	ComposeStart                  string
+	ComposeStop                   string
+	ComposeRestart                string
 	ComposeDown                   string
 	ComposeDownMenuTitle          string
 	ComposeMenuTitle              string
@@ -104,6 +107,7 @@ type TranslationSet struct {
 	ConfirmComposeDown            string
 	ConfirmComposeDownWithVolumes string
 	ConfirmComposeUpPullRecreate  string
+	ConfirmComposeStop            string
 
 	CannotDeleteUnmanagedNetwork string
 	NoInstances                  string
@@ -246,6 +250,9 @@ func englishSet() TranslationSet {
 		ComposeCannotManageNonLocal:   "Only the compose project in the current directory can be managed from here.",
 		ComposeUp:                     "compose up",
 		ComposeUpPullRecreate:         "pull & recreate",
+		ComposeStart:                  "compose start",
+		ComposeStop:                   "compose stop",
+		ComposeRestart:                "compose restart",
 		ComposeDown:                   "compose down",
 		ComposeDownMenuTitle:          "Down",
 		ComposeMenuTitle:              "Compose",
@@ -255,6 +262,7 @@ func englishSet() TranslationSet {
 		ConfirmComposeDown:            "Are you sure you want to bring down compose project %s?",
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down compose project %s and delete its volumes?",
 		ConfirmComposeUpPullRecreate:  "Are you sure you want to pull the latest images and recreate compose project %s? Running instances will be replaced.",
+		ConfirmComposeStop:            "Are you sure you want to stop compose project %s?",
 
 		SnapshotsTitle: "Snapshots",
 		TopTitle:       "Top",

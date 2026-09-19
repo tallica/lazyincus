@@ -312,6 +312,27 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.ComposeUpPullRecreate,
 		},
 		{
+			ViewName:    "composeProjects",
+			Key:         'S',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeStart,
+			Description: gui.Tr.ComposeStart,
+		},
+		{
+			ViewName:    "composeProjects",
+			Key:         's',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeStop,
+			Description: gui.Tr.ComposeStop,
+		},
+		{
+			ViewName:    "composeProjects",
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeRestart,
+			Description: gui.Tr.ComposeRestart,
+		},
+		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
