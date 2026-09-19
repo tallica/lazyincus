@@ -3,6 +3,7 @@ package gui
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -52,16 +53,72 @@ func (gui *Gui) renderComposeProjectInfo(project *commands.ComposeProject) tasks
 }
 
 func (gui *Gui) composeProjectInfoStr(project *commands.ComposeProject) string {
-	padding := 8
+	padding := 14
 	output := utils.WithPadding("Name: ", padding) + project.Name + "\n"
 
+	if project.Description != "" {
+		output += utils.WithPadding("Description: ", padding) + project.Description + "\n"
+	}
+
+	output += utils.WithPadding("Local: ", padding) + gui.yesNo(project.Local) + "\n"
+	output += utils.WithPadding("Healthcheck: ", padding) + gui.composeHealthcheckStr(project) + "\n"
+	output += utils.WithPadding("Resources: ", padding) + composeResourceCountsStr(project) + "\n\n"
+
 	if project.Local {
-		output += utils.WithPadding("Local: ", padding) + gui.Tr.Yes + "\n\n" + gui.Tr.ComposeManageHint
+		output += gui.Tr.ComposeManageHint
 	} else {
-		output += utils.WithPadding("Local: ", padding) + gui.Tr.No + "\n\n" + gui.Tr.ComposeNotLocalHint
+		output += gui.Tr.ComposeNotLocalHint
 	}
 
 	return output
+}
+
+func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
+	if !project.HealthcheckEnabled() {
+		return gui.Tr.No
+	}
+
+	if scope := project.HealthcheckScope(); scope != "" {
+		return fmt.Sprintf("%s (scope: %s)", gui.Tr.Yes, scope)
+	}
+
+	return gui.Tr.Yes
+}
+
+// composeResourceKinds orders ResourceCounts for display; a kind absent
+// from the project's UsedBy is skipped rather than shown as zero.
+var composeResourceKinds = []struct{ key, singular string }{
+	{"instances", "instance"},
+	{"images", "image"},
+	{"volumes", "volume"},
+	{"networks", "network"},
+	{"profiles", "profile"},
+}
+
+func composeResourceCountsStr(project *commands.ComposeProject) string {
+	counts := project.ResourceCounts()
+
+	var parts []string
+
+	for _, kind := range composeResourceKinds {
+		n, ok := counts[kind.key]
+		if !ok {
+			continue
+		}
+
+		label := kind.singular
+		if n != 1 {
+			label += "s"
+		}
+
+		parts = append(parts, fmt.Sprintf("%d %s", n, label))
+	}
+
+	if len(parts) == 0 {
+		return "none"
+	}
+
+	return strings.Join(parts, ", ")
 }
 
 func (gui *Gui) renderComposeConfig(project *commands.ComposeProject) tasks.TaskFunc {

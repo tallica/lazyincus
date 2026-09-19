@@ -163,9 +163,14 @@ deleted; the unmanaged entries are host interfaces Incus merely reports.
 
 Lists the Incus projects [incus-compose](https://github.com/lxc/incus-compose)
 manages: `GetComposeProjects` fetches every project (`GetProjects`, not
-`GetProjectNames` — the config is what's needed) and keeps the ones carrying
-`user.incus-compose.managed`, which excludes `incus-compose-cache` and any
-plain Incus project.
+`GetProjectNames` — the config and `UsedBy` are what's needed) and keeps the
+ones carrying `user.incus-compose.managed`, which excludes
+`incus-compose-cache` and any plain Incus project.
+
+The Info tab's Healthcheck and Resources lines both come from that one
+fetch, no extra call: healthcheck from `user.healthcheck.enabled`/`.scope`
+in the project's config, and the resource counts from `ComposeProject.
+ResourceCounts` (`pkg/commands/incus_compose.go`), tallying `UsedBy`.
 
 `u`/`U`/`d` only work on the one project whose compose file lives in
 lazyincus's own working directory — the same local-project gate lazydocker
