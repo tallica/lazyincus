@@ -86,9 +86,11 @@ Six side panels: **Instances** (`1`), listing both containers and VMs,
 **Volumes** (`4`), **Networks** (`5`) and **Compose** (`6`) for
 [incus-compose](https://incus-compose.org) stacks. All list every Incus
 project by default; `P` scopes them to a single project instead, and the
-footer shows the current remote and scope. A project column appears on any
-panel whose contents actually span projects, and actions run against the
-project the item came from.
+footer shows the current remote and scope. Starting lazyincus from a
+directory with a compose file scopes to its project automatically, the
+same as picking it with `P`. A project column appears on any panel whose
+contents actually span projects, and actions run against the project the
+item came from.
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config

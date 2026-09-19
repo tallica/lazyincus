@@ -175,7 +175,16 @@ shelling out to `incus-compose config --format json` and reading `.name`,
 the project name incus-compose itself would act on. No compose file here
 means the command exits 1 and nothing is local — not treated as an error,
 since most servers with compose stacks aren't administered from this
-directory. `u` runs `incus-compose up --detach`; `U` adds `--pull always
+directory.
+
+Finding the local project also decides the startup scope: `Run` calls
+`UseProject` with it, ahead of the first refresh, before falling back to
+every project when there isn't one. `UseProject` is purely local
+(`pkg/commands/incus.go`), so this costs nothing beyond the one
+`incus-compose config` shell-out already needed for the gate, and the
+panels never render an all-projects flash before narrowing.
+
+`u` runs `incus-compose up --detach`; `U` adds `--pull always
 --recreate`, to pick up an image the compose file's tag now resolves to
 without waiting for the daemon to notice on its own; `d` opens a menu for
 `down` or `down --volumes`. Everything but plain `u` is confirmed first,

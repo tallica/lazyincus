@@ -276,6 +276,11 @@ func (gui *Gui) Run() error {
 	}
 
 	go func() {
+		gui.State.LocalComposeProject = gui.localComposeProjectName()
+		if gui.State.LocalComposeProject != "" {
+			gui.IncusCommand.UseProject(gui.State.LocalComposeProject)
+		}
+
 		if err := gui.refreshInstances(); err != nil {
 			gui.Log.Error(err)
 		}
@@ -291,8 +296,6 @@ func (gui *Gui) Run() error {
 		if err := gui.refreshNetworks(); err != nil {
 			gui.Log.Error(err)
 		}
-
-		gui.State.LocalComposeProject = gui.localComposeProjectName()
 
 		if err := gui.refreshComposeProjects(); err != nil {
 			gui.Log.Error(err)
