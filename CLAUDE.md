@@ -181,7 +181,9 @@ without waiting for the daemon to notice on its own; `d` opens a menu for
 `down` or `down --volumes`. Everything but plain `u` is confirmed first,
 since it replaces or removes running instances. All three shell out via
 `runSubprocess`, the same pattern instance exec/attach use, and refresh the
-instances and compose-projects panels once the subprocess returns.
+instances and compose-projects panels once the subprocess returns. `U` can
+fail on a non-local daemon for reasons that are incus-compose's, not ours —
+see [BACKLOG.md](BACKLOG.md#caveats).
 
 The main panel's Config tab applies the same gate to a read: `incus-compose
 config`'s plain YAML for the local project, and the same non-local hint

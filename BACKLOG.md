@@ -284,6 +284,13 @@ lazydocker's panel that was a main-panel tab rather than the list itself:
   hand. Two keys the table above missed turned up there:
   `user.incus-compose.managed` on every instance and project compose owns,
   and `user.image_alias`, now the image column.
+- `U` (pull and recreate) fails incus-compose's own way on a stack with a
+  bind mount or device passthrough (`error="failed to add a bind-mount for
+  service <name>: not on the same host"`) whenever the daemon isn't local —
+  a colima VM included. `--recreate` re-validates those sources, and
+  incus-compose refuses when it isn't running on the same host as the
+  daemon. Not a lazyincus bug and nothing to fix here; plain `u` doesn't
+  re-create an existing instance, so it doesn't hit this.
 
 ## Snapshots panel
 
