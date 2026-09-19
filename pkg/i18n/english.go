@@ -101,9 +101,6 @@ type TranslationSet struct {
 	ComposeTargetProject          string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
-	ComposeStart                  string
-	ComposeStop                   string
-	ComposeRestart                string
 	ComposeDown                   string
 	ComposeKill                   string
 	ComposePause                  string
@@ -267,12 +264,9 @@ func englishSet() TranslationSet {
 		InfoTitle:                     "Info",
 		ComposeTargetService:          "service %s",
 		ComposeTargetProject:          "project %s",
-		ComposeUp:                     "compose up",
+		ComposeUp:                     "bring up",
 		ComposeUpPullRecreate:         "pull & recreate",
-		ComposeStart:                  "compose start",
-		ComposeStop:                   "compose stop",
-		ComposeRestart:                "compose restart",
-		ComposeDown:                   "compose down",
+		ComposeDown:                   "bring down",
 		ComposeKill:                   "kill",
 		ComposePause:                  "pause",
 		ComposeUnpause:                "unpause",
@@ -281,7 +275,7 @@ func englishSet() TranslationSet {
 		ComposeLogs:                   "logs --follow",
 		ComposeDownMenuTitle:          "Down",
 		ComposeMenuTitle:              "Compose",
-		ComposeActions:                "compose actions",
+		ComposeActions:                "more actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down %s?",
