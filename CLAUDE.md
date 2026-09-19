@@ -111,16 +111,12 @@ client to it — the instances panel spans projects like every other panel,
 and `P` still narrows.
 
 Keys act on the selected service, passing its name as the `SERVICE`
-argument every incus-compose verb takes: `u` runs `up --detach`, `U` adds
-`--pull always --recreate` to pick up an image the compose file's tag now
-resolves to, `S`/`s`/`r` run `start`/`stop`/`restart`, `d` opens a menu for
-`down` or `down --volumes`. `s` and `d` confirm, `S`/`r`/`u` don't — same
-rule as the instances panel. `C` holds the verbs that don't warrant a key
-(`kill`, `pause`, `unpause`, `build`, `pull`, `logs --follow`), each listed
-twice: once for the service, once for the project, which is the same command
-with the argument left off. `composeRun` is all of them, and refreshes the
+argument every incus-compose verb takes; which key runs which verb is
+README's [Compose stacks](README.md#compose-stacks) section, alongside the
+rest of what a user sees. `composeRun` is all of them, and refreshes the
 instances and services panels once the subprocess returns rather than
-waiting for the poll. `U` can fail on a non-local daemon for reasons that
+waiting for the poll. `s` and `d` confirm, `S`/`r`/`u` don't — same rule as
+the instances panel. `U` can fail on a non-local daemon for reasons that
 are incus-compose's, not ours — see [BACKLOG.md](BACKLOG.md#caveats).
 
 The per-instance keys (`m`, `n`, `a`, `E`, `y`) reach the service's

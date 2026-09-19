@@ -42,12 +42,8 @@ panel-by-panel comparison.
   exec-into-instance.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
-  stacks on Incus. It's what the optional `service`, `health` and `image`
-  columns describe ([docs/Config.md](docs/Config.md)); those columns read
-  the daemon, so a stack shows up in them from another machine entirely,
-  while the Services panel needs the `incus-compose` binary on `PATH` and
-  the compose file in the current directory. Not in Homebrew core — on
-  macOS, `brew install tallica/tap/incus-compose`.
+  stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in
+  Homebrew core; on macOS, `brew install tallica/tap/incus-compose`.
 
 ## Install / run
 
@@ -92,19 +88,8 @@ the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
 
-Start lazyincus from a directory holding an
-[incus-compose](https://incus-compose.org) file and a sixth panel appears
-above the others: **Services** (`1`), titled with the compose project, one
-row per service that file declares, with the other panels shifting down a
-number. A service the file declares but nothing is running still gets a
-row, in state `none` — the
-compose file is what the list comes from, not the daemon. The stack's own
-instances move out of the instances panel, which becomes **Standalone
-Instances** (`2`); every other project's instances stay there. "Directory"
-follows incus-compose's own resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY`
-in the environment works too, not just the current directory (lazyincus
-shells out to incus-compose without passing its own `-P`, so the flag itself
-isn't reachable this way).
+A sixth panel, **Services**, appears when there's a compose file in the
+working directory — see [Compose stacks](#compose-stacks).
 
 The instances panel's columns (name, status, health, type, IPv4, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -121,19 +106,19 @@ incus-compose.
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
-| `S` | Start; on the Services panel, `incus-compose start` for the selected service |
-| `s` | Stop; on the Services panel, `incus-compose stop` for the selected service (confirms first) |
+| `S` | Start; on the Services panel, start the service |
+| `s` | Stop; on the Services panel, stop the service (confirms first) |
 | `p` | Pause/freeze (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down (menu: plain or with volumes) |
-| `u` | Services panel: bring the service up (`incus-compose up --detach <service>`) |
-| `U` | Services panel: pull the latest image and recreate the service's instances (confirms first) |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down |
+| `u` | Services panel: bring the service up |
+| `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
-| `r` | Restart an instance, or restore a snapshot; on the Services panel, `incus-compose restart` for the selected service |
+| `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
-| `C` | Services panel: the compose verbs without a key of their own — kill, pause, unpause, build, pull, `logs --follow` — each for the selected service and for the whole project |
+| `C` | Services panel: the compose verbs without a key of their own ([Compose stacks](#compose-stacks)) |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
@@ -143,11 +128,64 @@ incus-compose.
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |
 
-On the Services panel the per-instance keys - `m`, `n`, `a`, `E`, `y` - act
-on the service's instance, asking which one when it has replicas.
-
 Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
 for the full list of options and defaults.
+
+## Compose stacks
+
+[incus-compose](https://incus-compose.org) runs an unmodified
+`compose.yaml` against Incus, giving each compose project an Incus project
+of its own. lazyincus reads those stacks two ways.
+
+**Anywhere, from the daemon.** The `service`, `health` and `image` columns
+read the config keys incus-compose stamps on each instance, so a stack
+shows up in the instances panel from another machine entirely, with no
+compose file and no `incus-compose` binary in sight. `health` is on by
+default; the other two you add through `gui.instanceColumns` — see
+[docs/Config.md](docs/Config.md).
+
+**As a panel, from the compose file.** Start lazyincus from a directory
+holding a compose file and a **Services** panel appears above the others as
+`1`, titled with the compose project, with every other panel shifting down
+a number. It needs the `incus-compose` binary on `PATH`. "Directory"
+follows incus-compose's own resolution, so `INCUS_COMPOSE_PROJECT_DIRECTORY`
+works too (lazyincus shells out without passing its own `-P`, so that flag
+isn't reachable this way).
+
+The rows come from the compose file rather than the daemon, so a service
+the file declares but nothing is running still gets one, in state `none`.
+Otherwise a service carries the status of the instances under it —
+`running`, `frozen`, whatever they are, or `partial` when replicas
+disagree. The stack's own instances move out of the instances panel, which
+becomes **Standalone Instances** (`2`); every other project's instances
+stay there.
+
+What the keys run, each of them `incus-compose <verb> <service>`:
+
+- `u` — `up --detach`; `U` adds `--pull always --recreate`, to pick up an
+  image the compose file's tag now resolves to (it confirms first)
+- `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms
+- `d` — `down`, plain or `--volumes`, after a confirmation
+- `C` — the verbs without a key of their own: `kill`, `pause`, `unpause`,
+  `build`, `pull`, `logs --follow`, each listed for the service and for the
+  whole project, which is the same command with the argument left off
+- `m`, `n`, `a`, `E` and `y` act on the service's instance rather than on
+  compose, asking which instance when the service has replicas
+
+Selecting a service points the snapshots panel at its instance, the way
+selecting an instance does.
+
+The main panel tabs are the instance's with the service's own on top:
+**Info** shows what the compose file declares — image, command, restart
+policy, ports, volumes, devices, depends-on — and then each instance's own
+Info; **Config** shows the service's slice of `incus-compose config` and
+then the daemon's dump for each instance; **Logs**, **Env** and **Top** are
+the instance's, and say so when a service has more than one.
+
+One gotcha that isn't ours: `U` fails on a stack with a bind mount or
+device passthrough whenever the daemon isn't on the same host, because
+`--recreate` re-validates those sources. Plain `u` doesn't re-create an
+existing instance, so it doesn't hit this.
 
 ## Supporting upstream
 
