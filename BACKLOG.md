@@ -33,9 +33,10 @@ lazydocker has six side panels; lazyincus has five.
 
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
       credits tab, so dropping that panel left lazyincus with nowhere to put
-      one (`CreditsTitle` is ported but unused).
+      one (`CreditsTitle` is ported but unused). The
+      [project panel](#3-project-panel) is where it would go, as upstream.
 
-Not planned as lazydocker has them:
+The sixth panel is no longer ruled out:
 
 - **Services / Project panels** — these were docker-compose specific, and the
   port assumed Incus had nothing to map them onto. That assumption is now
@@ -218,6 +219,11 @@ data lazyincus has in hand, not new API calls.
       (`user.healthcheck.enabled`) can sit on the Incus project instead, and
       `ExpandedConfig` expands profiles rather than projects, so status's
       presence is the signal and the opt-in is no use for this.
+- [ ] **Health in the status column** — lazydocker renders health as a
+      substatus beside the container's state, styled by
+      `containerStatusHealthStyle` (`long`/`short`/`icon`), where ours is a
+      column of its own. The inline form spends less width on a panel that
+      rarely has any to spare.
 - [x] **Image column** — opt-in `image` column reading `user.image_alias`,
       the reference the compose file named. Incus's own
       `volatile.base_image` is a fingerprint, so this is the only place an
@@ -240,14 +246,69 @@ data lazyincus has in hand, not new API calls.
       when navigating. That's the whole cost, and it buys a separator on a
       list that's already ordered — worth doing only if collapsing comes
       with it.
-- [ ] **`incus-compose` shell-outs** — `up`/`down`/`restart` on the selected
-      project, in the `instanceExecShell` subprocess style. Optional, and it
-      adds a second CLI dependency beyond `incus` itself — one that, unlike
-      `incus`, need not be on the machine running lazyincus at all: a remote
-      daemon's stacks are managed from wherever `incus-compose` runs.
+
+      The one thing that panel bought which no column can is a service with
+      no instance behind it: lazydocker reads the compose file, so a service
+      that's down still gets a row, in state `none`. Ours sees only what the
+      daemon holds, so that service is simply absent. Surfacing it means
+      reading the compose file too — `incus-compose config --services`, and
+      with it the local-project gate below.
+
+### 3. Project panel
+
+lazydocker's sixth side panel, and the home for everything compose-shaped
+that isn't a column: it lists the compose projects it has discovered, hangs
+`u` (up) and `d` (a menu — down, or down with volumes) off the selection,
+and gives the main panel a tab per project — aggregate logs, the rendered
+compose config, and the credits.
+
+What doesn't survive the port unchanged is who may be acted on. lazydocker
+knows which project the compose file in the current directory belongs to
+(`DockerCommand.LocalProjectName`); every other project it found by reading
+container labels is visible but read-only, and `up`/`down`/`rm` on one
+answer `CannotManageNonLocalService`. The same gate is needed here, for the
+same reason and no more: a listed project is a project some machine's
+compose file created, and only the machine holding that file can `up` it.
+Which daemon is not the obstacle — incus-compose runs locally and talks to
+any remote (`--remote`, or `INCUS_REMOTE`, resolved out of the same
+`~/.config/incus/config.yml` `pkg/commands/incus.go` reads), so a stack on
+a remote server is managed from here exactly like a local one, provided the
+file is here. That makes the child's remote something we have to set rather
+than inherit, since ours comes from `INCUS_REMOTE` or the CLI's default —
+the same `runSubprocess` fix the [`--remote` flag](#not-lazydocker-shaped)
+item needs for `incus` itself, paid for once.
+
+The gate is then just "is there a compose file here, and for which
+project", and one call answers both: `incus-compose config --format json`
+prints `.name`, the project name it would act on, derived the way compose
+derives it (the directory, unless `-p`/`INCUS_COMPOSE_PROJECT_NAME` or the
+file says otherwise) — so the name needn't be worked out here. With no
+compose file it exits 1 with `no compose.yaml found`, which is the gate
+closing. It resolves the remote before parsing, though, so it isn't a
+purely local probe and wants the off-the-main-goroutine treatment the
+remote switcher describes. Nothing checks that the file and the project the
+daemon reports are the same stack; cwd is the assumption upstream makes too.
+
+- [ ] **The panel** — one `sidePanelDefs()` entry plus its own files, over
+      the projects the other panels already discover. `P` stays as it is:
+      the panel says which projects exist, the switcher scopes to one.
+- [ ] **`u` / `d`** — `incus-compose up`, and `down` / `down --volumes` as a
+      menu, in the `instanceExecShell` subprocess style and offered only for
+      the local project. Adds a second CLI dependency beyond `incus` itself.
+- [ ] **Compose config tab** — `incus-compose config` for the local project,
+      lazydocker's `DockerComposeConfigTitle`.
+- [ ] **Credits tab** — the home the
+      [missing credits surface](#side-panels) is waiting for.
+- [ ] **Aggregate logs tab** — lazydocker tails every container in the
+      project at once. `incus-compose logs -f` is the analog, but
+      `TailConsoleLog` is per-instance and drain-on-read, so merging the
+      streams ourselves is work; a subprocess is the cheap version.
 
 ### Caveats
 
+- The CLI surface above was read off `incus-compose 1.3.4` on macOS, where
+  `--remote` takes `$INCUS_REMOTE`, `-p` is the project name and `-P` the
+  project directory.
 - Those keys are internal to incus-compose and carry no compatibility
   promise, so they're pinned the way the lazydocker port is: everything
   above was read from
