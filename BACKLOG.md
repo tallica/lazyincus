@@ -259,10 +259,8 @@ lazydocker also enforces (`CannotManageNonLocalService`), shipped - see
 [CLAUDE.md](CLAUDE.md#compose) and CHANGELOG.md. What's left is the part of
 lazydocker's panel that was a main-panel tab rather than the list itself:
 
-- [x] **The panel** and **`u` / `d`** — shipped as the sixth side panel,
-      Compose.
-- [ ] **Compose config tab** — `incus-compose config` for the local project,
-      lazydocker's `DockerComposeConfigTitle`.
+- [x] **The panel**, **`u` / `d`** and **the compose config tab** — shipped
+      as the sixth side panel, Compose.
 - [ ] **Credits tab** — the home the
       [missing credits surface](#side-panels) is waiting for.
 - [ ] **Aggregate logs tab** — lazydocker tails every container in the

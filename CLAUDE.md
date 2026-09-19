@@ -180,9 +180,12 @@ or `down --volumes`, each confirmed before running. Both shell out via
 `runSubprocess`, the same pattern instance exec/attach use, and refresh the
 instances and compose-projects panels once the subprocess returns.
 
-The compose config tab, credits tab and aggregate-logs tab from
-lazydocker's Project panel aren't ported — see
-[BACKLOG.md](BACKLOG.md#3-project-panel).
+The main panel's Config tab applies the same gate to a read: `incus-compose
+config`'s plain YAML for the local project, and the same non-local hint
+otherwise.
+
+The credits tab and aggregate-logs tab from lazydocker's Project panel
+aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
 
 ## Incus client integration details
 

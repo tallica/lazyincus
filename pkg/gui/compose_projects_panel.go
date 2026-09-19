@@ -23,6 +23,11 @@ func (gui *Gui) getComposeProjectsPanel() *panels.SideListPanel[*commands.Compos
 						Title:  gui.Tr.InfoTitle,
 						Render: gui.renderComposeProjectInfo,
 					},
+					{
+						Key:    "config",
+						Title:  gui.Tr.ConfigTitle,
+						Render: gui.renderComposeConfig,
+					},
 				}
 			},
 			GetItemContextCacheKey: func(project *commands.ComposeProject) string {
@@ -57,6 +62,26 @@ func (gui *Gui) composeProjectInfoStr(project *commands.ComposeProject) string {
 	}
 
 	return output
+}
+
+func (gui *Gui) renderComposeConfig(project *commands.ComposeProject) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.composeConfigStr(project) })
+}
+
+// composeConfigStr renders `incus-compose config`'s plain YAML - not the
+// --format json parseComposeProjectName parses - for the local project;
+// gated the same way `u`/`d` are, just above.
+func (gui *Gui) composeConfigStr(project *commands.ComposeProject) string {
+	if !project.Local {
+		return gui.Tr.ComposeNotLocalHint
+	}
+
+	output, err := gui.OSCommand.RunExecutableWithOutput(gui.OSCommand.NewCmd("incus-compose", "config"))
+	if err != nil {
+		return fmt.Sprintf("Error running `incus-compose config`: %v", err)
+	}
+
+	return utils.ColoredYamlString(output)
 }
 
 func (gui *Gui) refreshComposeProjects() error {
