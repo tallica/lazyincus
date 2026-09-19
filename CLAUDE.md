@@ -172,6 +172,15 @@ fetch, no extra call: healthcheck from `user.healthcheck.enabled`/`.scope`
 in the project's config, and the resource counts from `ComposeProject.
 ResourceCounts` (`pkg/commands/incus_compose.go`), tallying `UsedBy`.
 
+Below that, a table of the project's instances - service, instance, image,
+status, addresses, the columns `incus-compose ps` itself prints - does need
+its own fetch, `IncusCommand.GetProjectInstances`, rather than filtering the
+instances panel's already-loaded list: that list only holds whichever
+project the panels are currently scoped to, which isn't necessarily the one
+whose Info tab is open, and quietly showing nothing for a project's
+services just because a different one is focused would be worse than the
+extra call.
+
 `u`/`U`/`d` only work on the one project whose compose file lives in
 lazyincus's own working directory — the same local-project gate lazydocker
 enforces on its Services panel. That project is found once at startup

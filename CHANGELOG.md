@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Optional `health` and `image` columns in the instances panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. Off by default; see [docs/Config.md](docs/Config.md).
-- Sixth side panel, **Compose** (`6`), listing incus-compose's managed projects: an Info tab with its description, healthcheck opt-in and resource counts, `u`/`U`/`d` to start, pull-and-recreate, or stop the local one, and a Config tab showing its rendered compose file — see [CLAUDE.md](CLAUDE.md#compose). The credits/aggregate-log tabs from BACKLOG.md's [project panel](BACKLOG.md#3-project-panel) plan are still deferred.
+- Sixth side panel, **Compose** (`6`), listing incus-compose's managed projects: an Info tab with its description, healthcheck opt-in, resource counts and a service table (`incus-compose ps`'s own columns), `u`/`U`/`d` to start, pull-and-recreate, or stop the local one, and a Config tab showing its rendered compose file — see [CLAUDE.md](CLAUDE.md#compose). The credits/aggregate-log tabs from BACKLOG.md's [project panel](BACKLOG.md#3-project-panel) plan are still deferred.
 - Starting lazyincus from a directory with a compose file now scopes every panel to that project by default, the same as picking it with `P`.
 
 ## [0.6.1] - 2026-09-13

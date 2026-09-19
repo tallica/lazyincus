@@ -1,6 +1,10 @@
 package commands
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/lxc/incus/v7/shared/api"
+)
 
 // ComposeProject is an Incus project that incus-compose created and
 // manages. Every such project carries composeManagedKey in its config,
@@ -114,4 +118,37 @@ func (c *IncusCommand) GetComposeProjects() ([]*ComposeProject, error) {
 	}
 
 	return result, nil
+}
+
+// GetProjectInstances lists one project's instances directly, regardless of
+// which project the panels are currently scoped to.
+func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) {
+	client := c.Client().UseProject(project)
+
+	fulls, err := client.GetInstancesFull(api.InstanceTypeAny)
+	if err != nil {
+		return nil, err
+	}
+
+	instances := make([]*Instance, len(fulls))
+
+	for i := range fulls {
+		full := fulls[i]
+
+		inst := &Instance{
+			Name:         full.Name,
+			Project:      project,
+			Instance:     full.Instance,
+			Client:       client,
+			OSCommand:    c.OSCommand,
+			Log:          c.Log,
+			IncusCommand: c,
+			Tr:           c.Tr,
+		}
+		inst.setFull(&full)
+
+		instances[i] = inst
+	}
+
+	return instances, nil
 }

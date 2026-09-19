@@ -88,6 +88,7 @@ type TranslationSet struct {
 
 	ComposeProjectsTitle          string
 	NoComposeProjects             string
+	NoComposeServices             string
 	InfoTitle                     string
 	ComposeManageHint             string
 	ComposeNotLocalHint           string
@@ -236,6 +237,7 @@ func englishSet() TranslationSet {
 
 		ComposeProjectsTitle:          "Compose",
 		NoComposeProjects:             "No compose projects",
+		NoComposeServices:             "No instances found for this project",
 		InfoTitle:                     "Info",
 		ComposeManageHint:             "This is the compose project in the current directory - press 'u' to run `incus-compose up`, 'U' to pull the latest images and recreate it, or 'd' to bring it down.",
 		ComposeNotLocalHint:           "This project was found on the server, but its compose file isn't in the current directory, so it can't be managed from here.",

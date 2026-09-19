@@ -3,6 +3,7 @@ package gui
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jesseduffield/gocui"
@@ -70,7 +71,46 @@ func (gui *Gui) composeProjectInfoStr(project *commands.ComposeProject) string {
 		output += gui.Tr.ComposeNotLocalHint
 	}
 
-	return output
+	return output + "\n\n" + gui.composeProjectServicesStr(project)
+}
+
+// composeProjectServicesStr lists the project's instances the way
+// `incus-compose ps` does - service, instance, image, status, addresses.
+func (gui *Gui) composeProjectServicesStr(project *commands.ComposeProject) string {
+	instances, err := gui.IncusCommand.GetProjectInstances(project.Name)
+	if err != nil {
+		return err.Error()
+	}
+
+	if len(instances) == 0 {
+		return gui.Tr.NoComposeServices
+	}
+
+	sort.Slice(instances, func(i, j int) bool {
+		if instances[i].ComposeService() != instances[j].ComposeService() {
+			return instances[i].ComposeService() < instances[j].ComposeService()
+		}
+
+		return instances[i].Name < instances[j].Name
+	})
+
+	rows := [][]string{{"SERVICE", "INSTANCE", "IMAGE", "STATUS", "ADDRESSES"}}
+	for _, instance := range instances {
+		rows = append(rows, []string{
+			instance.ComposeService(),
+			instance.Name,
+			instance.ComposeImage(),
+			strings.ToLower(instance.Instance.Status),
+			strings.Join(instance.Addresses("inet"), " "),
+		})
+	}
+
+	table, err := utils.RenderTable(rows)
+	if err != nil {
+		return err.Error()
+	}
+
+	return table
 }
 
 func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
