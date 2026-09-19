@@ -58,6 +58,12 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			viewPtr: &gui.Views.Networks,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Networks },
 		},
+		{
+			name:    "composeProjects",
+			title:   gui.Tr.ComposeProjectsTitle,
+			viewPtr: &gui.Views.ComposeProjects,
+			panel:   func() panels.ISideListPanel { return gui.Panels.ComposeProjects },
+		},
 	}
 }
 

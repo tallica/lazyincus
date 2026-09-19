@@ -284,6 +284,20 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
+			ViewName:    "composeProjects",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeUp,
+			Description: gui.Tr.ComposeUp,
+		},
+		{
+			ViewName:    "composeProjects",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeDown,
+			Description: gui.Tr.ComposeDown,
+		},
+		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,

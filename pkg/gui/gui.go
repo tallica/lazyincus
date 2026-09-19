@@ -42,12 +42,13 @@ type Gui struct {
 }
 
 type Panels struct {
-	Instances *panels.SideListPanel[*commands.Instance]
-	Images    *panels.SideListPanel[*commands.Image]
-	Snapshots *panels.SideListPanel[*commands.Snapshot]
-	Volumes   *panels.SideListPanel[*commands.Volume]
-	Networks  *panels.SideListPanel[*commands.Network]
-	Menu      *panels.SideListPanel[*types.MenuItem]
+	Instances       *panels.SideListPanel[*commands.Instance]
+	Images          *panels.SideListPanel[*commands.Image]
+	Snapshots       *panels.SideListPanel[*commands.Snapshot]
+	Volumes         *panels.SideListPanel[*commands.Volume]
+	Networks        *panels.SideListPanel[*commands.Network]
+	ComposeProjects *panels.SideListPanel[*commands.ComposeProject]
+	Menu            *panels.SideListPanel[*types.MenuItem]
 }
 
 type Mutexes struct {
@@ -85,6 +86,12 @@ type guiState struct {
 	Filter filterState
 
 	Connection connectionState
+
+	// The compose project whose compose file lives in lazyincus's own
+	// working directory - see (*Gui).localComposeProjectName. Empty if
+	// there isn't one; resolved once at startup, since the working
+	// directory doesn't change mid-session.
+	LocalComposeProject string
 
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
@@ -285,6 +292,12 @@ func (gui *Gui) Run() error {
 			gui.Log.Error(err)
 		}
 
+		gui.State.LocalComposeProject = gui.localComposeProjectName()
+
+		if err := gui.refreshComposeProjects(); err != nil {
+			gui.Log.Error(err)
+		}
+
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
 		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
@@ -293,6 +306,7 @@ func (gui *Gui) Run() error {
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
+		gui.goEvery(time.Second*10, gui.refreshComposeProjectsQuiet)
 	}()
 
 	err = g.MainLoop()
@@ -324,12 +338,13 @@ func (gui *Gui) handleError(err error) error {
 
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
-		Instances: gui.getInstancesPanel(),
-		Snapshots: gui.getSnapshotsPanel(),
-		Images:    gui.getImagesPanel(),
-		Volumes:   gui.getVolumesPanel(),
-		Networks:  gui.getNetworksPanel(),
-		Menu:      gui.getMenuPanel(),
+		Instances:       gui.getInstancesPanel(),
+		Snapshots:       gui.getSnapshotsPanel(),
+		Images:          gui.getImagesPanel(),
+		Volumes:         gui.getVolumesPanel(),
+		Networks:        gui.getNetworksPanel(),
+		ComposeProjects: gui.getComposeProjectsPanel(),
+		Menu:            gui.getMenuPanel(),
 	}
 }
 

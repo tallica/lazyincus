@@ -22,25 +22,22 @@ comparison if the pin ever moves.
 
 Shipped. `sidePanelDefs()` is the ordered list every part of the side-panel
 machinery derives from — see CLAUDE.md; the staged plan that got there is in
-the git history. Five panels, number keys, `tab`/`shift+tab` cycling, and
-`gui.expandFocusedSidePanel` for when an even split is too cramped.
+the git history. Adding a panel is one entry in that list plus its own
+files; number keys, `tab`/`shift+tab` cycling, and
+`gui.expandFocusedSidePanel` for when an even split is too cramped all
+derive from it automatically.
 
 ## Missing vs lazydocker
 
 ### Side panels
 
-lazydocker has six side panels; lazyincus has five.
+Both have six now — the sixth, Compose, shipped as the Incus analog of
+lazydocker's docker-compose-specific Services/Project panels; see
+[incus-compose integration](#incus-compose-integration).
 
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
-      credits tab, so dropping that panel left lazyincus with nowhere to put
-      one (`CreditsTitle` is ported but unused). The
-      [project panel](#3-project-panel) is where it would go, as upstream.
-
-The sixth panel is no longer ruled out:
-
-- **Services / Project panels** — these were docker-compose specific, and the
-  port assumed Incus had nothing to map them onto. That assumption is now
-  wrong: see [incus-compose integration](#incus-compose-integration).
+      credits tab; the Compose panel is where it would go here too, as
+      upstream (`CreditsTitle` is ported but unused).
 
 ### Per-instance actions
 
@@ -257,44 +254,13 @@ data lazyincus has in hand, not new API calls.
 ### 3. Project panel
 
 lazydocker's sixth side panel, and the home for everything compose-shaped
-that isn't a column: it lists the compose projects it has discovered, hangs
-`u` (up) and `d` (a menu — down, or down with volumes) off the selection,
-and gives the main panel a tab per project — aggregate logs, the rendered
-compose config, and the credits.
+that isn't a column. The panel itself, and the local-project gate on `u`/`d`
+lazydocker also enforces (`CannotManageNonLocalService`), shipped - see
+[CLAUDE.md](CLAUDE.md#compose) and CHANGELOG.md. What's left is the part of
+lazydocker's panel that was a main-panel tab rather than the list itself:
 
-What doesn't survive the port unchanged is who may be acted on. lazydocker
-knows which project the compose file in the current directory belongs to
-(`DockerCommand.LocalProjectName`); every other project it found by reading
-container labels is visible but read-only, and `up`/`down`/`rm` on one
-answer `CannotManageNonLocalService`. The same gate is needed here, for the
-same reason and no more: a listed project is a project some machine's
-compose file created, and only the machine holding that file can `up` it.
-Which daemon is not the obstacle — incus-compose runs locally and talks to
-any remote (`--remote`, or `INCUS_REMOTE`, resolved out of the same
-`~/.config/incus/config.yml` `pkg/commands/incus.go` reads), so a stack on
-a remote server is managed from here exactly like a local one, provided the
-file is here. That makes the child's remote something we have to set rather
-than inherit, since ours comes from `INCUS_REMOTE` or the CLI's default —
-the same `runSubprocess` fix the [`--remote` flag](#not-lazydocker-shaped)
-item needs for `incus` itself, paid for once.
-
-The gate is then just "is there a compose file here, and for which
-project", and one call answers both: `incus-compose config --format json`
-prints `.name`, the project name it would act on, derived the way compose
-derives it (the directory, unless `-p`/`INCUS_COMPOSE_PROJECT_NAME` or the
-file says otherwise) — so the name needn't be worked out here. With no
-compose file it exits 1 with `no compose.yaml found`, which is the gate
-closing. It resolves the remote before parsing, though, so it isn't a
-purely local probe and wants the off-the-main-goroutine treatment the
-remote switcher describes. Nothing checks that the file and the project the
-daemon reports are the same stack; cwd is the assumption upstream makes too.
-
-- [ ] **The panel** — one `sidePanelDefs()` entry plus its own files, over
-      the projects the other panels already discover. `P` stays as it is:
-      the panel says which projects exist, the switcher scopes to one.
-- [ ] **`u` / `d`** — `incus-compose up`, and `down` / `down --volumes` as a
-      menu, in the `instanceExecShell` subprocess style and offered only for
-      the local project. Adds a second CLI dependency beyond `incus` itself.
+- [x] **The panel** and **`u` / `d`** — shipped as the sixth side panel,
+      Compose.
 - [ ] **Compose config tab** — `incus-compose config` for the local project,
       lazydocker's `DockerComposeConfigTitle`.
 - [ ] **Credits tab** — the home the

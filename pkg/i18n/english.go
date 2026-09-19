@@ -86,6 +86,20 @@ type TranslationSet struct {
 	NoNetworks                string
 	DeleteNetwork             string
 
+	ComposeProjectsTitle          string
+	NoComposeProjects             string
+	InfoTitle                     string
+	ComposeManageHint             string
+	ComposeNotLocalHint           string
+	ComposeCannotManageNonLocal   string
+	ComposeUp                     string
+	ComposeDown                   string
+	ComposeDownMenuTitle          string
+	ComposeDownOption             string
+	ComposeDownWithVolumesOption  string
+	ConfirmComposeDown            string
+	ConfirmComposeDownWithVolumes string
+
 	CannotDeleteUnmanagedNetwork string
 	NoInstances                  string
 	NoInstance                   string
@@ -217,9 +231,24 @@ func englishSet() TranslationSet {
 		DeleteNetwork:                "Are you sure you want to delete network %s?",
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
-		SnapshotsTitle:               "Snapshots",
-		TopTitle:                     "Top",
-		CreditsTitle:                 "About",
+
+		ComposeProjectsTitle:          "Compose",
+		NoComposeProjects:             "No compose projects",
+		InfoTitle:                     "Info",
+		ComposeManageHint:             "This is the compose project in the current directory - press 'u' to run `incus-compose up`, or 'd' to bring it down.",
+		ComposeNotLocalHint:           "This project was found on the server, but its compose file isn't in the current directory, so it can't be managed from here.",
+		ComposeCannotManageNonLocal:   "Only the compose project in the current directory can be managed from here.",
+		ComposeUp:                     "compose up",
+		ComposeDown:                   "compose down",
+		ComposeDownMenuTitle:          "Down",
+		ComposeDownOption:             "down",
+		ComposeDownWithVolumesOption:  "down --volumes",
+		ConfirmComposeDown:            "Are you sure you want to bring down compose project %s?",
+		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down compose project %s and delete its volumes?",
+
+		SnapshotsTitle: "Snapshots",
+		TopTitle:       "Top",
+		CreditsTitle:   "About",
 
 		NothingToDisplay:                   "Nothing to display",
 		CannotListProcesses:                "Could not list processes.\n\n`ps` has to exist inside the instance, and a VM also\nneeds the Incus guest agent running.",

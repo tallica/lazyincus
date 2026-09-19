@@ -40,9 +40,11 @@ yet" below, and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus. It's what the optional `service`, `health` and `image`
-  columns describe ([docs/Config.md](docs/Config.md)); those read the
-  daemon, so the stacks can be managed from another machine entirely. Not in
-  Homebrew core — on macOS, `brew install tallica/tap/incus-compose`.
+  columns describe ([docs/Config.md](docs/Config.md)) and what the Compose
+  panel lists; the columns read the daemon, so stacks show up there from
+  another machine entirely, but `u`/`d` need the `incus-compose` binary on
+  `PATH` and the compose file in the current directory. Not in Homebrew
+  core — on macOS, `brew install tallica/tap/incus-compose`.
 
 ## Install / run
 
@@ -79,13 +81,14 @@ guest clock skew both fail in ways that point at the wrong component.
 
 ## Usage
 
-Five side panels: **Instances** (`1`), listing both containers and VMs,
+Six side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance is selected, **Images** (`3`),
-**Volumes** (`4`) and **Networks** (`5`). All list every Incus project by default;
-`P` scopes them to a single project instead, and the footer shows the current
-remote and scope. A project column appears on any panel whose contents
-actually span projects, and actions run against the project the item came
-from.
+**Volumes** (`4`), **Networks** (`5`) and **Compose** (`6`) for
+[incus-compose](https://incus-compose.org) stacks. All list every Incus
+project by default; `P` scopes them to a single project instead, and the
+footer shows the current remote and scope. A project column appears on any
+panel whose contents actually span projects, and actions run against the
+project the item came from.
 
 The instances panel's columns (name, status, type, IPv4, IPv6, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -93,7 +96,7 @@ file - see [docs/Config.md](docs/Config.md).
 
 | Key | Action |
 |---|---|
-| `1` … `5` | Focus the Instances / Snapshots / Images / Volumes / Networks panel |
+| `1` … `6` | Focus the Instances / Snapshots / Images / Volumes / Networks / Compose panel |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
@@ -102,7 +105,8 @@ file - see [docs/Config.md](docs/Config.md).
 | `S` | Start |
 | `s` | Stop |
 | `p` | Pause/freeze (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted) |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Compose panel, bring the local project down (menu: plain or with volumes) |
+| `u` | Compose panel: bring the local compose project up (`incus-compose up --detach`) |
 | `e` | Toggle showing stopped instances |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
@@ -139,10 +143,10 @@ If lazyincus is useful to you, that money is better spent there than here.
 
 Ported deliberately as an MVP, not full parity with lazydocker. Not included:
 
-- Services/Project panels (lazydocker's docker-compose view). The Incus
-  analog would be [incus-compose](https://github.com/lxc/incus-compose),
-  whose stacks are visible today as Incus projects — see
-  [BACKLOG.md](BACKLOG.md#incus-compose-integration)
+- The compose config, credits and aggregate-log tabs lazydocker's
+  Services/Project panel had — the panel itself and `u`/`d` are covered by
+  the Compose panel above; see
+  [BACKLOG.md](BACKLOG.md#incus-compose-integration) for what's left
 - Custom and bulk commands
 - Historical resource-usage graphing (the Stats tab is point-in-time only)
 - Non-English translations

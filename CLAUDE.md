@@ -159,6 +159,31 @@ image they belong to.
 `GetNetworks`, managed and unmanaged alike. Only managed ones can be
 deleted; the unmanaged entries are host interfaces Incus merely reports.
 
+### Compose
+
+Lists the Incus projects [incus-compose](https://github.com/lxc/incus-compose)
+manages: `GetComposeProjects` fetches every project (`GetProjects`, not
+`GetProjectNames` — the config is what's needed) and keeps the ones carrying
+`user.incus-compose.managed`, which excludes `incus-compose-cache` and any
+plain Incus project.
+
+`u`/`d` only work on the one project whose compose file lives in lazyincus's
+own working directory — the same local-project gate lazydocker enforces on
+its Services panel. That project is found once at startup
+(`localComposeProjectName`, `pkg/gui/compose_projects_panel.go`), by
+shelling out to `incus-compose config --format json` and reading `.name`,
+the project name incus-compose itself would act on. No compose file here
+means the command exits 1 and nothing is local — not treated as an error,
+since most servers with compose stacks aren't administered from this
+directory. `u` runs `incus-compose up --detach`; `d` opens a menu for `down`
+or `down --volumes`, each confirmed before running. Both shell out via
+`runSubprocess`, the same pattern instance exec/attach use, and refresh the
+instances and compose-projects panels once the subprocess returns.
+
+The compose config tab, credits tab and aggregate-logs tab from
+lazydocker's Project panel aren't ported — see
+[BACKLOG.md](BACKLOG.md#3-project-panel).
+
 ## Incus client integration details
 
 The non-obvious parts of talking to Incus. Most of these were established
