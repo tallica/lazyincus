@@ -304,8 +304,12 @@ against a live daemon or read out of the Incus source, not inferred.
   socket lives at a path recorded in that remote's config
   (`unix:///Users/you/.colima/default/incus.sock`), not at any standard
   Linux location. Which remote that is comes from the CLI config's
-  default-remote, overridable with `INCUS_REMOTE` — there's no flag of our
-  own; see [docs/Remotes.md](docs/Remotes.md).
+  default-remote, which `cliconfig` itself overrides with `INCUS_REMOTE`.
+  `--remote` is that variable: `main` sets it before anything loads, since
+  the client is only half of it — `incus console`, `incus exec` and the
+  incus-compose verbs are subprocesses reading the environment on their
+  own, and `NewCmd` hands them `os.Environ()`. See
+  [docs/Remotes.md](docs/Remotes.md).
 - **Connection loss**: a daemon going away mid-session is routine, so
   nothing treats it as fatal. `NoteError` classifies every error -
   `IsConnectionError` takes a `*url.Error` to mean the request never

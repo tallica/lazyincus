@@ -126,27 +126,16 @@ own merits.
       `WithWaitingStatus` off the main goroutine and must keep the existing
       client on failure rather than leaving the app with none; and it should
       stay session-only, leaving `incus remote switch` as the persistent
-      path. The shell-out problem below is shared, and has to be solved for
-      either. Verifying the failure paths needs a second reachable daemon,
-      so the unreachable-remote case is the part likeliest to ship untested.
+      path. The shell-outs are already handled: `--remote` set `INCUS_REMOTE`
+      for the process, so a switcher only has to keep that variable current
+      as it swaps the client. Verifying the failure paths needs a second
+      reachable daemon, so the unreachable-remote case is the part likeliest
+      to ship untested.
 - [ ] **Profiles** — no panel. (Projects have a switcher — see
       [incus-compose integration](#incus-compose-integration); remotes are
       above.)
-- [ ] **`--remote` flag** — selecting a remote means `INCUS_REMOTE=<name>
-      lazyincus` or changing the CLI's default; there's no flag of our own.
-      See [docs/Remotes.md](docs/Remotes.md). The connection side is small:
-      pass the name to `cliCfg.GetInstanceServer` instead of
-      `cliCfg.DefaultRemote` in `pkg/commands/incus.go`, plus a `flaggy`
-      entry in `main.go`. The catch is the shell-outs — `instanceCLIArgs`
-      (`pkg/gui/instances_panel.go`) passes `--project` but nothing about the
-      remote, and `a`/`E` invoke `incus` with a bare instance name, so they'd
-      still follow the CLI's own default. Setting `INCUS_REMOTE` on the child
-      in `runSubprocess` covers every shell-out at once and can't collide
-      with instance names the way qualifying them as `<remote>:<instance>`
-      could; without it the panels and the console end up on different
-      daemons. Same fix the switcher above needs, so whichever lands first
-      pays for it. That's also the argument for `INCUS_REMOTE` remaining the
-      documented way in: it already covers both halves.
+- [x] **`--remote` flag** — names the remote for the session, applied as
+      `INCUS_REMOTE` so the shell-outs follow the panels.
 
 Deliberately deferred (don't re-pitch unprompted):
 

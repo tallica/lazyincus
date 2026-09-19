@@ -24,6 +24,7 @@ var (
 	buildSource = "unknown"
 
 	debuggingFlag = false
+	remoteFlag    = ""
 )
 
 func main() {
@@ -44,9 +45,21 @@ func main() {
 	flaggy.DefaultParser.AdditionalHelpPrepend = "https://github.com/tallica/lazyincus"
 
 	flaggy.Bool(&debuggingFlag, "d", "debug", "a boolean")
+	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
 	flaggy.SetVersion(info)
 
 	flaggy.Parse()
+
+	// The flag is applied as INCUS_REMOTE rather than threaded through to
+	// the client, because the client is only half of it: `incus console`,
+	// `incus exec` and every incus-compose verb are subprocesses that read
+	// the environment themselves. Setting it here puts the panels and every
+	// shell-out on the same daemon, which passing a name inward wouldn't.
+	if remoteFlag != "" {
+		if err := os.Setenv("INCUS_REMOTE", remoteFlag); err != nil {
+			log.Fatal(err.Error())
+		}
+	}
 
 	appConfig, err := config.NewAppConfig("lazyincus", version, commit, date, buildSource, debuggingFlag)
 	if err != nil {

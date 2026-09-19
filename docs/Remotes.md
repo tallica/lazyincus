@@ -6,12 +6,17 @@ It reads Incus's own client configuration (`~/.config/incus/config.yml`, or
 can reach — a local unix socket, a daemon in a VM, a server across the network
 — works without lazyincus knowing anything about it.
 
-There is no `--remote` flag. Pick a remote with the environment variable
-instead:
+Pick a remote with the flag or the environment variable:
 
 ```sh
+lazyincus --remote myserver
 INCUS_REMOTE=myserver lazyincus
 ```
+
+The flag is the environment variable: lazyincus sets `INCUS_REMOTE` from it
+at startup, so `incus console`, `incus exec` and every incus-compose verb —
+all of them subprocesses that read the environment themselves — end up on
+the same daemon as the panels.
 
 The footer shows the remote you ended up on, so you can tell at a glance
 which daemon you are looking at, and whether it is currently answering.
@@ -20,11 +25,9 @@ The built-in `local` remote is the daemon's own unix socket, so it only
 works on a Linux host running incusd. Anywhere else, name the remote for
 wherever the daemon actually lives.
 
-`incus remote switch myserver` works too, and persists. Prefer `INCUS_REMOTE`
-when you have more than one daemon: `a` (console) and `E` (exec) shell out to
-the `incus` CLI with a bare instance name, and the child process inherits the
-variable. Switching the default in one place and not the other would send
-those two commands to a different daemon than the panels are showing.
+`incus remote switch myserver` works too, and persists — it changes the
+CLI's default for everything, lazyincus included. The flag and the variable
+are the per-session alternatives, and neither writes to the CLI's config.
 
 ## Adding a remote over TLS
 

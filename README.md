@@ -70,10 +70,12 @@ lazyincus talks to whichever remote the `incus` CLI treats as its default.
 Point it at a different one with:
 
 ```sh
-INCUS_REMOTE=myserver lazyincus
+lazyincus --remote myserver
 ```
 
-The footer shows the remote you are on. [docs/Remotes.md](docs/Remotes.md)
+`INCUS_REMOTE=myserver lazyincus` does the same thing — the flag just sets
+that variable, so the `incus` and `incus-compose` subprocesses follow the
+panels onto the same daemon. The footer shows the remote you are on. [docs/Remotes.md](docs/Remotes.md)
 covers adding a remote and its token, reaching a daemon over SSH, and the
 gotchas behind running incusd in a local VM — macOS Local Network Privacy and
 guest clock skew both fail in ways that point at the wrong component.

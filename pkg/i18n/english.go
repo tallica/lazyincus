@@ -171,7 +171,7 @@ func englishSet() TranslationSet {
 		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
-		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that INCUS_REMOTE or the CLI's default-remote names the one you meant.",
+		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that --remote, INCUS_REMOTE or the CLI's default-remote names the one you meant.",
 		ConnectionLost:                   "Lost the connection to '%s'.\n\nStill trying - this closes itself once the daemon answers again.",
 		ConnectionLostTitle:              "Connection lost",
 		WaitingForInstanceInfo:           "Cannot proceed until incus gives us more information about the instance. Please retry in a few moments.",
