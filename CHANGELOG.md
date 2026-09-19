@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-19
+
 ### Added
 - **Services** side panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. It appears only when a compose file is in the working directory, and then it's panel `1` — one row per service that file declares, with everything else shifting down a number. Because the rows come from the compose file rather than the daemon, a service that's declared but not running still gets one, in state `none`; the title names the compose project, every row sharing it. Tabs: Info (what the compose file declares for the service — image, command, restart policy, ports, volumes, devices, depends-on — then each of its instances' own Info tab), Logs, Config (the service's slice of `incus-compose config`, then the daemon's own dump for each instance), Env and Top. Logs, Env and Top show the service's one instance, and say so when it has replicas. See [CLAUDE.md](CLAUDE.md#services).
 - `u`/`U`/`S`/`s`/`r`/`d` on the Services panel run `incus-compose up`/`up --pull always --recreate`/`start`/`stop`/`restart`/`down` for the selected service, confirmed the way the instances panel's own keys are, and named the way its keys are: bring up, pull & recreate, start, stop, restart, bring down. `C` opens the verbs without a key of their own — `kill`, `pause`, `unpause`, `build`, `pull`, `logs --follow` — each listed for the service and for the whole project.
 - `m`/`n`/`a`/`E`/`y` work on the Services panel too, acting on the service's instance and asking which one when it has replicas.
 - `gui.serviceColumns` reorders or hides the Services panel's columns, the way `gui.instanceColumns` does for the instances panel and over the same column names, rendered from the service's instances rolled up — plus `replicas`, which is off by default: it's blank unless what's running differs from what the compose file declared.
 - `health` and `image` columns in the instances panel, read from incus-compose's config keys and blank for anything created another way. `health` is in the default column set, beside status on both panels; `image` is not. See [docs/Config.md](docs/Config.md).
+- README has a [Compose stacks](README.md#compose-stacks) section: what the panel needs, what each key runs, and the columns that read a stack straight from the daemon with no compose file in sight.
 
 ### Changed
 - The instances panel's **Stats** tab is now **Info**: what the instance is — name, status, type, project, the image it was created from, architecture, created and last-used dates, addresses, snapshot count, and its health where it has one — then those counters under a Stats heading. The Config tab is the YAML dump alone, that identity having moved.
@@ -135,7 +138,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/tallica/lazyincus/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/tallica/lazyincus/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/tallica/lazyincus/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tallica/lazyincus/compare/v0.4.0...v0.5.0
