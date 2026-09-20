@@ -309,10 +309,9 @@ What's left:
 - [x] **Backfill the GitHub releases for v0.1.0 and v0.2.0** — both cut
       from their changelog sections, flagged not-latest so v0.3.0 keeps that
       badge. Every tag now has a release.
-- [ ] **Attach built binaries to releases** — releases currently carry
-      notes only, so installing still means `go build` from source. Needs a
-      decision on which platforms to build for (linux/amd64 and
-      linux/arm64 at minimum) and whether that runs in CI.
+- [x] **Attach built binaries to releases** — GoReleaser builds macOS and
+      Linux, amd64 and arm64, on every `v*` tag. See
+      [CLAUDE.md](CLAUDE.md#releasing).
 
 ## Blocked
 
