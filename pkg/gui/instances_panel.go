@@ -182,11 +182,20 @@ func (gui *Gui) handleInstanceStart(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	return gui.instanceStart(inst)
+}
+
+// The state changes below are split into handler and action the way the
+// snapshot and copy-IPv4 keys are: the services panel runs the same action
+// against the replica its selected row stands for. Either panel may be
+// showing what changed, so both are refreshed.
+func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.StartingStatus, func() error {
-		if err := inst.Start(); err != nil {
+		if err := instance.Start(); err != nil {
 			return gui.createErrorPanel(err.Error())
 		}
-		return gui.refreshInstances()
+
+		return gui.refreshInstancesAndServices()
 	})
 }
 
@@ -196,12 +205,35 @@ func (gui *Gui) handleInstanceStop(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.StopInstance, func(g *gocui.Gui, v *gocui.View) error {
+	return gui.instanceStop(inst)
+}
+
+func (gui *Gui) instanceStop(instance *commands.Instance) error {
+	message := fmt.Sprintf(gui.Tr.StopInstance, instance.Name)
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
-			if err := inst.Stop(); err != nil {
+			if err := instance.Stop(); err != nil {
 				return gui.createErrorPanel(err.Error())
 			}
-			return gui.refreshInstances()
+
+			return gui.refreshInstancesAndServices()
+		})
+	}, nil)
+}
+
+// instanceForceStop is `incus stop --force`: the services panel's `f`, which
+// kills a whole service, narrowed to one replica.
+func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
+	message := fmt.Sprintf(gui.Tr.ForceStopInstance, instance.Name)
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
+		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
+			if err := instance.ForceStop(); err != nil {
+				return gui.createErrorPanel(err.Error())
+			}
+
+			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
 }
@@ -212,11 +244,16 @@ func (gui *Gui) handleInstanceRestart(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	return gui.instanceRestart(inst)
+}
+
+func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.RestartingStatus, func() error {
-		if err := inst.Restart(); err != nil {
+		if err := instance.Restart(); err != nil {
 			return gui.createErrorPanel(err.Error())
 		}
-		return gui.refreshInstances()
+
+		return gui.refreshInstancesAndServices()
 	})
 }
 
@@ -226,18 +263,22 @@ func (gui *Gui) handleInstancePauseFreeze(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
+	return gui.instancePauseFreeze(inst)
+}
+
+func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() (err error) {
-		if inst.Instance.Status == "Frozen" {
-			err = inst.Unfreeze()
+		if instance.Instance.Status == "Frozen" {
+			err = instance.Unfreeze()
 		} else {
-			err = inst.Freeze()
+			err = instance.Freeze()
 		}
 
 		if err != nil {
 			return gui.createErrorPanel(err.Error())
 		}
 
-		return gui.refreshInstances()
+		return gui.refreshInstancesAndServices()
 	})
 }
 
@@ -247,18 +288,24 @@ func (gui *Gui) handleInstanceDelete(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	return gui.createConfirmationPanel(gui.Tr.Confirm, gui.Tr.DeleteInstance, func(g *gocui.Gui, v *gocui.View) error {
+	return gui.instanceDelete(inst)
+}
+
+func (gui *Gui) instanceDelete(instance *commands.Instance) error {
+	message := fmt.Sprintf(gui.Tr.DeleteInstance, instance.Name)
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			err := inst.Delete()
+			err := instance.Delete()
 			if errors.Is(err, commands.ErrInstanceRunning) {
-				return gui.promptToForceDeleteInstance(inst)
+				return gui.promptToForceDeleteInstance(instance)
 			}
 
 			if err != nil {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstances()
+			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
 }
@@ -274,7 +321,7 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstances()
+			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
 }

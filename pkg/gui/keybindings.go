@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/jesseduffield/gocui"
 )
@@ -284,111 +285,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
-			ViewName:    "services",
-			Key:         'u',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeUp,
-			Description: gui.Tr.ComposeUp,
-		},
-		{
-			ViewName:    "services",
-			Key:         'd',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeDown,
-			Description: gui.Tr.ComposeDown,
-		},
-		{
-			ViewName:    "services",
-			Key:         'U',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeUpPullRecreate,
-			Description: gui.Tr.ComposeUpPullRecreate,
-		},
-		{
-			ViewName:    "services",
-			Key:         'S',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeStart,
-			Description: gui.Tr.Start,
-		},
-		{
-			ViewName:    "services",
-			Key:         's',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeStop,
-			Description: gui.Tr.Stop,
-		},
-		{
-			ViewName:    "services",
-			Key:         'r',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeRestart,
-			Description: gui.Tr.Restart,
-		},
-		{
-			ViewName:    "services",
-			Key:         'p',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposePause,
-			Description: gui.Tr.Pause,
-		},
-		{
-			ViewName:    "services",
-			Key:         'f',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeKill,
-			Description: gui.Tr.ComposeKill,
-		},
-		{
-			ViewName:    "services",
-			Key:         'b',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeBuild,
-			Description: gui.Tr.ComposeBuild,
-		},
-		{
-			ViewName:    "services",
-			Key:         'g',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposePull,
-			Description: gui.Tr.ComposePull,
-		},
-		{
-			ViewName:    "services",
-			Key:         'C',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeProjectMenu,
-			Description: gui.Tr.ComposeProjectActions,
-		},
-		{
-			ViewName:    "services",
-			Key:         'm',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleServiceViewLogs,
-			Description: gui.Tr.ViewLogs,
-		},
-		{
-			ViewName:    "services",
-			Key:         'n',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleServiceSnapshotCreate,
-			Description: gui.Tr.NewSnapshot,
-		},
-		{
-			ViewName:    "services",
-			Key:         'E',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleServiceExecShell,
-			Description: gui.Tr.ExecShell,
-		},
-		{
-			ViewName:    "services",
-			Key:         'y',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleServiceCopyIPv4,
-			Description: gui.Tr.CopyIPv4,
-		},
-		{
 			ViewName:    "main",
 			Key:         gocui.KeyEsc,
 			Modifier:    gocui.ModNone,
@@ -519,6 +415,8 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 	)
 
+	bindings = append(bindings, gui.servicesKeybindings()...)
+
 	for index, def := range gui.visibleSidePanelDefs() {
 		bindings = append(bindings, &Binding{
 			Handler:     gui.handleGoTo(*def.viewPtr),
@@ -594,4 +492,155 @@ func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
 		return f()
 	}
+}
+
+// servicesKeybindings is the Services panel's own keys, in the order the
+// keybinding menu lists them - which depends on the selected row. A
+// service's own row leads with the compose verbs the panel is there for;
+// a replica's row leads with the instances panel's keys, in the instances
+// panel's order, those being what they do there.
+func (gui *Gui) servicesKeybindings() []*Binding {
+	bindings := []*Binding{
+		{
+			ViewName:    "services",
+			Key:         'S',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeStart,
+			Description: gui.Tr.Start,
+		},
+		{
+			ViewName:    "services",
+			Key:         's',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeStop,
+			Description: gui.Tr.Stop,
+		},
+		{
+			ViewName:    "services",
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeRestart,
+			Description: gui.Tr.Restart,
+		},
+		{
+			ViewName:    "services",
+			Key:         'p',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposePause,
+			Description: gui.Tr.Pause,
+		},
+		{
+			ViewName:    "services",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeDown,
+			Description: gui.composeRowDescription(gui.Tr.ComposeDown, gui.Tr.Remove),
+		},
+		{
+			ViewName:    "services",
+			Key:         'f',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeKill,
+			Description: gui.composeRowDescription(gui.Tr.ComposeKill, gui.Tr.ForceStop),
+		},
+		{
+			ViewName:    "services",
+			Key:         'n',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceSnapshotCreate,
+			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "services",
+			Key:         'm',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceViewLogs,
+			Description: gui.Tr.ViewLogs,
+		},
+		{
+			ViewName:    "services",
+			Key:         'y',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceCopyIPv4,
+			Description: gui.Tr.CopyIPv4,
+		},
+		{
+			ViewName:    "services",
+			Key:         'E',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceExecShell,
+			Description: gui.Tr.ExecShell,
+		},
+		{
+			ViewName:    "services",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeUp,
+			Description: gui.serviceScopedDescription(gui.Tr.ComposeUp),
+		},
+		{
+			ViewName:    "services",
+			Key:         'U',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeUpPullRecreate,
+			Description: gui.serviceScopedDescription(gui.Tr.ComposeUpPullRecreate),
+		},
+		{
+			ViewName:    "services",
+			Key:         'b',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeBuild,
+			Description: gui.serviceScopedDescription(gui.Tr.ComposeBuild),
+		},
+		{
+			ViewName:    "services",
+			Key:         'g',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposePull,
+			Description: gui.serviceScopedDescription(gui.Tr.ComposePull),
+		},
+		{
+			ViewName:    "services",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleComposeProjectMenu,
+			Description: gui.Tr.ComposeProjectActions,
+		},
+	}
+
+	order := []rune{'u', 'd', 'U', 'S', 's', 'r', 'p', 'f', 'b', 'g', 'C', 'm', 'n', 'E', 'y'}
+	if row, ok := gui.selectedServiceRow(); ok && row.Instance != nil {
+		order = []rune{'S', 's', 'r', 'p', 'd', 'f', 'n', 'm', 'y', 'E', 'u', 'U', 'b', 'g', 'C'}
+	}
+
+	return orderByKey(bindings, order)
+}
+
+// orderByKey lists bindings in the given key order, leaving anything the
+// order doesn't name at the end in the order it was declared: a key added
+// without touching the order is then listed last rather than dropped.
+func orderByKey(bindings []*Binding, order []rune) []*Binding {
+	rank := make(map[rune]int, len(order))
+	for index, key := range order {
+		rank[key] = index
+	}
+
+	bindingRank := func(binding *Binding) int {
+		key, isRune := binding.Key.(rune)
+		if !isRune {
+			return len(rank)
+		}
+
+		if index, named := rank[key]; named {
+			return index
+		}
+
+		return len(rank)
+	}
+
+	sort.SliceStable(bindings, func(i, j int) bool {
+		return bindingRank(bindings[i]) < bindingRank(bindings[j])
+	})
+
+	return bindings
 }

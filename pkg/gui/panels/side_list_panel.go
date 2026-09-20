@@ -52,6 +52,12 @@ type SideListPanel[T comparable] struct {
 	// a callback to invoke when a new item is selected (e.g. keyboard navigation)
 	OnSelect func(T) error
 
+	// SameItem reports whether two items are the same row. Only panels whose
+	// items a refresh rebuilds need it: the cursor follows the selected item
+	// by identity, and a replaced pointer otherwise leaves it holding an
+	// index, which by then belongs to a different row.
+	SameItem func(a, b T) bool
+
 	// returns the cells that we render to the view in a table format. The cells will
 	// be rendered with padding.
 	GetTableCells func(T) []string
@@ -260,10 +266,24 @@ func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 	// every background refresh, so holding the cursor at a fixed index would
 	// hand the selection to a different item the moment one changes state.
 	if hadSelection {
-		if index := self.List.GetIndex(selected); index >= 0 {
+		if index := self.selectedIndex(selected); index >= 0 {
 			self.SelectedIdx = index
 		}
 	}
+}
+
+// selectedIndex is where the previously selected item sorted to, by value
+// and then - for panels that say so - by identity.
+func (self *SideListPanel[T]) selectedIndex(selected T) int {
+	if index := self.List.GetIndex(selected); index >= 0 {
+		return index
+	}
+
+	if self.SameItem == nil {
+		return -1
+	}
+
+	return self.List.GetIndexBy(func(item T) bool { return self.SameItem(selected, item) })
 }
 
 func (self *SideListPanel[T]) RerenderList() error {

@@ -34,6 +34,7 @@ type TranslationSet struct {
 	Remove                    string
 	HideStopped               string
 	ForceRemove               string
+	ForceStop                 string
 	MustForceToRemove         string
 	Confirm                   string
 	Return                    string
@@ -41,6 +42,7 @@ type TranslationSet struct {
 	LcFilter                  string
 	StopInstance              string
 	DeleteInstance            string
+	ForceStopInstance         string
 	RestartingStatus          string
 	StartingStatus            string
 	StoppingStatus            string
@@ -96,6 +98,8 @@ type TranslationSet struct {
 	ServiceNotInComposeFile       string
 	ServiceLogsMultipleInstances  string
 	ServiceMultipleInstances      string
+	ServiceReplicaHeading         string
+	ServiceInstanceHeading        string
 	StandaloneInstancesTitle      string
 	InfoTitle                     string
 	ComposeTargetService          string
@@ -112,6 +116,7 @@ type TranslationSet struct {
 	ComposeDownMenuTitle          string
 	ComposeProjectMenuTitle       string
 	ComposeProjectActions         string
+	ComposeServiceScoped          string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
 	ConfirmComposeDown            string
@@ -130,7 +135,6 @@ type TranslationSet struct {
 	FilterList                   string
 	SortInstancesByState         string
 
-	StatsTitle                string
 	LogsTitle                 string
 	ConfigTitle               string
 	EnvTitle                  string
@@ -201,6 +205,7 @@ func englishSet() TranslationSet {
 		Remove:               "delete",
 		HideStopped:          "hide/show stopped instances",
 		ForceRemove:          "force delete",
+		ForceStop:            "force stop",
 		MustForceToRemove:    "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
 		Stop:                 "stop",
 		Pause:                "pause/unpause",
@@ -222,7 +227,6 @@ func englishSet() TranslationSet {
 		InstanceTitle:                "Instance",
 		InstancesTitle:               "Instances",
 		ErrorTitle:                   "Error",
-		StatsTitle:                   "Stats",
 		LogsTitle:                    "Logs",
 		ConfigTitle:                  "Config",
 		EnvTitle:                     "Env",
@@ -260,12 +264,15 @@ func englishSet() TranslationSet {
 		NoServices:                    "No services",
 		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up, or 'C' for the whole project.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
-		ServiceLogsMultipleInstances:  "This service has more than one instance, so there is no single log stream to show. Press 'C' to follow the whole project's.",
-		ServiceMultipleInstances:      "This service has more than one instance, and this tab shows one.",
+		ServiceLogsMultipleInstances:  "This service runs more than one replica, so there is no single log stream to show. Select a replica in the list for its own, or press 'C' to follow the whole project's.",
+		ServiceMultipleInstances:      "This service runs more than one replica. Select one in the list to see this tab for it.",
+		ServiceReplicaHeading:         "Replica %d of %d · %s",
+		ServiceInstanceHeading:        "Instance · %s",
 		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
 		ComposeTargetService:          "service %s",
 		ComposeTargetProject:          "project %s",
+		ComposeServiceScoped:          "%s service",
 		ComposeUp:                     "bring up",
 		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeDown:                   "bring down",
@@ -300,8 +307,9 @@ func englishSet() TranslationSet {
 		NoInstance:  "No instance",
 
 		ConfirmQuit:        "Are you sure you want to quit?",
-		StopInstance:       "Are you sure you want to stop this instance?",
-		DeleteInstance:     "Are you sure you want to delete this instance?",
+		StopInstance:       "Are you sure you want to stop instance %s?",
+		DeleteInstance:     "Are you sure you want to delete instance %s?",
+		ForceStopInstance:  "Are you sure you want to force stop instance %s?",
 		NotEnoughSpace:     "Not enough space to render panels",
 		PressEnterToReturn: "Press enter to return to lazyincus (this prompt can be disabled in your config by setting `gui.returnImmediately: true`)",
 		ExitShellToReturn:  "Exit the shell to return to lazyincus",

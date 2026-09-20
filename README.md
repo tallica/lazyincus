@@ -108,10 +108,10 @@ incus-compose.
 | `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
-| `S` | Start; on the Services panel, start the service |
-| `s` | Stop; on the Services panel, stop the service (confirms first) |
+| `S` | Start; on the Services panel, start the service, or the selected replica |
+| `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/unpause (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down, or delete the selected replica |
 | `u` | Services panel: bring the service up |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Toggle showing stopped instances |
@@ -120,7 +120,7 @@ incus-compose.
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
-| `f` | Services panel: kill the service (confirms first) |
+| `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
 | `C` | Services panel: menu of the same compose verbs run against the whole stack rather than the selected service ([Compose stacks](#compose-stacks)) |
@@ -171,7 +171,14 @@ disagree. The stack's own instances move out of the instances panel, which
 becomes **Standalone Instances** (`2`); every other project's instances
 stay there.
 
-What the keys run, each of them `incus-compose <verb> <service>`:
+A service with replicas lists them under it, one indented row each,
+rendered in the same columns as the service. Selecting a replica points
+everything that needs a single instance at it. The service's own row above
+them means all of its replicas, which is what selecting the service has
+always meant.
+
+What the keys run on a service's own row, each of them `incus-compose
+<verb> <service>`:
 
 - `u` — `up --detach`; `U` adds `--pull always --recreate`, to pick up an
   image the compose file's tag now resolves to (it confirms first)
@@ -179,23 +186,35 @@ What the keys run, each of them `incus-compose <verb> <service>`:
 - `d` — `down`, plain or `--volumes`, after a confirmation
 - `p` — `pause`, or `unpause` when the service is already frozen
 - `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
+
 - `C` — the same verbs with the service argument left off, so they act on
   the whole stack, plus `logs --follow`. It needs no selection, which is
   how a project whose services have never been deployed gets brought up
 - `m`, `n`, `E` and `y` act on the service's instance rather than on
-  compose, asking which instance when the service has replicas. There's no
-  `a`: a compose service runs an OCI image, which has no console to attach
-  to
+  compose: the selected replica's, or the only one there is, and they ask
+  which from a service's own row. There's no `a`: a compose service runs an
+  OCI image, which has no console to attach to
+
+On a **replica's** row, the keys that can mean one instance do: `S`, `s`,
+`r` and `p` start, stop, restart and freeze that replica, `d` deletes it —
+incus-compose creates it again on the next `u`, the compose file still
+asking for it — and `f` force stops it. They're the instances panel's own
+keys, a replica being an instance. `u`, `U`, `b`, `g` and `C` have no
+per-replica form and keep acting on the service. `x` says which you'll get:
+it reads the row under the cursor.
 
 Selecting a service points the snapshots panel at its instance, the way
-selecting an instance does.
+selecting an instance does — a replica's row at its own, a service's row
+with replicas under it at none.
 
 The main panel tabs are the instance's with the service's own on top:
 **Info** shows what the compose file declares — image, command, restart
-policy, ports, volumes, devices, depends-on — and then each instance's own
+policy, ports, volumes, devices, depends-on — and then the instance's own
 Info; **Config** shows the service's slice of `incus-compose config` and
-then the daemon's dump for each instance; **Logs**, **Env** and **Top** are
-the instance's, and say so when a service has more than one.
+then the daemon's dump. From a service's row those cover every replica;
+from a replica's row, that replica alone. **Logs**, **Env** and **Top**
+need one instance, so a service's row with replicas under it points at
+them instead.
 
 Two gotchas that aren't ours, both on `U`. It fails on a stack with a bind
 mount or device passthrough whenever the daemon isn't on the same host,

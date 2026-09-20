@@ -7,6 +7,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -93,15 +94,48 @@ func (i *Instance) IsOCI() bool {
 
 func (i *Instance) updateState(action string, timeout int, force bool) error {
 	i.Log.Warn(fmt.Sprintf("%s instance %s", action, i.Name))
-	op, err := i.Client.UpdateInstanceState(i.Name, api.InstanceStatePut{
-		Action:  action,
-		Timeout: timeout,
-		Force:   force,
-	}, "")
-	if err != nil {
-		return err
+
+	return i.retryWhileBusy(func() error {
+		op, err := i.Client.UpdateInstanceState(i.Name, api.InstanceStatePut{
+			Action:  action,
+			Timeout: timeout,
+			Force:   force,
+		}, "")
+		if err != nil {
+			return err
+		}
+
+		return op.Wait()
+	})
+}
+
+// busyMessage is how incusd refuses a request while another operation holds
+// the instance: `Instance is busy running a "update" operation`
+// (instanceOperationLock in internal/server/instance/operationlock). There's
+// no error code for it, so the message is the test, the way asDeleteError
+// matches the running-instance refusal.
+const busyMessage = "is busy running"
+
+// retryWhileBusy rides out another writer holding the instance: a compose
+// stack with healthchecks has ic-healthd stamping a verdict into every
+// instance's config on a timer, and what's in the way is milliseconds long.
+func (i *Instance) retryWhileBusy(request func() error) error {
+	const (
+		window = 3 * time.Second
+		pause  = 150 * time.Millisecond
+	)
+
+	deadline := time.Now().Add(window)
+
+	for {
+		err := request()
+		if err == nil || !strings.Contains(err.Error(), busyMessage) || time.Now().After(deadline) {
+			return err
+		}
+
+		i.Log.Warn(fmt.Sprintf("instance %s is busy, retrying: %v", i.Name, err))
+		time.Sleep(pause)
 	}
-	return op.Wait()
 }
 
 // Start starts the instance.
@@ -129,6 +163,12 @@ func (i *Instance) Unfreeze() error {
 	return i.updateState("unfreeze", -1, false)
 }
 
+// ForceStop stops the instance without waiting for a clean shutdown,
+// mirroring `incus stop --force`.
+func (i *Instance) ForceStop() error {
+	return i.updateState("stop", -1, true)
+}
+
 // ErrInstanceRunning is what Delete returns when Incus refused to delete the
 // instance because it was still running. Callers can catch this to offer a
 // force-stop-then-delete flow (see ForceDelete).
@@ -143,12 +183,15 @@ var ErrInstanceNotRunning = errors.New("instance is not running")
 // stop it first.
 func (i *Instance) Delete() error {
 	i.Log.Warn(fmt.Sprintf("deleting instance %s", i.Name))
-	op, err := i.Client.DeleteInstance(i.Name)
-	if err != nil {
-		return asDeleteError(err)
-	}
 
-	return asDeleteError(op.Wait())
+	return i.retryWhileBusy(func() error {
+		op, err := i.Client.DeleteInstance(i.Name)
+		if err != nil {
+			return asDeleteError(err)
+		}
+
+		return asDeleteError(op.Wait())
+	})
 }
 
 // ForceDelete stops the instance without waiting for a clean shutdown and then
@@ -156,7 +199,7 @@ func (i *Instance) Delete() error {
 // cmd/incus/delete.go).
 func (i *Instance) ForceDelete() error {
 	i.Log.Warn(fmt.Sprintf("force stopping instance %s before deleting it", i.Name))
-	if err := i.updateState("stop", -1, true); err != nil {
+	if err := i.ForceStop(); err != nil {
 		return fmt.Errorf("stopping the instance failed: %w", err)
 	}
 

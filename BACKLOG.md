@@ -251,8 +251,9 @@ of lazydocker's panel that was a main-panel tab rather than the list:
       project at once. `incus-compose logs -f` is the analog and is in the
       Services panel's `C` menu as a subprocess; an in-panel tab still
       wants merged streams, and `TailConsoleLog` is per-instance and
-      drain-on-read. The same gap makes a replicated service's Logs tab a
-      hint rather than output.
+      drain-on-read. The same gap leaves the Logs tab a hint rather than
+      output on a service's own row, where a replicated service means
+      several streams; a replica's own row shows that replica's log.
 
 ### Caveats
 

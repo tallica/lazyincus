@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-runewidth"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 
@@ -38,23 +39,42 @@ func (gui *Gui) renderInstanceInfoToMain(instance *commands.Instance) tasks.Task
 
 // instanceInfoStr takes the labels of any identity lines to leave out: the
 // services panel stacks this under a service that has already said those.
+// The counters underneath are set off by a gap rather than a heading of
+// their own: CPU and memory need no label to say what they are, and a
+// ruled heading here would carry the same weight as the replica headings
+// stacking whole instances, which are a level above it.
 func (gui *Gui) instanceInfoStr(instance *commands.Instance, omit ...string) string {
-	return gui.instanceIdentityStr(instance, omit...) + "\n" +
-		sectionHeading(gui.Tr.StatsTitle) + "\n" + gui.instanceStatsStr(instance)
+	return gui.instanceIdentityStr(instance, omit...) + "\n\n" + gui.instanceStatsStr(instance)
 }
 
-// sectionHeading marks off the blocks an Info tab is made of, the tab being
-// several things stacked rather than one table.
-func sectionHeading(title string) string {
-	return utils.ColoredString(title, color.FgCyan)
+// sectionHeading marks off the blocks a tab is made of, the tab being
+// several things stacked rather than one table. The label sits inside the
+// rule the way a fieldset legend sits in its border: a service's replicas
+// stack the same labels several times over, and a heading with nothing
+// under it doesn't stop the eye.
+func (gui *Gui) sectionHeading(title string) string {
+	rule := "\u2500\u2500 " + title + " "
+
+	if padding := int(gui.mainViewWidth.Load()) - runewidth.StringWidth(rule); padding > 0 {
+		rule += strings.Repeat("\u2500", padding)
+	} else {
+		rule += "\u2500\u2500\u2500"
+	}
+
+	return utils.ColoredString(rule, color.FgCyan)
 }
 
 // instanceIdentityStr is what `incus info` prints before the counters,
 // minus what's a tab of its own: no config, no profiles list, no snapshot
 // dates. Fields an instance may not have - a compose image, a health
 // verdict, addresses - are left out rather than shown empty.
+// identityPadding lines every label's value up in the same column, the Info
+// tab being one block of them once the identity lines and the counters run
+// together.
+const identityPadding = 14
+
 func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string) string {
-	padding := 14
+	padding := identityPadding
 
 	line := func(label, value string) string {
 		if value == "" || lo.Contains(omit, label) {
@@ -100,12 +120,14 @@ func (gui *Gui) instanceStatsStr(instance *commands.Instance) string {
 	}
 
 	state := full.State
+	// The nested labels under Disk and Network keep a padding of their own,
+	// being a level in.
 	padding := 12
 	output := ""
 
-	output += utils.WithPadding("CPU: ", padding) + formatCPUUsage(state.CPU) + "\n"
-	output += utils.WithPadding("Memory: ", padding) + formatMemoryUsage(state.Memory) + "\n"
-	output += utils.WithPadding("Processes: ", padding) + fmt.Sprint(state.Processes) + "\n"
+	output += utils.WithPadding("CPU: ", identityPadding) + formatCPUUsage(state.CPU) + "\n"
+	output += utils.WithPadding("Memory: ", identityPadding) + formatMemoryUsage(state.Memory) + "\n"
+	output += utils.WithPadding("Processes: ", identityPadding) + fmt.Sprint(state.Processes) + "\n"
 
 	output += "\nDisk:\n"
 	if len(state.Disk) == 0 {

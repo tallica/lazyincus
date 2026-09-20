@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/lxc/incus/v7/shared/api"
@@ -174,6 +175,15 @@ func (s *ComposeService) Health() string {
 	return worst
 }
 
+// SortedInstances orders the replicas by name, the order they come back in
+// being otherwise whatever the daemon returned.
+func (s *ComposeService) SortedInstances() []*Instance {
+	instances := append([]*Instance(nil), s.Instances...)
+	sort.Slice(instances, func(i, j int) bool { return instances[i].Name < instances[j].Name })
+
+	return instances
+}
+
 // GetComposeServices pairs the services the compose file declares with the
 // project's instances, matching on the label incus-compose stamps on each
 // (Instance.ComposeService). Instances whose label names no declared service
@@ -223,4 +233,67 @@ func (c *IncusCommand) GetComposeProject(name string) (*ComposeProject, error) {
 		Config:      project.Config,
 		Local:       true,
 	}, nil
+}
+
+// ServiceRow is one line of the Services panel: a service, or - when it has
+// replicas - one of those under it.
+type ServiceRow struct {
+	Service *ComposeService
+
+	// Instance is the replica the row stands for, and nil on a service's
+	// own row.
+	Instance *Instance
+}
+
+func ServiceRows(services []*ComposeService) []*ServiceRow {
+	rows := make([]*ServiceRow, 0, len(services))
+
+	for _, service := range services {
+		rows = append(rows, &ServiceRow{Service: service})
+
+		if len(service.Instances) < 2 {
+			continue
+		}
+
+		for _, instance := range service.SortedInstances() {
+			rows = append(rows, &ServiceRow{Service: service, Instance: instance})
+		}
+	}
+
+	return rows
+}
+
+// Key identifies the row across refreshes, which build new ComposeService
+// values every time.
+func (r *ServiceRow) Key() string {
+	if r.Instance == nil {
+		return r.Service.Name
+	}
+
+	return r.Service.Name + "/" + r.Instance.Name
+}
+
+// SelectedInstance is the instance the row means: the replica it stands
+// for, or a lone service's only one. A service with replicas means all of
+// them, so it answers with none - which is what every caller branches on.
+func (r *ServiceRow) SelectedInstance() (*Instance, bool) {
+	if r.Instance != nil {
+		return r.Instance, true
+	}
+
+	if len(r.Service.Instances) == 1 {
+		return r.Service.Instances[0], true
+	}
+
+	return nil, false
+}
+
+// Instances is what the row stands for, for the tabs that show an instance
+// each.
+func (r *ServiceRow) Instances() []*Instance {
+	if r.Instance != nil {
+		return []*Instance{r.Instance}
+	}
+
+	return r.Service.SortedInstances()
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,11 +20,13 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeService] {
-	return &panels.SideListPanel[*commands.ComposeService]{
-		ContextState: &panels.ContextState[*commands.ComposeService]{
-			GetMainTabs: func() []panels.MainTab[*commands.ComposeService] {
-				return []panels.MainTab[*commands.ComposeService]{
+// getServicesPanel lists a service per row, and - when it has replicas -
+// one row per replica under it.
+func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
+	return &panels.SideListPanel[*commands.ServiceRow]{
+		ContextState: &panels.ContextState[*commands.ServiceRow]{
+			GetMainTabs: func() []panels.MainTab[*commands.ServiceRow] {
+				return []panels.MainTab[*commands.ServiceRow]{
 					{
 						Key:    "info",
 						Title:  gui.Tr.InfoTitle,
@@ -51,27 +54,35 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeServic
 					},
 				}
 			},
-			GetItemContextCacheKey: func(service *commands.ComposeService) string {
+			GetItemContextCacheKey: func(row *commands.ServiceRow) string {
 				// Each refresh builds new ComposeService values, so the
 				// instance count is part of the key: without it a replica
 				// coming or going leaves the main panel rendering the
-				// service object the tab opened with.
-				return "services-" + service.Name + "-" + service.Status() +
-					"-" + strconv.Itoa(len(service.Instances))
+				// service object the tab opened with. A replica row adds its
+				// own status, the way the instances panel does, so a restart
+				// re-reads the log.
+				key := "services-" + row.Key() + "-" + row.Service.Status() +
+					"-" + strconv.Itoa(len(row.Service.Instances))
+
+				if row.Instance != nil {
+					key += "-" + row.Instance.Instance.Status
+				}
+
+				return key
 			},
 		},
-		ListPanel: panels.ListPanel[*commands.ComposeService]{
-			List: panels.NewFilteredList[*commands.ComposeService](),
+		ListPanel: panels.ListPanel[*commands.ServiceRow]{
+			List: panels.NewFilteredList[*commands.ServiceRow](),
 			View: gui.Views.Services,
 		},
 		NoItemsMessage: gui.Tr.NoServices,
 		Gui:            gui.intoInterface(),
-		// The snapshots panel shows the selected service's instance while
-		// this panel has focus, the way it follows the instances panel. A
-		// replicated service points at none: showing one replica's
-		// snapshots under the service's name would be a lie.
-		OnSelect: func(service *commands.ComposeService) error {
-			instance, _ := singleInstance(service)
+		// The snapshots panel shows the selected row's instance while this
+		// panel has focus, the way it follows the instances panel. A
+		// service's own row with replicas under it points at none: showing
+		// one replica's snapshots under the service's name would be a lie.
+		OnSelect: func(row *commands.ServiceRow) error {
+			instance, _ := row.SelectedInstance()
 
 			return gui.refreshSnapshotsFor(instance)
 		},
@@ -79,34 +90,37 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ComposeServic
 		// on, and the panel would be a title over an empty list.
 		Hide: gui.noLocalComposeProject,
 		// Compose file order is arbitrary (a JSON object), so name is the
-		// only stable order there is.
-		Sort: func(a, b *commands.ComposeService) bool {
-			return a.Name < b.Name
+		// only stable order there is; a service's replicas follow it, named
+		// in order themselves.
+		Sort: func(a, b *commands.ServiceRow) bool {
+			if a.Service.Name != b.Service.Name {
+				return a.Service.Name < b.Service.Name
+			}
+
+			if (a.Instance == nil) != (b.Instance == nil) {
+				return a.Instance == nil
+			}
+
+			return a.Instance != nil && a.Instance.Name < b.Instance.Name
 		},
-		GetTableCells: func(service *commands.ComposeService) []string {
-			return presentation.GetComposeServiceDisplayStrings(&gui.Config.UserConfig.Gui, service)
+		// Rows are rebuilt on every refresh, so the cursor follows the one
+		// it was on by name rather than by pointer.
+		SameItem: func(a, b *commands.ServiceRow) bool {
+			return a.Key() == b.Key()
+		},
+		GetTableCells: func(row *commands.ServiceRow) []string {
+			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row)
 		},
 	}
-}
-
-// singleInstance is the instance a per-instance key should act on: the
-// service's only one. With replicas there's no single answer, so the caller
-// asks which - see withServiceInstance.
-func singleInstance(service *commands.ComposeService) (*commands.Instance, bool) {
-	if len(service.Instances) == 1 {
-		return service.Instances[0], true
-	}
-
-	return nil, false
 }
 
 // renderServiceInfo ticks like the instances panel's Stats tab, the two
 // being one tab here: the identity half is static, the counters underneath
 // it aren't.
-func (gui *Gui) renderServiceInfo(service *commands.ComposeService) tasks.TaskFunc {
+func (gui *Gui) renderServiceInfo(row *commands.ServiceRow) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.serviceInfoStr(service))
+			gui.reRenderStringMain(gui.serviceInfoStr(row))
 		},
 		Duration:   time.Second,
 		Before:     func(ctx context.Context) { gui.clearMainView() },
@@ -115,8 +129,11 @@ func (gui *Gui) renderServiceInfo(service *commands.ComposeService) tasks.TaskFu
 	})
 }
 
-func (gui *Gui) serviceInfoStr(service *commands.ComposeService) string {
-	padding := 14
+func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
+	service := row.Service
+	// The same column the instance blocks below use: the tab is one run of
+	// labels, the service's and then its instances'.
+	padding := identityPadding
 
 	line := func(label, value string) string {
 		if value == "" {
@@ -146,35 +163,48 @@ func (gui *Gui) serviceInfoStr(service *commands.ComposeService) string {
 		return output + "\n" + gui.Tr.ServiceNotRunning
 	}
 
-	// Each instance's own Info tab under that, minus the lines the service
-	// has just shown: project and image are the same for every replica, and
-	// a lone instance's health is what the service's rolls up to.
-	omit := []string{"Project", "Image"}
-	if _, single := singleInstance(service); single {
+	// Each instance's own Info tab under that - the selected replica's
+	// alone, or every one of them from the service's own row - each under a
+	// heading of its own, and minus the lines the service or that heading
+	// has just said: project and image are the same for every replica, the
+	// name is the heading's, and a lone instance's health is what the
+	// service's rolls up to.
+	omit := []string{"Project", "Image", "Name"}
+	if len(service.Instances) == 1 {
 		omit = append(omit, "Health")
 	}
 
-	for _, instance := range sortedInstances(service) {
-		instanceOmit := omit
-		// A compose file with a container_name gets an instance named after
-		// the service, and the Service line above has already said it.
-		if instance.Name == service.Name {
-			instanceOmit = append(instanceOmit, "Name")
-		}
-
-		output += "\n" + gui.instanceInfoStr(instance, instanceOmit...)
+	for _, instance := range row.Instances() {
+		output += "\n" + gui.instanceHeading(service, instance) + "\n"
+		output += "\n" + gui.instanceInfoStr(instance, omit...)
 	}
 
 	return output
 }
 
-// sortedInstances orders a service's replicas by name, the order they're
-// listed in being otherwise whatever the daemon returned.
-func sortedInstances(service *commands.ComposeService) []*commands.Instance {
-	instances := append([]*commands.Instance(nil), service.Instances...)
-	sort.Slice(instances, func(i, j int) bool { return instances[i].Name < instances[j].Name })
+// instanceHeading rules off one instance's block and says which of the
+// service's instances it is - a name among a dozen identical labels not
+// being enough to place you. The number is over the service's instances
+// rather than the ones on screen, so a replica's own row still reads "2 of
+// 4". A lone instance has no count worth printing, and one carrying the
+// service's own name has nothing left to say: the Service line said it.
+func (gui *Gui) instanceHeading(service *commands.ComposeService, instance *commands.Instance) string {
+	instances := service.SortedInstances()
 
-	return instances
+	if len(instances) < 2 {
+		if instance.Name == service.Name {
+			return gui.sectionHeading(gui.Tr.InstanceTitle)
+		}
+
+		return gui.sectionHeading(fmt.Sprintf(gui.Tr.ServiceInstanceHeading, instance.Name))
+	}
+
+	index := slices.IndexFunc(instances, func(other *commands.Instance) bool {
+		return other.Name == instance.Name
+	})
+
+	return gui.sectionHeading(fmt.Sprintf(
+		gui.Tr.ServiceReplicaHeading, index+1, len(instances), instance.Name))
 }
 
 func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
@@ -189,17 +219,17 @@ func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
 	return gui.Tr.Yes
 }
 
-// serviceInstanceTab is a tab that is really the instance's: the service's
-// only one answers for it, and replicas have no single answer - the same
+// serviceInstanceTab is a tab that is really the instance's: the row's
+// replica answers for it, as does a lone service's only instance - the same
 // split the per-instance keys make through withServiceInstance.
 func (gui *Gui) serviceInstanceTab(
 	render func(*commands.Instance) tasks.TaskFunc,
-) func(*commands.ComposeService) tasks.TaskFunc {
-	return func(service *commands.ComposeService) tasks.TaskFunc {
-		instance, ok := singleInstance(service)
+) func(*commands.ServiceRow) tasks.TaskFunc {
+	return func(row *commands.ServiceRow) tasks.TaskFunc {
+		instance, ok := row.SelectedInstance()
 		if !ok {
 			return gui.NewSimpleRenderStringTask(func() string {
-				return gui.serviceNoSingleInstanceStr(service)
+				return gui.serviceNoSingleInstanceStr(row.Service)
 			})
 		}
 
@@ -208,7 +238,7 @@ func (gui *Gui) serviceInstanceTab(
 }
 
 // serviceNoSingleInstanceStr says which of the two reasons there's no
-// instance to show: nothing running, or too many to pick from.
+// instance to show: nothing running, or a row per replica to pick from.
 func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) string {
 	if len(service.Instances) == 0 {
 		return gui.Tr.ServiceNotRunning
@@ -220,12 +250,13 @@ func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) str
 // renderServiceLogs delegates to the instance logs renderer, which owns the
 // drain-on-read console buffer. Merging several replicas' buffers into one
 // ordered stream is a different problem - see BACKLOG.md's aggregate-logs
-// item - so a replicated service points at `C`'s `logs --follow` instead.
-func (gui *Gui) renderServiceLogs(service *commands.ComposeService) tasks.TaskFunc {
-	instance, ok := singleInstance(service)
+// item - so the service's own row points at `C`'s `logs --follow` and a
+// replica's row at its own log.
+func (gui *Gui) renderServiceLogs(row *commands.ServiceRow) tasks.TaskFunc {
+	instance, ok := row.SelectedInstance()
 	if !ok {
 		return gui.NewSimpleRenderStringTask(func() string {
-			if len(service.Instances) == 0 {
+			if len(row.Service.Instances) == 0 {
 				return gui.Tr.ServiceNotRunning
 			}
 
@@ -236,29 +267,22 @@ func (gui *Gui) renderServiceLogs(service *commands.ComposeService) tasks.TaskFu
 	return gui.renderInstanceLogsToMain(instance)
 }
 
-func (gui *Gui) renderServiceConfig(service *commands.ComposeService) tasks.TaskFunc {
-	return gui.NewSimpleRenderStringTask(func() string { return gui.serviceConfigStr(service) })
+func (gui *Gui) renderServiceConfig(row *commands.ServiceRow) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.serviceConfigStr(row) })
 }
 
 // serviceConfigStr is both halves of a service's configuration: what the
 // compose file declares, then what the daemon made of it.
-func (gui *Gui) serviceConfigStr(service *commands.ComposeService) string {
-	output := sectionHeading(gui.Tr.ComposeTitle) + "\n\n" + gui.composeServiceConfigStr(service)
+func (gui *Gui) serviceConfigStr(row *commands.ServiceRow) string {
+	service := row.Service
+	output := gui.sectionHeading(gui.Tr.ComposeTitle) + "\n\n" + gui.composeServiceConfigStr(service)
 
 	// Then what the daemon made of it: the same dump the instances panel's
-	// Config tab shows, one per replica. The heading says what the section
-	// is rather than just naming it - a lone instance usually carries the
-	// service's own name, and "mosquitto" under "Compose" reads as another
-	// view of the compose file.
-	_, single := singleInstance(service)
-
-	for _, instance := range sortedInstances(service) {
-		heading := gui.Tr.InstanceTitle
-		if !single {
-			heading += " (" + instance.Name + ")"
-		}
-
-		output += "\n\n" + sectionHeading(heading) + "\n\n" + gui.instanceConfigStr(instance)
+	// Config tab shows, one per instance the row stands for, under the Info
+	// tab's own headings.
+	for _, instance := range row.Instances() {
+		output += "\n\n" + gui.instanceHeading(service, instance) +
+			"\n\n" + gui.instanceConfigStr(instance)
 	}
 
 	return output
@@ -318,13 +342,13 @@ func (gui *Gui) refreshServices() error {
 		gui.State.ComposeProject = project
 	}
 
-	gui.Panels.Services.SetItems(services)
+	gui.Panels.Services.SetItems(commands.ServiceRows(services))
 
 	return gui.Panels.Services.RerenderList()
 }
 
 // refreshServicesQuiet is the background poll. A service's instances change
-// under a compose verb, and every one of those calls refreshAfterCompose
+// under a compose verb, and every one of those calls refreshInstancesAndServices
 // already - so this only has to catch changes made from outside lazyincus.
 func (gui *Gui) refreshServicesQuiet() error {
 	if err := gui.refreshServices(); err != nil {
@@ -510,15 +534,72 @@ func (gui *Gui) localComposeProject() (string, []commands.ComposeService) {
 	return name, services
 }
 
-// selectedService is the services panel's selection. No selection is a
+// selectedServiceRow is the services panel's selection. No selection is a
 // silent no-op, matching the other panel handlers.
-func (gui *Gui) selectedService() (*commands.ComposeService, bool) {
-	service, err := gui.Panels.Services.GetSelectedItem()
+func (gui *Gui) selectedServiceRow() (*commands.ServiceRow, bool) {
+	row, err := gui.Panels.Services.GetSelectedItem()
 	if err != nil {
 		return nil, false
 	}
 
-	return service, true
+	return row, true
+}
+
+// selectedService is the service the selection belongs to - a replica's row
+// answers with its own, for the verbs that only a service has.
+func (gui *Gui) selectedService() (*commands.ComposeService, bool) {
+	row, ok := gui.selectedServiceRow()
+	if !ok {
+		return nil, false
+	}
+
+	return row.Service, true
+}
+
+// composeRowDescription is what a key whose two scopes aren't the same verb
+// does from the row selected right now - `d` downs a service but deletes a
+// replica. The menu rebuilds its bindings each time it opens, so it can say
+// which; the panels don't exist yet at the first call, which is startup
+// binding the keys rather than anyone reading them.
+func (gui *Gui) composeRowDescription(service, replica string) string {
+	if gui.Panels.Services == nil {
+		return service
+	}
+
+	if row, ok := gui.selectedServiceRow(); ok && row.Instance != nil {
+		return replica
+	}
+
+	return service
+}
+
+// serviceScopedDescription is a verb only a service has, described from a
+// replica's row: it still runs against the service, and saying so is what
+// keeps "bring up" off a row where bringing one replica up isn't a thing.
+func (gui *Gui) serviceScopedDescription(description string) string {
+	return gui.composeRowDescription(
+		description, fmt.Sprintf(gui.Tr.ComposeServiceScoped, description))
+}
+
+// onServiceRow splits a key between the compose verb for a whole service
+// and the instances panel's own action for one replica. Only a replica's
+// row takes the instance side: a service with a single instance is still
+// the compose scope, where `u` and `d` create and destroy what the compose
+// file declares.
+func (gui *Gui) onServiceRow(
+	instanceAction func(*commands.Instance) error,
+	serviceAction func(*commands.ComposeService) error,
+) error {
+	row, ok := gui.selectedServiceRow()
+	if !ok {
+		return nil
+	}
+
+	if row.Instance != nil {
+		return instanceAction(row.Instance)
+	}
+
+	return serviceAction(row.Service)
 }
 
 // composeRun is every compose verb: the arguments, then the service to
@@ -533,7 +614,7 @@ func (gui *Gui) composeRun(service string, args ...string) error {
 		return err
 	}
 
-	return gui.refreshAfterCompose()
+	return gui.refreshInstancesAndServices()
 }
 
 // composeTarget names what a confirmation prompt is about - the service, or
@@ -582,39 +663,30 @@ func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
 // handleComposeStart runs `incus-compose start` - already-created instances
 // only, unlike `u`, which also creates whatever's missing.
 func (gui *Gui) handleComposeStart(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
-
-	return gui.composeRun(service.Name, "start")
+	return gui.onServiceRow(gui.instanceStart, func(service *commands.ComposeService) error {
+		return gui.composeRun(service.Name, "start")
+	})
 }
 
 func (gui *Gui) handleComposeStop(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
-
-	return gui.composeConfirm(gui.Tr.ConfirmComposeStop, service.Name, "stop")
+	return gui.onServiceRow(gui.instanceStop, func(service *commands.ComposeService) error {
+		return gui.composeConfirm(gui.Tr.ConfirmComposeStop, service.Name, "stop")
+	})
 }
 
 func (gui *Gui) handleComposeRestart(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
-
-	return gui.composeRun(service.Name, "restart")
+	return gui.onServiceRow(gui.instanceRestart, func(service *commands.ComposeService) error {
+		return gui.composeRun(service.Name, "restart")
+	})
 }
 
+// handleComposeDown is `d`: the service's `down` submenu, or - on a
+// replica's row - deleting that instance, which incus-compose creates again
+// on the next `up`, the compose file still asking for it.
 func (gui *Gui) handleComposeDown(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
-
-	return gui.composeDownMenu(service.Name)
+	return gui.onServiceRow(gui.instanceDelete, func(service *commands.ComposeService) error {
+		return gui.composeDownMenu(service.Name)
+	})
 }
 
 func (gui *Gui) composeDownMenu(service string) error {
@@ -638,26 +710,21 @@ func (gui *Gui) composeDownMenu(service string) error {
 }
 
 func (gui *Gui) handleComposeKill(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
-
-	return gui.composeConfirm(gui.Tr.ConfirmComposeKill, service.Name, "kill")
+	return gui.onServiceRow(gui.instanceForceStop, func(service *commands.ComposeService) error {
+		return gui.composeConfirm(gui.Tr.ConfirmComposeKill, service.Name, "kill")
+	})
 }
 
-// handleComposePause is `p`, the toggle the instances panel's own `p` is.
+// handleComposePause is `p`, the toggle the instances panel's own `p` is -
+// over the whole service, or over the one replica whose row is selected.
 func (gui *Gui) handleComposePause(g *gocui.Gui, v *gocui.View) error {
-	service, ok := gui.selectedService()
-	if !ok {
-		return nil
-	}
+	return gui.onServiceRow(gui.instancePauseFreeze, func(service *commands.ComposeService) error {
+		if len(service.Instances) == 0 {
+			return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
+		}
 
-	if len(service.Instances) == 0 {
-		return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
-	}
-
-	return gui.composeRun(service.Name, composePauseVerb(service.Status()))
+		return gui.composeRun(service.Name, composePauseVerb(service.Status()))
+	})
 }
 
 // composePauseVerb is which half of the toggle to run, over one service's
@@ -710,11 +777,14 @@ func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) handleComposeProjectMenu(g *gocui.Gui, v *gocui.View) error {
 	// One pause row rather than two, the way `p` is one key: the verb is the
 	// stack's own status, every service voting.
-	services := gui.Panels.Services.List.GetAllItems()
-	statuses := make([]string, 0, len(services))
+	rows := gui.Panels.Services.List.GetAllItems()
+	statuses := make([]string, 0, len(rows))
 
-	for _, service := range services {
-		statuses = append(statuses, service.Status())
+	for _, row := range rows {
+		// One vote per service: a replica's row carries the same service.
+		if row.Instance == nil {
+			statuses = append(statuses, row.Service.Status())
+		}
 	}
 
 	pauseVerb := composePauseVerb(statuses...)
@@ -761,29 +831,26 @@ func (gui *Gui) composeMenuAction(service, confirm string, args []string) func()
 	}
 }
 
-// withServiceInstance runs a per-instance action against the service's
-// instance. A service usually has exactly one, and then the key acts
-// straight away; replicas have no single answer, so it asks which.
+// withServiceInstance runs a per-instance action against the instance the
+// selected row stands for, and acts straight away when there is one. A
+// service's own row with replicas under it still asks which.
 func (gui *Gui) withServiceInstance(title string, action func(*commands.Instance) error) error {
-	service, ok := gui.selectedService()
+	row, ok := gui.selectedServiceRow()
 	if !ok {
 		return nil
 	}
 
-	if len(service.Instances) == 0 {
+	if len(row.Service.Instances) == 0 {
 		return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
 	}
 
-	if instance, ok := singleInstance(service); ok {
+	if instance, ok := row.SelectedInstance(); ok {
 		return action(instance)
 	}
 
-	instances := append([]*commands.Instance(nil), service.Instances...)
-	sort.Slice(instances, func(i, j int) bool { return instances[i].Name < instances[j].Name })
+	items := make([]*types.MenuItem, 0, len(row.Service.Instances))
 
-	items := make([]*types.MenuItem, 0, len(instances))
-
-	for _, instance := range instances {
+	for _, instance := range row.Service.SortedInstances() {
 		items = append(items, &types.MenuItem{
 			Label:   instance.Name,
 			OnPress: func() error { return action(instance) },
@@ -813,10 +880,10 @@ func (gui *Gui) handleServiceViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return gui.switchFocus(gui.Views.Main)
 }
 
-// refreshAfterCompose re-lists the services and the instances panel once a
-// compose verb returns, rather than waiting on the next background poll to
-// notice what it created or removed.
-func (gui *Gui) refreshAfterCompose() error {
+// refreshInstancesAndServices re-lists both panels as soon as something has
+// changed what they hold, rather than waiting on the next background poll
+// to notice. Both, because a compose instance has a row in each.
+func (gui *Gui) refreshInstancesAndServices() error {
 	if err := gui.refreshInstances(); err != nil {
 		return err
 	}

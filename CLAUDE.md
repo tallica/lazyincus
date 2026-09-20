@@ -58,6 +58,12 @@ focused one everything the others don't need. "Focused" there means the last
 side panel to have focus, so stepping into the main panel doesn't collapse
 the list you were reading.
 
+A main-panel tab's content is a string built off the main loop — on a
+ticker, or in a task goroutine — so anything that needs the panel's width
+reads `gui.mainViewWidth`, which `layout` stores on every pass. The view's
+own `Size()` is the main loop's to read. `sectionHeading` is what wants it:
+the rule it draws runs to the panel's edge.
+
 ### Services
 
 Only there when there's a compose file in lazyincus's own working directory,
@@ -96,6 +102,19 @@ than reading the instances panel's list, since the panels can be scoped
 anywhere. An instance whose label names no declared service — a one-off
 from `incus-compose run` — matches no row and stays in the instances panel.
 
+A service with more than one instance lists its replicas under it, one row
+each: the panel's item is a `commands.ServiceRow`, either a service or one
+of its replicas, and `ServiceRows` lays them out. `SideListPanel` is
+generic over the row type, so this is a row type rather than a tree — the
+list stays flat. `ServiceRow.SelectedInstance` is the one answer to "which
+instance does this row mean": the replica, or a lone service's only
+instance, and none from a service's own row, which means all of them. That
+last case is what every tab, the snapshots panel and `withServiceInstance`
+branch on. `ServiceRow.Instances` is the same split for the tabs that show an
+instance each. Rows are rebuilt on every refresh, so the panel's `SameItem`
+is what keeps the cursor on the row it was on; without it the selection
+holds an index, which by then belongs to a different replica.
+
 `ComposeService.Status` is an instance status — the daemon's own spelling,
 rendered by the instances panel's own `presentation.DisplayStatus`, a
 service being the instances underneath it. Only two values are the
@@ -115,10 +134,11 @@ Because the stack has a panel of its own, startup no longer scopes the
 client to it — the instances panel spans projects like every other panel,
 and `P` still narrows.
 
-Keys act on the selected service, passing its name as the `SERVICE`
-argument every incus-compose verb takes; which key runs which verb is
-README's [Compose stacks](README.md#compose-stacks) section, alongside the
-rest of what a user sees. `composeRun` is all of them, and refreshes the
+Keys act on the selected row's service, passing its name as the `SERVICE`
+argument every incus-compose verb takes; which key runs which verb, and
+which of them a replica's row takes for itself, is README's
+[Compose stacks](README.md#compose-stacks) section, alongside the rest of
+what a user sees. `composeRun` is all of them, and refreshes the
 instances and services panels once the subprocess returns rather than
 waiting for the poll. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
 don't — same rule as the instances panel. `C` is the one key that doesn't
@@ -128,30 +148,70 @@ is brought up from there. `U` can fail on a non-local daemon for reasons
 that are incus-compose's, not ours — see
 [BACKLOG.md](BACKLOG.md#caveats).
 
-The per-instance keys (`m`, `n`, `E`, `y`) reach the service's
-instance through `withServiceInstance`, which acts directly on the only one
-and otherwise asks which — the reason `handleSnapshotCreate` and
-`handleInstanceCopyIPv4` were split into handler and action.
+`onServiceRow` is what splits a key between the two, a replica's row taking
+the instances panel's own action where one exists. Those actions are the
+instances panel's, split into handler and action for this, and they refresh
+both panels (`refreshInstancesAndServices`), a compose instance having a row
+in each.
+
+The keybinding menu varies with the row, which it can because it rebuilds
+its bindings each time it opens. `composeRowDescription` names the other
+verb where the two scopes aren't the same one, and `serviceScopedDescription`
+appends "service" to the verbs only a service has — "bring up" alone, on a
+replica's row, reads as bringing that replica up, which isn't a thing. The
+order varies too: `servicesKeybindings` hands this panel's keys to
+`orderByKey`, leading with the compose verbs on a service's own row and with
+the instances panel's keys, in its order, on a replica's — the same keys
+doing the same thing should be found in the same place. A key the order
+doesn't name is listed last rather than dropped. The panels don't exist at
+the first call, which is startup binding the keys rather than anyone reading
+them.
+
+The per-instance keys (`m`, `n`, `E`, `y`) reach the row's instance through
+`withServiceInstance`, which acts directly on the one
+`SelectedInstance` names and otherwise asks which — the reason
+`handleSnapshotCreate` and `handleInstanceCopyIPv4` were split into handler
+and action. The menu is left for a service's own row, that row meaning all
+of its replicas.
 
 Columns work the way the instances panel's do: `gui.serviceColumns` over
 `serviceColumnRenderers` in `pkg/gui/presentation/services.go`, taking the
 instance column names rendered from the service's instances rolled up, plus
-`replicas`. That one is blank unless what's running differs from what the
-compose file declared — `presentation.ServiceReplicas` is the rule, and the
-Info tab's line calls it too. `gui.instanceStatusStyle` covers the status column
-either way; `serviceStatusStyles` supplies the glyphs for `partial` and
-`none`, which no instance state has. There's no project
+`replicas`. That one is blank unless the service has a different number of
+instances from what the compose file declared —
+`presentation.ServiceReplicas` is the rule, and the Info tab's line calls it
+too. It counts what exists
+rather than what's running: the status column says what state the instances
+are in and a replica's row says which is in which, so the figure before the
+slash is the number of rows underneath, and "3/4" is one replica missing
+rather than one stopped. A replica's row renders the same configured
+columns through `instanceColumnRenderers` instead (`replicaCell`), indented
+under the service and blank where only a service has the column, so the two
+kinds of row share one table. Which columns appear at all is the service
+half's to decide, replica rows following it — otherwise the rows would
+disagree on how many cells they have. `gui.instanceStatusStyle` covers the
+status column either way; `serviceStatusStyles` supplies the glyphs for
+`partial` and `none`, which no instance state has. There's no project
 column: every row shares the one project, so `servicesPanelTitle` puts it
 in the title instead.
 
 Main panel tabs:
 
-- **Info** — what the compose file declares for the service, then each
-  instance's own Info tab, `instanceInfoStr` and all, which is why this
-  renders on a ticker. `instanceInfoStr` takes the identity lines to leave
-  out, the service having just said them: project and image always, health
-  for a lone instance, and the name when the instance carries the service's
-  own. The compose fields are parsed once at startup by
+- **Info** — what the compose file declares for the service, then the Info
+  tab of each instance the row stands for, `instanceInfoStr` and all, which
+  is why this renders on a ticker. Each instance is ruled off by
+  `instanceHeading` and drops its own Name line, the heading having said it.
+  The heading numbers replicas — "Replica 2 of 4 · web-2", the blocks being
+  the same labels over and over — and numbers them over the service's
+  instances rather than the ones on screen, so a replica's row still reads
+  "2 of 4" while showing only itself. A service with one instance has no
+  count worth printing ("Instance · redis-1"), and one carrying the
+  service's own name has nothing left to say ("Instance"). It's ruled
+  either way: the rule is where the compose file's half ends and the
+  daemon's begins, which a service with no replicas has too.
+  `instanceInfoStr` takes the identity lines to leave out, the service and
+  the heading having just said them: project, image and name always, plus
+  health for a lone instance. The compose fields are parsed once at startup by
   `parseComposeConfig` and stored rendered, only display wanting them; the
   Healthcheck line is the project's, from `State.ComposeProject`
   (`GetComposeProject` fetches it during `refreshServices`, so rendering
@@ -160,22 +220,22 @@ Main panel tabs:
   may carry no registry host. Each refresh builds new `ComposeService`
   values, so the instance count is part of `GetItemContextCacheKey` —
   otherwise the ticker goes on rendering the service object the tab opened
-  with.
-- **Logs** — delegates to the instance logs renderer for a single-instance
-  service; merging several replicas' drain-on-read buffers into one ordered
-  stream is a different problem, so a replicated service points at `C`'s
-  `logs --follow` instead.
+  with. A replica's row adds its own status to that key, the way the
+  instances panel does, so a restart re-reads the log.
+- **Logs** — delegates to the instance logs renderer for whichever instance
+  the row names; merging several replicas' drain-on-read buffers into one
+  ordered stream is a different problem, so a service's own row with
+  replicas under it points at `C`'s `logs --follow` instead.
 - **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
-  the service's only instance answers for it, and replicas say so instead,
-  the same split the per-instance keys make through `withServiceInstance`.
+  the row's replica answers for it, as does a lone service's only instance,
+  and a service's own row with replicas under it says so instead — the same
+  split the per-instance keys make through `withServiceInstance`.
 - **Config** — both halves: a Compose section, the service's slice of
   `incus-compose config --format json` handed to `yaml.JSONToYAML`
   untouched (decoding through `map[string]any` first would turn every count
   into a float64 and render `replicas: 2` as `2.0`), then one
-  `instanceConfigStr` dump per instance. Those are headed `Instance`, named
-  `Instance (web-1)` only when there are replicas to tell apart: a lone
-  instance carries the service's own name, which under "Compose" reads as
-  another view of the compose file.
+  `instanceConfigStr` dump per instance the row stands for, under the Info
+  tab's own `instanceHeading`.
 
 The credits tab and aggregate-logs tab from lazydocker's Project panel
 aren't ported — see [BACKLOG.md](BACKLOG.md#3-project-panel).
@@ -217,9 +277,13 @@ up:
 
 - **Info** — what the instance is (name, status, type, project, image,
   health where it has one, architecture, dates, addresses, snapshot count),
-  then a **Stats** section: CPU/memory/process count/disk/network from
-  `InstanceFull.State`. Re-rendered every second (no extra API calls: the
-  background poll already keeps that current). CPU is cumulative usage
+  then the counters from `InstanceFull.State`: CPU, memory, process count,
+  disk, network. A gap sets those off rather than a heading — CPU and
+  memory say what they are, and a ruled heading would weigh the same as the
+  replica headings stacking whole instances, a level above it. Both halves
+  pad their labels to `identityPadding`, the tab being one run of them.
+  Re-rendered every second (no extra API calls: the background poll already
+  keeps that current). CPU is cumulative usage
   time, not a percentage — the API reports total nanoseconds since start,
   not a rate, and `incus info` shows the same.
 - **Logs** — polls `Instance.TailConsoleLog()` and re-renders the
@@ -238,10 +302,10 @@ up:
 ### Snapshots
 
 Follows whichever list you're in: the instances panel's `OnSelect` hands
-over its instance, the services panel's the service's own — none while it
-has replicas, no one of them being the service's snapshots — and the view
-title carries that instance's name since the rows alone don't say whose
-they are. Each panel hands the instance over rather than `refreshSnapshots`
+over its instance, the services panel's whatever its row stands for — a
+replica's own, and none at all from a service's row with replicas under it,
+no one of them being the service's snapshots — and the view title carries
+that instance's name since the rows alone don't say whose they are. Each panel hands the instance over rather than `refreshSnapshots`
 reading the focused view, because that read takes `ViewStackMutex`, which
 `switchFocus` holds while it runs an `OnSelect`: reading it there deadlocks
 the app. Listing uses

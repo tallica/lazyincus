@@ -33,7 +33,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 			return ""
 		}
 
-		return utils.ColoredString(InstanceType(service.Instances[0]), color.FgMagenta)
+		return utils.ColoredString(InstanceType(service.SortedInstances()[0]), color.FgMagenta)
 	},
 	"snapshots": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return displayServiceSnapshotCount(service)
@@ -46,7 +46,11 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	},
 }
 
-func GetComposeServiceDisplayStrings(guiConfig *config.GuiConfig, service *commands.ComposeService) []string {
+// replicaIndent sets a replica's row under the service it belongs to, the
+// rows being one list rather than two panels.
+const replicaIndent = "  "
+
+func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.ServiceRow) []string {
 	columns := guiConfig.ServiceColumns
 	if len(columns) == 0 {
 		columns = config.DefaultServiceColumns
@@ -58,10 +62,33 @@ func GetComposeServiceDisplayStrings(guiConfig *config.GuiConfig, service *comma
 		if !ok {
 			continue
 		}
-		cells = append(cells, render(guiConfig, service))
+
+		if row.Instance == nil {
+			cells = append(cells, render(guiConfig, row.Service))
+			continue
+		}
+
+		cells = append(cells, replicaCell(guiConfig, column, row.Instance))
 	}
 
 	return cells
+}
+
+// replicaCell renders a replica's row through the instances panel's own
+// renderers - the same column name means the same thing on an instance -
+// leaving a cell blank where only a service has the column, so the two
+// kinds of row stay in the same table.
+func replicaCell(guiConfig *config.GuiConfig, column string, instance *commands.Instance) string {
+	if column == "name" {
+		return replicaIndent + instance.Name
+	}
+
+	render, ok := instanceColumnRenderers[column]
+	if !ok {
+		return ""
+	}
+
+	return render(guiConfig, instance)
 }
 
 // displayServiceSnapshotCount totals the replicas': a service's snapshots
@@ -78,9 +105,16 @@ func displayServiceSnapshotCount(service *commands.ComposeService) string {
 	return strconv.Itoa(count)
 }
 
-// displayServiceAddresses runs the replicas' addresses together in the one
-// column, the way a single instance's several addresses already are.
+// displayServiceAddresses is the service's instance's addresses, the way a
+// single instance's several already run together in the one column. A
+// service with replicas leaves the column to them: each has a row of its
+// own carrying its own address, and four sets of those side by side push
+// the columns after them off the panel.
 func displayServiceAddresses(service *commands.ComposeService, family string) string {
+	if len(service.Instances) > 1 {
+		return ""
+	}
+
 	addresses := make([]string, 0, len(service.Instances))
 
 	for _, instance := range service.Instances {
@@ -90,11 +124,14 @@ func displayServiceAddresses(service *commands.ComposeService, family string) st
 	return strings.Join(addresses, " ")
 }
 
-// ServiceReplicas is running-against-declared, and blank when the
-// two agree: a count that always reads "1" is a column of noise, and the
-// Info tab drops its line on the same rule.
+// ServiceReplicas is how many instances the service has against how many
+// the compose file declared, and blank when the two agree: a count that
+// always reads "1" is a column of noise. It counts what exists rather than
+// what's running, the status column and the replica rows already saying
+// what state they're in, so the figure before the slash is the number of
+// rows underneath and "3/4" is one replica missing, never one stopped.
 func ServiceReplicas(service *commands.ComposeService) string {
-	if service.Replicas == len(service.Instances) {
+	if len(service.Instances) == service.Replicas {
 		return ""
 	}
 

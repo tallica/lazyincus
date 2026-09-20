@@ -103,6 +103,11 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 		}
 	}
 
+	if gui.Views.Main != nil {
+		mainWidth, _ := gui.Views.Main.Size()
+		gui.mainViewWidth.Store(int32(mainWidth))
+	}
+
 	return gui.resizeCurrentPopupPanel(g)
 }
 

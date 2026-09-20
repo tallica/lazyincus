@@ -113,7 +113,7 @@ var DefaultInstanceColumns = []string{"name", "status", "health", "type", "ipv4"
 
 // DefaultServiceColumns is the Services panel's column set/order when the
 // user hasn't customized ServiceColumns.
-var DefaultServiceColumns = []string{"name", "status", "health", "ipv4", "snapshots"}
+var DefaultServiceColumns = []string{"name", "status", "replicas", "health", "ipv4", "snapshots"}
 
 // OSConfig contains config on the level of the os
 type OSConfig struct {

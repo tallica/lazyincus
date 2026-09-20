@@ -2,6 +2,7 @@ package gui
 
 import (
 	"os"
+	"sync/atomic"
 	"time"
 
 	lcUtils "github.com/jesseduffield/lazycore/pkg/utils"
@@ -31,6 +32,11 @@ type Gui struct {
 	ErrorChan     chan error
 	Views         Views
 
+	// mainViewWidth is how wide the main panel currently is, recorded by
+	// layout for the render goroutines: a tab's content is built off the
+	// main loop, where reading the view's own size would race.
+	mainViewWidth atomic.Int32
+
 	// if we've suspended the gui (e.g. because we've switched to a subprocess)
 	// we typically want to pause some things that are running like background
 	// refreshes
@@ -47,7 +53,7 @@ type Panels struct {
 	Snapshots *panels.SideListPanel[*commands.Snapshot]
 	Volumes   *panels.SideListPanel[*commands.Volume]
 	Networks  *panels.SideListPanel[*commands.Network]
-	Services  *panels.SideListPanel[*commands.ComposeService]
+	Services  *panels.SideListPanel[*commands.ServiceRow]
 	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 

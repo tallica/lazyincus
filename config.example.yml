@@ -75,11 +75,14 @@ gui:
   # Which columns the Services panel shows, and in what order. Valid
   # values: the instance column names rendered from the service's instances
   # rolled up - name, status, type, ipv4, ipv6, health, image, snapshots -
-  # plus "replicas", which is blank unless what's running differs from what
-  # the compose file declared.
+  # plus "replicas", which is blank unless the service has a different
+  # number of instances from what the compose file declared. It counts what
+  # exists, not what's running - the status column says what state they're
+  # in, and each replica has a row of its own saying which.
   serviceColumns:
     - name
     - status
+    - replicas
     - health
     - ipv4
     - snapshots

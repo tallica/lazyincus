@@ -105,3 +105,17 @@ func TestSelectionClampsWhenSelectedItemDisappears(t *testing.T) {
 	assert.Equal(t, "alpha", selectedName(t, panel))
 	assert.Equal(t, 0, panel.SelectedIdx)
 }
+
+// A panel whose items a refresh rebuilds - the services panel's rows - says
+// how to recognize the same row across that, and the cursor follows it the
+// way it does an item that kept its pointer.
+func TestSelectionFollowsRebuiltItem(t *testing.T) {
+	panel := newPanel([]*row{{name: "alpha"}, {name: "bravo"}})
+	panel.SameItem = func(a, b *row) bool { return a.name == b.name }
+	panel.SetSelectedLineIdx(1)
+
+	panel.SetItems([]*row{{name: "alpha"}, {name: "avocado"}, {name: "bravo"}})
+
+	assert.Equal(t, "bravo", selectedName(t, panel))
+	assert.Equal(t, 2, panel.SelectedIdx)
+}

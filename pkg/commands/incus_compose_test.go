@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/lxc/incus/v7/shared/api"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsComposeManagedProject(t *testing.T) {
@@ -82,4 +83,44 @@ func TestComposeServiceHealth(t *testing.T) {
 			t.Errorf("%s: Health() = %q, want %q", tt.name, got, tt.want)
 		}
 	}
+}
+
+// A service with replicas lists them under it; one with a single instance
+// is that instance, and gets no row of its own.
+func TestServiceRows(t *testing.T) {
+	replica := func(name string) *Instance { return &Instance{Name: name} }
+
+	web := &ComposeService{
+		Name:      "web",
+		Instances: []*Instance{replica("web-2"), replica("web-1")},
+	}
+	redis := &ComposeService{Name: "redis", Instances: []*Instance{replica("redis-1")}}
+	down := &ComposeService{Name: "down"}
+
+	rows := ServiceRows([]*ComposeService{web, redis, down})
+
+	keys := make([]string, 0, len(rows))
+	for _, row := range rows {
+		keys = append(keys, row.Key())
+	}
+
+	assert.Equal(t, []string{"web", "web/web-1", "web/web-2", "redis", "down"}, keys)
+
+	// The service's own row means all of its replicas; each replica's row
+	// means itself, and a lone instance answers for its service.
+	_, ok := rows[0].SelectedInstance()
+	assert.False(t, ok)
+	assert.Len(t, rows[0].Instances(), 2)
+
+	instance, ok := rows[1].SelectedInstance()
+	assert.True(t, ok)
+	assert.Equal(t, "web-1", instance.Name)
+
+	instance, ok = rows[3].SelectedInstance()
+	assert.True(t, ok)
+	assert.Equal(t, "redis-1", instance.Name)
+
+	_, ok = rows[4].SelectedInstance()
+	assert.False(t, ok)
+	assert.Empty(t, rows[4].Instances())
 }

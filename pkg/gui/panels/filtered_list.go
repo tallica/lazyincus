@@ -92,6 +92,20 @@ func (self *FilteredList[T]) GetIndex(item T) int {
 	return -1
 }
 
+// GetIndexBy is GetIndex for items whose identity isn't the value itself -
+// rows a refresh rebuilds, whose pointers no longer match.
+func (self *FilteredList[T]) GetIndexBy(match func(T) bool) int {
+	self.mutex.RLock()
+	defer self.mutex.RUnlock()
+
+	for i, index := range self.indices {
+		if match(self.allItems[index]) {
+			return i
+		}
+	}
+	return -1
+}
+
 func (self *FilteredList[T]) GetItems() []T {
 	self.mutex.RLock()
 	defer self.mutex.RUnlock()
