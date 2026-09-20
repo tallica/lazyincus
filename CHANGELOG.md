@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- A state change or a delete is retried for a few seconds while the daemon reports the instance busy with another operation, instead of failing outright. A compose stack with healthchecks has ic-healthd stamping a verdict into every instance's config on a timer, and a key pressed as one of those landed came back with `Instance is busy running a "update" operation` — most visibly on the force-stop-then-delete path, where the delete follows the stop with nothing in between.
-- `a` on an OCI application container now says why instead of failing: those run the image's entrypoint rather than an init system, so there is no console device and `incus console` comes back with "operation not supported by device". The message points at the Logs tab, which is where that output goes, and at `E`, which still works. The Services panel drops `a` altogether, a compose service being an OCI image as a rule.
-- Popups no longer grow past the edges of a short terminal. A popup is sized to its content, and one taller than the screen ran off both ends of it rather than scrolling — the keybinding menu (`x`) on anything under about 30 rows. It's now capped to what the screen holds, which is what lets it scroll.
+## [0.8.0] - 2026-09-20
+
+### Added
+- `--remote <name>` (`-r`) picks the daemon for the session, an alternative to `INCUS_REMOTE=<name> lazyincus` and to changing the CLI's default. The flag sets that same variable at startup, so `incus console`, `incus exec` and every incus-compose verb — subprocesses that read the environment themselves — land on the daemon the panels are showing. See [docs/Remotes.md](docs/Remotes.md).
+- `--project-directory <dir>` (`-P`) points the Services panel at a compose file somewhere other than the working directory, an alternative to `INCUS_COMPOSE_PROJECT_DIRECTORY`, whose name it borrows and whose variable it sets. A path that isn't a directory is refused at startup rather than showing up as a missing panel.
 
 ### Changed
 - The Logs tab on a replicated service's own row now shows every replica's log, one after another under the same heading the Info and Config tabs use, instead of a message saying to pick a replica. The streams stay separate rather than interleaved — the console buffers carry nothing to order them by — so `C`'s `logs --follow` is still the merged view of the stack.
@@ -22,9 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `replicas` column is in the Services panel's default columns, now that a missing replica is a missing row and the figure before the slash is the number of rows underneath. It counts what exists against what the compose file declared, not what's running: the status column says what state the instances are in, and each replica's row says which is in which, so "3/4" means one replica missing rather than one stopped. It stays blank for every service that has what the file asked for, which is every unreplicated one.
 - `C` on the Services panel is now the project's actions rather than a list of every verb twice: the same verbs the service keys run, with the `SERVICE` argument left off. It takes no selection, so a stack whose services have never been deployed can be brought up from an all-`none` panel. The verbs it used to hold for the selected service get keys of their own — `p` pauses, or unpauses an already-frozen service, the way the instances panel's `p` toggles freeze; `f` kills (after a confirmation), `b` builds, `g` pulls. The menu lists the same verbs in the same order, pause among them as the one row the key is, plus `logs --follow` for the whole stack.
 
-### Added
-- `--remote <name>` (`-r`) picks the daemon for the session, an alternative to `INCUS_REMOTE=<name> lazyincus` and to changing the CLI's default. The flag sets that same variable at startup, so `incus console`, `incus exec` and every incus-compose verb — subprocesses that read the environment themselves — land on the daemon the panels are showing. See [docs/Remotes.md](docs/Remotes.md).
-- `--project-directory <dir>` (`-P`) points the Services panel at a compose file somewhere other than the working directory, an alternative to `INCUS_COMPOSE_PROJECT_DIRECTORY`, whose name it borrows and whose variable it sets. A path that isn't a directory is refused at startup rather than showing up as a missing panel.
+### Fixed
+- A state change or a delete is retried for a few seconds while the daemon reports the instance busy with another operation, instead of failing outright. A compose stack with healthchecks has ic-healthd stamping a verdict into every instance's config on a timer, and a key pressed as one of those landed came back with `Instance is busy running a "update" operation` — most visibly on the force-stop-then-delete path, where the delete follows the stop with nothing in between.
+- `a` on an OCI application container now says why instead of failing: those run the image's entrypoint rather than an init system, so there is no console device and `incus console` comes back with "operation not supported by device". The message points at the Logs tab, which is where that output goes, and at `E`, which still works. The Services panel drops `a` altogether, a compose service being an OCI image as a rule.
+- Popups no longer grow past the edges of a short terminal. A popup is sized to its content, and one taller than the screen ran off both ends of it rather than scrolling — the keybinding menu (`x`) on anything under about 30 rows. It's now capped to what the screen holds, which is what lets it scroll.
 
 ## [0.7.0] - 2026-09-19
 
@@ -157,7 +159,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/tallica/lazyincus/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/tallica/lazyincus/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/tallica/lazyincus/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/tallica/lazyincus/compare/v0.5.0...v0.6.0
