@@ -2,7 +2,7 @@
 
 What each side panel lists, the columns it shows, its main-panel tabs and
 what its keys do. The rule they all derive from — `sidePanelDefs()`, and
-what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#side-panels);
+what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#panels);
 the keys as a user meets them are in [README.md](../README.md#usage).
 
 ## Services
