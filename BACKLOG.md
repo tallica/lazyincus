@@ -296,6 +296,47 @@ of lazydocker's panel that was a main-panel tab rather than the list:
       what's left is the whole project in one tab, and ordering the
       streams against each other, which those buffers carry nothing for.
 
+### 4. Backups
+
+`incus-compose backup` snapshots a project's data volumes into a
+`<project>-backup` Incus project: `create`, `list`, `verify`, `restore` and
+`delete` (which also prunes, with `--keep-last`). `list` and `verify` take
+`--format json`, so a panel reads them the way `localComposeProject` reads
+`incus-compose config` — a shell-out and an unmarshal, no new daemon calls.
+`list` gives a timestamp, an optional name, and per-volume source and backup
+project/pool/name; `verify` gives a per-volume status.
+
+Backups are to a compose project what snapshots are to an instance: a
+timestamped list belonging to a parent selected above it. That's the panel
+the [Snapshots panel](#snapshots-panel) already is, which is the argument
+for a panel over a menu of verbs.
+
+- [ ] **Mark backup volumes in the Volumes panel** — worth doing whether or
+      not the rest lands. A stack with backups puts `ic-backup-<volume>`
+      rows and a `vol-ic-backup-manifest` row in the Volumes panel, in a
+      `<project>-backup` project, with nothing saying they're backups
+      rather than something a service mounts. Both the project suffix and
+      the `ic-backup-` prefix are recognisable; whether that reads better
+      as a marker in a column or as a filter is the open question.
+- [ ] **A Backups panel** — one `sidePanelDefs()` entry plus its
+      `backups_panel.go`, `hidden` without a local compose project the way
+      Services is. Rows are backups by timestamp, with the name, volume
+      count and pool `list` returns; the main-panel tab is the volume
+      mapping, and `verify` fills in a status column on demand rather than
+      on every refresh, since it walks the restore points. The verbs become
+      the keys the Snapshots panel already spells this way — `n` create,
+      `d` delete, `R` restore.
+
+`restore` needs no confirmation panel of its own: its `--yes` is documented
+as required only without a terminal, and `runSubprocess` hands over the real
+one, so incus-compose prompts for itself the way `incus console` prints its
+own detach hint. Passing `--yes` is what would be wrong.
+
+Unexercised, and worth being careful about: this was read off one stack with
+two volumes and a single backup, every volume `ok`. A partial backup, a
+missing restore point and `verify`'s status vocabulary beyond `ok` are all
+unseen.
+
 ### Caveats
 
 - The CLI surface above was read off `incus-compose 1.3.4` on macOS, where
