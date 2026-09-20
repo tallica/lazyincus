@@ -110,7 +110,7 @@ incus-compose.
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, start the service |
 | `s` | Stop; on the Services panel, stop the service (confirms first) |
-| `p` | Pause/freeze (toggle) |
+| `p` | Pause/unpause (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down |
 | `u` | Services panel: bring the service up |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
@@ -120,7 +120,10 @@ incus-compose.
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
 | `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
-| `C` | Services panel: the compose verbs without a key of their own ([Compose stacks](#compose-stacks)) |
+| `f` | Services panel: kill the service (confirms first) |
+| `b` | Services panel: build the service |
+| `g` | Services panel: pull the service's image |
+| `C` | Services panel: menu of the same compose verbs run against the whole stack rather than the selected service ([Compose stacks](#compose-stacks)) |
 | `y` | Copy the instance's IPv4 address to the clipboard |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
@@ -174,9 +177,11 @@ What the keys run, each of them `incus-compose <verb> <service>`:
   image the compose file's tag now resolves to (it confirms first)
 - `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms
 - `d` — `down`, plain or `--volumes`, after a confirmation
-- `C` — the verbs without a key of their own: `kill`, `pause`, `unpause`,
-  `build`, `pull`, `logs --follow`, each listed for the service and for the
-  whole project, which is the same command with the argument left off
+- `p` — `pause`, or `unpause` when the service is already frozen
+- `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
+- `C` — the same verbs with the service argument left off, so they act on
+  the whole stack, plus `logs --follow`. It needs no selection, which is
+  how a project whose services have never been deployed gets brought up
 - `m`, `n`, `a`, `E` and `y` act on the service's instance rather than on
   compose, asking which instance when the service has replicas
 
@@ -190,10 +195,14 @@ Info; **Config** shows the service's slice of `incus-compose config` and
 then the daemon's dump for each instance; **Logs**, **Env** and **Top** are
 the instance's, and say so when a service has more than one.
 
-One gotcha that isn't ours: `U` fails on a stack with a bind mount or
-device passthrough whenever the daemon isn't on the same host, because
-`--recreate` re-validates those sources. Plain `u` doesn't re-create an
-existing instance, so it doesn't hit this.
+Two gotchas that aren't ours, both on `U`. It fails on a stack with a bind
+mount or device passthrough whenever the daemon isn't on the same host,
+because `--recreate` re-validates those sources. And a `--recreate` that
+fails anywhere is rolled back by incus-compose deleting what it just
+created, so the stack ends up empty rather than back where it started —
+the error on screen is then the rollback's, not the cause. Re-run the
+command outside lazyincus with `--debug` to see that. Plain `u` doesn't
+re-create an existing instance, so it hits neither.
 
 ## Supporting upstream
 

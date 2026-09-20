@@ -280,6 +280,14 @@ of lazydocker's panel that was a main-panel tab rather than the list:
   incus-compose refuses when it isn't running on the same host as the
   daemon. Not a lazyincus bug and nothing to fix here; plain `u` doesn't
   re-create an existing instance, so it doesn't hit this.
+- A `--recreate` that fails for any reason is rolled back by incus-compose
+  deleting the resources it just created ("Deleting resources
+  project=<name>"), so `U` reads as having deleted the stack. The error
+  left on screen is the rollback's own - observed as `delete network
+  default [error: The network is currently in use]`, the project's bridge
+  still carrying an instance the compose file no longer declares - and it
+  hides whatever actually failed. `--debug` outside lazyincus is the way
+  to see that one.
 
 ## Snapshots panel
 

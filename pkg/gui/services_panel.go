@@ -220,7 +220,7 @@ func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) str
 // renderServiceLogs delegates to the instance logs renderer, which owns the
 // drain-on-read console buffer. Merging several replicas' buffers into one
 // ordered stream is a different problem - see BACKLOG.md's aggregate-logs
-// item - so a replicated service points at `incus-compose logs` instead.
+// item - so a replicated service points at `C`'s `logs --follow` instead.
 func (gui *Gui) renderServiceLogs(service *commands.ComposeService) tasks.TaskFunc {
 	instance, ok := singleInstance(service)
 	if !ok {
@@ -637,43 +637,118 @@ func (gui *Gui) composeDownMenu(service string) error {
 	})
 }
 
-// handleComposeMenu is `C`: the verbs that don't warrant a key of their own,
-// each listed twice - once narrowed to the selected service, once for the
-// whole project, which is the same command with the SERVICE argument left
-// off.
-func (gui *Gui) handleComposeMenu(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleComposeKill(g *gocui.Gui, v *gocui.View) error {
 	service, ok := gui.selectedService()
 	if !ok {
 		return nil
 	}
 
-	verbs := []struct {
-		label   string
-		args    []string
-		confirm string
-	}{
-		{gui.Tr.ComposeKill, []string{"kill"}, gui.Tr.ConfirmComposeKill},
-		{gui.Tr.ComposePause, []string{"pause"}, ""},
-		{gui.Tr.ComposeUnpause, []string{"unpause"}, ""},
-		{gui.Tr.ComposeBuild, []string{"build"}, ""},
-		{gui.Tr.ComposePull, []string{"pull"}, ""},
-		{gui.Tr.ComposeLogs, []string{"logs", "--follow"}, ""},
+	return gui.composeConfirm(gui.Tr.ConfirmComposeKill, service.Name, "kill")
+}
+
+// handleComposePause is `p`, the toggle the instances panel's own `p` is.
+func (gui *Gui) handleComposePause(g *gocui.Gui, v *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
 	}
 
-	items := make([]*types.MenuItem, 0, len(verbs)*2)
+	if len(service.Instances) == 0 {
+		return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
+	}
 
-	for _, target := range []string{service.Name, ""} {
-		for _, verb := range verbs {
-			label := fmt.Sprintf("%s %s", verb.label, gui.composeTarget(target))
+	return gui.composeRun(service.Name, composePauseVerb(service.Status()))
+}
 
-			items = append(items, &types.MenuItem{
-				Label:   label,
-				OnPress: gui.composeMenuAction(target, verb.confirm, verb.args),
-			})
+// composePauseVerb is which half of the toggle to run, over one service's
+// rolled-up status or every service's at once: frozen throughout thaws,
+// anything else freezes. Services with nothing running don't vote.
+func composePauseVerb(statuses ...string) string {
+	frozen := false
+
+	for _, status := range statuses {
+		if status == commands.ServiceNone {
+			continue
 		}
+
+		if !strings.EqualFold(status, "Frozen") {
+			return "pause"
+		}
+
+		frozen = true
 	}
 
-	return gui.Menu(CreateMenuOptions{Title: gui.Tr.ComposeMenuTitle, Items: items})
+	if frozen {
+		return "unpause"
+	}
+
+	return "pause"
+}
+
+func (gui *Gui) handleComposeBuild(g *gocui.Gui, v *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
+	}
+
+	return gui.composeRun(service.Name, "build")
+}
+
+func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
+	}
+
+	return gui.composeRun(service.Name, "pull")
+}
+
+// handleComposeProjectMenu is `C`: the same verbs the service keys run, with
+// the SERVICE argument left off so they act on the whole stack. It takes no
+// selection - a project whose services have never been deployed is brought
+// up from here.
+func (gui *Gui) handleComposeProjectMenu(g *gocui.Gui, v *gocui.View) error {
+	// One pause row rather than two, the way `p` is one key: the verb is the
+	// stack's own status, every service voting.
+	services := gui.Panels.Services.List.GetAllItems()
+	statuses := make([]string, 0, len(services))
+
+	for _, service := range services {
+		statuses = append(statuses, service.Status())
+	}
+
+	pauseVerb := composePauseVerb(statuses...)
+
+	pauseLabel := gui.Tr.ComposePause
+	if pauseVerb == "unpause" {
+		pauseLabel = gui.Tr.ComposeUnpause
+	}
+
+	item := func(label, confirm string, args ...string) *types.MenuItem {
+		return &types.MenuItem{Label: label, OnPress: gui.composeMenuAction("", confirm, args)}
+	}
+
+	items := []*types.MenuItem{
+		item(gui.Tr.ComposeUp, "", "up", "--detach"),
+		// Down is the service key's own submenu, `--volumes` and all, with the
+		// project as its target.
+		{Label: gui.Tr.ComposeDown, OnPress: func() error { return gui.composeDownMenu("") }},
+		item(gui.Tr.ComposeUpPullRecreate, gui.Tr.ConfirmComposeUpPullRecreate,
+			"up", "--pull", "always", "--recreate", "--detach"),
+		item(gui.Tr.Start, "", "start"),
+		item(gui.Tr.Stop, gui.Tr.ConfirmComposeStop, "stop"),
+		item(gui.Tr.Restart, "", "restart"),
+		item(pauseLabel, "", pauseVerb),
+		item(gui.Tr.ComposeKill, gui.Tr.ConfirmComposeKill, "kill"),
+		item(gui.Tr.ComposeBuild, "", "build"),
+		item(gui.Tr.ComposePull, "", "pull"),
+		item(gui.Tr.ComposeLogs, "", "logs", "--follow"),
+	}
+
+	return gui.Menu(CreateMenuOptions{
+		Title: fmt.Sprintf(gui.Tr.ComposeProjectMenuTitle, gui.State.LocalComposeProject),
+		Items: items,
+	})
 }
 
 func (gui *Gui) composeMenuAction(service, confirm string, args []string) func() error {

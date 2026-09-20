@@ -109,8 +109,8 @@ type TranslationSet struct {
 	ComposePull                   string
 	ComposeLogs                   string
 	ComposeDownMenuTitle          string
-	ComposeMenuTitle              string
-	ComposeActions                string
+	ComposeProjectMenuTitle       string
+	ComposeProjectActions         string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
 	ConfirmComposeDown            string
@@ -201,7 +201,7 @@ func englishSet() TranslationSet {
 		ForceRemove:          "force delete",
 		MustForceToRemove:    "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
 		Stop:                 "stop",
-		Pause:                "pause/freeze",
+		Pause:                "pause/unpause",
 		Restart:              "restart",
 		Start:                "start",
 		PreviousContext:      "previous tab",
@@ -256,9 +256,9 @@ func englishSet() TranslationSet {
 		ServicesTitle:                 "Services",
 		ServicesTitleProject:          "Services (%s)",
 		NoServices:                    "No services",
-		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up.",
+		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up, or 'C' for the whole project.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
-		ServiceLogsMultipleInstances:  "This service has more than one instance. Press 'm' for one instance's logs, or 'C' for `incus-compose logs`.",
+		ServiceLogsMultipleInstances:  "This service has more than one instance, so there is no single log stream to show. Press 'C' to follow the whole project's.",
 		ServiceMultipleInstances:      "This service has more than one instance, and this tab shows one.",
 		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
@@ -274,8 +274,8 @@ func englishSet() TranslationSet {
 		ComposePull:                   "pull",
 		ComposeLogs:                   "logs --follow",
 		ComposeDownMenuTitle:          "Down",
-		ComposeMenuTitle:              "Compose",
-		ComposeActions:                "more actions",
+		ComposeProjectMenuTitle:       "Project %s",
+		ComposeProjectActions:         "project actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down %s?",

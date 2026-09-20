@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `C` on the Services panel is now the project's actions rather than a list of every verb twice: the same verbs the service keys run, with the `SERVICE` argument left off. It takes no selection, so a stack whose services have never been deployed can be brought up from an all-`none` panel. The verbs it used to hold for the selected service get keys of their own — `p` pauses, or unpauses an already-frozen service, the way the instances panel's `p` toggles freeze; `f` kills (after a confirmation), `b` builds, `g` pulls. The menu lists the same verbs in the same order, pause among them as the one row the key is, plus `logs --follow` for the whole stack.
+
 ### Added
 - `--remote <name>` (`-r`) picks the daemon for the session, an alternative to `INCUS_REMOTE=<name> lazyincus` and to changing the CLI's default. The flag sets that same variable at startup, so `incus console`, `incus exec` and every incus-compose verb — subprocesses that read the environment themselves — land on the daemon the panels are showing. See [docs/Remotes.md](docs/Remotes.md).
 - `--project-directory <dir>` (`-P`) points the Services panel at a compose file somewhere other than the working directory, an alternative to `INCUS_COMPOSE_PROJECT_DIRECTORY`, whose name it borrows and whose variable it sets. A path that isn't a directory is refused at startup rather than showing up as a missing panel.

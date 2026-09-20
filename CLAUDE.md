@@ -120,9 +120,13 @@ argument every incus-compose verb takes; which key runs which verb is
 README's [Compose stacks](README.md#compose-stacks) section, alongside the
 rest of what a user sees. `composeRun` is all of them, and refreshes the
 instances and services panels once the subprocess returns rather than
-waiting for the poll. `s` and `d` confirm, `S`/`r`/`u` don't — same rule as
-the instances panel. `U` can fail on a non-local daemon for reasons that
-are incus-compose's, not ours — see [BACKLOG.md](BACKLOG.md#caveats).
+waiting for the poll. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
+don't — same rule as the instances panel. `C` is the one key that doesn't
+narrow: it runs the same verbs with the `SERVICE` argument left off, and
+takes no selection, since a stack whose services have never been deployed
+is brought up from there. `U` can fail on a non-local daemon for reasons
+that are incus-compose's, not ours — see
+[BACKLOG.md](BACKLOG.md#caveats).
 
 The per-instance keys (`m`, `n`, `a`, `E`, `y`) reach the service's
 instance through `withServiceInstance`, which acts directly on the only one
