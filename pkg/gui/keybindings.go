@@ -384,6 +384,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:     wrappedHandler(gui.prevScreenMode),
 			Description: gui.Tr.LcPrevScreenMode,
 		},
+		{
+			ViewName:    "",
+			Key:         '=',
+			Handler:     wrappedHandler(gui.toggleExpandSidePanel),
+			Description: gui.Tr.LcToggleExpandSidePanel,
+		},
 	}
 
 	setUpDownClickBindings := func(viewName string, onUp func() error, onDown func() error, onClick func() error) {

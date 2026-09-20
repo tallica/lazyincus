@@ -259,6 +259,12 @@ func (gui *Gui) prevScreenMode() error {
 	return nil
 }
 
+func (gui *Gui) toggleExpandSidePanel() error {
+	gui.State.ExpandSidePanel = !gui.State.ExpandSidePanel
+
+	return nil
+}
+
 func nextIntInCycle(sl []WindowMaximisation, current WindowMaximisation) WindowMaximisation {
 	for i, val := range sl {
 		if val == current {

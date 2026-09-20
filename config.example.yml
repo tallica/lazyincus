@@ -35,8 +35,9 @@ gui:
   # subprocess (e.g. incus exec) finishes.
   returnImmediately: false
 
-  # Give the focused side panel the space the others aren't using, instead
-  # of splitting the side column evenly between all of them.
+  # Start with the focused side panel given the space the others aren't
+  # using, instead of splitting the side column evenly between all of them.
+  # '=' toggles it during a session.
   expandFocusedSidePanel: false
 
   # Word-wrap the main panel's content.

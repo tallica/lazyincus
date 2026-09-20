@@ -87,6 +87,10 @@ type guiState struct {
 
 	ScreenMode WindowMaximisation
 
+	// Seeded from expandFocusedSidePanel and then owned by the session, so
+	// '=' outlives a config reload.
+	ExpandSidePanel bool
+
 	// Maintains the state of manual filtering i.e. typing in a substring
 	// to filter on in the current panel.
 	Filter filterState
@@ -196,6 +200,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 
 		ShowStoppedInstances: true,
 		ScreenMode:           getScreenMode(config),
+		ExpandSidePanel:      config.UserConfig.Gui.ExpandFocusedSidePanel,
 	}
 
 	gui := &Gui{
@@ -471,8 +476,8 @@ func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
 }
 
 // reloadConfig re-applies the settings the app caches rather than reads at
-// the point of use. screenMode and language stay as they were - see
-// docs/Config.md.
+// the point of use. screenMode, expandFocusedSidePanel and language stay as
+// they were - see docs/Config.md.
 func (gui *Gui) reloadConfig() error {
 	if err := gui.Config.ReloadUserConfig(); err != nil {
 		return err

@@ -12,11 +12,13 @@ yet.
 ### Reloading
 
 Changes take effect without restarting lazyincus: an edit made with `O` as
-soon as the editor exits, any other edit within about two seconds. Two
+soon as the editor exits, any other edit within about two seconds. Three
 options are the exception and still need a restart:
 
 - `gui.screenMode` — it only seeds the initial screen mode, which `+`/`_`
   then own.
+- `gui.expandFocusedSidePanel` — likewise, it only seeds the startup state;
+  `=` owns it from then on.
 - `gui.language` — English is the only supported language anyway.
 
 A YAML error leaves the config in effect alone. An edit made with `O`
@@ -66,7 +68,7 @@ your file either).
 | `theme.optionsTextColor` | []string | `[blue]` | Color of the keybinding hints in the bottom line. |
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. |
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |
-| `expandFocusedSidePanel` | bool | `false` | Give the focused side panel the space the others aren't using, collapsing them to their title and first row. Falls back to an even split when the terminal is too short to fit them all collapsed. |
+| `expandFocusedSidePanel` | bool | `false` | Start with the focused side panel given the space the others aren't using, collapsing them to their title and first row; `=` toggles it during a session. Falls back to an even split when the terminal is too short to fit them all collapsed. |
 | `sidePanelWidth` | float | `0.3333` | Fraction of screen width used by the Instances side panel. |
 | `showBottomLine` | bool | `true` | Show the bottom status/keybinding line. |
 | `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full` (`fullscreen` is accepted as an alias). |

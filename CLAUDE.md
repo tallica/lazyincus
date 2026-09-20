@@ -83,9 +83,10 @@ over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
 what the app focuses at startup. `tab`/`shift+tab` cycle through them in
 that order, stepping from the last side panel to have focus. The side column
 splits evenly between whichever panels aren't hidden, or — with
-`gui.expandFocusedSidePanel` — gives the focused one everything the others
-don't need. "Focused" there means the last side panel to have focus, so
-stepping into the main panel doesn't collapse the list you were reading.
+`gui.State.ExpandSidePanel`, seeded from config and toggled by `=` — gives
+the focused one everything the others don't need. "Focused" there means the
+last side panel to have focus, so stepping into the main panel doesn't
+collapse the list you were reading.
 
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width

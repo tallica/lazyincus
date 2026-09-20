@@ -154,6 +154,7 @@ incus-compose.
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
 | `+` / `_` | Next / previous screen mode |
+| `=` | Expand / collapse the focused side panel |
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
 | `q` | Quit |

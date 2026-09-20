@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `=` expands the focused side panel and collapses it back, so the space the side column gives each list is now a decision you make while reading rather than one you commit to in the config file. `gui.expandFocusedSidePanel` still says which way a session starts, and `=` owns it from then on — a config reload won't pull it back.
 - Releases now carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source. Each release also has a `checksums.txt` to verify the archive you downloaded against.
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
 
