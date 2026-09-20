@@ -228,8 +228,9 @@ re-create an existing instance, so it hits neither.
 ## Supporting upstream
 
 lazyincus is a thin layer over other people's work — Incus does everything
-that matters here, and lazydocker is what it was ported from. Neither asks
-anything of you for that, but the people behind them take sponsorships:
+that matters here, incus-compose does the same for the Services panel, and
+lazydocker is what it was ported from. None of them asks anything of you
+for that, but some of the people behind them take sponsorships:
 
 - [Stéphane Graber](https://github.com/sponsors/stgraber) — project leader
   of [Linux Containers](https://linuxcontainers.org/), the umbrella over
@@ -237,7 +238,14 @@ anything of you for that, but the people behind them take sponsorships:
 - [Jesse Duffield](https://github.com/sponsors/jesseduffield) — author of
   lazydocker, lazygit and more.
 
-If lazyincus is useful to you, that money is better spent there than here.
+Special thanks also go to [René Jochum](https://github.com/jochumdev),
+author of [incus-compose](https://github.com/lxc/incus-compose) and the
+hand behind nearly every commit in it. There's no sponsorship page to
+point at, so starring incus-compose is the way to give that work some
+visibility.
+
+If lazyincus is useful to you, the money is better spent upstream than
+here. A star on this repo, though, is always welcome.
 
 ## What's not here yet
 
