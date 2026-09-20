@@ -63,7 +63,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		// The snapshots panel shows whichever instance is selected here, so
 		// it reloads whenever that changes rather than on its poll alone.
 		OnSelect: func(instance *commands.Instance) error {
-			return gui.refreshSnapshotsFor(instance)
+			return gui.refreshSnapshotsFor(instance.Name, instance)
 		},
 		Sort: func(a *commands.Instance, b *commands.Instance) bool {
 			return sortInstances(a, b)

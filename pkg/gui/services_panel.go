@@ -77,14 +77,17 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 		},
 		NoItemsMessage: gui.Tr.NoServices,
 		Gui:            gui.intoInterface(),
-		// The snapshots panel shows the selected row's instance while this
+		// The snapshots panel shows the selected row's instances while this
 		// panel has focus, the way it follows the instances panel. A
-		// service's own row with replicas under it points at none: showing
-		// one replica's snapshots under the service's name would be a lie.
+		// service's own row means every replica of it, so the panel holds
+		// all of their snapshots, each row naming the replica it came from.
 		OnSelect: func(row *commands.ServiceRow) error {
-			instance, _ := row.SelectedInstance()
+			label := row.Service.Name
+			if row.Instance != nil {
+				label = row.Instance.Name
+			}
 
-			return gui.refreshSnapshotsFor(instance)
+			return gui.refreshSnapshotsFor(label, row.Instances()...)
 		},
 		// No compose file in the working directory means no services to act
 		// on, and the panel would be a title over an empty list.

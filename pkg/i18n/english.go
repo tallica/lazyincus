@@ -235,7 +235,7 @@ func englishSet() TranslationSet {
 		NewSnapshot:                  "new snapshot",
 		RestoreSnapshot:              "Are you sure you want to restore %s to snapshot %s? Anything changed since is lost.",
 		RestoreSnapshotShort:         "restore snapshot",
-		DeleteSnapshot:               "Are you sure you want to delete snapshot %s?",
+		DeleteSnapshot:               "Are you sure you want to delete snapshot %s of %s?",
 		SnapshotNamePrompt:           "New snapshot of %s",
 		SnapshotOptionsTitle:         "Options",
 		SnapshotFocusName:            "back to name",

@@ -245,9 +245,13 @@ up:
 
 Follows whichever list you're in: the instances panel's `OnSelect` hands
 over its instance, the services panel's whatever its row stands for — a
-replica's own, and none at all from a service's row with replicas under it,
-no one of them being the service's snapshots — and the view title carries
-that instance's name since the rows alone don't say whose they are. Each panel hands the instance over rather than `refreshSnapshots`
+replica's own, and every replica's from a service's row above them, the
+service's snapshots being all of theirs. The view title names what the rows
+belong to, the instance or the service, since the rows alone don't say; a
+panel holding more than one instance's snapshots grows a column naming the
+replica each came from, and groups the list by instance before ordering it
+newest-first, replicas being snapshotted alike. Each panel hands its
+selection over rather than `refreshSnapshots`
 reading the focused view, because that read takes `ViewStackMutex`, which
 `switchFocus` holds while it runs an `OnSelect`: reading it there deadlocks
 the app. Listing uses

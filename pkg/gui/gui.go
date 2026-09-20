@@ -104,10 +104,12 @@ type guiState struct {
 	// the project name, from the same output.
 	ComposeServiceDefs []commands.ComposeService
 
-	// SnapshotsInstance is the instance the snapshots panel is showing:
-	// whatever the list you were last in had selected, a service standing
-	// for its own instance - see refreshSnapshotsFor.
-	SnapshotsInstance *commands.Instance
+	// SnapshotsInstances are the instances the snapshots panel is showing
+	// the snapshots of, and SnapshotsLabel what its title calls them:
+	// whatever the list you were last in had selected, which is every
+	// replica of a selected service - see refreshSnapshotsFor.
+	SnapshotsInstances []*commands.Instance
+	SnapshotsLabel     string
 
 	// ComposeProject is the local project as the daemon holds it, backing
 	// the healthcheck and resource lines of the services panel's Info tab.

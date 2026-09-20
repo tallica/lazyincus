@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The Snapshots panel on a replicated service's own row now lists every replica's snapshots, instead of standing empty because no single instance was selected. The rows group by replica and grow a column naming it, the panel's title carrying the service's name; a replica's own row still shows that replica alone. Taking a snapshot (`n`) from a service's row still picks a replica first, and the panel drops to that one instance so the new snapshot is unambiguous. `d`'s confirmation now names the instance along with the snapshot, replicas being snapshotted under the same names.
+
 ## [0.8.0] - 2026-09-20
 
 ### Added

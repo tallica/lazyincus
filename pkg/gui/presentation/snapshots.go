@@ -10,14 +10,24 @@ import (
 // for snapshot timestamps.
 const DateTimeFormat = "2006/01/02 15:04 MST"
 
-func GetSnapshotDisplayStrings(snapshot *commands.Snapshot) []string {
-	return []string{
+func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, showInstance bool) []string {
+	cells := []string{
 		utils.Truncate(snapshot.Name, maxSnapshotNameWidth),
+	}
+
+	// Only when the panel is holding several instances' snapshots: on one
+	// instance's the column would repeat the name already in the title.
+	if showInstance {
+		cells = append(cells, utils.ColoredString(
+			utils.Truncate(snapshot.InstanceName, maxSnapshotNameWidth), color.FgCyan))
+	}
+
+	return append(cells,
 		// Local time, matching `incus info`; the API reports UTC.
 		utils.ColoredString(snapshot.Snapshot.CreatedAt.Local().Format(DateTimeFormat), color.FgYellow),
 		displaySnapshotExpiry(snapshot),
 		displaySnapshotStateful(snapshot),
-	}
+	)
 }
 
 // displaySnapshotExpiry marks the snapshots that delete themselves, since
