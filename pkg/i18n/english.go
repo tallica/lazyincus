@@ -24,6 +24,7 @@ type TranslationSet struct {
 	ConnectionLostTitle                        string
 	WaitingForInstanceInfo                     string
 	CannotAttachStoppedInstanceError           string
+	CannotAttachAppContainerError              string
 	CannotExecStoppedInstanceError             string
 	CannotAccessIncusSocketError               string
 	CannotKillChildError                       string
@@ -176,6 +177,7 @@ func englishSet() TranslationSet {
 		ConnectionLostTitle:              "Connection lost",
 		WaitingForInstanceInfo:           "Cannot proceed until incus gives us more information about the instance. Please retry in a few moments.",
 		CannotAttachStoppedInstanceError: "You cannot attach to a stopped instance's console, you need to start it first (which you can do with the 'S' key)",
+		CannotAttachAppContainerError:    "An OCI application container runs its image's entrypoint rather than an init system, so it has no console to attach to. Its output is the Logs tab ('m'), and 'E' gets you a shell.",
 		CannotExecStoppedInstanceError:   "You cannot exec into a stopped instance, you need to start it first (which you can do with the 'S' key)",
 		CannotAccessIncusSocketError:     "Can't access the incus socket.\nRun lazyincus as a user in the 'incus' group, or read https://linuxcontainers.org/incus/docs/main/installing/",
 		CannotKillChildError:             "Waited three seconds for child process to stop. There may be an orphan process that continues to run on your system.",

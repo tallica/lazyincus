@@ -128,7 +128,7 @@ is brought up from there. `U` can fail on a non-local daemon for reasons
 that are incus-compose's, not ours — see
 [BACKLOG.md](BACKLOG.md#caveats).
 
-The per-instance keys (`m`, `n`, `a`, `E`, `y`) reach the service's
+The per-instance keys (`m`, `n`, `E`, `y`) reach the service's
 instance through `withServiceInstance`, which acts directly on the only one
 and otherwise asks which — the reason `handleSnapshotCreate` and
 `handleInstanceCopyIPv4` were split into handler and action.
@@ -393,7 +393,13 @@ against a live daemon or read out of the Incus source, not inferred.
   only `resp.Body` and discards `Last-Modified`.
 - **Attach**: `a` shells out to `incus console <name>`, the analog of
   lazydocker's `docker attach`. No detach hint from us - the CLI prints its
-  own (`ctrl+a q`) on connect.
+  own (`ctrl+a q`) on connect. An OCI application container has no console
+  device to attach to (`incus console` fails with "operation not supported
+  by device"), so `Instance.IsOCI` - the key behind the type column's
+  "(app)" - turns the key into a message pointing at the Logs tab. `E`
+  still works there: `incus exec` is a process, not a console. The
+  services panel has no `a` at all, a compose service being an OCI image
+  as a rule.
 - **Exec**: deliberately not the client library's `ExecInstance` websocket
   API — that needs the session's stdio wired into the terminal, which is
   nontrivial to thread through gocui's suspend/resume model (raw mode,

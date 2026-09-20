@@ -352,6 +352,12 @@ func (gui *Gui) instanceAttachConsole(instance *commands.Instance) error {
 		return gui.createErrorPanel(gui.Tr.CannotAttachStoppedInstanceError)
 	}
 
+	// `incus console` on one of these fails with the daemon's own "operation
+	// not supported by device".
+	if instance.IsOCI() {
+		return gui.createErrorPanel(gui.Tr.CannotAttachAppContainerError)
+	}
+
 	cmd := gui.OSCommand.NewCmd("incus", append(instanceCLIArgs(instance), "console", instance.Name)...)
 
 	// No detach hint from us: `incus console` prints its own on connect.

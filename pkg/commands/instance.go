@@ -10,6 +10,7 @@ import (
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
+	"github.com/lxc/incus/v7/shared/util"
 	"github.com/sasha-s/go-deadlock"
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/i18n"
@@ -77,6 +78,17 @@ func (i *Instance) DetailsLoaded() bool {
 // IsVM returns true if the instance is a virtual machine rather than a container.
 func (i *Instance) IsVM() bool {
 	return i.Instance.Type == "virtual-machine"
+}
+
+// ociContainerKey is what the `incus` CLI reads to mark a container as an
+// OCI application container (typeColumnData in cmd/incus/list.go).
+const ociContainerKey = "volatile.container.oci"
+
+// IsOCI reports whether this is an OCI application container - one running
+// an image's entrypoint rather than an init system. False until the full
+// details are fetched, the key being in the expanded config.
+func (i *Instance) IsOCI() bool {
+	return util.IsTrue(i.config(ociContainerKey))
 }
 
 func (i *Instance) updateState(action string, timeout int, force bool) error {

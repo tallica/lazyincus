@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/fatih/color"
-	"github.com/lxc/incus/v7/shared/util"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -78,16 +77,14 @@ func withProjectColumn(columns []string, spansProjects bool) []string {
 	return append([]string{"project"}, columns...)
 }
 
-// InstanceType mirrors the `incus list` TYPE column, including the
-// "(app)" suffix for OCI application containers that the CLI derives from
-// volatile.container.oci (cmd/incus/list.go, typeColumnData). That key is in
-// the expanded config, so the suffix appears only once details are fetched.
+// InstanceType mirrors the `incus list` TYPE column, "(app)" suffix and
+// all, which appears only once the details are fetched - see IsOCI.
 func InstanceType(instance *commands.Instance) string {
 	if instance.IsVM() {
 		return "vm"
 	}
 
-	if full, ok := instance.Full(); ok && util.IsTrue(full.ExpandedConfig["volatile.container.oci"]) {
+	if instance.IsOCI() {
 		return "container (app)"
 	}
 

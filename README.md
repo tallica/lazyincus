@@ -182,8 +182,10 @@ What the keys run, each of them `incus-compose <verb> <service>`:
 - `C` — the same verbs with the service argument left off, so they act on
   the whole stack, plus `logs --follow`. It needs no selection, which is
   how a project whose services have never been deployed gets brought up
-- `m`, `n`, `a`, `E` and `y` act on the service's instance rather than on
-  compose, asking which instance when the service has replicas
+- `m`, `n`, `E` and `y` act on the service's instance rather than on
+  compose, asking which instance when the service has replicas. There's no
+  `a`: a compose service runs an OCI image, which has no console to attach
+  to
 
 Selecting a service points the snapshots panel at its instance, the way
 selecting an instance does.

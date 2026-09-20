@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `a` on an OCI application container now says why instead of failing: those run the image's entrypoint rather than an init system, so there is no console device and `incus console` comes back with "operation not supported by device". The message points at the Logs tab, which is where that output goes, and at `E`, which still works. The Services panel drops `a` altogether, a compose service being an OCI image as a rule.
 - Popups no longer grow past the edges of a short terminal. A popup is sized to its content, and one taller than the screen ran off both ends of it rather than scrolling — the keybinding menu (`x`) on anything under about 30 rows. It's now capped to what the screen holds, which is what lets it scroll.
 
 ### Changed
