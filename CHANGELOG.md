@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-20
+
 ### Changed
 - The Snapshots panel on a replicated service's own row now lists every replica's snapshots, instead of standing empty because no single instance was selected. The rows group by replica and grow a column naming it, the panel's title carrying the service's name; a replica's own row still shows that replica alone. Taking a snapshot (`n`) from a service's row still picks a replica first, and the panel drops to that one instance so the new snapshot is unambiguous. `d`'s confirmation now names the instance along with the snapshot, replicas being snapshotted under the same names.
 
@@ -162,7 +164,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/tallica/lazyincus/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/tallica/lazyincus/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/tallica/lazyincus/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/tallica/lazyincus/compare/v0.6.0...v0.6.1
