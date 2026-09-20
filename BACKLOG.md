@@ -223,7 +223,7 @@ data lazyincus has in hand, not new API calls.
       panel gave you, shipped: when a compose file is in the working
       directory, one row per service it declares, and the instances panel
       becomes "Standalone Instances" without them. See
-      [CLAUDE.md](CLAUDE.md#services).
+      [docs/Panels.md](docs/Panels.md#services).
 
       The panel reads the compose file rather than the daemon, which is what
       buys the thing no column could: a service that's down still gets a
