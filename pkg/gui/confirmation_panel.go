@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 func (gui *Gui) wrappedConfirmationFunction(function func(*gocui.Gui, *gocui.View) error) func(*gocui.Gui, *gocui.View) error {
@@ -67,6 +68,11 @@ func (gui *Gui) getConfirmationPanelDimensions(wrap bool, prompt string) (int, i
 	width, height := gui.g.Size()
 	panelWidth := width / 2
 	panelHeight := gui.getMessageHeight(wrap, prompt, panelWidth)
+	// A popup taller than the terminal ran off both ends of it rather than
+	// scrolling: focusPoint only moves a view's origin when the content
+	// doesn't fit the view. The clamp is what makes a long menu scroll.
+	panelHeight = utils.Max(1, utils.Min(panelHeight, height-4))
+
 	return width/2 - panelWidth/2,
 		height/2 - panelHeight/2 - panelHeight%2 - 1,
 		width/2 + panelWidth/2,

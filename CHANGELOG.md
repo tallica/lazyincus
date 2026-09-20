@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Popups no longer grow past the edges of a short terminal. A popup is sized to its content, and one taller than the screen ran off both ends of it rather than scrolling — the keybinding menu (`x`) on anything under about 30 rows. It's now capped to what the screen holds, which is what lets it scroll.
+
 ### Changed
 - `C` on the Services panel is now the project's actions rather than a list of every verb twice: the same verbs the service keys run, with the `SERVICE` argument left off. It takes no selection, so a stack whose services have never been deployed can be brought up from an all-`none` panel. The verbs it used to hold for the selected service get keys of their own — `p` pauses, or unpauses an already-frozen service, the way the instances panel's `p` toggles freeze; `f` kills (after a confirmation), `b` builds, `g` pulls. The menu lists the same verbs in the same order, pause among them as the one row the key is, plus `logs --follow` for the whole stack.
 

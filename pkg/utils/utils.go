@@ -151,6 +151,14 @@ func Max(x, y int) int {
 	return y
 }
 
+// Min returns the minimum of two integers
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 // RenderTable takes an array of string arrays and returns a table containing the values
 func RenderTable(rows [][]string) (string, error) {
 	if len(rows) == 0 {
