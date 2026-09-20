@@ -1,12 +1,10 @@
 # lazyincus
 
-> [!WARNING]
-> **AI-assisted project**
-> This codebase was built with [Claude Code](https://claude.com/claude-code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
-
-A terminal UI for [Incus](https://linuxcontainers.org/incus/) — a
-next-generation system container, application container, and virtual
-machine manager.
+lazyincus is a terminal UI (TUI) for
+[Incus](https://linuxcontainers.org/incus/) — a next-generation system
+container, application container, and virtual machine manager. One
+keyboard-driven screen shows every instance and its state, and runs the
+commands you'd otherwise type at the `incus` CLI.
 
 This is a port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by [Jesse Duffield](https://github.com/jesseduffield) — the excellent Docker
@@ -19,7 +17,7 @@ See [LICENSE](LICENSE) (MIT, same as upstream),
 attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
 how it was renamed.
 
-![lazyincus](docs/screenshot.png)
+![lazyincus — a terminal UI for Incus, showing the instances panel](docs/screenshot.png)
 
 ## Status
 
@@ -30,6 +28,10 @@ for: projects and remotes. Parity with lazydocker in the corners —
 custom and bulk commands, non-English translations — isn't there; see
 "What's not here yet" below, and [BACKLOG.md](BACKLOG.md) for the
 panel-by-panel comparison.
+
+> [!WARNING]
+> **AI-assisted project**<br>
+> This codebase was built with [Claude Code](https://claude.com/claude-code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
 
 ## Requirements
 
