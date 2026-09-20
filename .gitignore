@@ -1,2 +1,4 @@
 /lazyincus
 *.log
+/dist/
+/.archive/

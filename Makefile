@@ -1,4 +1,4 @@
-.PHONY: run build test vet lint clean
+.PHONY: run build test vet lint release-check release-snapshot clean
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo unversioned)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null)
@@ -20,5 +20,12 @@ vet:
 lint:
 	golangci-lint run
 
+release-check:
+	goreleaser check
+
+release-snapshot:
+	goreleaser release --snapshot --clean
+
 clean:
 	rm -f lazyincus
+	rm -rf dist .archive

@@ -1,0 +1,52 @@
+version: 2
+project_name: lazyincus
+
+# The markdown that goes into the archives is rewritten copies,
+# staged outside dist/ because --clean wipes that before the hooks run:
+# unpacked somewhere else, links to docs/ and BACKLOG.md have nothing to
+# resolve against.
+before:
+  hooks:
+    - go mod tidy
+    - sh -c 'mkdir -p .archive'
+    - sh -c 'for f in README.md CHANGELOG.md THIRD_PARTY_NOTICES.md; do scripts/absolute-links.sh {{ .Tag }} < "$f" > ".archive/$f"; done'
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .FullCommit }}
+      - -X main.date={{ .CommitDate }}
+      - -X main.buildSource=release
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: .archive/*.md
+        strip_parent: true
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# The release notes are the tag's CHANGELOG.md section, passed in by the
+# workflow, rather than a log of commit subjects.
+changelog:
+  disable: true
+
+release:
+  mode: replace

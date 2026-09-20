@@ -47,6 +47,21 @@ panel-by-panel comparison.
 
 ## Install / run
 
+Every [release](https://github.com/tallica/lazyincus/releases) carries a
+binary for macOS and Linux on both amd64 and arm64. Pick the archive for
+yours, check it against the release's `checksums.txt`, and put the binary on
+your `PATH`:
+
+```sh
+tar xzf lazyincus_*_darwin_arm64.tar.gz
+sudo install lazyincus /usr/local/bin/
+```
+
+The binaries are unsigned, so macOS refuses one downloaded through a browser
+until its quarantine flag is off: `xattr -d com.apple.quarantine lazyincus`.
+
+Or build it yourself:
+
 ```sh
 git clone https://github.com/tallica/lazyincus.git
 cd lazyincus

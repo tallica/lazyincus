@@ -142,6 +142,22 @@ make lint        # golangci-lint, configured by .golangci.yml
 
 No `vendor/` directory — plain module mode.
 
+### Releasing
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`: GoReleaser builds
+macOS and Linux binaries for amd64 and arm64, archives each with the
+markdown and LICENSE, and publishes them with a `checksums.txt`. The
+release notes are the tag's `CHANGELOG.md` section
+(`scripts/release-notes.sh`), so a tag without one fails the release rather
+than publishing an empty one. `make release-snapshot` builds the same set
+into `dist/` without touching GitHub, and `make release-check` validates
+`.goreleaser.yaml`.
+
+The markdown that goes into an archive is a rewritten copy: away from a
+checkout, a link to `docs/` or `BACKLOG.md` has nothing to resolve against,
+so `scripts/absolute-links.sh` pins those links to the tag. It's the same
+filter the release notes go through.
+
 ### Verifying in a live TUI
 
 Build with `make build` and drive the binary:
