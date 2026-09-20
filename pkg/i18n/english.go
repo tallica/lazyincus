@@ -96,7 +96,6 @@ type TranslationSet struct {
 	NoServices                    string
 	ServiceNotRunning             string
 	ServiceNotInComposeFile       string
-	ServiceLogsMultipleInstances  string
 	ServiceMultipleInstances      string
 	ServiceReplicaHeading         string
 	ServiceInstanceHeading        string
@@ -264,7 +263,6 @@ func englishSet() TranslationSet {
 		NoServices:                    "No services",
 		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up, or 'C' for the whole project.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
-		ServiceLogsMultipleInstances:  "This service runs more than one replica, so there is no single log stream to show. Select a replica in the list for its own, or press 'C' to follow the whole project's.",
 		ServiceMultipleInstances:      "This service runs more than one replica. Select one in the list to see this tab for it.",
 		ServiceReplicaHeading:         "Replica %d of %d · %s",
 		ServiceInstanceHeading:        "Instance · %s",

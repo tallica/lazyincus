@@ -164,9 +164,10 @@ Main panel tabs:
   with. A replica's row adds its own status to that key, the way the
   instances panel does, so a restart re-reads the log.
 - **Logs** — delegates to the instance logs renderer for whichever instance
-  the row names; merging several replicas' drain-on-read buffers into one
-  ordered stream is a different problem, so a service's own row with
-  replicas under it points at `C`'s `logs --follow` instead.
+  the row names; a service's own row with replicas under it stacks all of
+  their logs, each under the Info tab's `instanceHeading`. They stay
+  separate streams — the buffers carry nothing to interleave them on — so
+  `C`'s `logs --follow` is still the merged view.
 - **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
   the row's replica answers for it, as does a lone service's only instance,
   and a service's own row with replicas under it says so instead — the same

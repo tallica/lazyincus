@@ -248,23 +248,31 @@ func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) str
 }
 
 // renderServiceLogs delegates to the instance logs renderer, which owns the
-// drain-on-read console buffer. Merging several replicas' buffers into one
-// ordered stream is a different problem - see BACKLOG.md's aggregate-logs
-// item - so the service's own row points at `C`'s `logs --follow` and a
-// replica's row at its own log.
+// drain-on-read console buffer. A replicated service's own row has no
+// single stream to show, so it stacks every replica's under a heading of
+// its own rather than interleaving them - the buffers carry no timestamps
+// to merge on. `C`'s `logs --follow` is still the merged view.
 func (gui *Gui) renderServiceLogs(row *commands.ServiceRow) tasks.TaskFunc {
-	instance, ok := row.SelectedInstance()
-	if !ok {
-		return gui.NewSimpleRenderStringTask(func() string {
-			if len(row.Service.Instances) == 0 {
-				return gui.Tr.ServiceNotRunning
-			}
-
-			return gui.Tr.ServiceLogsMultipleInstances
-		})
+	if instance, ok := row.SelectedInstance(); ok {
+		return gui.renderInstanceLogsToMain(instance)
 	}
 
-	return gui.renderInstanceLogsToMain(instance)
+	instances := row.Instances()
+	if len(instances) == 0 {
+		return gui.NewSimpleRenderStringTask(func() string { return gui.Tr.ServiceNotRunning })
+	}
+
+	return gui.renderLogsToMain(func() string { return gui.serviceLogsStr(row.Service, instances) })
+}
+
+func (gui *Gui) serviceLogsStr(service *commands.ComposeService, instances []*commands.Instance) string {
+	sections := make([]string, 0, len(instances))
+
+	for _, instance := range instances {
+		sections = append(sections, gui.instanceHeading(service, instance)+"\n\n"+gui.instanceLogStr(instance))
+	}
+
+	return strings.Join(sections, "\n\n")
 }
 
 func (gui *Gui) renderServiceConfig(row *commands.ServiceRow) tasks.TaskFunc {

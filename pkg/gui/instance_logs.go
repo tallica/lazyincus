@@ -12,27 +12,36 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// renderInstanceLogsToMain polls TailConsoleLog rather than ConsoleLog: the
-// endpoint drains on read, so rendering each raw snapshot would blank the
-// panel on every tick with nothing new buffered.
 func (gui *Gui) renderInstanceLogsToMain(instance *commands.Instance) tasks.TaskFunc {
+	return gui.renderLogsToMain(func() string { return gui.instanceLogStr(instance) })
+}
+
+func (gui *Gui) renderLogsToMain(content func() string) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			content, err := instance.TailConsoleLog()
-			if err != nil {
-				gui.Log.Warn(err)
-			}
-			if content == "" {
-				content = gui.Tr.NothingToDisplay
-			}
-
-			gui.reRenderStringMain(content)
+			gui.reRenderStringMain(content())
 		},
 		Duration:   time.Second,
 		Before:     func(ctx context.Context) { gui.clearMainView() },
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: true,
 	})
+}
+
+// instanceLogStr reads TailConsoleLog rather than ConsoleLog: the endpoint
+// drains on read, so rendering each raw snapshot would blank the panel on
+// every tick with nothing new buffered.
+func (gui *Gui) instanceLogStr(instance *commands.Instance) string {
+	content, err := instance.TailConsoleLog()
+	if err != nil {
+		gui.Log.Warn(err)
+	}
+
+	if content == "" {
+		return gui.Tr.NothingToDisplay
+	}
+
+	return content
 }
 
 func (gui *Gui) promptToReturn() {

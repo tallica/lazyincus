@@ -248,12 +248,12 @@ of lazydocker's panel that was a main-panel tab rather than the list:
       [missing credits surface](#side-panels) is waiting for. It lost the
       panel it was going to live on, so it needs somewhere else.
 - [ ] **Aggregate logs tab** — lazydocker tails every container in the
-      project at once. `incus-compose logs -f` is the analog and is in the
-      Services panel's `C` menu as a subprocess; an in-panel tab still
-      wants merged streams, and `TailConsoleLog` is per-instance and
-      drain-on-read. The same gap leaves the Logs tab a hint rather than
-      output on a service's own row, where a replicated service means
-      several streams; a replica's own row shows that replica's log.
+      project at once, interleaved. `incus-compose logs -f` is the analog
+      and is in the Services panel's `C` menu as a subprocess. The Logs tab
+      on a replicated service's own row now stacks each replica's
+      `TailConsoleLog` buffer under a heading, which covers one service;
+      what's left is the whole project in one tab, and ordering the
+      streams against each other, which those buffers carry nothing for.
 
 ### Caveats
 
