@@ -108,7 +108,16 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 		gui.mainViewWidth.Store(int32(mainWidth))
 	}
 
-	return gui.resizeCurrentPopupPanel(g)
+	if err := gui.resizeCurrentPopupPanel(g); err != nil {
+		return err
+	}
+
+	// Last, so rows are cut to the width they're about to be drawn at.
+	for _, panel := range gui.allListPanels() {
+		panel.FitToWidth()
+	}
+
+	return nil
 }
 
 func (gui *Gui) focusPointInView(view *gocui.View) {

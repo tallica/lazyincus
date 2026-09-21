@@ -96,21 +96,10 @@ own merits.
       a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
-- [ ] **Horizontal truncation indicator** — a row wider than its panel is
-      clipped silently at the view's edge, so a cut-off IPv4 column looks
-      like a short address rather than a hidden one. gocui has nothing for
-      this, and the right border column is already spoken for: `drawFrame`
-      puts the vertical scrollbar thumb there. The fix that doesn't fight it
-      is to clip the rows ourselves in `RerenderList`
-      (`pkg/gui/panels/side_list_panel.go`), running each line of the
-      rendered table through `utils.Truncate` at `View.InnerWidth()` — the
-      same `…` the per-column widths in `pkg/gui/presentation` already use,
-      just applied to the row. Watch the colour codes: `Truncate` measures
-      display width with `runewidth`, which counts escape sequences, so it
-      needs the `Decolorise` treatment `getPadWidths` gives them — otherwise
-      it cuts rows that only look long, and can land the cut inside an
-      escape sequence. lazydocker clips silently too, so there's no upstream
-      behaviour to match here.
+- [x] **Horizontal truncation indicator** — `SideListPanel` clips each
+      row itself, through a colour-aware `utils.TruncateColored`, and the
+      layout re-clips on a width change. lazydocker clips silently, so there
+      was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
       mirroring `P` for projects. `pkg/gui/remotes.go` alongside
       `projects.go`: the menu lists `cliconfig.Config.Remotes`, marked with

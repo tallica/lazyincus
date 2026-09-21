@@ -119,3 +119,33 @@ func TestSelectionFollowsRebuiltItem(t *testing.T) {
 	assert.Equal(t, "bravo", selectedName(t, panel))
 	assert.Equal(t, 2, panel.SelectedIdx)
 }
+
+// renderingGui runs Update's function in place, so RerenderList writes to
+// the view before returning.
+type renderingGui struct{ stubGui }
+
+func (renderingGui) Update(f func() error) { _ = f() }
+
+func TestRowsRefitWhenPanelResizes(t *testing.T) {
+	g, err := gocui.NewGui(gocui.NewGuiOpts{Headless: true, Width: 40, Height: 10})
+	assert.NoError(t, err)
+	defer g.Close()
+
+	view, err := g.SetView("list", 0, 0, 11, 5, 0)
+	if !gocui.IsUnknownView(err) {
+		assert.NoError(t, err)
+	}
+
+	panel := newPanel([]*row{{name: "alpha-beta-gamma"}, {name: "delta"}})
+	panel.Gui = renderingGui{}
+	panel.View = view
+
+	assert.NoError(t, panel.RerenderList())
+	assert.Equal(t, []string{"alpha-bet…", "delta"}, view.BufferLines())
+
+	_, err = g.SetView("list", 0, 0, 21, 5, 0)
+	assert.NoError(t, err)
+	panel.FitToWidth()
+
+	assert.Equal(t, []string{"alpha-beta-gamma", "delta"}, view.BufferLines())
+}

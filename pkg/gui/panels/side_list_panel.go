@@ -2,7 +2,6 @@ package panels
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/go-errors/errors"
@@ -20,6 +19,7 @@ type ISideListPanel interface {
 	GetView() *gocui.View
 	Refocus()
 	RerenderList() error
+	FitToWidth()
 	IsFilterDisabled() bool
 	IsHidden() bool
 	HandleNextLine() error
@@ -70,6 +70,11 @@ type SideListPanel[T comparable] struct {
 
 	// This can be nil if you want to always show the panel
 	Hide func() bool
+
+	// the rendered table before clipping, and the width it was last clipped
+	// to, so a resize re-clips without re-rendering
+	table     string
+	clipWidth int
 }
 
 var _ ISideListPanel = &SideListPanel[int]{}
@@ -290,7 +295,6 @@ func (self *SideListPanel[T]) RerenderList() error {
 	self.FilterAndSort()
 
 	self.Gui.Update(func() error {
-		self.View.Clear()
 		table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
 			return self.GetTableCells(item)
 		})
@@ -298,7 +302,9 @@ func (self *SideListPanel[T]) RerenderList() error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprint(self.View, renderedTable)
+
+		self.table = renderedTable
+		self.writeRows()
 
 		if self.OnRerender != nil {
 			if err := self.OnRerender(); err != nil {
@@ -313,6 +319,32 @@ func (self *SideListPanel[T]) RerenderList() error {
 	})
 
 	return nil
+}
+
+// FitToWidth re-cuts the rows if the panel has changed width since they
+// were written. The layout calls it, so a resize is drawn at the new width
+// in the same frame rather than at the panel's next refresh.
+func (self *SideListPanel[T]) FitToWidth() {
+	if width, _ := self.View.Size(); width != self.clipWidth {
+		self.writeRows()
+	}
+}
+
+// writeRows writes the table to the view, each row cut to the view's width
+// and the cut marked: gocui stops a long row at the edge without a sign. The
+// mark goes in the row because drawFrame puts the scrollbar in the border.
+//
+// Size, not InnerWidth: the latter takes a column off for the frame that the
+// content doesn't actually lose, which would leave the last column empty.
+func (self *SideListPanel[T]) writeRows() {
+	self.clipWidth, _ = self.View.Size()
+
+	rows := strings.Split(self.table, "\n")
+	for index, row := range rows {
+		rows[index] = utils.TruncateColored(row, self.clipWidth)
+	}
+
+	self.View.SetContent(strings.Join(rows, "\n"))
 }
 
 func (self *SideListPanel[T]) SetMainTabIndex(index int) {

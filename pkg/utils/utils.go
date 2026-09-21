@@ -54,7 +54,7 @@ func Truncate(str string, width int) string {
 		return str
 	}
 
-	return runewidth.Truncate(str, width, "…")
+	return runewidth.Truncate(str, width, ellipsis)
 }
 
 // ColoredString takes a string and a colour attribute and returns a colored
@@ -174,10 +174,78 @@ func RenderTable(rows [][]string) (string, error) {
 	return strings.Join(paddedDisplayRows, "\n"), nil
 }
 
+const ellipsis = "…"
+
+// colorEscapePattern matches one SGR sequence, 256-colour and truecolor forms
+// included.
+var colorEscapePattern = regexp.MustCompile(`\x1B\[[0-9;]*[mK]`)
+
 // Decolorise strips a string of color
 func Decolorise(str string) string {
-	re := regexp.MustCompile(`\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mK]`)
-	return re.ReplaceAllString(str, "")
+	return colorEscapePattern.ReplaceAllString(str, "")
+}
+
+// TruncateColored shortens a line to the given display width the way
+// Truncate does, but steps over colour escapes rather than counting them:
+// runewidth measures a sequence as though it were text, so a coloured line
+// that fits would otherwise be cut, and the cut could land inside a
+// sequence. A line whose overflow is only blanks - a table row's padding -
+// hides nothing and is left alone. A reset closes a cut line, the escapes
+// that would have done it being past the cut.
+func TruncateColored(str string, width int) string {
+	// An ambiguous-width rune: two columns under an East Asian locale.
+	ellipsisWidth := runewidth.StringWidth(ellipsis)
+
+	visibleWidth := runewidth.StringWidth(strings.TrimRight(Decolorise(str), " "))
+	if width <= ellipsisWidth || visibleWidth <= width {
+		return str
+	}
+
+	var kept strings.Builder
+
+	limit := width - ellipsisWidth
+	used := 0
+
+	// Reports whether the limit was reached, which is where the line ends.
+	writeText := func(text string) bool {
+		for _, char := range text {
+			charWidth := runewidth.RuneWidth(char)
+			if used+charWidth > limit {
+				return true
+			}
+
+			kept.WriteRune(char)
+			used += charWidth
+		}
+
+		return false
+	}
+
+	cursor := 0
+	full := false
+	colored := false
+
+	for _, escape := range colorEscapePattern.FindAllStringIndex(str, -1) {
+		if full = writeText(str[cursor:escape[0]]); full {
+			break
+		}
+
+		kept.WriteString(str[escape[0]:escape[1]])
+		colored = true
+		cursor = escape[1]
+	}
+
+	if !full {
+		writeText(str[cursor:])
+	}
+
+	kept.WriteString(ellipsis)
+
+	if colored {
+		kept.WriteString("\x1b[0m")
+	}
+
+	return kept.String()
 }
 
 func getPadWidths(rows [][]string) []int {
