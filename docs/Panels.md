@@ -60,7 +60,7 @@ holds an index, which by then belongs to a different replica.
 rendered by the instances panel's own `presentation.DisplayStatus`, a
 service being the instances underneath it. Only two values are the
 service's own: `partial` when replicas disagree, `none` when it has no
-instances. `Health` rolls up ic-healthd's verdict worst-first.
+instances. `Health` rolls up ic-healthd's verdict on the running replicas, worst-first.
 
 The instances panel is the other half of the split: its filter drops the
 local project's compose instances, and its title becomes "Standalone

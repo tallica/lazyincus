@@ -267,9 +267,18 @@ const (
 	HealthStopped   = "stopped"
 )
 
-// HealthStatus is the instance's ic-healthd health, empty when unchecked.
+// HealthStatus is the instance's ic-healthd health, empty when unchecked or
+// not running. ic-healthd rewrites its verdict on its own schedule - seconds
+// after a pause or stop, never while it's down itself - so until then the
+// key still says how the instance was doing while it ran. "stopped" is its
+// word for not running, which the status already says.
 func (i *Instance) HealthStatus() string {
-	return i.config(healthStatusKey)
+	health := i.config(healthStatusKey)
+	if !i.IsRunning() || health == HealthStopped {
+		return ""
+	}
+
+	return health
 }
 
 const (

@@ -123,7 +123,8 @@ count) can be reordered or hidden via `gui.instanceColumns` in the config
 file, and the Services panel's (name, status, health, IPv4, snapshot count) via
 `gui.serviceColumns` - see [docs/Config.md](docs/Config.md). Health comes
 from `ic-healthd`, so it's blank for anything created outside
-incus-compose.
+incus-compose, and for an instance that isn't running: ic-healthd takes
+seconds to catch up with a pause or stop, and never does while it's down.
 
 | Key | Action |
 |---|---|

@@ -58,6 +58,7 @@ func TestComposeServiceHealth(t *testing.T) {
 	withHealth := func(status string) *Instance {
 		return &Instance{Instance: api.InstanceFull{
 			Instance: api.Instance{
+				Status:         "Running",
 				ExpandedConfig: map[string]string{healthStatusKey: status},
 			},
 		}}
@@ -120,4 +121,24 @@ func TestServiceRows(t *testing.T) {
 	_, ok = rows[4].SelectedInstance()
 	assert.False(t, ok)
 	assert.Empty(t, rows[4].Instances())
+}
+
+// ic-healthd's verdict lags a pause or stop by seconds, and never catches up
+// while it's down; only a running instance's verdict is shown.
+func TestHealthOnlySpeaksForARunningInstance(t *testing.T) {
+	instance := func(status, health string) *Instance {
+		return &Instance{Instance: api.InstanceFull{Instance: api.Instance{
+			Status:         status,
+			ExpandedConfig: map[string]string{healthStatusKey: health},
+		}}}
+	}
+
+	assert.Equal(t, HealthHealthy, instance("Running", HealthHealthy).HealthStatus())
+	assert.Empty(t, instance("Frozen", HealthHealthy).HealthStatus())
+	assert.Empty(t, instance("Stopped", HealthHealthy).HealthStatus())
+	// Just unpaused: ic-healthd hasn't rechecked yet.
+	assert.Empty(t, instance("Running", HealthStopped).HealthStatus())
+
+	service := &ComposeService{Instances: []*Instance{instance("Running", HealthHealthy), instance("Frozen", HealthUnhealthy)}}
+	assert.Equal(t, HealthHealthy, service.Health())
 }

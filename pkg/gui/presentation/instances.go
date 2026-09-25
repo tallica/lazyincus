@@ -130,7 +130,7 @@ func displayHealth(health string) string {
 		healthColor = color.FgGreen
 	case commands.HealthUnhealthy:
 		healthColor = color.FgRed
-	case commands.HealthStarting, commands.HealthStopped:
+	case commands.HealthStarting:
 		healthColor = color.FgYellow
 	default:
 		healthColor = color.FgWhite
