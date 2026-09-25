@@ -12,8 +12,8 @@ require (
 	github.com/jesseduffield/kill v0.0.0-20250101124109-e216ddbe133a
 	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996
 	github.com/lxc/incus/v7 v7.4.0
-	github.com/mattn/go-runewidth v0.0.30
 	github.com/mgutz/str v1.2.0
+	github.com/rivo/uniseg v0.4.7
 	github.com/samber/lo v1.53.0
 	github.com/sasha-s/go-deadlock v0.3.9
 	github.com/sirupsen/logrus v1.10.2
@@ -26,7 +26,6 @@ require (
 	github.com/apex/log v1.9.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v1.0.0-rc.5 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
@@ -58,7 +57,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.11 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rootless-containers/proto/go-proto v0.0.0-20260207013450-f6ee952d53d9 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli v1.22.17 // indirect

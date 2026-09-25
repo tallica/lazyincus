@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml"
@@ -17,10 +17,11 @@ import (
 )
 
 // DisplayWidth is how many terminal columns str takes, colour escapes
-// taking none. Every width lazyincus lays out goes through here, so it
-// measures the way gocui draws.
+// taking none. Every width lazyincus lays out goes through here, measured
+// by grapheme cluster with uniseg the way gocui draws - tcell sets
+// uniseg's ambiguous width for an East Asian locale for both of us.
 func DisplayWidth(str string) int {
-	return runewidth.StringWidth(Decolorise(str))
+	return uniseg.StringWidth(Decolorise(str))
 }
 
 // WithPadding pads a string as much as you want
@@ -154,15 +155,16 @@ func Decolorise(str string) string {
 }
 
 // Truncate shortens a string to the given display width, marking the cut
-// with an ellipsis. It steps over colour escapes rather than counting them:
-// runewidth measures a sequence as though it were text, so a coloured line
-// that fits would otherwise be cut, and the cut could land inside a
-// sequence. A string whose overflow is only blanks - a table row's padding
+// with an ellipsis. It steps over colour escapes rather than counting them -
+// a width count measures a sequence as though it were text, so a coloured
+// line that fits would otherwise be cut, and the cut could land inside a
+// sequence - and over grapheme clusters rather than runes, so it can't
+// split an accent from its letter or an emoji sequence apart. A string whose overflow is only blanks - a table row's padding
 // - hides nothing and is left alone, as is one with no room to mark a cut.
 // A reset closes a cut line, the escapes that would have done it being
 // past the cut.
 func Truncate(str string, width int) string {
-	// An ambiguous-width rune: two columns under an East Asian locale.
+	// Ambiguous width: two columns under an East Asian locale.
 	ellipsisWidth := DisplayWidth(ellipsis)
 
 	visibleWidth := DisplayWidth(strings.TrimRight(Decolorise(str), " "))
@@ -177,14 +179,19 @@ func Truncate(str string, width int) string {
 
 	// Reports whether the limit was reached, which is where the line ends.
 	writeText := func(text string) bool {
-		for _, char := range text {
-			charWidth := runewidth.RuneWidth(char)
-			if used+charWidth > limit {
+		state := -1
+
+		for text != "" {
+			var cluster string
+			var clusterWidth int
+
+			cluster, text, clusterWidth, state = uniseg.FirstGraphemeClusterInString(text, state)
+			if used+clusterWidth > limit {
 				return true
 			}
 
-			kept.WriteRune(char)
-			used += charWidth
+			kept.WriteString(cluster)
+			used += clusterWidth
 		}
 
 		return false

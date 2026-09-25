@@ -77,3 +77,23 @@ func TestMarshalIntoYamlKeepsFieldOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "name: web\nnested:\n  zulu: 1\n  alpha: 2\nconfig:\n  a: \"1\"\n  b: \"2\"\n", string(data))
 }
+
+func TestDisplayWidthCountsColumnsNotRunes(t *testing.T) {
+	assert.Equal(t, 4, DisplayWidth("日本"))
+	assert.Equal(t, 1, DisplayWidth("é"))
+	assert.Equal(t, 2, DisplayWidth("👨‍👩‍👧"))
+	assert.Equal(t, 3, DisplayWidth("\x1b[32mrun\x1b[0m"))
+}
+
+func TestTruncateKeepsGraphemeClustersWhole(t *testing.T) {
+	assert.Equal(t, "日本…", Truncate("日本語テキスト", 5))
+	assert.Equal(t, "café…", Truncate("café au lait", 5))
+	assert.Equal(t, "👨‍👩‍👧…", Truncate("👨‍👩‍👧 family", 3))
+}
+
+func TestPaddingLinesUpWideCells(t *testing.T) {
+	table, err := RenderTable([][]string{{"日本", "a"}, {"web", "b"}})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "日本 a\nweb  b", table)
+}
