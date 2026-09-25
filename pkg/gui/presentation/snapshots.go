@@ -37,7 +37,7 @@ func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
 		return ""
 	}
 
-	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgBlue)
+	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgMagenta)
 }
 
 const maxSnapshotNameWidth = 22

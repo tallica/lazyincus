@@ -30,5 +30,5 @@ func displayNetworkManaged(network *commands.Network) string {
 		return utils.ColoredString("managed", color.FgGreen)
 	}
 
-	return utils.ColoredString("unmanaged", color.FgBlue)
+	return "unmanaged"
 }

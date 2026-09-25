@@ -38,7 +38,7 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	},
 	"image": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		image := shortImageRef(instance.ComposeImage())
-		return utils.ColoredString(utils.Truncate(image, maxImageAliasWidth), color.FgBlue)
+		return utils.Truncate(image, maxImageAliasWidth)
 	},
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
@@ -130,9 +130,7 @@ func displayHealth(health string) string {
 		healthColor = color.FgGreen
 	case commands.HealthUnhealthy:
 		healthColor = color.FgRed
-	case commands.HealthStarting:
-		healthColor = color.FgBlue
-	case commands.HealthStopped:
+	case commands.HealthStarting, commands.HealthStopped:
 		healthColor = color.FgYellow
 	default:
 		healthColor = color.FgWhite
@@ -195,10 +193,8 @@ func StatusColor(status string) color.Attribute {
 		return color.FgGreen
 	case "Stopped", "Error":
 		return color.FgRed
-	case "Frozen":
+	case "Frozen", "Starting", "Stopping", "Freezing", "Thawed":
 		return color.FgYellow
-	case "Starting", "Stopping", "Freezing", "Thawed":
-		return color.FgBlue
 	default:
 		return color.FgWhite
 	}

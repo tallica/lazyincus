@@ -26,7 +26,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	},
 	"image": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		image := shortImageRef(service.ResolvedImage())
-		return utils.ColoredString(utils.Truncate(image, maxImageAliasWidth), color.FgBlue)
+		return utils.Truncate(image, maxImageAliasWidth)
 	},
 	"type": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		if len(service.Instances) == 0 {
