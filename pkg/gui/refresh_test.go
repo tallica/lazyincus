@@ -106,6 +106,19 @@ func TestProjectSwitchForgetsTheSnapshotsShown(t *testing.T) {
 	assert.NotContains(t, screen, "Snapshots (a-name-long")
 }
 
+// The switch blanks the focused panel before the new project's instances
+// arrive; the same instance at the top must still redraw the main panel.
+func TestProjectSwitchRedrawsTheSameFirstInstance(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.settle(t, "Name:         a-name-long-enough-to-be-cut-off")
+
+	s.do(t, func() error { return s.gui.switchToProject("default") })
+
+	screen := s.settle(t, "(fake/default)")
+	assert.NotContains(t, screen, "No instances")
+	assert.Contains(t, screen, "Name:         a-name-long-enough-to-be-cut-off")
+}
+
 func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.settle(t, "incusbr0")

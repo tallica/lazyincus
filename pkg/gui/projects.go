@@ -95,6 +95,10 @@ func (gui *Gui) reloadAfterProjectChange() error {
 	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
 	gui.setSnapshotsTitle("")
 
+	// The blank frame below shows "No instances" in the main panel; without
+	// this, the same instance arriving at the top reads as nothing changed.
+	gui.resetMainView()
+
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
 	// A fetch already in flight was asked about the old scope.
