@@ -30,10 +30,12 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
 - Incus client: `github.com/lxc/incus/v7` (client at `v7.4.0`)
-- TUI: `github.com/jesseduffield/gocui` (pinned to
-  `v0.3.1-0.20240418080333-8cd33929c513` — the version lazydocker itself
-  uses; the latest tagged `v0.3.0` release is missing the `Tabs`/`TabIndex`
-  view fields the main-panel tab UI depends on)
+- TUI: `github.com/jesseduffield/gocui` (pinned to master,
+  `v0.3.1-0.20260331125330-c81715e95462` — the latest tagged `v0.3.0`
+  release is missing the `Tabs`/`TabIndex` view fields the main-panel tab
+  UI depends on. lazydocker is still on `8cd33929c513` from 2024, so for
+  how a newer gocui API is meant to be used, lazygit is the reference: it
+  tracks gocui master.)
 
 ## Working on this
 

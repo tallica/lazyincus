@@ -34,7 +34,7 @@ func (gui *Gui) focusPoint(selectedX int, selectedY int, lineCount int, v *gocui
 	originalOy := oy
 	cx, cy := v.Cursor()
 	originalCy := cy
-	_, height := v.Size()
+	height := v.InnerHeight()
 
 	ly := utils.Max(height-1, 0)
 
@@ -53,12 +53,12 @@ func (gui *Gui) focusPoint(selectedX int, selectedY int, lineCount int, v *gocui
 	}
 
 	if originalOy != oy {
-		_ = v.SetOrigin(ox, oy)
+		v.SetOrigin(ox, oy)
 	}
 
 	cy = selectedY - oy
 	if originalCy != cy {
-		_ = v.SetCursor(cx, selectedY-oy)
+		v.SetCursor(cx, selectedY-oy)
 	}
 }
 
@@ -67,8 +67,8 @@ func (gui *Gui) FocusY(selectedY int, lineCount int, v *gocui.View) {
 }
 
 func (gui *Gui) ResetOrigin(v *gocui.View) {
-	_ = v.SetOrigin(0, 0)
-	_ = v.SetCursor(0, 0)
+	v.SetOrigin(0, 0)
+	v.SetCursor(0, 0)
 }
 
 func (gui *Gui) cleanString(s string) string {
@@ -89,12 +89,8 @@ func (gui *Gui) renderString(g *gocui.Gui, viewName, s string) error {
 		if err != nil {
 			return nil // return gracefully if view has been deleted
 		}
-		if err := v.SetOrigin(0, 0); err != nil {
-			return err
-		}
-		if err := v.SetCursor(0, 0); err != nil {
-			return err
-		}
+		v.SetOrigin(0, 0)
+		v.SetCursor(0, 0)
 		return gui.setViewContent(v, s)
 	})
 	return nil

@@ -323,7 +323,7 @@ func (self *SideListPanel[T]) RerenderList() error {
 // were written. The layout calls it, so a resize is drawn at the new width
 // in the same frame rather than at the panel's next refresh.
 func (self *SideListPanel[T]) FitToWidth() {
-	if width, _ := self.View.Size(); width != self.clipWidth {
+	if self.View.InnerWidth() != self.clipWidth {
 		self.writeRows()
 	}
 }
@@ -331,11 +331,8 @@ func (self *SideListPanel[T]) FitToWidth() {
 // writeRows writes the table to the view, each row cut to the view's width
 // and the cut marked: gocui stops a long row at the edge without a sign. The
 // mark goes in the row because drawFrame puts the scrollbar in the border.
-//
-// Size, not InnerWidth: the latter takes a column off for the frame that the
-// content doesn't actually lose, which would leave the last column empty.
 func (self *SideListPanel[T]) writeRows() {
-	self.clipWidth, _ = self.View.Size()
+	self.clipWidth = self.View.InnerWidth()
 
 	rows := strings.Split(self.table, "\n")
 	for index, row := range rows {

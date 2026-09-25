@@ -104,7 +104,7 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 	}
 
 	if gui.Views.Main != nil {
-		mainWidth, _ := gui.Views.Main.Size()
+		mainWidth := gui.Views.Main.InnerWidth()
 		gui.mainViewWidth.Store(int32(mainWidth))
 	}
 

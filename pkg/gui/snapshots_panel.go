@@ -344,9 +344,7 @@ func (gui *Gui) renderSnapshotOptions(prompt *snapshotPrompt) error {
 
 	// The highlight is the selection: gocui draws it on the cursor line, so
 	// the cursor is what moves rather than a marker in the text.
-	if err := view.SetCursor(0, prompt.field); err != nil {
-		return err
-	}
+	view.SetCursor(0, prompt.field)
 	view.Title = gui.Tr.SnapshotOptionsTitle
 	view.Subtitle = gui.Tr.SnapshotChangeHint
 	view.Footer = gui.Tr.SnapshotSubmitHint

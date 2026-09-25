@@ -131,7 +131,6 @@ func (gui *Gui) styleAllViews() {
 	selectedLineBgColor := GetGocuiStyle(gui.Config.UserConfig.Gui.Theme.SelectedLineBgColor)
 
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel
-	gui.Views.Main.IgnoreCarriageReturns = true
 
 	for index, def := range gui.visibleSidePanelDefs() {
 		view := *def.viewPtr

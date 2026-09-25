@@ -76,8 +76,8 @@ func (gui *Gui) writeMain(ctx context.Context, write func(view *gocui.View)) {
 // renderMain sets the main view's content from the top.
 func (gui *Gui) renderMain(ctx context.Context, content string) {
 	gui.writeMain(ctx, func(view *gocui.View) {
-		_ = view.SetOrigin(0, 0)
-		_ = view.SetCursor(0, 0)
+		view.SetOrigin(0, 0)
+		view.SetCursor(0, 0)
 		_ = gui.setViewContent(view, content)
 	})
 }
@@ -93,8 +93,8 @@ func (gui *Gui) reRenderMain(ctx context.Context, content string) {
 func (gui *Gui) clearMain(ctx context.Context) {
 	gui.writeMain(ctx, func(view *gocui.View) {
 		view.Clear()
-		_ = view.SetOrigin(0, 0)
-		_ = view.SetCursor(0, 0)
+		view.SetOrigin(0, 0)
+		view.SetCursor(0, 0)
 	})
 }
 
