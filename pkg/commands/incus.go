@@ -70,21 +70,7 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 
 	capDialTimeout(client)
 
-	command := &IncusCommand{
-		Log:         log,
-		OSCommand:   osCommand,
-		Tr:          tr,
-		Config:      cfg,
-		client:      client,
-		RemoteName:  cliCfg.DefaultRemote,
-		projectName: clientProjectName(client),
-		// Every project by default: a server with one project looks the same
-		// either way, and on a server with several, scoping to whichever one
-		// the user's remote happens to point at hides the rest with no hint
-		// that they're there.
-		allProjects: true,
-		connected:   true,
-	}
+	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, cliCfg.DefaultRemote)
 
 	// Best-effort: a failed GetServer() shouldn't prevent startup, since
 	// the instance list is what actually matters. The footer just shows
@@ -97,6 +83,26 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 	}
 
 	return command, nil
+}
+
+// NewIncusCommandWithClient is an IncusCommand around a client already
+// connected - to a remote, or to incustest's stand-in.
+func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
+	return &IncusCommand{
+		Log:         log,
+		OSCommand:   osCommand,
+		Tr:          tr,
+		Config:      cfg,
+		client:      client,
+		RemoteName:  remote,
+		projectName: clientProjectName(client),
+		// Every project by default: a server with one project looks the same
+		// either way, and on a server with several, scoping to whichever one
+		// the user's remote happens to point at hides the rest with no hint
+		// that they're there.
+		allProjects: true,
+		connected:   true,
+	}
 }
 
 // clientProjectName reports the project a client is scoped to. An empty

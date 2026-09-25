@@ -1,0 +1,30 @@
+┌─[1]─Instances──────────────────┐┌─Info - Logs - Config - Env - Top───────────────────────────────┐
+│a-name-long-enough-to-be-cut-of…││Name:         a-name-long-enough-to-be-cut-off                  │
+│web                            …││Status:       running                                           │
+│db                             …││Type:         container                                         │
+│                                ││Project:      default                                           │
+└────────────────────────────────┘│Image:        Alpine 3.22 amd64                                 │
+┌─[2]─Snapshots (a-name-long-eno─┐│Architecture: x86_64                                            │
+│                                ││IPv4:         192.0.2.144                                       │
+│                                ││Snapshots:    0                                                 │
+│                                ││                                                                │
+│                                ││                                                                │
+└────────────────────────────────┘│CPU:          (no usage reported)                               │
+┌─[3]─Images─────────────────────┐│Memory:       (no usage reported)                               │
+│Alpine 3.22 amd64 0123456789ab …││Processes:    12                                                │
+│                                ││                                                                │
+│                                ││Disk:                                                           │
+│                                ││  (no disk usage reported)                                      │
+└────────────────────────────────┘│                                                                │
+┌─[4]─Volumes────────────────────┐│Network:                                                        │
+│data default custom 0           ││  eth0:                                                         │
+│                                ││    Type:                                                       │
+│                                ││    State:                                                      │
+│                                ││    MTU:        0                                               │
+└────────────────────────────────┘│    Received:   0B (0 packets)                                  │
+┌─[5]─Networks───────────────────┐│    Sent:       0B (0 packets)                                  │
+│incusbr0 bridge managed 0       ││    IP addresses:                                               │
+│                                ││      inet:  192.0.2.144/ (global)                              │
+│                                ││                                                                │
+└────────────────────────────────┘└────────────────────────────────────────────────────────────────┘
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigateDonate Incus v7.4 (fake/all projects) ●  test

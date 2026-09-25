@@ -1,0 +1,40 @@
+╭─[1]─Instances──────────────╮╭─Info - Logs - Config - Env - Top─────────────────────────╮
+│a-name-long-enough-to-be-cu…││Name:         a-name-long-enough-to-be-cut-off            │
+│web                        …││Status:       running                                     │
+│db                         …││Type:         container                                   │
+│                      ╭─Menu──────────────────────────────────────╮                     │
+│                      │S         start                            │                     │
+│                      │s         stop                             │                     │
+╰──────────────────────│r         restart                          │                     │
+╭─[2]─Snapshots (a-name│p         pause/unpause                    │                     │
+│                      │d         delete                           │                     │
+│                      │e         hide/show stopped instances      │                     │
+│                      │n         new snapshot                     │                     │
+│                      │m         view logs                        │                     │
+│                      │y         copy IPv4 address                │                     │
+│                      │a         attach to console                │                     │
+╰──────────────────────│E         exec shell                       │                     │
+╭─[3]─Images───────────│enter     focus main panel                 │                     │
+│Alpine 3.22 amd64 0123│[         previous tab                     │                     │
+│                      │]         next tab                         │                     │
+│                      │/         filter list                      │                     │
+│                      │                                           │                     │
+│                      │o         open lazyincus config            │                     │
+│                      │O         edit lazyincus config            │                     │
+╰──────────────────────│P         switch project                   │                     │
+╭─[4]─Volumes──────────│+         next screen mode (normal/half/fu…│                     │
+│data default custom 0 │_         prev screen mode                 │                     │
+│                      │=         expand/collapse the focused side…│                     │
+│                      │tab       next panel                       │                     │
+│                      │shift+tab previous panel                   │                     │
+│                      │1         focus instances panel            │                     │
+│                      │2         focus snapshots panel            │                     │
+╰──────────────────────│3         focus images panel               │                     │
+╭─[5]─Networks─────────│4         focus volumes panel              │                     │
+│incusbr0 bridge manage│5         focus networks panel             │                     │
+│                      ╰───────────────────────────────────────────╯                     │
+│                            ││                                                          │
+│                            ││                                                          │
+│                            ││                                                          │
+╰────────────────────────────╯╰──────────────────────────────────────────────────────────╯
+enter: execute, esc: close, ↑ ↓: navigate   Donate Incus v7.4 (fake/all projects) ●  test

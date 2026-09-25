@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"os"
 	"sync/atomic"
 	"time"
@@ -53,6 +54,9 @@ type Gui struct {
 	// the healthcheck line of the services panel's Info tab. Refreshed with
 	// the services; atomic, the tab rendering off the main loop.
 	composeProject atomic.Pointer[commands.ComposeProject]
+
+	// stopped closes when run returns, stopping the pollers.
+	stopped chan struct{}
 }
 
 type Panels struct {
@@ -215,6 +219,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		Tr:            tr,
 		statusManager: &statusManager{},
 		taskManager:   tasks.NewTaskManager(log, tr),
+		stopped:       make(chan struct{}),
 	}
 
 	deadlock.Opts.Disable = !gui.Config.Debug
@@ -237,9 +242,14 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
-		for range ticker.C {
-			if !gui.PauseBackgroundThreads.Load() {
-				_ = function()
+		for {
+			select {
+			case <-gui.stopped:
+				return
+			case <-ticker.C:
+				if !gui.PauseBackgroundThreads.Load() {
+					_ = function()
+				}
 			}
 		}
 	}()
@@ -247,8 +257,6 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 
 // Run sets up the gui with keybindings and starts the mainloop
 func (gui *Gui) Run() error {
-	defer gui.taskManager.Close()
-
 	// Before any view exists: whether there's a compose file in the working
 	// directory decides whether the services panel is there at all, and so
 	// which panels get styled, numbered and focused first. One fast
@@ -262,7 +270,20 @@ func (gui *Gui) Run() error {
 	if err != nil {
 		return err
 	}
+
+	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() {
+		g.Close()
+	})
+
+	return gui.run(g)
+}
+
+// run drives a gocui.Gui until quit: all of Run but making it, which a
+// test does headless.
+func (gui *Gui) run(g *gocui.Gui) error {
+	defer gui.taskManager.Close()
 	defer g.Close()
+	defer close(gui.stopped)
 
 	if !gui.Config.UserConfig.Gui.IgnoreMouseEvents {
 		g.Mouse = true
@@ -273,10 +294,6 @@ func (gui *Gui) Run() error {
 	g.ShowListFooter = true
 
 	gui.g = g
-
-	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() {
-		gui.g.Close()
-	})
 
 	if err := gui.SetColorScheme(); err != nil {
 		return err
@@ -295,7 +312,7 @@ func (gui *Gui) Run() error {
 
 	gui.setPanels()
 
-	if err = gui.keybindings(g); err != nil {
+	if err := gui.keybindings(g); err != nil {
 		return err
 	}
 
@@ -326,8 +343,8 @@ func (gui *Gui) Run() error {
 		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 
-	err = g.MainLoop()
-	if err == gocui.ErrQuit {
+	err := g.MainLoop()
+	if errors.Is(err, gocui.ErrQuit) {
 		return nil
 	}
 	return err
