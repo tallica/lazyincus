@@ -30,11 +30,10 @@ type Instance struct {
 	// creation time, ...).
 	Instance api.Instance
 
-	Client       incus.InstanceServer
-	OSCommand    *OSCommand
-	Log          *logrus.Entry
-	IncusCommand LimitedIncusCommand
-	Tr           *i18n.TranslationSet
+	Client    incus.InstanceServer
+	OSCommand *OSCommand
+	Log       *logrus.Entry
+	Tr        *i18n.TranslationSet
 
 	detailsMutex deadlock.Mutex
 	// full holds the full instance details (including current state), lazily

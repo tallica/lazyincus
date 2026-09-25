@@ -29,7 +29,6 @@ type Gui struct {
 	Tr            *i18n.TranslationSet
 	statusManager *statusManager
 	taskManager   *tasks.TaskManager
-	ErrorChan     chan error
 	Views         Views
 
 	// mainViewWidth is how wide the main panel currently is, recorded by
@@ -188,7 +187,7 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 }
 
 // NewGui builds a new gui handler
-func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig, errorChan chan error) (*Gui, error) {
+func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
 	initialState := guiState{
 		Platform: *oSCommand.Platform,
 		Panels: &panelStates{
@@ -212,7 +211,6 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		Tr:            tr,
 		statusManager: &statusManager{},
 		taskManager:   tasks.NewTaskManager(log, tr),
-		ErrorChan:     errorChan,
 	}
 
 	deadlock.Opts.Disable = !gui.Config.Debug
@@ -551,23 +549,4 @@ func (gui *Gui) IgnoreStrings() []string {
 
 func (gui *Gui) Update(f func() error) {
 	gui.g.Update(func(*gocui.Gui) error { return f() })
-}
-
-// this is used by our cheatsheet code to generate keybindings.
-func (gui *Gui) SetupFakeGui() {
-	g, err := gocui.NewGui(gocui.NewGuiOpts{
-		OutputMode:       gocui.OutputTrue,
-		RuneReplacements: map[rune]string{},
-		Headless:         true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	gui.g = g
-	defer g.Close()
-	if err := gui.createAllViews(); err != nil {
-		panic(err)
-	}
-
-	gui.setPanels()
 }

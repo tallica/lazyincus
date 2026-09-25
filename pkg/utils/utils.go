@@ -1,19 +1,13 @@
 package utils
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"io"
-	"math"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/jesseduffield/gocui"
 	"github.com/mattn/go-runewidth"
 
 	"github.com/fatih/color"
@@ -21,21 +15,6 @@ import (
 	"github.com/goccy/go-yaml/lexer"
 	"github.com/goccy/go-yaml/printer"
 )
-
-// SplitLines takes a multiline string and splits it on newlines
-// currently we are also stripping \r's which may have adverse effects for
-// windows users (but no issues have been raised yet)
-func SplitLines(multilineString string) []string {
-	multilineString = strings.ReplaceAll(multilineString, "\r", "")
-	if multilineString == "" || multilineString == "\n" {
-		return make([]string, 0)
-	}
-	lines := strings.Split(multilineString, "\n")
-	if lines[len(lines)-1] == "" {
-		return lines[:len(lines)-1]
-	}
-	return lines
-}
 
 // WithPadding pads a string as much as you want
 func WithPadding(str string, padding int) string {
@@ -104,13 +83,6 @@ func ColoredYamlString(str string) string {
 		}
 	}
 	return p.PrintTokens(tokens)
-}
-
-// MultiColoredString takes a string and an array of colour attributes and returns a colored
-// string with those attributes
-func MultiColoredString(str string, colorAttribute ...color.Attribute) string {
-	colour := color.New(colorAttribute...)
-	return ColoredStringDirect(str, colour)
 }
 
 // ColoredStringDirect used for aggregating a few color attributes rather than
@@ -285,153 +257,6 @@ func displayArraysAligned(stringArrays [][]string) bool {
 		}
 	}
 	return true
-}
-
-func FormatBinaryBytes(b int) string {
-	n := float64(b)
-	units := []string{"B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
-	for _, unit := range units {
-		if n > math.Pow(2, 10) {
-			n /= math.Pow(2, 10)
-		} else {
-			val := fmt.Sprintf("%.2f%s", n, unit)
-			if val == "0.00B" {
-				return "0B"
-			}
-			return val
-		}
-	}
-	return "a lot"
-}
-
-func FormatDecimalBytes(b int) string {
-	n := float64(b)
-	units := []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-	for _, unit := range units {
-		if n > float64(10*10*10) {
-			n /= float64(10 * 10 * 10)
-		} else {
-			val := fmt.Sprintf("%.2f%s", n, unit)
-			if val == "0.00B" {
-				return "0B"
-			}
-			return val
-		}
-	}
-	return "a lot"
-}
-
-func ApplyTemplate(str string, object interface{}) string {
-	var buf bytes.Buffer
-	_ = template.Must(template.New("").Parse(str)).Execute(&buf, object)
-	return buf.String()
-}
-
-// GetGocuiAttribute gets the gocui color attribute from the string
-func GetGocuiAttribute(key string) gocui.Attribute {
-	colorMap := map[string]gocui.Attribute{
-		"default":   gocui.ColorDefault,
-		"black":     gocui.ColorBlack,
-		"red":       gocui.ColorRed,
-		"green":     gocui.ColorGreen,
-		"yellow":    gocui.ColorYellow,
-		"blue":      gocui.ColorBlue,
-		"magenta":   gocui.ColorMagenta,
-		"cyan":      gocui.ColorCyan,
-		"white":     gocui.ColorWhite,
-		"bold":      gocui.AttrBold,
-		"reverse":   gocui.AttrReverse,
-		"underline": gocui.AttrUnderline,
-	}
-	value, present := colorMap[key]
-	if present {
-		return value
-	}
-	return gocui.ColorDefault
-}
-
-// GetColorAttribute gets the color attribute from the string
-func GetColorAttribute(key string) color.Attribute {
-	colorMap := map[string]color.Attribute{
-		"default":   color.FgWhite,
-		"black":     color.FgBlack,
-		"red":       color.FgRed,
-		"green":     color.FgGreen,
-		"yellow":    color.FgYellow,
-		"blue":      color.FgBlue,
-		"magenta":   color.FgMagenta,
-		"cyan":      color.FgCyan,
-		"white":     color.FgWhite,
-		"bold":      color.Bold,
-		"underline": color.Underline,
-	}
-	value, present := colorMap[key]
-	if present {
-		return value
-	}
-	return color.FgWhite
-}
-
-// WithShortSha returns a command but with a shorter SHA. in the terminal we're all used to 10 character SHAs but under the hood they're actually 64 characters long. No need including all the characters when we're just displaying a command
-func WithShortSha(str string) string {
-	split := strings.Split(str, " ")
-	for i, word := range split {
-		// good enough proxy for now
-		if len(word) == 64 {
-			split[i] = word[0:10]
-		}
-	}
-	return strings.Join(split, " ")
-}
-
-// FormatMapItem is for displaying items in a map
-func FormatMapItem(padding int, k string, v interface{}) string {
-	return fmt.Sprintf("%s%s %v\n", strings.Repeat(" ", padding), ColoredString(k+":", color.FgYellow), fmt.Sprintf("%v", v))
-}
-
-// FormatMap is for displaying a map
-func FormatMap(padding int, m map[string]string) string {
-	if len(m) == 0 {
-		return "none\n"
-	}
-
-	output := "\n"
-
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		output += FormatMapItem(padding, key, m[key])
-	}
-
-	return output
-}
-
-type multiErr []error
-
-func (m multiErr) Error() string {
-	var b bytes.Buffer
-	b.WriteString("encountered multiple errors:")
-	for _, err := range m {
-		b.WriteString("\n\t... " + err.Error())
-	}
-	return b.String()
-}
-
-func CloseMany(closers []io.Closer) error {
-	errs := make([]error, 0, len(closers))
-	for _, c := range closers {
-		err := c.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if len(errs) > 0 {
-		return multiErr(errs)
-	}
-	return nil
 }
 
 func SafeTruncate(str string, limit int) string {

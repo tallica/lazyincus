@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
-	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // IncusCommand is our main interface into the Incus API
@@ -24,7 +22,6 @@ type IncusCommand struct {
 	OSCommand     *OSCommand
 	Tr            *i18n.TranslationSet
 	Config        *config.AppConfig
-	ErrorChan     chan error
 	InstanceMutex deadlock.Mutex
 
 	// RemoteName is the Incus remote we connected to, taken from the CLI
@@ -43,16 +40,7 @@ type IncusCommand struct {
 
 	connMutex deadlock.Mutex
 	connected bool
-
-	Closers []io.Closer
 }
-
-var _ io.Closer = &IncusCommand{}
-
-// LimitedIncusCommand is a stripped-down IncusCommand with just the methods that
-// an Instance might need. Kept as an interface (mirroring lazydocker's design)
-// so that Instance doesn't need to import the whole command package.
-type LimitedIncusCommand interface{}
 
 // dialTimeout bounds the connection attempt, which the client otherwise
 // leaves to the OS - a minute or more on a remote that has gone away.
@@ -68,7 +56,7 @@ const connectTimeout = 10 * time.Second
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
 // every remote that doesn't keep it where we'd look - a daemon in a VM
 // records its own path in the remote's config.
-func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, errorChan chan error) (*IncusCommand, error) {
+func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {
 		return nil, &ConnectError{Err: err}
@@ -87,7 +75,6 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 		Tr:          tr,
 		Config:      cfg,
 		client:      client,
-		ErrorChan:   errorChan,
 		RemoteName:  cliCfg.DefaultRemote,
 		projectName: clientProjectName(client),
 		// Every project by default: a server with one project looks the same
@@ -253,10 +240,6 @@ func (c *IncusCommand) UseProject(name string) {
 	c.allProjects = false
 }
 
-func (c *IncusCommand) Close() error {
-	return utils.CloseMany(c.Closers)
-}
-
 // IsConnected reports whether the daemon is reachable, as of the most
 // recent request. Updated by the list calls, which run on a background
 // poll, so this reflects connection health without a dedicated heartbeat.
@@ -310,11 +293,10 @@ func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance,
 
 		if inst == nil {
 			inst = &Instance{
-				Name:         apiInstance.Name,
-				OSCommand:    c.OSCommand,
-				Log:          c.Log,
-				IncusCommand: c,
-				Tr:           c.Tr,
+				Name:      apiInstance.Name,
+				OSCommand: c.OSCommand,
+				Log:       c.Log,
+				Tr:        c.Tr,
 			}
 		}
 

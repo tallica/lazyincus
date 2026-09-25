@@ -103,7 +103,6 @@ func main() {
 	if err == nil {
 		err = lazyincusApp.Run()
 	}
-	lazyincusApp.Close()
 
 	if err != nil {
 		if errMessage, known := lazyincusApp.KnownError(err); known {

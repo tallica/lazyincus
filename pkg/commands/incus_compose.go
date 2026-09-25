@@ -64,14 +64,13 @@ func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) 
 		full := fulls[i]
 
 		inst := &Instance{
-			Name:         full.Name,
-			Project:      project,
-			Instance:     full.Instance,
-			Client:       client,
-			OSCommand:    c.OSCommand,
-			Log:          c.Log,
-			IncusCommand: c,
-			Tr:           c.Tr,
+			Name:      full.Name,
+			Project:   project,
+			Instance:  full.Instance,
+			Client:    client,
+			OSCommand: c.OSCommand,
+			Log:       c.Log,
+			Tr:        c.Tr,
 		}
 		inst.setFull(&full)
 
