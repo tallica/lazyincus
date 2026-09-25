@@ -57,6 +57,13 @@ func (gui *Gui) refresh(then func() error, fetches ...fetch) error {
 	return firstErr
 }
 
+// refreshInstancesAndServices re-lists both panels as soon as something has
+// changed what they hold, rather than waiting on the next background poll
+// to notice. Both, because a compose instance has a row in each.
+func (gui *Gui) refreshInstancesAndServices() error {
+	return gui.refresh(nil, gui.fetchInstances, gui.fetchServices)
+}
+
 // refreshInBackground is refresh for a caller on the main loop. A failure
 // goes through the same handler as a keypress's.
 func (gui *Gui) refreshInBackground(fetches ...fetch) {
