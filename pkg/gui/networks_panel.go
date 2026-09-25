@@ -103,12 +103,7 @@ func (gui *Gui) refreshNetworksQuiet() error {
 	return nil
 }
 
-func (gui *Gui) handleNetworkDelete(g *gocui.Gui, v *gocui.View) error {
-	network, err := gui.Panels.Networks.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) networkDelete(network *commands.Network) error {
 	if !network.IsManaged() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteUnmanagedNetwork)
 	}

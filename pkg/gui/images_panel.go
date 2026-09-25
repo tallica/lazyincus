@@ -119,12 +119,7 @@ func (gui *Gui) refreshImagesQuiet() error {
 	return nil
 }
 
-func (gui *Gui) handleImageDelete(g *gocui.Gui, v *gocui.View) error {
-	image, err := gui.Panels.Images.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) imageDelete(image *commands.Image) error {
 	prompt := fmt.Sprintf(gui.Tr.DeleteImage, image.Label())
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {

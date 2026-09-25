@@ -176,15 +176,6 @@ func (p *snapshotPrompt) options() commands.SnapshotOptions {
 	}
 }
 
-func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
-	instance, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.snapshotCreatePrompt(instance)
-}
-
 func (gui *Gui) snapshotCreatePrompt(instance *commands.Instance) error {
 	prompt := &snapshotPrompt{instance: instance}
 
@@ -417,12 +408,7 @@ func (gui *Gui) focusSnapshot(name string) error {
 	return gui.switchFocus(gui.Views.Snapshots)
 }
 
-func (gui *Gui) handleSnapshotRestore(g *gocui.Gui, v *gocui.View) error {
-	snapshot, err := gui.Panels.Snapshots.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, snapshot.InstanceName, snapshot.Name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
@@ -436,12 +422,7 @@ func (gui *Gui) handleSnapshotRestore(g *gocui.Gui, v *gocui.View) error {
 	}, nil)
 }
 
-func (gui *Gui) handleSnapshotDelete(g *gocui.Gui, v *gocui.View) error {
-	snapshot, err := gui.Panels.Snapshots.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 	// Named with its instance, the panel holding every replica's snapshots
 	// where a service is selected, and replicas sharing snapshot names.
 	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, snapshot.InstanceName)

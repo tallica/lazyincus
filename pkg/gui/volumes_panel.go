@@ -122,12 +122,7 @@ func (gui *Gui) refreshVolumesQuiet() error {
 	return nil
 }
 
-func (gui *Gui) handleVolumeDelete(g *gocui.Gui, v *gocui.View) error {
-	volume, err := gui.Panels.Volumes.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) volumeDelete(volume *commands.Volume) error {
 	if !volume.IsCustom() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteManagedVolume)
 	}

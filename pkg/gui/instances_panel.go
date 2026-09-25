@@ -179,19 +179,10 @@ func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
 	return gui.Panels.Instances.RerenderList()
 }
 
-func (gui *Gui) handleInstanceStart(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceStart(inst)
-}
-
-// The state changes below are split into handler and action the way the
-// snapshot and copy-IPv4 keys are: the services panel runs the same action
-// against the replica its selected row stands for. Either panel may be
-// showing what changed, so both are refreshed.
+// The actions below take the instance rather than reading the selection:
+// the services panel runs the same ones against the replica its selected
+// row stands for. Either panel may be showing what changed, so both are
+// refreshed.
 func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.StartingStatus, func() error {
 		if err := instance.Start(); err != nil {
@@ -200,15 +191,6 @@ func (gui *Gui) instanceStart(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstanceStop(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceStop(inst)
 }
 
 func (gui *Gui) instanceStop(instance *commands.Instance) error {
@@ -241,15 +223,6 @@ func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
 	}, nil)
 }
 
-func (gui *Gui) handleInstanceRestart(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceRestart(inst)
-}
-
 func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.RestartingStatus, func() error {
 		if err := instance.Restart(); err != nil {
@@ -258,15 +231,6 @@ func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstancePauseFreeze(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instancePauseFreeze(inst)
 }
 
 func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
@@ -283,15 +247,6 @@ func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstanceDelete(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceDelete(inst)
 }
 
 func (gui *Gui) instanceDelete(instance *commands.Instance) error {
@@ -329,18 +284,9 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 	}, nil)
 }
 
-// handleInstanceCopyIPv4 copies the selected instance's IPv4 address to the
-// system clipboard. An instance can have several (one per interface); we copy
+// instanceCopyIPv4 copies the instance's IPv4 address to the system
+// clipboard. An instance can have several (one per interface); we copy
 // the first, which is the address people generally want to paste somewhere.
-func (gui *Gui) handleInstanceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceCopyIPv4(inst)
-}
-
 func (gui *Gui) instanceCopyIPv4(inst *commands.Instance) error {
 	addresses := inst.Addresses("inet")
 	if len(addresses) == 0 {
@@ -365,15 +311,6 @@ func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return gui.handleEnterMain(g, v)
 }
 
-func (gui *Gui) handleInstancesExecShell(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceExecShell(inst)
-}
-
 // instanceCLIArgs carries the instance's project through to the `incus` CLI,
 // which otherwise uses whatever project the user's own remote is set to -
 // not necessarily the one the selected instance lives in.
@@ -383,15 +320,6 @@ func instanceCLIArgs(instance *commands.Instance) []string {
 	}
 
 	return []string{"--project", instance.Project}
-}
-
-func (gui *Gui) handleInstanceAttach(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceAttachConsole(inst)
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

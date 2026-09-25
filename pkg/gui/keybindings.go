@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/tallica/lazyincus/pkg/gui/panels"
 )
 
 // Binding - a keybinding mapping a key and modifier to a handler. The keypress
@@ -160,35 +161,35 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "instances",
 			Key:         'S',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceStart,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceStart),
 			Description: gui.Tr.Start,
 		},
 		{
 			ViewName:    "instances",
 			Key:         's',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceStop,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceStop),
 			Description: gui.Tr.Stop,
 		},
 		{
 			ViewName:    "instances",
 			Key:         'r',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceRestart,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceRestart),
 			Description: gui.Tr.Restart,
 		},
 		{
 			ViewName:    "instances",
 			Key:         'p',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstancePauseFreeze,
+			Handler:     onSelected(gui.Panels.Instances, gui.instancePauseFreeze),
 			Description: gui.Tr.Pause,
 		},
 		{
 			ViewName:    "instances",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceDelete,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceDelete),
 			Description: gui.Tr.Remove,
 		},
 		{
@@ -202,7 +203,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "instances",
 			Key:         'n',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSnapshotCreate,
+			Handler:     onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt),
 			Description: gui.Tr.NewSnapshot,
 		},
 		{
@@ -216,63 +217,63 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "instances",
 			Key:         'y',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceCopyIPv4,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceCopyIPv4),
 			Description: gui.Tr.CopyIPv4,
 		},
 		{
 			ViewName:    "instances",
 			Key:         'a',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstanceAttach,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceAttachConsole),
 			Description: gui.Tr.Attach,
 		},
 		{
 			ViewName:    "instances",
 			Key:         'E',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleInstancesExecShell,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceExecShell),
 			Description: gui.Tr.ExecShell,
 		},
 		{
 			ViewName:    "images",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleImageDelete,
+			Handler:     onSelected(gui.Panels.Images, gui.imageDelete),
 			Description: gui.Tr.Remove,
 		},
 		{
 			ViewName:    "snapshots",
 			Key:         'n',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSnapshotCreate,
+			Handler:     onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt),
 			Description: gui.Tr.NewSnapshot,
 		},
 		{
 			ViewName:    "snapshots",
 			Key:         'r',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSnapshotRestore,
+			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotRestore),
 			Description: gui.Tr.RestoreSnapshotShort,
 		},
 		{
 			ViewName:    "snapshots",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleSnapshotDelete,
+			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotDelete),
 			Description: gui.Tr.Remove,
 		},
 		{
 			ViewName:    "volumes",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleVolumeDelete,
+			Handler:     onSelected(gui.Panels.Volumes, gui.volumeDelete),
 			Description: gui.Tr.Remove,
 		},
 		{
 			ViewName:    "networks",
 			Key:         'd',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleNetworkDelete,
+			Handler:     onSelected(gui.Panels.Networks, gui.networkDelete),
 			Description: gui.Tr.Remove,
 		},
 		{
@@ -483,6 +484,19 @@ func (gui *Gui) keybindings(g *gocui.Gui) error {
 	}
 
 	return nil
+}
+
+// onSelected binds a key to an action on the panel's selected item. With
+// nothing selected, the key does nothing.
+func onSelected[T comparable](panel *panels.SideListPanel[T], action func(T) error) func(*gocui.Gui, *gocui.View) error {
+	return func(*gocui.Gui, *gocui.View) error {
+		item, err := panel.GetSelectedItem()
+		if err != nil {
+			return nil
+		}
+
+		return action(item)
+	}
 }
 
 func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
