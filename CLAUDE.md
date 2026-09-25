@@ -173,6 +173,12 @@ than publishing an empty one. `make release-snapshot` builds the same set
 into `dist/` without touching GitHub, and `make release-check` validates
 `.goreleaser.yaml`.
 
+A release isn't finished at the tag. GoReleaser doesn't publish to Homebrew,
+so [tallica/homebrew-tap](https://github.com/tallica/homebrew-tap) still
+serves the previous version until `Formula/lazyincus.rb` points at the new
+archives, each `sha256` taken from the release's `checksums.txt`. The tap's
+own CLAUDE.md says what else changes there with it.
+
 The markdown that goes into an archive is a rewritten copy: away from a
 checkout, a link to `docs/` or `BACKLOG.md` has nothing to resolve against,
 so `scripts/absolute-links.sh` pins those links to the tag. It's the same
