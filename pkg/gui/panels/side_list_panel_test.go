@@ -2,6 +2,7 @@ package panels
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/jesseduffield/gocui"
@@ -132,7 +133,7 @@ func TestRowsRefitWhenPanelResizes(t *testing.T) {
 	defer g.Close()
 
 	view, err := g.SetView("list", 0, 0, 11, 5, 0)
-	if !gocui.IsUnknownView(err) {
+	if !errors.Is(err, gocui.ErrUnknownView) {
 		assert.NoError(t, err)
 	}
 

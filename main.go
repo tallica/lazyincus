@@ -69,7 +69,7 @@ func main() {
 	flaggy.SetDescription("The lazier way to manage everything incus")
 	flaggy.DefaultParser.AdditionalHelpPrepend = "https://github.com/tallica/lazyincus"
 
-	flaggy.Bool(&debuggingFlag, "d", "debug", "a boolean")
+	flaggy.Bool(&debuggingFlag, "d", "debug", "Write a development.log to the config directory")
 	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
 	flaggy.String(&projectDirectory, "P", "project-directory", "Directory to look for the compose file in, overriding INCUS_COMPOSE_PROJECT_DIRECTORY")
 	flaggy.SetVersion(info)

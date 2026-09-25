@@ -1,10 +1,10 @@
 package gui
 
 import (
+	"errors"
+
 	"github.com/jesseduffield/gocui"
 )
-
-const UNKNOWN_VIEW_ERROR_MSG = "unknown view"
 
 // getFocusLayout returns a manager function for when view gain and lose focus
 func (gui *Gui) getFocusLayout() func(g *gocui.Gui) error {
@@ -98,7 +98,7 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 
 	for _, viewName := range gui.autoPositionedViewNames() {
 		_, err := setViewFromDimensions(viewName, viewName)
-		if err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+		if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 	}

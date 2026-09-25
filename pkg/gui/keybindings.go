@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/jesseduffield/gocui"
@@ -13,49 +12,41 @@ import (
 type Binding struct {
 	ViewName    string
 	Handler     func(*gocui.Gui, *gocui.View) error
-	Key         interface{} // FIXME: find out how to get `gocui.Key | rune`
+	Key         any // a rune or a gocui.Key
 	Modifier    gocui.Modifier
 	Description string
 }
 
-// GetKey is a function.
+// keyLabels names the non-printing keys the keybinding menu can list.
+var keyLabels = map[gocui.Key]string{
+	gocui.KeyTab:        "tab",
+	gocui.KeyBacktab:    "shift+tab",
+	gocui.KeyEsc:        "esc",
+	gocui.KeyEnter:      "enter",
+	gocui.KeySpace:      "space",
+	gocui.KeyArrowRight: "►",
+	gocui.KeyArrowLeft:  "◄",
+	gocui.KeyArrowUp:    "▲",
+	gocui.KeyArrowDown:  "▼",
+	gocui.KeyPgup:       "PgUp",
+	gocui.KeyPgdn:       "PgDn",
+}
+
+// GetKey is the binding's key as the keybinding menu shows it, empty for a
+// key it has no label for.
 func (b *Binding) GetKey() string {
-	key := 0
-
-	switch b.Key.(type) {
+	switch key := b.Key.(type) {
 	case rune:
-		key = int(b.Key.(rune))
+		if key == ' ' {
+			return keyLabels[gocui.KeySpace]
+		}
+
+		return string(key)
 	case gocui.Key:
-		key = int(b.Key.(gocui.Key))
+		return keyLabels[key]
 	}
 
-	// special keys
-	switch key {
-	case int(gocui.KeyTab):
-		return "tab"
-	case int(gocui.KeyBacktab):
-		return "shift+tab"
-	case 27:
-		return "esc"
-	case 13:
-		return "enter"
-	case 32:
-		return "space"
-	case 65514:
-		return "►"
-	case 65515:
-		return "◄"
-	case 65517:
-		return "▲"
-	case 65516:
-		return "▼"
-	case 65508:
-		return "PgUp"
-	case 65507:
-		return "PgDn"
-	}
-
-	return fmt.Sprintf("%c", key)
+	return ""
 }
 
 // GetInitialKeybindings is a function.

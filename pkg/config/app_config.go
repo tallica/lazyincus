@@ -1,6 +1,5 @@
 // Package config handles all the user-configuration. The fields here are
 // all in PascalCase but in your actual config.yml they'll be in camelCase.
-// You can view the default config with `lazyincus --config`.
 // You can open your config file with 'o', or edit it in $VISUAL/$EDITOR
 // with 'O'. Changes are picked up without a restart, aside from the few
 // options noted in docs/Config.md as startup-only.
