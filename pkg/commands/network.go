@@ -19,6 +19,12 @@ type Network struct {
 	Tr        *i18n.TranslationSet
 }
 
+// Key identifies the network across refreshes: the all-projects view can
+// list the same name once per project.
+func (n *Network) Key() string {
+	return n.Network.Project + "/" + n.Name
+}
+
 func (n *Network) IsManaged() bool {
 	return n.Network.Managed
 }

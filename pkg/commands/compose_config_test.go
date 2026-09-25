@@ -1,10 +1,9 @@
-package gui
+package commands
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tallica/lazyincus/pkg/commands"
 )
 
 func TestParseComposeConfig(t *testing.T) {
@@ -19,7 +18,7 @@ func TestParseComposeConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "playground", name)
 
-	byName := map[string]commands.ComposeService{}
+	byName := map[string]ComposeService{}
 	for _, service := range services {
 		byName[service.Name] = service
 	}

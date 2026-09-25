@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mattn/go-runewidth"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 
@@ -21,17 +20,16 @@ import (
 )
 
 // renderInstanceInfoToMain periodically re-renders what the instance is and
-// what it's doing: identity, then the Stats section underneath. Both come
-// from the instance's last-fetched full details (InstanceFull.State), which
-// IncusCommand.RefreshInstanceDetails already keeps current in the
-// background - no extra API calls needed here, unlike the Logs tab.
+// what it's doing: identity, then the Stats section underneath, both from
+// the newest instance listing - no API calls of its own, unlike the Logs
+// tab.
 func (gui *Gui) renderInstanceInfoToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.instanceInfoStr(instance))
+			gui.reRenderMain(ctx, gui.instanceInfoStr(instance.Latest()))
 		},
 		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Before:     gui.clearMain,
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})
@@ -55,7 +53,7 @@ func (gui *Gui) instanceInfoStr(instance *commands.Instance, omit ...string) str
 func (gui *Gui) sectionHeading(title string) string {
 	rule := "\u2500\u2500 " + title + " "
 
-	if padding := int(gui.mainViewWidth.Load()) - runewidth.StringWidth(rule); padding > 0 {
+	if padding := int(gui.mainViewWidth.Load()) - utils.DisplayWidth(rule); padding > 0 {
 		rule += strings.Repeat("\u2500", padding)
 	} else {
 		rule += "\u2500\u2500\u2500"
@@ -96,9 +94,7 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 	output += line("IPv4", strings.Join(instance.Addresses("inet"), " "))
 	output += line("IPv6", strings.Join(instance.Addresses("inet6"), " "))
 
-	if full, ok := instance.Full(); ok {
-		output += line("Snapshots", strconv.Itoa(len(full.Snapshots)))
-	}
+	output += line("Snapshots", strconv.Itoa(len(instance.Instance.Snapshots)))
 
 	return output
 }
@@ -114,12 +110,11 @@ func localTime(t time.Time) string {
 }
 
 func (gui *Gui) instanceStatsStr(instance *commands.Instance) string {
-	full, ok := instance.Full()
-	if !ok || full.State == nil {
-		return gui.Tr.WaitingForInstanceInfo
+	state := instance.Instance.State
+	if state == nil {
+		return ""
 	}
 
-	state := full.State
 	// The nested labels under Disk and Network keep a padding of their own,
 	// being a level in.
 	padding := 12

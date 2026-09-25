@@ -37,6 +37,9 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 		},
 		NoItemsMessage: gui.Tr.NoSnapshots,
 		Gui:            gui.intoInterface(),
+		SameItem: func(a, b *commands.Snapshot) bool {
+			return a.Key() == b.Key()
+		},
 		Sort: func(a *commands.Snapshot, b *commands.Snapshot) bool {
 			// A service's replicas are snapshotted alike, so their
 			// snapshots group by instance rather than interleaving by date;
@@ -76,25 +79,16 @@ func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
 	return output
 }
 
-// refreshSnapshots reloads the panel for whichever instances are selected.
-// Unlike the other panels this one follows another panel's selection, so it
-// runs on selection changes as well as on its own poll.
-func (gui *Gui) refreshSnapshots() error {
-	if gui.Views.Snapshots == nil {
-		return nil
-	}
-
+// renderSnapshots lists the snapshots of the instances the panel follows,
+// as the newest refresh has them: they come with the instance listing, so
+// neither a selection change nor a poll asks the daemon for anything.
+func (gui *Gui) renderSnapshots() error {
 	gui.setSnapshotsTitle(gui.State.SnapshotsLabel)
 
 	snapshots := []*commands.Snapshot{}
 
 	for _, instance := range gui.State.SnapshotsInstances {
-		instanceSnapshots, err := instance.Snapshots()
-		if err != nil {
-			return err
-		}
-
-		snapshots = append(snapshots, instanceSnapshots...)
+		snapshots = append(snapshots, instance.Latest().Snapshots()...)
 	}
 
 	gui.Panels.Snapshots.SetItems(snapshots)
@@ -103,16 +97,16 @@ func (gui *Gui) refreshSnapshots() error {
 }
 
 // refreshSnapshotsFor points the panel at what the selection stands for -
-// one instance, or every replica of a service - and reloads it. The panel
-// follows whichever list you're in, so each of those hands its own
-// selection over rather than the snapshots panel reaching for the focused
-// view - reading that takes ViewStackMutex, which switchFocus is holding
-// when it runs a panel's OnSelect.
+// one instance, or every replica of a service. The panel follows whichever
+// list you're in, so each of those hands its own selection over rather than
+// the snapshots panel reaching for the focused view - reading that takes
+// ViewStackMutex, which switchFocus is holding when it runs a panel's
+// OnSelect.
 func (gui *Gui) refreshSnapshotsFor(label string, instances ...*commands.Instance) error {
 	gui.State.SnapshotsLabel = label
 	gui.State.SnapshotsInstances = instances
 
-	return gui.refreshSnapshots()
+	return gui.renderSnapshots()
 }
 
 // snapshotsSpanInstances reports whether the panel is holding more than one
@@ -130,14 +124,6 @@ func (gui *Gui) setSnapshotsTitle(label string) {
 	}
 
 	gui.Views.Snapshots.Title = title
-}
-
-func (gui *Gui) refreshSnapshotsQuiet() error {
-	if err := gui.refreshSnapshots(); err != nil {
-		gui.Log.Warn(err)
-	}
-
-	return nil
 }
 
 // snapshotPrompt is the state behind the new-snapshot popup: a name field,
@@ -188,15 +174,6 @@ func (p *snapshotPrompt) options() commands.SnapshotOptions {
 		Stateful:  p.stateful,
 		ExpiresIn: snapshotExpiries[p.expiry].value,
 	}
-}
-
-func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
-	instance, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.snapshotCreatePrompt(instance)
 }
 
 func (gui *Gui) snapshotCreatePrompt(instance *commands.Instance) error {
@@ -358,9 +335,7 @@ func (gui *Gui) renderSnapshotOptions(prompt *snapshotPrompt) error {
 
 	// The highlight is the selection: gocui draws it on the cursor line, so
 	// the cursor is what moves rather than a marker in the text.
-	if err := view.SetCursor(0, prompt.field); err != nil {
-		return err
-	}
+	view.SetCursor(0, prompt.field)
 	view.Title = gui.Tr.SnapshotOptionsTitle
 	view.Subtitle = gui.Tr.SnapshotChangeHint
 	view.Footer = gui.Tr.SnapshotSubmitHint
@@ -404,14 +379,17 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 			return gui.createErrorPanel(err.Error())
 		}
 
-		// Points the panel at this instance alone: taken from a replicated
-		// service, the one just picked is one of several it was showing,
-		// and focusSnapshot below wants the new snapshot unambiguous.
-		if err := gui.refreshSnapshotsFor(instance.Name, instance); err != nil {
-			return err
-		}
+		return gui.refresh(func() error {
+			// Points the panel at this instance alone: taken from a
+			// replicated service, the one just picked is one of several it
+			// was showing, and focusSnapshot wants the new snapshot
+			// unambiguous.
+			if err := gui.refreshSnapshotsFor(instance.Name, instance); err != nil {
+				return err
+			}
 
-		return gui.focusSnapshot(name)
+			return gui.focusSnapshot(name)
+		}, gui.fetchInstances, gui.fetchServices)
 	})
 }
 
@@ -427,21 +405,10 @@ func (gui *Gui) focusSnapshot(name string) error {
 
 	gui.Panels.Snapshots.SetSelectedLineIdx(index)
 
-	// This runs on the waiting-status goroutine; focus belongs to the main
-	// loop.
-	gui.g.Update(func(*gocui.Gui) error {
-		return gui.switchFocus(gui.Views.Snapshots)
-	})
-
-	return nil
+	return gui.switchFocus(gui.Views.Snapshots)
 }
 
-func (gui *Gui) handleSnapshotRestore(g *gocui.Gui, v *gocui.View) error {
-	snapshot, err := gui.Panels.Snapshots.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, snapshot.InstanceName, snapshot.Name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
@@ -450,17 +417,12 @@ func (gui *Gui) handleSnapshotRestore(g *gocui.Gui, v *gocui.View) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstances()
+			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
 }
 
-func (gui *Gui) handleSnapshotDelete(g *gocui.Gui, v *gocui.View) error {
-	snapshot, err := gui.Panels.Snapshots.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
+func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 	// Named with its instance, the panel holding every replica's snapshots
 	// where a service is selected, and replicas sharing snapshot names.
 	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, snapshot.InstanceName)
@@ -471,7 +433,7 @@ func (gui *Gui) handleSnapshotDelete(g *gocui.Gui, v *gocui.View) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshSnapshots()
+			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
 }

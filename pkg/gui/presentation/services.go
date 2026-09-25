@@ -97,9 +97,7 @@ func displayServiceSnapshotCount(service *commands.ComposeService) string {
 	count := 0
 
 	for _, instance := range service.Instances {
-		if full, ok := instance.Full(); ok {
-			count += len(full.Snapshots)
-		}
+		count += len(instance.Instance.Snapshots)
 	}
 
 	return strconv.Itoa(count)

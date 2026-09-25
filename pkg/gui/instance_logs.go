@@ -19,10 +19,10 @@ func (gui *Gui) renderInstanceLogsToMain(instance *commands.Instance) tasks.Task
 func (gui *Gui) renderLogsToMain(content func() string) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(content())
+			gui.reRenderMain(ctx, content())
 		},
 		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Before:     gui.clearMain,
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: true,
 	})

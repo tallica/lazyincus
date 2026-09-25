@@ -13,11 +13,22 @@ import (
 // which hides every incus-compose stack: incus-compose gives each compose
 // project an Incus project of its own.
 func (gui *Gui) handleSwitchProject(g *gocui.Gui, v *gocui.View) error {
-	names, err := gui.IncusCommand.GetProjectNames()
-	if err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
+	go func() {
+		names, err := gui.IncusCommand.GetProjectNames()
 
+		gui.g.Update(func(*gocui.Gui) error {
+			if err != nil {
+				return err
+			}
+
+			return gui.projectsMenu(names)
+		})
+	}()
+
+	return nil
+}
+
+func (gui *Gui) projectsMenu(names []string) error {
 	sort.Strings(names)
 	current := gui.IncusCommand.ProjectName()
 
@@ -80,19 +91,30 @@ func (gui *Gui) reloadAfterProjectChange() error {
 		panel.ClearItems()
 	}
 
+	// Or the next instance refresh redraws the old project's snapshots.
+	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
+	gui.setSnapshotsTitle("")
+
+	// The blank frame below shows "No instances" in the main panel; without
+	// this, the same instance arriving at the top reads as nothing changed.
+	gui.resetMainView()
+
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
-	for _, refresh := range []func() error{
-		gui.refreshInstances,
-		gui.refreshImages,
-		gui.refreshVolumes,
-		gui.refreshNetworks,
-		gui.refreshServices,
-	} {
-		if err := refresh(); err != nil {
-			return gui.createErrorPanel(err.Error())
+	// A fetch already in flight was asked about the old scope.
+	gui.refreshes.invalidateAll()
+
+	for _, panel := range gui.allSidePanels() {
+		if err := panel.RerenderList(); err != nil {
+			return err
 		}
 	}
 
-	return gui.renderString(gui.g, "information", gui.getInformationContent())
+	if err := gui.renderString(gui.g, "information", gui.getInformationContent()); err != nil {
+		return err
+	}
+
+	return gui.WithWaitingStatus(gui.Tr.LoadingStatus, func() error {
+		return gui.refresh(nil, gui.allFetches()...)
+	})
 }

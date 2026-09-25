@@ -1,0 +1,40 @@
+╭─[1]─Instances───────────────────────────────╮╭─Info - Logs - Config - Env - Top──────────────────────────────────────────────────────────╮
+│a-name-long-enough-to-be-cut-off running  co…││Name:         a-name-long-enough-to-be-cut-off                                             │
+│web                              running  co…││Status:       running                                                                      │
+│db                               stopped  co…││Type:         container                                                                    │
+│                                             ││Project:      default                                                                      │
+│                                             ││Image:        Alpine 3.22 amd64                                                            │
+│                                             ││Architecture: x86_64                                                                       │
+│                                             ││IPv4:         192.0.2.144                                                                  │
+│                                             ││Snapshots:    0                                                                            │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││CPU:          (no usage reported)                                                          │
+│                                             ││Memory:       (no usage reported)                                                          │
+│                                             ││Processes:    12                                                                           │
+│                                             ││                                                                                           │
+│                                             ││Disk:                                                                                      │
+│                                             ││  (no disk usage reported)                                                                 │
+│                                             ││                                                                                           │
+│                                             ││Network:                                                                                   │
+│                                             ││  eth0:                                                                                    │
+│                                             ││    Type:                                                                                  │
+│                                             ││    State:                                                                                 │
+│                                             ││    MTU:        0                                                                          │
+│                                             ││    Received:   0B (0 packets)                                                             │
+│                                             ││    Sent:       0B (0 packets)                                                             │
+│                                             ││    IP addresses:                                                                          │
+╰─────────────────────────────────────────────╯│      inet:  192.0.2.144/ (global)                                                         │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[3]─Images──────────────────────────────────╮│                                                                                           │
+│Alpine 3.22 amd64 0123456789ab container     ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[4]─Volumes─────────────────────────────────╮│                                                                                           │
+│data default custom 0                        ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[5]─Networks────────────────────────────────╮│                                                                                           │
+│incusbr0 bridge managed 0                    ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                        Donate Incus v7.4 (fake/all projects) ●  test

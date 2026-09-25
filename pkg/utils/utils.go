@@ -1,20 +1,14 @@
 package utils
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"io"
-	"math"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/go-errors/errors"
-	"github.com/jesseduffield/gocui"
-	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml"
@@ -22,39 +16,21 @@ import (
 	"github.com/goccy/go-yaml/printer"
 )
 
-// SplitLines takes a multiline string and splits it on newlines
-// currently we are also stripping \r's which may have adverse effects for
-// windows users (but no issues have been raised yet)
-func SplitLines(multilineString string) []string {
-	multilineString = strings.ReplaceAll(multilineString, "\r", "")
-	if multilineString == "" || multilineString == "\n" {
-		return make([]string, 0)
-	}
-	lines := strings.Split(multilineString, "\n")
-	if lines[len(lines)-1] == "" {
-		return lines[:len(lines)-1]
-	}
-	return lines
+// DisplayWidth is how many terminal columns str takes, colour escapes
+// taking none. Every width lazyincus lays out goes through here, measured
+// by grapheme cluster with uniseg the way gocui draws - tcell sets
+// uniseg's ambiguous width for an East Asian locale for both of us.
+func DisplayWidth(str string) int {
+	return uniseg.StringWidth(Decolorise(str))
 }
 
 // WithPadding pads a string as much as you want
 func WithPadding(str string, padding int) string {
-	uncoloredStr := Decolorise(str)
-	if padding < runewidth.StringWidth(uncoloredStr) {
+	width := DisplayWidth(str)
+	if padding < width {
 		return str
 	}
-	return str + strings.Repeat(" ", padding-runewidth.StringWidth(uncoloredStr))
-}
-
-// Truncate shortens a string to the given display width, marking the cut
-// with an ellipsis. Widths below 2 return the string untouched, since
-// there's no room to say anything.
-func Truncate(str string, width int) string {
-	if width < 2 || runewidth.StringWidth(str) <= width {
-		return str
-	}
-
-	return runewidth.Truncate(str, width, ellipsis)
+	return str + strings.Repeat(" ", padding-width)
 }
 
 // ColoredString takes a string and a colour attribute and returns a colored
@@ -104,13 +80,6 @@ func ColoredYamlString(str string) string {
 		}
 	}
 	return p.PrintTokens(tokens)
-}
-
-// MultiColoredString takes a string and an array of colour attributes and returns a colored
-// string with those attributes
-func MultiColoredString(str string, colorAttribute ...color.Attribute) string {
-	colour := color.New(colorAttribute...)
-	return ColoredStringDirect(str, colour)
 }
 
 // ColoredStringDirect used for aggregating a few color attributes rather than
@@ -185,18 +154,20 @@ func Decolorise(str string) string {
 	return colorEscapePattern.ReplaceAllString(str, "")
 }
 
-// TruncateColored shortens a line to the given display width the way
-// Truncate does, but steps over colour escapes rather than counting them:
-// runewidth measures a sequence as though it were text, so a coloured line
-// that fits would otherwise be cut, and the cut could land inside a
-// sequence. A line whose overflow is only blanks - a table row's padding -
-// hides nothing and is left alone. A reset closes a cut line, the escapes
-// that would have done it being past the cut.
-func TruncateColored(str string, width int) string {
-	// An ambiguous-width rune: two columns under an East Asian locale.
-	ellipsisWidth := runewidth.StringWidth(ellipsis)
+// Truncate shortens a string to the given display width, marking the cut
+// with an ellipsis. It steps over colour escapes rather than counting them -
+// a width count measures a sequence as though it were text, so a coloured
+// line that fits would otherwise be cut, and the cut could land inside a
+// sequence - and over grapheme clusters rather than runes, so it can't
+// split an accent from its letter or an emoji sequence apart. A string whose overflow is only blanks - a table row's padding
+// - hides nothing and is left alone, as is one with no room to mark a cut.
+// A reset closes a cut line, the escapes that would have done it being
+// past the cut.
+func Truncate(str string, width int) string {
+	// Ambiguous width: two columns under an East Asian locale.
+	ellipsisWidth := DisplayWidth(ellipsis)
 
-	visibleWidth := runewidth.StringWidth(strings.TrimRight(Decolorise(str), " "))
+	visibleWidth := DisplayWidth(strings.TrimRight(Decolorise(str), " "))
 	if width <= ellipsisWidth || visibleWidth <= width {
 		return str
 	}
@@ -208,14 +179,19 @@ func TruncateColored(str string, width int) string {
 
 	// Reports whether the limit was reached, which is where the line ends.
 	writeText := func(text string) bool {
-		for _, char := range text {
-			charWidth := runewidth.RuneWidth(char)
-			if used+charWidth > limit {
+		state := -1
+
+		for text != "" {
+			var cluster string
+			var clusterWidth int
+
+			cluster, text, clusterWidth, state = uniseg.FirstGraphemeClusterInString(text, state)
+			if used+clusterWidth > limit {
 				return true
 			}
 
-			kept.WriteRune(char)
-			used += charWidth
+			kept.WriteString(cluster)
+			used += clusterWidth
 		}
 
 		return false
@@ -255,10 +231,8 @@ func getPadWidths(rows [][]string) []int {
 	columnPadWidths := make([]int, len(rows[0])-1)
 	for i := range columnPadWidths {
 		for _, cells := range rows {
-			uncoloredCell := Decolorise(cells[i])
-
-			if runewidth.StringWidth(uncoloredCell) > columnPadWidths[i] {
-				columnPadWidths[i] = runewidth.StringWidth(uncoloredCell)
+			if width := DisplayWidth(cells[i]); width > columnPadWidths[i] {
+				columnPadWidths[i] = width
 			}
 		}
 	}
@@ -285,153 +259,6 @@ func displayArraysAligned(stringArrays [][]string) bool {
 		}
 	}
 	return true
-}
-
-func FormatBinaryBytes(b int) string {
-	n := float64(b)
-	units := []string{"B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
-	for _, unit := range units {
-		if n > math.Pow(2, 10) {
-			n /= math.Pow(2, 10)
-		} else {
-			val := fmt.Sprintf("%.2f%s", n, unit)
-			if val == "0.00B" {
-				return "0B"
-			}
-			return val
-		}
-	}
-	return "a lot"
-}
-
-func FormatDecimalBytes(b int) string {
-	n := float64(b)
-	units := []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-	for _, unit := range units {
-		if n > float64(10*10*10) {
-			n /= float64(10 * 10 * 10)
-		} else {
-			val := fmt.Sprintf("%.2f%s", n, unit)
-			if val == "0.00B" {
-				return "0B"
-			}
-			return val
-		}
-	}
-	return "a lot"
-}
-
-func ApplyTemplate(str string, object interface{}) string {
-	var buf bytes.Buffer
-	_ = template.Must(template.New("").Parse(str)).Execute(&buf, object)
-	return buf.String()
-}
-
-// GetGocuiAttribute gets the gocui color attribute from the string
-func GetGocuiAttribute(key string) gocui.Attribute {
-	colorMap := map[string]gocui.Attribute{
-		"default":   gocui.ColorDefault,
-		"black":     gocui.ColorBlack,
-		"red":       gocui.ColorRed,
-		"green":     gocui.ColorGreen,
-		"yellow":    gocui.ColorYellow,
-		"blue":      gocui.ColorBlue,
-		"magenta":   gocui.ColorMagenta,
-		"cyan":      gocui.ColorCyan,
-		"white":     gocui.ColorWhite,
-		"bold":      gocui.AttrBold,
-		"reverse":   gocui.AttrReverse,
-		"underline": gocui.AttrUnderline,
-	}
-	value, present := colorMap[key]
-	if present {
-		return value
-	}
-	return gocui.ColorDefault
-}
-
-// GetColorAttribute gets the color attribute from the string
-func GetColorAttribute(key string) color.Attribute {
-	colorMap := map[string]color.Attribute{
-		"default":   color.FgWhite,
-		"black":     color.FgBlack,
-		"red":       color.FgRed,
-		"green":     color.FgGreen,
-		"yellow":    color.FgYellow,
-		"blue":      color.FgBlue,
-		"magenta":   color.FgMagenta,
-		"cyan":      color.FgCyan,
-		"white":     color.FgWhite,
-		"bold":      color.Bold,
-		"underline": color.Underline,
-	}
-	value, present := colorMap[key]
-	if present {
-		return value
-	}
-	return color.FgWhite
-}
-
-// WithShortSha returns a command but with a shorter SHA. in the terminal we're all used to 10 character SHAs but under the hood they're actually 64 characters long. No need including all the characters when we're just displaying a command
-func WithShortSha(str string) string {
-	split := strings.Split(str, " ")
-	for i, word := range split {
-		// good enough proxy for now
-		if len(word) == 64 {
-			split[i] = word[0:10]
-		}
-	}
-	return strings.Join(split, " ")
-}
-
-// FormatMapItem is for displaying items in a map
-func FormatMapItem(padding int, k string, v interface{}) string {
-	return fmt.Sprintf("%s%s %v\n", strings.Repeat(" ", padding), ColoredString(k+":", color.FgYellow), fmt.Sprintf("%v", v))
-}
-
-// FormatMap is for displaying a map
-func FormatMap(padding int, m map[string]string) string {
-	if len(m) == 0 {
-		return "none\n"
-	}
-
-	output := "\n"
-
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		output += FormatMapItem(padding, key, m[key])
-	}
-
-	return output
-}
-
-type multiErr []error
-
-func (m multiErr) Error() string {
-	var b bytes.Buffer
-	b.WriteString("encountered multiple errors:")
-	for _, err := range m {
-		b.WriteString("\n\t... " + err.Error())
-	}
-	return b.String()
-}
-
-func CloseMany(closers []io.Closer) error {
-	errs := make([]error, 0, len(closers))
-	for _, c := range closers {
-		err := c.Close()
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if len(errs) > 0 {
-		return multiErr(errs)
-	}
-	return nil
 }
 
 func SafeTruncate(str string, limit int) string {
@@ -468,29 +295,13 @@ func OpensMenuStyle(str string) string {
 	return ColoredString(fmt.Sprintf("%s...", str), color.FgMagenta)
 }
 
-// MarshalIntoYaml gets any json-tagged data and marshal it into yaml saving original json structure.
-// Useful for structs from 3rd-party libs without yaml tags.
-func MarshalIntoYaml(data interface{}) ([]byte, error) {
-	return marshalIntoFormat(data, "yaml")
-}
-
-func marshalIntoFormat(data interface{}, format string) ([]byte, error) {
-	// First marshal struct->json to get the resulting structure declared by json tags
-	dataJSON, err := json.MarshalIndent(data, "", "  ")
+// MarshalIntoYaml renders json-tagged data - the Incus API's structs have
+// no yaml tags - as YAML, in the order the struct declares its fields.
+func MarshalIntoYaml(data any) ([]byte, error) {
+	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
-	switch format {
-	case "json":
-		return dataJSON, err
-	case "yaml":
-		// Use Unmarshal->Marshal hack to convert json into yaml with the original structure preserved
-		var dataMirror yaml.MapSlice
-		if err := yaml.Unmarshal(dataJSON, &dataMirror); err != nil {
-			return nil, err
-		}
-		return yaml.Marshal(dataMirror)
-	default:
-		return nil, errors.New(fmt.Sprintf("Unsupported detailization format: %s", format))
-	}
+
+	return yaml.JSONToYAML(dataJSON)
 }

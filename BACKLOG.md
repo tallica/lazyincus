@@ -97,7 +97,7 @@ own merits.
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
 - [x] **Horizontal truncation indicator** — `SideListPanel` clips each
-      row itself, through a colour-aware `utils.TruncateColored`, and the
+      row itself, through a colour-aware `utils.Truncate`, and the
       layout re-clips on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
@@ -141,6 +141,20 @@ Deliberately deferred (don't re-pitch unprompted):
   `runSubprocessWithMessage`, mirroring `instanceExecShell`. That also shows
   image-download progress natively, which a `WithWaitingStatus` spinner would
   hide.
+
+### What gocui master makes possible
+
+Available since the move off lazydocker's 2024 pin; none of it wired up.
+
+- [ ] **Clickable links** - `View.AutoRenderHyperLinks` on the main view
+      turns URLs into terminal hyperlinks. The Info tab's addresses and a
+      service's published ports are where one would earn its place.
+- [ ] **Double-click** - `ViewMouseBindingOpts.IsDoubleClick`. A double
+      click on a row could do what enter does, focusing the main panel.
+- [ ] **Recentre on scroll** - `View.FocusPoint` keeps the selection in the
+      middle once it leaves the view, the way lazygit scrolls; lazyincus
+      moves a line at a time, as lazydocker does. A UX choice to make, not
+      a gap.
 
 ### Typed commands
 

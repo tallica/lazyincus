@@ -27,9 +27,9 @@ func TestIsComposeManagedProject(t *testing.T) {
 }
 
 func TestComposeServiceStatus(t *testing.T) {
-	running := &Instance{Instance: api.Instance{Status: "Running"}}
-	stopped := &Instance{Instance: api.Instance{Status: "Stopped"}}
-	frozen := &Instance{Instance: api.Instance{Status: "Frozen"}}
+	running := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Running"}}}
+	stopped := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Stopped"}}}
+	frozen := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Frozen"}}}
 
 	tests := []struct {
 		name      string
@@ -56,14 +56,11 @@ func TestComposeServiceStatus(t *testing.T) {
 
 func TestComposeServiceHealth(t *testing.T) {
 	withHealth := func(status string) *Instance {
-		instance := &Instance{}
-		instance.setFull(&api.InstanceFull{
+		return &Instance{Instance: api.InstanceFull{
 			Instance: api.Instance{
 				ExpandedConfig: map[string]string{healthStatusKey: status},
 			},
-		})
-
-		return instance
+		}}
 	}
 
 	tests := []struct {

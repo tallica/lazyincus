@@ -29,11 +29,13 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
-- Incus client: `github.com/lxc/incus/v7` (client at `v7.3.0`)
-- TUI: `github.com/jesseduffield/gocui` (pinned to
-  `v0.3.1-0.20240418080333-8cd33929c513` — the version lazydocker itself
-  uses; the latest tagged `v0.3.0` release is missing the `Tabs`/`TabIndex`
-  view fields the main-panel tab UI depends on)
+- Incus client: `github.com/lxc/incus/v7` (client at `v7.4.0`)
+- TUI: `github.com/jesseduffield/gocui` (pinned to master,
+  `v0.3.1-0.20260331125330-c81715e95462` — the latest tagged `v0.3.0`
+  release is missing the `Tabs`/`TabIndex` view fields the main-panel tab
+  UI depends on. lazydocker is still on `8cd33929c513` from 2024, so for
+  how a newer gocui API is meant to be used, lazygit is the reference: it
+  tracks gocui master.)
 
 ## Working on this
 
@@ -56,8 +58,10 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 - **Nothing machine-specific in the tree.** The repo is public and a push
   is permanent — no credentials, no local paths, no "works on my VM". That
   belongs in what you report, not in a file.
-- **Most of the UI has no test.** Drive a change against a live daemon —
-  see [Verifying in a live TUI](#verifying-in-a-live-tui).
+- **The tests see the screen, not the daemon.** The screen and refresh
+  tests in `pkg/gui` run the real app on a headless gocui over
+  `incustest`'s stand-in daemon; anything that talks to a real one still
+  wants driving live — see [Verifying in a live TUI](#verifying-in-a-live-tui).
 
 ## Source of the port
 
@@ -87,6 +91,16 @@ splits evenly between whichever panels aren't hidden, or — with
 the focused one everything the others don't need. "Focused" there means the
 last side panel to have focus, so stepping into the main panel doesn't
 collapse the list you were reading.
+
+Views, panels and `gui.State` belong to gocui's main loop. A refresh is a
+`fetch` (`pkg/gui/refresh.go`): it asks the daemon off the loop and returns
+the closure that shows the answer, which `gui.refresh` runs on the loop
+through `Update`. So a refresh is never started on the loop — a keypress
+wanting one starts it from `WithWaitingStatus` or `refreshInBackground` —
+and `RerenderList` is never called off it. Each kind of fetch carries a
+`refreshSeq`, so an older fetch that finishes late can't undo a newer one.
+A refresh of several kinds applies each that succeeded even when another
+fails.
 
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width
@@ -143,6 +157,11 @@ make lint        # golangci-lint, configured by .golangci.yml
 
 No `vendor/` directory — plain module mode.
 
+The screen tests compare against `pkg/gui/testdata/screens`. A change
+that moves the layout on purpose rewrites them with
+`go test ./pkg/gui -run TestScreen -update`; read the diff before
+keeping it.
+
 ### Releasing
 
 Pushing a `v*` tag runs `.github/workflows/release.yml`: GoReleaser builds
@@ -186,3 +205,20 @@ root disk or NIC in its default profile — `incus launch` into it fails with
 (`incus profile device add default root disk path=/ pool=<pool> --project
 <name>`, same for a `nic`). Deleting the project afterwards also needs its
 cached images deleted first.
+
+### Checking for races
+
+Most of the concurrency lives in paths no test reaches: the pollers, the
+main-panel tasks, the loop they hand results to. A change that touches any
+of them gets a race-enabled build driven like the one above:
+
+```sh
+go build -race -o /tmp/lazyincus-race .
+tmux new-session -d -s lzr -x 140 -y 40 \
+  "GORACE=log_path=/tmp/lzi-race CONFIG_DIR=/tmp/lzi-cfg /tmp/lazyincus-race"
+```
+
+Move through the lists, every main-panel tab, a project switch or two
+(`P`), and the services panel if there's a stack in the working directory,
+for a minute or so; then quit. Any `/tmp/lzi-race.*` file is a race.
+Read-only keys are enough - the races are between reading and refreshing.

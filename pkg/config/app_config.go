@@ -1,6 +1,5 @@
 // Package config handles all the user-configuration. The fields here are
 // all in PascalCase but in your actual config.yml they'll be in camelCase.
-// You can view the default config with `lazyincus --config`.
 // You can open your config file with 'o', or edit it in $VISUAL/$EDITOR
 // with 'O'. Changes are picked up without a restart, aside from the few
 // options noted in docs/Config.md as startup-only.
@@ -11,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/OpenPeeDeeP/xdg"
-	"github.com/jesseduffield/yaml"
+	"github.com/goccy/go-yaml"
 )
 
 // UserConfig holds all of the user-configurable options
@@ -163,12 +162,12 @@ func GetDefaultConfig() UserConfig {
 
 // AppConfig contains the base configuration fields required for lazyincus.
 type AppConfig struct {
-	Debug       bool   `long:"debug" env:"DEBUG" default:"false"`
-	Version     string `long:"version" env:"VERSION" default:"unversioned"`
-	Commit      string `long:"commit" env:"COMMIT"`
-	BuildDate   string `long:"build-date" env:"BUILD_DATE"`
-	Name        string `long:"name" env:"NAME" default:"lazyincus"`
-	BuildSource string `long:"build-source" env:"BUILD_SOURCE" default:""`
+	Debug       bool
+	Version     string
+	Commit      string
+	BuildDate   string
+	Name        string
+	BuildSource string
 	UserConfig  *UserConfig
 	ConfigDir   string
 }
@@ -262,33 +261,22 @@ func loadUserConfig(configDir string, base *UserConfig) (*UserConfig, error) {
 		return nil, err
 	}
 
+	// goccy/go-yaml zeroes the target for a document with nothing in it,
+	// which is what a fresh install's config file is.
+	var document map[string]any
+	if err := yaml.Unmarshal(content, &document); err != nil {
+		return nil, err
+	}
+
+	if len(document) == 0 {
+		return base, nil
+	}
+
 	if err := yaml.Unmarshal(content, base); err != nil {
 		return nil, err
 	}
 
 	return base, nil
-}
-
-// WriteToUserConfig allows you to set a value on the user config to be saved
-// note that if you set a zero-value, it may be ignored e.g. a false or 0 or
-// empty string this is because we are using the omitempty yaml directive so
-// that we don't write a heap of zero values to the user's config.yml
-func (c *AppConfig) WriteToUserConfig(updateConfig func(*UserConfig) error) error {
-	userConfig, err := loadUserConfig(c.ConfigDir, &UserConfig{})
-	if err != nil {
-		return err
-	}
-
-	if err := updateConfig(userConfig); err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(c.ConfigFilename(), os.O_WRONLY|os.O_CREATE, 0o666)
-	if err != nil {
-		return err
-	}
-
-	return yaml.NewEncoder(file).Encode(userConfig)
 }
 
 // ReloadUserConfig re-reads the config file, layered over the defaults again

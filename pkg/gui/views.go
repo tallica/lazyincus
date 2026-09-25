@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"os"
 
 	"github.com/fatih/color"
@@ -94,7 +95,7 @@ func (gui *Gui) createAllViews() error {
 	var err error
 	for _, mapping := range gui.orderedViewNameMappings() {
 		*mapping.viewPtr, err = gui.prepareView(mapping.name)
-		if err != nil && err.Error() != UNKNOWN_VIEW_ERROR_MSG {
+		if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 	}
@@ -130,7 +131,6 @@ func (gui *Gui) styleAllViews() {
 	selectedLineBgColor := GetGocuiStyle(gui.Config.UserConfig.Gui.Theme.SelectedLineBgColor)
 
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel
-	gui.Views.Main.IgnoreCarriageReturns = true
 
 	for index, def := range gui.visibleSidePanelDefs() {
 		view := *def.viewPtr

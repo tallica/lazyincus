@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"os"
 	"sync/atomic"
 	"time"
@@ -29,7 +30,6 @@ type Gui struct {
 	Tr            *i18n.TranslationSet
 	statusManager *statusManager
 	taskManager   *tasks.TaskManager
-	ErrorChan     chan error
 	Views         Views
 
 	// mainViewWidth is how wide the main panel currently is, recorded by
@@ -40,11 +40,23 @@ type Gui struct {
 	// if we've suspended the gui (e.g. because we've switched to a subprocess)
 	// we typically want to pause some things that are running like background
 	// refreshes
-	PauseBackgroundThreads bool
+	PauseBackgroundThreads atomic.Bool
 
 	Mutexes
 
 	Panels Panels
+
+	refreshes refreshSeqs
+
+	mainView mainViewState
+
+	// composeProject is the local project as the daemon holds it, backing
+	// the healthcheck line of the services panel's Info tab. Refreshed with
+	// the services; atomic, the tab rendering off the main loop.
+	composeProject atomic.Pointer[commands.ComposeProject]
+
+	// stopped closes when run returns, stopping the pollers.
+	stopped chan struct{}
 }
 
 type Panels struct {
@@ -115,11 +127,6 @@ type guiState struct {
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
 
-	// ComposeProject is the local project as the daemon holds it, backing
-	// the healthcheck and resource lines of the services panel's Info tab.
-	// Refreshed with the services, so rendering makes no API calls.
-	ComposeProject *commands.ComposeProject
-
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
 	// the all-projects view of a server with a single project reads better
@@ -188,7 +195,7 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 }
 
 // NewGui builds a new gui handler
-func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig, errorChan chan error) (*Gui, error) {
+func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
 	initialState := guiState{
 		Platform: *oSCommand.Platform,
 		Panels: &panelStates{
@@ -212,7 +219,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		Tr:            tr,
 		statusManager: &statusManager{},
 		taskManager:   tasks.NewTaskManager(log, tr),
-		ErrorChan:     errorChan,
+		stopped:       make(chan struct{}),
 	}
 
 	deadlock.Opts.Disable = !gui.Config.Debug
@@ -235,9 +242,14 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
-		for range ticker.C {
-			if !gui.PauseBackgroundThreads {
-				_ = function()
+		for {
+			select {
+			case <-gui.stopped:
+				return
+			case <-ticker.C:
+				if !gui.PauseBackgroundThreads.Load() {
+					_ = function()
+				}
 			}
 		}
 	}()
@@ -245,8 +257,6 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 
 // Run sets up the gui with keybindings and starts the mainloop
 func (gui *Gui) Run() error {
-	defer gui.taskManager.Close()
-
 	// Before any view exists: whether there's a compose file in the working
 	// directory decides whether the services panel is there at all, and so
 	// which panels get styled, numbered and focused first. One fast
@@ -260,7 +270,20 @@ func (gui *Gui) Run() error {
 	if err != nil {
 		return err
 	}
+
+	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() {
+		g.Close()
+	})
+
+	return gui.run(g)
+}
+
+// run drives a gocui.Gui until quit: all of Run but making it, which a
+// test does headless.
+func (gui *Gui) run(g *gocui.Gui) error {
+	defer gui.taskManager.Close()
 	defer g.Close()
+	defer close(gui.stopped)
 
 	if !gui.Config.UserConfig.Gui.IgnoreMouseEvents {
 		g.Mouse = true
@@ -272,15 +295,18 @@ func (gui *Gui) Run() error {
 
 	gui.g = g
 
-	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() {
-		gui.g.Close()
-	})
-
 	if err := gui.SetColorScheme(); err != nil {
 		return err
 	}
 
 	g.ErrorHandler = gui.handleError
+
+	// A popup has the keyboard, so a click or a wheel outside it does
+	// nothing; gocui would otherwise move the cursor of the list under it
+	// before any binding of ours could say no.
+	g.ShouldHandleMouseEvent = func(v *gocui.View, _ gocui.Key) bool {
+		return !gui.popupPanelFocused() || gui.isPopupPanel(v.Name())
+	}
 
 	g.SetManager(gocui.ManagerFunc(gui.layout), gocui.ManagerFunc(gui.getFocusLayout()))
 
@@ -293,7 +319,7 @@ func (gui *Gui) Run() error {
 
 	gui.setPanels()
 
-	if err = gui.keybindings(g); err != nil {
+	if err := gui.keybindings(g); err != nil {
 		return err
 	}
 
@@ -310,39 +336,22 @@ func (gui *Gui) Run() error {
 	}
 
 	go func() {
-		if err := gui.refreshInstances(); err != nil {
-			gui.Log.Error(err)
+		for _, fetch := range gui.allFetches() {
+			if err := gui.refresh(nil, fetch); err != nil {
+				gui.Log.Error(err)
+			}
 		}
 
-		if err := gui.refreshImages(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshVolumes(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshNetworks(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshServices(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
-		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
-		gui.goEvery(time.Second*10, gui.refreshSnapshotsQuiet)
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
 		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 
-	err = g.MainLoop()
-	if err == gocui.ErrQuit {
+	err := g.MainLoop()
+	if errors.Is(err, gocui.ErrQuit) {
 		return nil
 	}
 	return err
@@ -368,6 +377,12 @@ func (gui *Gui) handleError(err error) error {
 	return nil
 }
 
+// allFetches is every panel's fetch, in the order startup and a project
+// switch run them.
+func (gui *Gui) allFetches() []fetch {
+	return []fetch{gui.fetchInstances, gui.fetchImages, gui.fetchVolumes, gui.fetchNetworks, gui.fetchServices}
+}
+
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
@@ -378,24 +393,6 @@ func (gui *Gui) setPanels() {
 		Services:  gui.getServicesPanel(),
 		Menu:      gui.getMenuPanel(),
 	}
-}
-
-func (gui *Gui) reRenderMain() error {
-	mainView := gui.Views.Main
-	if mainView == nil {
-		return nil
-	}
-	if mainView.IsTainted() {
-		gui.g.Update(func(g *gocui.Gui) error {
-			return nil
-		})
-	}
-	return nil
-}
-
-func (gui *Gui) updateInstanceDetails() error {
-	gui.IncusCommand.RefreshInstanceDetails(gui.Panels.Instances.List.GetAllItems())
-	return nil
 }
 
 // refreshInstancesQuiet drives the background poll (Incus has no event
@@ -551,23 +548,4 @@ func (gui *Gui) IgnoreStrings() []string {
 
 func (gui *Gui) Update(f func() error) {
 	gui.g.Update(func(*gocui.Gui) error { return f() })
-}
-
-// this is used by our cheatsheet code to generate keybindings.
-func (gui *Gui) SetupFakeGui() {
-	g, err := gocui.NewGui(gocui.NewGuiOpts{
-		OutputMode:       gocui.OutputTrue,
-		RuneReplacements: map[rune]string{},
-		Headless:         true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	gui.g = g
-	defer g.Close()
-	if err := gui.createAllViews(); err != nil {
-		panic(err)
-	}
-
-	gui.setPanels()
 }

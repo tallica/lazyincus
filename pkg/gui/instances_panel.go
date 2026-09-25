@@ -51,7 +51,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			GetItemContextCacheKey: func(instance *commands.Instance) string {
 				// Including the instance status in the cache key so that if the
 				// instance restarts we re-read the logs.
-				return "instances-" + instance.Name + "-" + instance.Instance.Status
+				return "instances-" + instance.Key() + "-" + instance.Instance.Status
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Instance]{
@@ -67,6 +67,9 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		},
 		Sort: func(a *commands.Instance, b *commands.Instance) bool {
 			return sortInstances(a, b)
+		},
+		SameItem: func(a, b *commands.Instance) bool {
+			return a.Key() == b.Key()
 		},
 		Filter: func(instance *commands.Instance) bool {
 			if !gui.State.ShowStoppedInstances && isStopped(instance) {
@@ -114,15 +117,7 @@ func (gui *Gui) isLocalComposeInstance(instance *commands.Instance) bool {
 		return false
 	}
 
-	if instance.Project != gui.State.LocalComposeProject {
-		return false
-	}
-
-	// ComposeService() reads ExpandedConfig, which RefreshInstanceDetails
-	// fills in the background - so until it has, assume an instance in the
-	// stack's project is the stack's, rather than showing its rows here for
-	// a second and then taking them away.
-	return !instance.DetailsLoaded() || instance.ComposeService() != ""
+	return instance.Project == gui.State.LocalComposeProject && instance.ComposeService() != ""
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {
@@ -132,12 +127,7 @@ func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc
 // instanceConfigStr is the dump alone: what used to head it - name, type,
 // status, created, profiles - is the Info tab's identity block now.
 func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
-	full, ok := instance.Full()
-	if !ok {
-		return gui.Tr.WaitingForInstanceInfo
-	}
-
-	data, err := utils.MarshalIntoYaml(full)
+	data, err := utils.MarshalIntoYaml(instance.Instance)
 	if err != nil {
 		return fmt.Sprintf("Error marshalling instance details: %v", err)
 	}
@@ -145,29 +135,42 @@ func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
 	return utils.ColoredYamlString(string(data))
 }
 
-func (gui *Gui) refreshInstances() error {
-	if gui.Views.Instances == nil {
-		return nil
-	}
+func (gui *Gui) fetchInstances() (func() error, error) {
+	ticket := gui.refreshes.instances.issue()
 
-	instances, err := gui.IncusCommand.GetInstances(gui.Panels.Instances.List.GetAllItems())
+	instances, err := gui.IncusCommand.GetInstances()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Computed over what the panel will actually show: with the local stack
-	// gone to the services panel, the instances left can sit in one project
-	// even when the server's don't.
-	standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
-		return gui.isLocalComposeInstance(instance)
-	})
+	return func() error {
+		if !gui.refreshes.instances.admit(ticket) {
+			return nil
+		}
 
-	gui.State.SpansProjects.Instances = spansMultipleProjects(
-		lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
+		// Computed over what the panel will actually show: with the local
+		// stack gone to the services panel, the instances left can sit in
+		// one project even when the server's don't.
+		standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
+			return gui.isLocalComposeInstance(instance)
+		})
 
-	gui.Panels.Instances.SetItems(instances)
+		gui.State.SpansProjects.Instances = spansMultipleProjects(
+			lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
 
-	return gui.Panels.Instances.RerenderList()
+		gui.Panels.Instances.SetItems(instances)
+
+		if err := gui.Panels.Instances.RerenderList(); err != nil {
+			return err
+		}
+
+		// The snapshots come with the instances.
+		return gui.renderSnapshots()
+	}, nil
+}
+
+func (gui *Gui) refreshInstances() error {
+	return gui.refresh(nil, gui.fetchInstances)
 }
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
@@ -176,19 +179,10 @@ func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
 	return gui.Panels.Instances.RerenderList()
 }
 
-func (gui *Gui) handleInstanceStart(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceStart(inst)
-}
-
-// The state changes below are split into handler and action the way the
-// snapshot and copy-IPv4 keys are: the services panel runs the same action
-// against the replica its selected row stands for. Either panel may be
-// showing what changed, so both are refreshed.
+// The actions below take the instance rather than reading the selection:
+// the services panel runs the same ones against the replica its selected
+// row stands for. Either panel may be showing what changed, so both are
+// refreshed.
 func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.StartingStatus, func() error {
 		if err := instance.Start(); err != nil {
@@ -197,15 +191,6 @@ func (gui *Gui) instanceStart(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstanceStop(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceStop(inst)
 }
 
 func (gui *Gui) instanceStop(instance *commands.Instance) error {
@@ -238,15 +223,6 @@ func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
 	}, nil)
 }
 
-func (gui *Gui) handleInstanceRestart(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceRestart(inst)
-}
-
 func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.RestartingStatus, func() error {
 		if err := instance.Restart(); err != nil {
@@ -255,15 +231,6 @@ func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstancePauseFreeze(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instancePauseFreeze(inst)
 }
 
 func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
@@ -280,15 +247,6 @@ func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
 
 		return gui.refreshInstancesAndServices()
 	})
-}
-
-func (gui *Gui) handleInstanceDelete(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceDelete(inst)
 }
 
 func (gui *Gui) instanceDelete(instance *commands.Instance) error {
@@ -326,18 +284,9 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 	}, nil)
 }
 
-// handleInstanceCopyIPv4 copies the selected instance's IPv4 address to the
-// system clipboard. An instance can have several (one per interface); we copy
+// instanceCopyIPv4 copies the instance's IPv4 address to the system
+// clipboard. An instance can have several (one per interface); we copy
 // the first, which is the address people generally want to paste somewhere.
-func (gui *Gui) handleInstanceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceCopyIPv4(inst)
-}
-
 func (gui *Gui) instanceCopyIPv4(inst *commands.Instance) error {
 	addresses := inst.Addresses("inet")
 	if len(addresses) == 0 {
@@ -362,15 +311,6 @@ func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return gui.handleEnterMain(g, v)
 }
 
-func (gui *Gui) handleInstancesExecShell(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceExecShell(inst)
-}
-
 // instanceCLIArgs carries the instance's project through to the `incus` CLI,
 // which otherwise uses whatever project the user's own remote is set to -
 // not necessarily the one the selected instance lives in.
@@ -380,15 +320,6 @@ func instanceCLIArgs(instance *commands.Instance) []string {
 	}
 
 	return []string{"--project", instance.Project}
-}
-
-func (gui *Gui) handleInstanceAttach(g *gocui.Gui, v *gocui.View) error {
-	inst, err := gui.Panels.Instances.GetSelectedItem()
-	if err != nil {
-		return nil
-	}
-
-	return gui.instanceAttachConsole(inst)
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

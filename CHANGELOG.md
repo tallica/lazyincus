@@ -12,7 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Releases now carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source. Each release also has a `checksums.txt` to verify the archive you downloaded against.
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
 
+### Changed
+- lazyincus asks the daemon for every instance's details in one request every two seconds, the way `incus list` does, instead of one request per instance every second - a dozen instances used to be a dozen requests a second while you did nothing. Type, addresses and snapshot counts are there as soon as the list appears, rather than filling in a moment later.
+- The Config tab lists every level of what it shows in the order Incus itself does, the way `incus config show` prints it. Only the top level kept that order before; everything nested under it - an instance's state, its network counters, a snapshot - came out alphabetical, which put `swap_usage` ahead of `usage` and split related fields apart.
+
 ### Fixed
+- Switching project clears the snapshots panel. It used to go back to showing the snapshots of whatever instance you'd selected in the project you left, where `d` and `r` would act on them.
+- A confirmation or error whose message wraps no longer loses its last line. The popup was sized by counting the message's characters, but the text wraps at word boundaries and can need more rows than that count, and the count took an error's colour codes for text as well.
+- A row cut to fit its panel no longer splits an emoji sequence in two. The cut counted each emoji joined into a sequence - a family, say - as a wide character of its own, so it came early and could land inside the sequence, leaving half of it and a stray joiner before the ellipsis.
+- Pasting into a list no longer types the pasted text as keypresses. Pasting `mosq` over the instances list used to open the Logs tab, open the config file, ask to stop the instance and quit, one letter each; the paste is now ignored there, and in the filter (`/`) it arrives as text.
+- Moving through the instances or services list no longer waits on the daemon. Every cursor move used to fetch the selected instance's snapshots before drawing, one request per replica, which on a remote daemon made each keypress as slow as the round trip. The snapshots come with the instance listing now. Opening the project menu (`P`) and switching project no longer freeze the screen either; the status line says it's loading.
+- In the all-projects view, moving straight from one item to another of the same name in a different project shows the second one's details. The main panel took the two for the same item and kept showing the first's.
 - A row too wide for its panel now ends in an ellipsis instead of being cut off without a word. gocui draws a long row up to the view's edge and stops, so a clipped `192.0.2.144` read as a short address rather than a hidden one — the kind of thing you copy before noticing. Every side panel and menu marks the cut, and re-cuts as it happens when the width changes, by `+` or by resizing the terminal. A row that only runs long on blank padding is left unmarked, having nothing hidden.
 
 ## [0.8.1] - 2026-09-20

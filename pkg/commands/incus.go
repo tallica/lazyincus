@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"time"
@@ -15,17 +14,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
-	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // IncusCommand is our main interface into the Incus API
 type IncusCommand struct {
-	Log           *logrus.Entry
-	OSCommand     *OSCommand
-	Tr            *i18n.TranslationSet
-	Config        *config.AppConfig
-	ErrorChan     chan error
-	InstanceMutex deadlock.Mutex
+	Log       *logrus.Entry
+	OSCommand *OSCommand
+	Tr        *i18n.TranslationSet
+	Config    *config.AppConfig
 
 	// RemoteName is the Incus remote we connected to, taken from the CLI
 	// config's default-remote.
@@ -44,15 +40,8 @@ type IncusCommand struct {
 	connMutex deadlock.Mutex
 	connected bool
 
-	Closers []io.Closer
+	runtimes instanceRuntimes
 }
-
-var _ io.Closer = &IncusCommand{}
-
-// LimitedIncusCommand is a stripped-down IncusCommand with just the methods that
-// an Instance might need. Kept as an interface (mirroring lazydocker's design)
-// so that Instance doesn't need to import the whole command package.
-type LimitedIncusCommand interface{}
 
 // dialTimeout bounds the connection attempt, which the client otherwise
 // leaves to the OS - a minute or more on a remote that has gone away.
@@ -68,7 +57,7 @@ const connectTimeout = 10 * time.Second
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
 // every remote that doesn't keep it where we'd look - a daemon in a VM
 // records its own path in the remote's config.
-func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, errorChan chan error) (*IncusCommand, error) {
+func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {
 		return nil, &ConnectError{Err: err}
@@ -81,22 +70,7 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 
 	capDialTimeout(client)
 
-	command := &IncusCommand{
-		Log:         log,
-		OSCommand:   osCommand,
-		Tr:          tr,
-		Config:      cfg,
-		client:      client,
-		ErrorChan:   errorChan,
-		RemoteName:  cliCfg.DefaultRemote,
-		projectName: clientProjectName(client),
-		// Every project by default: a server with one project looks the same
-		// either way, and on a server with several, scoping to whichever one
-		// the user's remote happens to point at hides the rest with no hint
-		// that they're there.
-		allProjects: true,
-		connected:   true,
-	}
+	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, cliCfg.DefaultRemote)
 
 	// Best-effort: a failed GetServer() shouldn't prevent startup, since
 	// the instance list is what actually matters. The footer just shows
@@ -109,6 +83,26 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 	}
 
 	return command, nil
+}
+
+// NewIncusCommandWithClient is an IncusCommand around a client already
+// connected - to a remote, or to incustest's stand-in.
+func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
+	return &IncusCommand{
+		Log:         log,
+		OSCommand:   osCommand,
+		Tr:          tr,
+		Config:      cfg,
+		client:      client,
+		RemoteName:  remote,
+		projectName: clientProjectName(client),
+		// Every project by default: a server with one project looks the same
+		// either way, and on a server with several, scoping to whichever one
+		// the user's remote happens to point at hides the rest with no hint
+		// that they're there.
+		allProjects: true,
+		connected:   true,
+	}
 }
 
 // clientProjectName reports the project a client is scoped to. An empty
@@ -253,10 +247,6 @@ func (c *IncusCommand) UseProject(name string) {
 	c.allProjects = false
 }
 
-func (c *IncusCommand) Close() error {
-	return utils.CloseMany(c.Closers)
-}
-
 // IsConnected reports whether the daemon is reachable, as of the most
 // recent request. Updated by the list calls, which run on a background
 // poll, so this reflects connection health without a dedicated heartbeat.
@@ -278,61 +268,68 @@ func (c *IncusCommand) setConnected(connected bool) {
 	c.connected = connected
 }
 
-// GetInstances lists all instances (containers and VMs). Existing Instance
-// objects are reused (by name) so that any cached details survive a refresh.
-func (c *IncusCommand) GetInstances(existingInstances []*Instance) ([]*Instance, error) {
-	c.InstanceMutex.Lock()
-	defer c.InstanceMutex.Unlock()
+// GetInstances lists every instance in scope, with its config, state and
+// snapshots: one request for what would otherwise be one per instance.
+func (c *IncusCommand) GetInstances() ([]*Instance, error) {
+	client, project, allProjects := c.scope()
+	listing := c.runtimes.beginListing()
 
-	client := c.Client()
-
-	apiInstances, err := c.listInstances(client)
+	fulls, err := listInstances(client, allProjects)
 	c.NoteError(err)
 
 	if err != nil {
 		return nil, err
 	}
 
-	ownInstances := make([]*Instance, len(apiInstances))
-
-	for i := range apiInstances {
-		apiInstance := apiInstances[i]
-
-		var inst *Instance
-		for _, existing := range existingInstances {
-			// Name alone isn't identity: the all-projects view can hold two
-			// instances of the same name from different projects.
-			if existing.Name == apiInstance.Name && existing.Project == apiInstance.Project {
-				inst = existing
-				break
-			}
+	instances := make([]*Instance, len(fulls))
+	for i := range fulls {
+		instanceClient := client
+		if allProjects {
+			instanceClient = client.UseProject(fulls[i].Project)
 		}
 
-		if inst == nil {
-			inst = &Instance{
-				Name:         apiInstance.Name,
-				OSCommand:    c.OSCommand,
-				Log:          c.Log,
-				IncusCommand: c,
-				Tr:           c.Tr,
-			}
-		}
-
-		// Reassigned every refresh, not just at construction: an instance
-		// reused by name across a project switch would otherwise keep a
-		// client pointed at the project it came from.
-		inst.Project = apiInstance.Project
-		inst.Client = c.clientFor(apiInstance.Project)
-		inst.Instance = apiInstance
-		ownInstances[i] = inst
+		instances[i] = c.newInstance(fulls[i], project, instanceClient, listing)
 	}
 
-	return ownInstances, nil
+	c.runtimes.prune(func(listed string) bool { return allProjects || listed == project }, instances, listing)
+
+	return instances, nil
 }
 
-// GetImages lists the images stored on the server, reusing existing Image
-// objects by fingerprint the way GetInstances does.
-func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
+// newInstance wraps one listed instance. fallbackProject names it for a
+// listing that left the instance's own project out.
+func (c *IncusCommand) newInstance(full api.InstanceFull, fallbackProject string, client incus.InstanceServer, listing uint64) *Instance {
+	project := full.Project
+	if project == "" {
+		project = fallbackProject
+	}
+
+	instance := &Instance{
+		Name:      full.Name,
+		Project:   project,
+		Instance:  full,
+		Client:    client,
+		OSCommand: c.OSCommand,
+		Log:       c.Log,
+		Tr:        c.Tr,
+	}
+
+	c.runtimes.attach(instance, listing)
+
+	return instance
+}
+
+// scope is the client, its project and whether the panels list every
+// project, read together so a project switch can't land between them.
+func (c *IncusCommand) scope() (incus.InstanceServer, string, bool) {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	return c.client, c.projectName, c.allProjects
+}
+
+// GetImages lists the images stored on the server.
+func (c *IncusCommand) GetImages() ([]*Image, error) {
 	client := c.Client()
 
 	apiImages, err := c.listImages(client)
@@ -347,26 +344,14 @@ func (c *IncusCommand) GetImages(existingImages []*Image) ([]*Image, error) {
 	for i := range apiImages {
 		apiImage := apiImages[i]
 
-		var image *Image
-		for _, existing := range existingImages {
-			if existing.Fingerprint == apiImage.Fingerprint && existing.Image.Project == apiImage.Project {
-				image = existing
-				break
-			}
+		ownImages[i] = &Image{
+			Fingerprint: apiImage.Fingerprint,
+			Image:       apiImage,
+			Client:      c.clientFor(apiImage.Project),
+			OSCommand:   c.OSCommand,
+			Log:         c.Log,
+			Tr:          c.Tr,
 		}
-
-		if image == nil {
-			image = &Image{
-				Fingerprint: apiImage.Fingerprint,
-				OSCommand:   c.OSCommand,
-				Log:         c.Log,
-				Tr:          c.Tr,
-			}
-		}
-
-		image.Client = c.clientFor(apiImage.Project)
-		image.Image = apiImage
-		ownImages[i] = image
 	}
 
 	return ownImages, nil
@@ -381,7 +366,7 @@ func (c *IncusCommand) listImages(client incus.InstanceServer) ([]api.Image, err
 }
 
 // GetNetworks lists the server's networks, managed and unmanaged alike.
-func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, error) {
+func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 	client := c.Client()
 
 	apiNetworks, err := c.listNetworks(client)
@@ -396,26 +381,14 @@ func (c *IncusCommand) GetNetworks(existingNetworks []*Network) ([]*Network, err
 	for i := range apiNetworks {
 		apiNetwork := apiNetworks[i]
 
-		var network *Network
-		for _, existing := range existingNetworks {
-			if existing.Name == apiNetwork.Name && existing.Network.Project == apiNetwork.Project {
-				network = existing
-				break
-			}
+		ownNetworks[i] = &Network{
+			Name:      apiNetwork.Name,
+			Network:   apiNetwork,
+			Client:    c.clientFor(apiNetwork.Project),
+			OSCommand: c.OSCommand,
+			Log:       c.Log,
+			Tr:        c.Tr,
 		}
-
-		if network == nil {
-			network = &Network{
-				Name:      apiNetwork.Name,
-				OSCommand: c.OSCommand,
-				Log:       c.Log,
-				Tr:        c.Tr,
-			}
-		}
-
-		network.Client = c.clientFor(apiNetwork.Project)
-		network.Network = apiNetwork
-		ownNetworks[i] = network
 	}
 
 	return ownNetworks, nil
@@ -433,7 +406,7 @@ func (c *IncusCommand) listNetworks(client incus.InstanceServer) ([]api.Network,
 // so this is one request per pool on top of the pool listing; a pool that
 // errors is skipped rather than failing the whole list, since one broken
 // pool shouldn't empty the panel.
-func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) {
+func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	client := c.Client()
 
 	pools, err := client.GetStoragePoolNames()
@@ -455,38 +428,27 @@ func (c *IncusCommand) GetVolumes(existingVolumes []*Volume) ([]*Volume, error) 
 		for i := range apiVolumes {
 			apiVolume := apiVolumes[i]
 
-			volume := &Volume{
+			ownVolumes = append(ownVolumes, &Volume{
 				Pool:      pool,
 				Name:      apiVolume.Name,
+				Volume:    apiVolume,
+				Client:    c.clientFor(apiVolume.Project),
 				OSCommand: c.OSCommand,
 				Log:       c.Log,
 				Tr:        c.Tr,
-			}
-
-			volume.Volume = apiVolume
-
-			for _, existing := range existingVolumes {
-				if existing.Key() == volume.Key() {
-					volume = existing
-					break
-				}
-			}
-
-			volume.Client = c.clientFor(apiVolume.Project)
-			volume.Volume = apiVolume
-			ownVolumes = append(ownVolumes, volume)
+			})
 		}
 	}
 
 	return ownVolumes, nil
 }
 
-func (c *IncusCommand) listInstances(client incus.InstanceServer) ([]api.Instance, error) {
-	if c.IsAllProjects() {
-		return client.GetInstancesAllProjects(api.InstanceTypeAny)
+func listInstances(client incus.InstanceServer, allProjects bool) ([]api.InstanceFull, error) {
+	if allProjects {
+		return client.GetInstancesFullAllProjects(api.InstanceTypeAny)
 	}
 
-	return client.GetInstances(api.InstanceTypeAny)
+	return client.GetInstancesFull(api.InstanceTypeAny)
 }
 
 func (c *IncusCommand) listVolumes(client incus.InstanceServer, pool string) ([]api.StorageVolume, error) {
@@ -495,25 +457,4 @@ func (c *IncusCommand) listVolumes(client incus.InstanceServer, pool string) ([]
 	}
 
 	return client.GetStoragePoolVolumes(pool)
-}
-
-// RefreshInstanceDetails fetches the full details (including state) for each
-// instance in the background.
-func (c *IncusCommand) RefreshInstanceDetails(instances []*Instance) {
-	for _, inst := range instances {
-		inst := inst
-		go func() {
-			// The instance's own client, not the command's: in the
-			// all-projects view they're scoped to different projects, and
-			// asking the wrong one returns nothing.
-			full, _, err := inst.Client.GetInstanceFull(inst.Name)
-			c.NoteError(err)
-
-			if err != nil {
-				c.Log.Warn(err)
-				return
-			}
-			inst.setFull(full)
-		}()
-	}
 }

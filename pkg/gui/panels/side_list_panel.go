@@ -88,7 +88,6 @@ type IGui interface {
 	IsCurrentView(*gocui.View) bool
 	FilterString(view *gocui.View) string
 	IgnoreStrings() []string
-	Update(func() error)
 
 	QueueTask(f func(ctx context.Context)) error
 }
@@ -291,32 +290,31 @@ func (self *SideListPanel[T]) selectedIndex(selected T) int {
 	return self.List.GetIndexBy(func(item T) bool { return self.SameItem(selected, item) })
 }
 
+// RerenderList re-filters and redraws the list. Main loop only, like
+// everything else that touches a view.
 func (self *SideListPanel[T]) RerenderList() error {
 	self.FilterAndSort()
 
-	self.Gui.Update(func() error {
-		table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
-			return self.GetTableCells(item)
-		})
-		renderedTable, err := utils.RenderTable(table)
-		if err != nil {
+	table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
+		return self.GetTableCells(item)
+	})
+	renderedTable, err := utils.RenderTable(table)
+	if err != nil {
+		return err
+	}
+
+	self.table = renderedTable
+	self.writeRows()
+
+	if self.OnRerender != nil {
+		if err := self.OnRerender(); err != nil {
 			return err
 		}
+	}
 
-		self.table = renderedTable
-		self.writeRows()
-
-		if self.OnRerender != nil {
-			if err := self.OnRerender(); err != nil {
-				return err
-			}
-		}
-
-		if self.Gui.IsCurrentView(self.View) {
-			return self.HandleSelect()
-		}
-		return nil
-	})
+	if self.Gui.IsCurrentView(self.View) {
+		return self.HandleSelect()
+	}
 
 	return nil
 }
@@ -325,7 +323,7 @@ func (self *SideListPanel[T]) RerenderList() error {
 // were written. The layout calls it, so a resize is drawn at the new width
 // in the same frame rather than at the panel's next refresh.
 func (self *SideListPanel[T]) FitToWidth() {
-	if width, _ := self.View.Size(); width != self.clipWidth {
+	if self.View.InnerWidth() != self.clipWidth {
 		self.writeRows()
 	}
 }
@@ -333,15 +331,12 @@ func (self *SideListPanel[T]) FitToWidth() {
 // writeRows writes the table to the view, each row cut to the view's width
 // and the cut marked: gocui stops a long row at the edge without a sign. The
 // mark goes in the row because drawFrame puts the scrollbar in the border.
-//
-// Size, not InnerWidth: the latter takes a column off for the frame that the
-// content doesn't actually lose, which would leave the last column empty.
 func (self *SideListPanel[T]) writeRows() {
-	self.clipWidth, _ = self.View.Size()
+	self.clipWidth = self.View.InnerWidth()
 
 	rows := strings.Split(self.table, "\n")
 	for index, row := range rows {
-		rows[index] = utils.TruncateColored(row, self.clipWidth)
+		rows[index] = utils.Truncate(row, self.clipWidth)
 	}
 
 	self.View.SetContent(strings.Join(rows, "\n"))

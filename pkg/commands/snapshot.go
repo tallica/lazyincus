@@ -13,6 +13,7 @@ import (
 // Snapshot is one snapshot of an instance. Snapshots have no identity of
 // their own in Incus: every operation names the instance and the snapshot.
 type Snapshot struct {
+	Project      string
 	InstanceName string
 	Name         string
 
@@ -24,7 +25,7 @@ type Snapshot struct {
 }
 
 func (s *Snapshot) Key() string {
-	return s.InstanceName + "/" + s.Name
+	return s.Project + "/" + s.InstanceName + "/" + s.Name
 }
 
 func (s *Snapshot) Delete() error {
@@ -65,21 +66,16 @@ func snapshotName(name string) string {
 	return name
 }
 
-// Snapshots lists the instance's snapshots.
-func (i *Instance) Snapshots() ([]*Snapshot, error) {
-	apiSnapshots, err := i.Client.GetInstanceSnapshots(i.Name)
-	if err != nil {
-		return nil, err
-	}
-
+// Snapshots are the instance's snapshots as its refresh listed them.
+func (i *Instance) Snapshots() []*Snapshot {
+	apiSnapshots := i.Instance.Snapshots
 	snapshots := make([]*Snapshot, len(apiSnapshots))
 
 	for index := range apiSnapshots {
 		apiSnapshot := apiSnapshots[index]
 
 		snapshots[index] = &Snapshot{
-			// GetInstanceSnapshots returns names as "<instance>/<snapshot>";
-			// every other call wants the bare snapshot name.
+			Project:      i.Project,
 			InstanceName: i.Name,
 			Name:         snapshotName(apiSnapshot.Name),
 			Snapshot:     apiSnapshot,
@@ -90,7 +86,7 @@ func (i *Instance) Snapshots() ([]*Snapshot, error) {
 		}
 	}
 
-	return snapshots, nil
+	return snapshots
 }
 
 // SnapshotOptions are the choices `incus snapshot create` exposes beyond the

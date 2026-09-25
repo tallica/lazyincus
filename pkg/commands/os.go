@@ -1,14 +1,10 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-errors/errors"
@@ -49,24 +45,9 @@ func NewOSCommand(log *logrus.Entry, config *config.AppConfig) *OSCommand {
 	}
 }
 
-// SetCommand sets the command function used by the struct.
-// To be used for testing only
-func (c *OSCommand) SetCommand(cmd func(string, ...string) *exec.Cmd) {
-	c.command = cmd
-}
-
 // RunCommandWithOutput wrapper around commands returning their output and error
 func (c *OSCommand) RunCommandWithOutput(command string) (string, error) {
 	cmd := c.ExecutableFromString(command)
-	before := time.Now()
-	output, err := sanitisedCommandOutput(cmd.Output())
-	c.Log.Warn(fmt.Sprintf("'%s': %s", command, time.Since(before)))
-	return output, err
-}
-
-// RunCommandWithOutputContext wrapper around commands returning their output and error
-func (c *OSCommand) RunCommandWithOutputContext(ctx context.Context, command string) (string, error) {
-	cmd := c.ExecutableFromStringContext(ctx, command)
 	before := time.Now()
 	output, err := sanitisedCommandOutput(cmd.Output())
 	c.Log.Warn(fmt.Sprintf("'%s': %s", command, time.Since(before)))
@@ -78,22 +59,10 @@ func (c *OSCommand) RunExecutableWithOutput(cmd *exec.Cmd) (string, error) {
 	return sanitisedCommandOutput(cmd.CombinedOutput())
 }
 
-// RunExecutable runs an executable file and returns an error if there was one
-func (c *OSCommand) RunExecutable(cmd *exec.Cmd) error {
-	_, err := c.RunExecutableWithOutput(cmd)
-	return err
-}
-
 // ExecutableFromString takes a string like `incus list` and returns an executable command for it
 func (c *OSCommand) ExecutableFromString(commandStr string) *exec.Cmd {
 	splitCmd := str.ToArgv(commandStr)
 	return c.NewCmd(splitCmd[0], splitCmd[1:]...)
-}
-
-// Same as ExecutableFromString but cancellable via a context
-func (c *OSCommand) ExecutableFromStringContext(ctx context.Context, commandStr string) *exec.Cmd {
-	splitCmd := str.ToArgv(commandStr)
-	return exec.CommandContext(ctx, splitCmd[0], splitCmd[1:]...)
 }
 
 func (c *OSCommand) NewCmd(cmdName string, commandArgs ...string) *exec.Cmd {
@@ -227,71 +196,6 @@ func (c *OSCommand) RunPreparedCommand(cmd *exec.Cmd) error {
 			return err
 		}
 		return errors.New(outString)
-	}
-	return nil
-}
-
-// GetLazyincusPath returns the path of the currently executed file
-func (c *OSCommand) GetLazyincusPath() string {
-	ex, err := os.Executable()
-	if err != nil {
-		ex = os.Args[0]
-	}
-	return filepath.ToSlash(ex)
-}
-
-// PipeCommands runs a heap of commands and pipes their inputs/outputs together like A | B | C
-func (c *OSCommand) PipeCommands(commandStrings ...string) error {
-	cmds := make([]*exec.Cmd, len(commandStrings))
-
-	for i, str := range commandStrings {
-		cmds[i] = c.ExecutableFromString(str)
-	}
-
-	for i := 0; i < len(cmds)-1; i++ {
-		stdout, err := cmds[i].StdoutPipe()
-		if err != nil {
-			return err
-		}
-
-		cmds[i+1].Stdin = stdout
-	}
-
-	finalErrors := []string{}
-
-	wg := sync.WaitGroup{}
-	wg.Add(len(cmds))
-
-	for _, cmd := range cmds {
-		currentCmd := cmd
-		go func() {
-			stderr, err := currentCmd.StderrPipe()
-			if err != nil {
-				c.Log.Error(err)
-			}
-
-			if err := currentCmd.Start(); err != nil {
-				c.Log.Error(err)
-			}
-
-			if b, err := io.ReadAll(stderr); err == nil {
-				if len(b) > 0 {
-					finalErrors = append(finalErrors, string(b))
-				}
-			}
-
-			if err := currentCmd.Wait(); err != nil {
-				c.Log.Error(err)
-			}
-
-			wg.Done()
-		}()
-	}
-
-	wg.Wait()
-
-	if len(finalErrors) > 0 {
-		return errors.New(strings.Join(finalErrors, "\n"))
 	}
 	return nil
 }

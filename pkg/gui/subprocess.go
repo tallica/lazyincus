@@ -24,7 +24,7 @@ func (gui *Gui) runSubprocessWithMessage(cmd *exec.Cmd, msg string) error {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	gui.PauseBackgroundThreads = true
+	gui.PauseBackgroundThreads.Store(true)
 
 	gui.runCommand(cmd, msg)
 
@@ -32,7 +32,7 @@ func (gui *Gui) runSubprocessWithMessage(cmd *exec.Cmd, msg string) error {
 		return gui.createErrorPanel(err.Error())
 	}
 
-	gui.PauseBackgroundThreads = false
+	gui.PauseBackgroundThreads.Store(false)
 
 	return nil
 }
@@ -42,15 +42,22 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 	cmd.Stderr = os.Stdout
 	cmd.Stdin = os.Stdin
 
-	stop := make(chan os.Signal, 1)
-	defer signal.Stop(stop)
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	done := make(chan struct{})
+	defer func() {
+		signal.Stop(interrupt)
+		close(done)
+	}()
 
 	go func() {
-		signal.Notify(stop, os.Interrupt)
-		<-stop
-
-		if err := gui.OSCommand.Kill(cmd); err != nil {
-			gui.Log.Error(err)
+		select {
+		case <-interrupt:
+			if err := gui.OSCommand.Kill(cmd); err != nil {
+				gui.Log.Error(err)
+			}
+		case <-done:
 		}
 	}()
 

@@ -34,7 +34,7 @@ func (gui *Gui) focusPoint(selectedX int, selectedY int, lineCount int, v *gocui
 	originalOy := oy
 	cx, cy := v.Cursor()
 	originalCy := cy
-	_, height := v.Size()
+	height := v.InnerHeight()
 
 	ly := utils.Max(height-1, 0)
 
@@ -53,12 +53,12 @@ func (gui *Gui) focusPoint(selectedX int, selectedY int, lineCount int, v *gocui
 	}
 
 	if originalOy != oy {
-		_ = v.SetOrigin(ox, oy)
+		v.SetOrigin(ox, oy)
 	}
 
 	cy = selectedY - oy
 	if originalCy != cy {
-		_ = v.SetCursor(cx, selectedY-oy)
+		v.SetCursor(cx, selectedY-oy)
 	}
 }
 
@@ -67,8 +67,8 @@ func (gui *Gui) FocusY(selectedY int, lineCount int, v *gocui.View) {
 }
 
 func (gui *Gui) ResetOrigin(v *gocui.View) {
-	_ = v.SetOrigin(0, 0)
-	_ = v.SetCursor(0, 0)
+	v.SetOrigin(0, 0)
+	v.SetCursor(0, 0)
 }
 
 func (gui *Gui) cleanString(s string) string {
@@ -89,35 +89,11 @@ func (gui *Gui) renderString(g *gocui.Gui, viewName, s string) error {
 		if err != nil {
 			return nil // return gracefully if view has been deleted
 		}
-		if err := v.SetOrigin(0, 0); err != nil {
-			return err
-		}
-		if err := v.SetCursor(0, 0); err != nil {
-			return err
-		}
+		v.SetOrigin(0, 0)
+		v.SetCursor(0, 0)
 		return gui.setViewContent(v, s)
 	})
 	return nil
-}
-
-func (gui *Gui) RenderStringMain(s string) {
-	_ = gui.renderString(gui.g, "main", s)
-}
-
-// reRenderStringMain sets the main view's content, without changing its origin
-func (gui *Gui) reRenderStringMain(s string) {
-	gui.reRenderString("main", s)
-}
-
-// reRenderString sets the view's content, without changing its origin
-func (gui *Gui) reRenderString(viewName, s string) {
-	gui.g.Update(func(*gocui.Gui) error {
-		v, err := gui.g.View(viewName)
-		if err != nil {
-			return nil // return gracefully if view has been deleted
-		}
-		return gui.setViewContent(v, s)
-	})
 }
 
 func (gui *Gui) optionsMapToString(optionsMap map[string]string) string {
@@ -160,13 +136,24 @@ func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 	return nil
 }
 
+// resizePopupPanel fits a popup to its content. The height is the view's
+// own count of the rows its content takes at the popup's width: gocui wraps
+// at word boundaries, so no count of characters can know where the lines
+// break. Setting the width first is what makes the count right.
 func (gui *Gui) resizePopupPanel(v *gocui.View) error {
-	content := v.Buffer()
-	x0, y0, x1, y1 := gui.getConfirmationPanelDimensions(v.Wrap, content)
-	vx0, vy0, vx1, vy1 := v.Dimensions()
-	if vx0 == x0 && vy0 == y0 && vx1 == x1 && vy1 == y1 {
+	width, height := gui.g.Size()
+	x0, x1 := popupColumns(width)
+	_, vy0, _, vy1 := v.Dimensions()
+
+	if _, err := gui.g.SetView(v.Name(), x0, vy0, x1, vy1, 0); err != nil {
+		return err
+	}
+
+	y0, y1 := popupRows(height, v.ViewLinesHeight())
+	if y0 == vy0 && y1 == vy1 {
 		return nil
 	}
+
 	_, err := gui.g.SetView(v.Name(), x0, y0, x1, y1, 0)
 	return err
 }
@@ -192,13 +179,6 @@ func (gui *Gui) popupPanelFocused() bool {
 	return gui.isPopupPanel(gui.currentViewName())
 }
 
-func (gui *Gui) clearMainView() {
-	mainView := gui.Views.Main
-	mainView.Clear()
-	_ = mainView.SetOrigin(0, 0)
-	_ = mainView.SetCursor(0, 0)
-}
-
 func (gui *Gui) HandleClick(v *gocui.View, itemCount int, selectedLine *int, handleSelect func() error) error {
 	wrappedHandleSelect := func(g *gocui.Gui, v *gocui.View) error {
 		return handleSelect()
@@ -207,10 +187,6 @@ func (gui *Gui) HandleClick(v *gocui.View, itemCount int, selectedLine *int, han
 }
 
 func (gui *Gui) handleClickAux(v *gocui.View, itemCount int, selectedLine *int, handleSelect func(*gocui.Gui, *gocui.View) error) error {
-	if gui.popupPanelFocused() && v != nil && !gui.isPopupPanel(v.Name()) {
-		return nil
-	}
-
 	_, cy := v.Cursor()
 	_, oy := v.Origin()
 

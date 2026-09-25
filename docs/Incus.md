@@ -45,26 +45,34 @@ inferred.
 - **Projects**: Incus scopes instances (and networks, volumes, profiles) per
   project, and a client is scoped to one at a time. `UseProject` swaps
   `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor
-  rather than a field, and `GetInstances` reassigns `Instance.Client` on
-  every refresh. `P` (`handleSwitchProject` in `pkg/gui/projects.go`) scopes
+  rather than a field, and every refresh builds its `Instance`s with a
+  client of their own. `P` (`handleSwitchProject` in `pkg/gui/projects.go`) scopes
   to a single project.
 - **All projects**: the default, and "all projects" in that menu returns to
   it. Lists every project at once through the `*AllProjects` endpoints. Each item then carries its own
   project-scoped client (`clientFor`), so actions go to the project the item
-  came from - including `RefreshInstanceDetails`, which asks each instance's
-  client rather than the command's, and the `incus` CLI shell-outs, which
-  pass `--project`. Identity includes the project everywhere items are
+  came from - the `incus` CLI shell-outs included, which pass
+  `--project`. Identity includes the project everywhere items are
   matched across refreshes: two projects can hold an instance, image or
   volume of the same name. The project column is per-panel and driven by
   `State.SpansProjects`, recomputed each refresh: a server with one project
   shouldn't carry a column repeating it on every row.
-- **List instances**: `GetInstances(api.InstanceTypeAny)` returns
-  `[]api.Instance`. Existing `*Instance` objects are matched by name and
-  reused across refreshes so cached `full` details survive.
-- **Full details / state**: `GetInstanceFull(name)` → `*api.InstanceFull`
-  (embeds `api.Instance` + `*api.InstanceState`). Fetched per instance in
-  the background every second (`RefreshInstanceDetails`), not on every list
-  refresh.
+- **List instances**: `GetInstancesFull` / `GetInstancesFullAllProjects`
+  (recursion 2, what `incus list` itself asks for) return every instance's
+  config, state and snapshots in one request, cheap enough for the
+  2-second poll. The alternative, a plain list plus `GetInstanceFull` per
+  instance, is one request per instance per tick.
+- **Instances are values**: each refresh builds new `*Instance`s rather
+  than updating the last ones in place, which is what made them safe to
+  read from a render goroutine. What has to outlive a refresh lives in an
+  `instanceRuntime` per project and name: the console log drained so far
+  (the endpoint hands each byte out once), the `ps` that worked for the
+  Top tab, and the newest `Instance` - `Instance.Latest()`, which a ticking
+  tab reads so it doesn't show the refresh it opened on forever. The poll
+  and an action's own listing overlap and can answer in either order, so
+  each listing is numbered before it asks: one that answers late can't
+  replace the newest `Instance` with an older one, or drop the runtime of
+  an instance a later listing has seen.
 - **State changes**: `UpdateInstanceState(name, api.InstanceStatePut{Action:
   ...}, "")` then `op.Wait()`. Stop/restart use a 30s timeout;
   start/freeze/unfreeze use -1.

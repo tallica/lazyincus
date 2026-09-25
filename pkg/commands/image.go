@@ -20,6 +20,12 @@ type Image struct {
 	Tr        *i18n.TranslationSet
 }
 
+// Key identifies the image across refreshes: one image can sit in several
+// projects.
+func (i *Image) Key() string {
+	return i.Image.Project + "/" + i.Fingerprint
+}
+
 // shortFingerprintLength is the 12-character form `incus image list` shows.
 const shortFingerprintLength = 12
 
