@@ -16,24 +16,20 @@ import (
 	"github.com/goccy/go-yaml/printer"
 )
 
-// WithPadding pads a string as much as you want
-func WithPadding(str string, padding int) string {
-	uncoloredStr := Decolorise(str)
-	if padding < runewidth.StringWidth(uncoloredStr) {
-		return str
-	}
-	return str + strings.Repeat(" ", padding-runewidth.StringWidth(uncoloredStr))
+// DisplayWidth is how many terminal columns str takes, colour escapes
+// taking none. Every width lazyincus lays out goes through here, so it
+// measures the way gocui draws.
+func DisplayWidth(str string) int {
+	return runewidth.StringWidth(Decolorise(str))
 }
 
-// Truncate shortens a string to the given display width, marking the cut
-// with an ellipsis. Widths below 2 return the string untouched, since
-// there's no room to say anything.
-func Truncate(str string, width int) string {
-	if width < 2 || runewidth.StringWidth(str) <= width {
+// WithPadding pads a string as much as you want
+func WithPadding(str string, padding int) string {
+	width := DisplayWidth(str)
+	if padding < width {
 		return str
 	}
-
-	return runewidth.Truncate(str, width, ellipsis)
+	return str + strings.Repeat(" ", padding-width)
 }
 
 // ColoredString takes a string and a colour attribute and returns a colored
@@ -157,18 +153,19 @@ func Decolorise(str string) string {
 	return colorEscapePattern.ReplaceAllString(str, "")
 }
 
-// TruncateColored shortens a line to the given display width the way
-// Truncate does, but steps over colour escapes rather than counting them:
+// Truncate shortens a string to the given display width, marking the cut
+// with an ellipsis. It steps over colour escapes rather than counting them:
 // runewidth measures a sequence as though it were text, so a coloured line
 // that fits would otherwise be cut, and the cut could land inside a
-// sequence. A line whose overflow is only blanks - a table row's padding -
-// hides nothing and is left alone. A reset closes a cut line, the escapes
-// that would have done it being past the cut.
-func TruncateColored(str string, width int) string {
+// sequence. A string whose overflow is only blanks - a table row's padding
+// - hides nothing and is left alone, as is one with no room to mark a cut.
+// A reset closes a cut line, the escapes that would have done it being
+// past the cut.
+func Truncate(str string, width int) string {
 	// An ambiguous-width rune: two columns under an East Asian locale.
-	ellipsisWidth := runewidth.StringWidth(ellipsis)
+	ellipsisWidth := DisplayWidth(ellipsis)
 
-	visibleWidth := runewidth.StringWidth(strings.TrimRight(Decolorise(str), " "))
+	visibleWidth := DisplayWidth(strings.TrimRight(Decolorise(str), " "))
 	if width <= ellipsisWidth || visibleWidth <= width {
 		return str
 	}
@@ -227,10 +224,8 @@ func getPadWidths(rows [][]string) []int {
 	columnPadWidths := make([]int, len(rows[0])-1)
 	for i := range columnPadWidths {
 		for _, cells := range rows {
-			uncoloredCell := Decolorise(cells[i])
-
-			if runewidth.StringWidth(uncoloredCell) > columnPadWidths[i] {
-				columnPadWidths[i] = runewidth.StringWidth(uncoloredCell)
+			if width := DisplayWidth(cells[i]); width > columnPadWidths[i] {
+				columnPadWidths[i] = width
 			}
 		}
 	}

@@ -339,7 +339,7 @@ func (self *SideListPanel[T]) writeRows() {
 
 	rows := strings.Split(self.table, "\n")
 	for index, row := range rows {
-		rows[index] = utils.TruncateColored(row, self.clipWidth)
+		rows[index] = utils.Truncate(row, self.clipWidth)
 	}
 
 	self.View.SetContent(strings.Join(rows, "\n"))

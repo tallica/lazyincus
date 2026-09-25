@@ -97,7 +97,7 @@ own merits.
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
 - [x] **Horizontal truncation indicator** — `SideListPanel` clips each
-      row itself, through a colour-aware `utils.TruncateColored`, and the
+      row itself, through a colour-aware `utils.Truncate`, and the
       layout re-clips on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,

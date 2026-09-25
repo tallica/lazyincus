@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mattn/go-runewidth"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 
@@ -54,7 +53,7 @@ func (gui *Gui) instanceInfoStr(instance *commands.Instance, omit ...string) str
 func (gui *Gui) sectionHeading(title string) string {
 	rule := "\u2500\u2500 " + title + " "
 
-	if padding := int(gui.mainViewWidth.Load()) - runewidth.StringWidth(rule); padding > 0 {
+	if padding := int(gui.mainViewWidth.Load()) - utils.DisplayWidth(rule); padding > 0 {
 		rule += strings.Repeat("\u2500", padding)
 	} else {
 		rule += "\u2500\u2500\u2500"

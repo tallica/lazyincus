@@ -3,7 +3,6 @@ package utils
 import (
 	"testing"
 
-	"github.com/mattn/go-runewidth"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,48 +13,48 @@ func TestTruncate(t *testing.T) {
 	assert.EqualValues(t, "untouched", Truncate("untouched", 1))
 }
 
-func TestTruncateColored(t *testing.T) {
+func TestTruncateMarksCuts(t *testing.T) {
 	green := "\x1b[32m"
 	reset := "\x1b[0m"
 
 	t.Run("leaves a line that fits", func(t *testing.T) {
-		assert.EqualValues(t, "short", TruncateColored("short", 10))
+		assert.EqualValues(t, "short", Truncate("short", 10))
 	})
 
 	t.Run("measures display width, not escapes", func(t *testing.T) {
 		// Eight columns of text wearing 9 bytes of escapes either side.
 		line := green + "web-1" + reset + " up"
-		assert.EqualValues(t, line, TruncateColored(line, 8))
+		assert.EqualValues(t, line, Truncate(line, 8))
 	})
 
 	t.Run("cuts uncoloured text like Truncate", func(t *testing.T) {
-		assert.EqualValues(t, "192.0.2.1…", TruncateColored("192.0.2.144", 10))
+		assert.EqualValues(t, "192.0.2.1…", Truncate("192.0.2.144", 10))
 	})
 
 	t.Run("carries escapes over and closes the colour", func(t *testing.T) {
-		assert.EqualValues(t, green+"runn"+"…"+reset, TruncateColored(green+"running"+reset, 5))
+		assert.EqualValues(t, green+"runn"+"…"+reset, Truncate(green+"running"+reset, 5))
 	})
 
 	t.Run("never cuts inside an escape sequence", func(t *testing.T) {
-		truncated := TruncateColored("ab"+green+"cdef"+reset, 4)
+		truncated := Truncate("ab"+green+"cdef"+reset, 4)
 		assert.EqualValues(t, "ab"+green+"c"+"…"+reset, truncated)
-		assert.EqualValues(t, 4, runewidth.StringWidth(Decolorise(truncated)))
+		assert.EqualValues(t, 4, DisplayWidth(truncated))
 	})
 
 	t.Run("steps over 256-colour escapes", func(t *testing.T) {
 		orange := "\x1b[38;5;208m"
-		truncated := TruncateColored(orange+"unhealthy"+reset, 5)
+		truncated := Truncate(orange+"unhealthy"+reset, 5)
 		assert.EqualValues(t, orange+"unhe…"+reset, truncated)
-		assert.EqualValues(t, 5, runewidth.StringWidth(Decolorise(truncated)))
+		assert.EqualValues(t, 5, DisplayWidth(truncated))
 	})
 
 	t.Run("leaves a line whose overflow is only padding", func(t *testing.T) {
 		line := "web-1 " + green + "" + reset + "     "
-		assert.EqualValues(t, line, TruncateColored(line, 6))
+		assert.EqualValues(t, line, Truncate(line, 6))
 	})
 
 	t.Run("a width with no room to mark the cut leaves the line alone", func(t *testing.T) {
-		assert.EqualValues(t, "untouched", TruncateColored("untouched", 1))
+		assert.EqualValues(t, "untouched", Truncate("untouched", 1))
 	})
 }
 

@@ -2,7 +2,6 @@ package gui
 
 import (
 	"github.com/jesseduffield/lazycore/pkg/boxlayout"
-	"github.com/mattn/go-runewidth"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -94,7 +93,7 @@ func (gui *Gui) infoSectionChildren(informationStr string, appStatus string) []*
 		result = append(result,
 			&boxlayout.Box{
 				Window: "appStatus",
-				Size:   runewidth.StringWidth(appStatus) + runewidth.StringWidth(INFO_SECTION_PADDING),
+				Size:   utils.DisplayWidth(appStatus) + utils.DisplayWidth(INFO_SECTION_PADDING),
 			},
 		)
 	}
@@ -103,7 +102,7 @@ func (gui *Gui) infoSectionChildren(informationStr string, appStatus string) []*
 		return append(result, []*boxlayout.Box{
 			{
 				Window: "filterPrefix",
-				Size:   runewidth.StringWidth(gui.filterPrompt()),
+				Size:   utils.DisplayWidth(gui.filterPrompt()),
 			},
 			{
 				Window: "filter",
@@ -120,7 +119,7 @@ func (gui *Gui) infoSectionChildren(informationStr string, appStatus string) []*
 			},
 			{
 				Window: "information",
-				Size:   runewidth.StringWidth(INFO_SECTION_PADDING) + runewidth.StringWidth(utils.Decolorise(informationStr)),
+				Size:   utils.DisplayWidth(INFO_SECTION_PADDING) + utils.DisplayWidth(informationStr),
 			},
 		}...,
 	)
