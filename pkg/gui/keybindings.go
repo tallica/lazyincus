@@ -152,12 +152,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  wrappedHandler(gui.handleMenuPress),
 		},
 		{
-			ViewName: "information",
-			Key:      gocui.MouseLeft,
-			Modifier: gocui.ModNone,
-			Handler:  gui.handleDonate,
-		},
-		{
 			ViewName:    "instances",
 			Key:         'S',
 			Modifier:    gocui.ModNone,

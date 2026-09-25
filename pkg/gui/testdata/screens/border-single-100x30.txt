@@ -27,4 +27,4 @@
 │                                ││      inet:  192.0.2.144/ (global)                              │
 │                                ││                                                                │
 └────────────────────────────────┘└────────────────────────────────────────────────────────────────┘
-PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigateDonate Incus v7.4 (fake/all projects) ●  test
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate       Incus v7.4 (fake/all projects) ●  test

@@ -28,7 +28,6 @@ type TranslationSet struct {
 	CannotAccessIncusSocketError               string
 	CannotKillChildError                       string
 
-	Donate                    string
 	Cancel                    string
 	Remove                    string
 	HideStopped               string
@@ -186,7 +185,6 @@ func englishSet() TranslationSet {
 		CannotAccessIncusSocketError:     "Can't access the incus socket.\nRun lazyincus as a user in the 'incus' group, or read https://linuxcontainers.org/incus/docs/main/installing/",
 		CannotKillChildError:             "Waited three seconds for child process to stop. There may be an orphan process that continues to run on your system.",
 
-		Donate:  "Donate",
 		Confirm: "Confirm",
 
 		Return:               "return",

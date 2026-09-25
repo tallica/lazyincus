@@ -37,4 +37,4 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
-n/esc: no, y/enter: yes                                                                       Donate Incus v7.4 (fake/all projects) ●  test
+n/esc: no, y/enter: yes                                                                              Incus v7.4 (fake/all projects) ●  test

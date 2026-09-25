@@ -49,8 +49,7 @@ panels, and like lazydocker's it pushes the plain instance list down to
       separate viewer rather than using the terminal.
 - [ ] **Open in browser (`w`)** — lazydocker opens the container's first HTTP
       port. Incus has no port-mapping concept, but "open `http://<ipv4>`" is
-      the obvious translation, and `OSCommand.OpenLink` already exists (the
-      footer's donate link uses it).
+      the obvious translation, and `OSCommand.OpenLink` already exists.
 
 Not planned:
 

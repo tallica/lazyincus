@@ -37,4 +37,4 @@
 │                                                                                                                                          │
 │                                                                                                                                          │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                        Donate Incus v7.4 (fake/all projects) ●  test
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                               Incus v7.4 (fake/all projects) ●  test

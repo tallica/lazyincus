@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - lazyincus asks the daemon for every instance's details in one request every two seconds, the way `incus list` does, instead of one request per instance every second - a dozen instances used to be a dozen requests a second while you did nothing. Type, addresses and snapshot counts are there as soon as the list appears, rather than filling in a moment later.
 - The Config tab lists every level of what it shows in the order Incus itself does, the way `incus config show` prints it. Only the top level kept that order before; everything nested under it - an instance's state, its network counters, a snapshot - came out alphabetical, which put `swap_usage` ahead of `usage` and split related fields apart.
 
+### Removed
+- The Donate link is gone from the footer. It crowded the key hints - on a narrow terminal it cut them off mid-word - and it only opened Incus's GitHub page. The README already says how to back the people lazyincus is built on, under [Supporting upstream](README.md#supporting-upstream), and how to help with lazyincus itself, under [Contributing](README.md#contributing).
+
 ### Fixed
 - Switching project clears the snapshots panel. It used to go back to showing the snapshots of whatever instance you'd selected in the project you left, where `d` and `r` would act on them.
 - A confirmation or error whose message wraps no longer loses its last line. The popup was sized by counting the message's characters, but the text wraps at word boundaries and can need more rows than that count, and the count took an error's colour codes for text as well.

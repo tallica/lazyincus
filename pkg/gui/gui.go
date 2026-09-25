@@ -428,18 +428,6 @@ func (gui *Gui) escape() error {
 	return nil
 }
 
-func (gui *Gui) handleDonate(g *gocui.Gui, v *gocui.View) error {
-	if !gui.g.Mouse {
-		return nil
-	}
-
-	cx, _ := v.Cursor()
-	if cx > len(gui.Tr.Donate) {
-		return nil
-	}
-	return gui.OSCommand.OpenLink("https://github.com/lxc/incus")
-}
-
 func (gui *Gui) editFile(filename string) error {
 	cmd, err := gui.OSCommand.EditFile(filename)
 	if err != nil {
