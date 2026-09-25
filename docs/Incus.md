@@ -75,7 +75,22 @@ inferred.
   an instance a later listing has seen.
 - **State changes**: `UpdateInstanceState(name, api.InstanceStatePut{Action:
   ...}, "")` then `op.Wait()`. Stop/restart use a 30s timeout;
-  start/freeze/unfreeze use -1.
+  start/freeze/unfreeze use -1. A compose instance goes through each of
+  these the way incus-compose puts its own instances through them, since
+  its CLI takes only whole services and a replica's row acts on one
+  instance (`instance_compose.go`): stop and force stop set
+  `user.healthcheck.stopped=true` first, so ic-healthd's restart policy
+  leaves it down, and stop falls back to a forced stop unless the clean
+  one left it `Stopped` - Incus fails a shutdown that outlives its timeout
+  and leaves the instance running, and won't cleanly stop one in `Error`
+  at all. When an action fails, the state it left behind decides: stopped
+  or frozen keeps the marker (a stop that finished just as its forced stop
+  was refused counts as done), still running loses it; incus-compose
+  leaves it on either way. Restart is that stop (60s) then a start; start clears
+  the marker; freeze sets it, a frozen instance answering no healthcheck,
+  and unfreeze clears it. The marker is written with a PATCH of that one
+  key, answered synchronously, not a read-modify-write that would race
+  ic-healthd's own writes to the same config.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so

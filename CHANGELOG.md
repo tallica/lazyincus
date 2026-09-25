@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Stopping or restarting one replica of a compose service no longer fails when it's slow to shut down. A replica's row asked Incus for a clean stop and gave up when that timed out, reporting `Failed shutting down instance` and leaving the replica running. Its keys now do what incus-compose does to each of its own instances: a stop gets ten seconds and is then forced, a restart is that stop followed by a start, and a stopped, killed or paused replica is marked as deliberately down, so ic-healthd's restart policy leaves it alone rather than bringing it back. Starting or unpausing it clears the mark.
+
 ## [0.9.0] - 2026-09-25
 
 ### Added

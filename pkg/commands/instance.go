@@ -125,33 +125,59 @@ func (i *Instance) retryWhileBusy(request func() error) error {
 
 // Start starts the instance.
 func (i *Instance) Start() error {
+	if i.isCompose() {
+		return i.composeStart()
+	}
+
 	return i.updateState("start", -1, false)
 }
 
 // Stop stops the instance.
 func (i *Instance) Stop() error {
+	if i.isCompose() {
+		return i.composeStop(composeStopTimeout)
+	}
+
 	return i.updateState("stop", 30, false)
 }
 
 // Restart restarts the instance.
 func (i *Instance) Restart() error {
+	if i.isCompose() {
+		return i.composeRestart()
+	}
+
 	return i.updateState("restart", 30, false)
 }
 
 // Freeze pauses (freezes) the instance. Only supported for containers.
 func (i *Instance) Freeze() error {
-	return i.updateState("freeze", -1, false)
+	freeze := func() error { return i.updateState("freeze", -1, false) }
+	if i.isCompose() {
+		return i.whileMarkedStopped(api.Frozen, freeze)
+	}
+
+	return freeze()
 }
 
 // Unfreeze resumes a frozen instance.
 func (i *Instance) Unfreeze() error {
+	if i.isCompose() {
+		return i.composeUnfreeze()
+	}
+
 	return i.updateState("unfreeze", -1, false)
 }
 
 // ForceStop stops the instance without waiting for a clean shutdown,
 // mirroring `incus stop --force`.
 func (i *Instance) ForceStop() error {
-	return i.updateState("stop", -1, true)
+	kill := func() error { return i.updateState("stop", -1, true) }
+	if i.isCompose() {
+		return i.whileMarkedStopped(api.Stopped, kill)
+	}
+
+	return kill()
 }
 
 // ErrInstanceRunning is what Delete returns when Incus refused to delete the
