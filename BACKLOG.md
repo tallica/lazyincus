@@ -142,6 +142,20 @@ Deliberately deferred (don't re-pitch unprompted):
   image-download progress natively, which a `WithWaitingStatus` spinner would
   hide.
 
+### What gocui master makes possible
+
+Available since the move off lazydocker's 2024 pin; none of it wired up.
+
+- [ ] **Clickable links** - `View.AutoRenderHyperLinks` on the main view
+      turns URLs into terminal hyperlinks. The Info tab's addresses and a
+      service's published ports are where one would earn its place.
+- [ ] **Double-click** - `ViewMouseBindingOpts.IsDoubleClick`. A double
+      click on a row could do what enter does, focusing the main panel.
+- [ ] **Recentre on scroll** - `View.FocusPoint` keeps the selection in the
+      middle once it leaves the view, the way lazygit scrolls; lazyincus
+      moves a line at a time, as lazydocker does. A UX choice to make, not
+      a gap.
+
 ### Typed commands
 
 `incus-compose` has this already, as an extension rather than a compose
