@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -16,15 +17,13 @@ import (
 type stubbornServer struct {
 	incus.InstanceServer
 
-	running bool
-	// status, when set, is what the instance reports while running.
 	status api.StatusCode
 	// failAll refuses every state change, forced or not.
 	failAll bool
-	stops   []api.InstanceStatePut
-	patches []any
 	// calls is every state change and marker write, in order.
 	calls []string
+	// patch is the last marker write's method, path and body.
+	patch []any
 }
 
 type doneOperation struct {
@@ -36,40 +35,35 @@ type doneOperation struct {
 func (o doneOperation) Wait() error { return o.err }
 
 func (s *stubbornServer) UpdateInstanceState(_ string, put api.InstanceStatePut, _ string) (incus.Operation, error) {
-	s.stops = append(s.stops, put)
-	s.calls = append(s.calls, put.Action+map[bool]string{true: " --force"}[put.Force])
+	switch {
+	case put.Force:
+		s.calls = append(s.calls, put.Action+" --force")
+	case put.Timeout > 0:
+		s.calls = append(s.calls, fmt.Sprintf("%s %ds", put.Action, put.Timeout))
+	default:
+		s.calls = append(s.calls, put.Action)
+	}
 
-	if s.failAll {
+	switch {
+	case s.failAll:
 		return doneOperation{err: errors.New("refused")}, nil
-	}
-
-	if put.Action != "stop" {
+	case put.Action != "stop":
 		return doneOperation{}, nil
-	}
-
-	if !put.Force {
+	case !put.Force:
 		return doneOperation{err: errors.New(`Failed shutting down instance, status is "Running": context deadline exceeded`)}, nil
 	}
 
-	s.running = false
+	s.status = api.Stopped
 
 	return doneOperation{}, nil
 }
 
 func (s *stubbornServer) GetInstanceState(string) (*api.InstanceState, string, error) {
-	code := api.Stopped
-	if s.running {
-		code = api.Running
-		if s.status != 0 {
-			code = s.status
-		}
-	}
-
-	return &api.InstanceState{StatusCode: code}, "", nil
+	return &api.InstanceState{StatusCode: s.status}, "", nil
 }
 
 func (s *stubbornServer) RawQuery(method string, path string, data any, _ string) (*api.Response, string, error) {
-	s.patches = append(s.patches, []any{method, path, data})
+	s.patch = []any{method, path, data}
 	s.calls = append(s.calls, "mark "+data.(map[string]any)["config"].(map[string]string)[healthStoppedKey])
 
 	return &api.Response{}, "", nil
@@ -85,82 +79,67 @@ func stubbornInstance(server *stubbornServer, config map[string]string) *Instanc
 	}
 }
 
-func TestStoppingAReplicaKillsItWhenItWontShutDown(t *testing.T) {
-	server := &stubbornServer{running: true}
-	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+func stubbornReplica(status api.StatusCode) (*stubbornServer, *Instance) {
+	server := &stubbornServer{status: status}
 
-	require.NoError(t, replica.Stop())
+	return server, stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+}
 
-	assert.False(t, server.running)
-	require.Len(t, server.stops, 2)
-	assert.Equal(t, composeStopTimeout, server.stops[0].Timeout)
-	assert.False(t, server.stops[0].Force)
-	assert.True(t, server.stops[1].Force)
-	assert.Equal(t, []any{[]any{
-		"PATCH", "/1.0/instances/web-1?project=playground",
-		map[string]any{"config": map[string]string{healthStoppedKey: "true"}},
-	}}, server.patches)
+// A clean stop that doesn't end Stopped is forced: one that timed out,
+// and one Incus refuses outright because the replica is in Error.
+func TestStoppingAReplicaForcesItWhenItWontShutDown(t *testing.T) {
+	for _, status := range []api.StatusCode{api.Running, api.Error} {
+		t.Run(status.String(), func(t *testing.T) {
+			server, replica := stubbornReplica(status)
+
+			require.NoError(t, replica.Stop())
+
+			assert.Equal(t, api.Stopped, server.status)
+			assert.Equal(t, []string{"mark true", "stop 10s", "stop --force"}, server.calls)
+		})
+	}
 }
 
 func TestStartingAReplicaClearsTheStoppedMarker(t *testing.T) {
-	server := &stubbornServer{}
-	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+	server, replica := stubbornReplica(api.Stopped)
 
 	require.NoError(t, replica.Start())
 
-	assert.Equal(t, []any{[]any{
+	assert.Equal(t, []string{"mark false", "start"}, server.calls)
+	assert.Equal(t, []any{
 		"PATCH", "/1.0/instances/web-1?project=playground",
 		map[string]any{"config": map[string]string{healthStoppedKey: "false"}},
-	}}, server.patches)
+	}, server.patch)
 }
 
-// Outside compose, a failed clean shutdown is still reported rather than
-// escalated, and nothing is written to the instance's config.
+// Outside compose, a failed clean shutdown is reported, not escalated.
 func TestStoppingAPlainInstanceDoesNotEscalate(t *testing.T) {
-	server := &stubbornServer{running: true}
+	server := &stubbornServer{status: api.Running}
 	instance := stubbornInstance(server, nil)
 
 	require.Error(t, instance.Stop())
 
-	assert.True(t, server.running)
-	assert.Len(t, server.stops, 1)
-	assert.Empty(t, server.patches)
+	assert.Equal(t, api.Running, server.status)
+	assert.Equal(t, []string{"stop 30s"}, server.calls)
 }
 
-// incus-compose's restart is its whole stop, then its start, so a replica
-// that won't shut down is killed rather than left running.
 func TestRestartingAReplicaStopsThenStartsIt(t *testing.T) {
-	server := &stubbornServer{running: true}
-	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+	server, replica := stubbornReplica(api.Running)
 
 	require.NoError(t, replica.Restart())
 
-	assert.Equal(t, []string{"mark true", "stop", "stop --force", "mark false", "start"}, server.calls)
-	assert.Equal(t, composeRestartTimeout, server.stops[0].Timeout)
+	assert.Equal(t, []string{"mark true", "stop 60s", "stop --force", "mark false", "start"}, server.calls)
 }
 
 // A frozen replica answers no healthcheck, so the marker goes on before the
 // freeze and comes off only once it's thawed.
 func TestPausingAReplicaMarksItAroundTheFreeze(t *testing.T) {
-	server := &stubbornServer{running: true}
-	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+	server, replica := stubbornReplica(api.Running)
 
 	require.NoError(t, replica.Freeze())
 	require.NoError(t, replica.Unfreeze())
 
 	assert.Equal(t, []string{"mark true", "freeze", "unfreeze", "mark false"}, server.calls)
-}
-
-// Incus won't shut down an instance in Error cleanly; the stop goes on to
-// the forced one rather than reading the refusal as done.
-func TestStoppingAReplicaInErrorForcesIt(t *testing.T) {
-	server := &stubbornServer{running: true, status: api.Error}
-	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
-
-	require.NoError(t, replica.Stop())
-
-	assert.False(t, server.running)
-	assert.Equal(t, []string{"mark true", "stop", "stop --force"}, server.calls)
 }
 
 // A replica that couldn't be taken down is still running, and mustn't keep
@@ -172,8 +151,8 @@ func TestAFailedStopOrFreezeTakesTheMarkOff(t *testing.T) {
 		"freeze": (*Instance).Freeze,
 	} {
 		t.Run(name, func(t *testing.T) {
-			server := &stubbornServer{running: true, failAll: true}
-			replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+			server, replica := stubbornReplica(api.Running)
+			server.failAll = true
 
 			require.Error(t, act(replica))
 

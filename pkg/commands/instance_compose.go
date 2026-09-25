@@ -19,13 +19,11 @@ import (
 //     deliberate, so a restart policy leaves the instance alone.
 //   - stop is docker's: a clean shutdown, then a kill once the timeout is
 //     up. Incus fails that shutdown and leaves the instance running.
-//   - restart is stop, then start; pause marks before freezing and unpause
-//     clears after thawing ("Pausing and health checks" in its
-//     docs/root/cli-reference/lifecycle.md).
+//   - restart, pause and unpause follow its
+//     docs/root/cli-reference/lifecycle.md ("Pausing and health checks").
 //
 // Should incus-compose come to take one instance, these go to its CLI.
 
-// healthStoppedKey is ic-healthd's deliberately-stopped marker.
 const healthStoppedKey = "user.healthcheck.stopped"
 
 // The timeouts incus-compose's stop and restart default to, so a replica
@@ -78,18 +76,9 @@ func (i *Instance) composeRestart() error {
 	return i.composeStart()
 }
 
-func (i *Instance) composeKill() error {
-	return i.whileMarkedStopped(func() error { return i.updateState("stop", -1, true) })
-}
-
-func (i *Instance) composeFreeze() error {
-	return i.whileMarkedStopped(func() error { return i.updateState("freeze", -1, false) })
-}
-
-// whileMarkedStopped marks the instance deliberately stopped, then takes it
-// down. Should that fail, the mark comes off again: left on a replica
-// still running, it would keep ic-healthd from restarting one that later
-// crashed. incus-compose itself leaves it on.
+// whileMarkedStopped takes the mark off again should action fail: left on a
+// replica still running, it would keep ic-healthd from restarting one that
+// later crashed. incus-compose itself leaves it on.
 func (i *Instance) whileMarkedStopped(action func() error) error {
 	if err := i.markStopped(true); err != nil {
 		return err
