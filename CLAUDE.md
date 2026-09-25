@@ -196,3 +196,20 @@ root disk or NIC in its default profile — `incus launch` into it fails with
 (`incus profile device add default root disk path=/ pool=<pool> --project
 <name>`, same for a `nic`). Deleting the project afterwards also needs its
 cached images deleted first.
+
+### Checking for races
+
+Most of the concurrency lives in paths no test reaches: the pollers, the
+main-panel tasks, the loop they hand results to. A change that touches any
+of them gets a race-enabled build driven like the one above:
+
+```sh
+go build -race -o /tmp/lazyincus-race .
+tmux new-session -d -s lzr -x 140 -y 40 \
+  "GORACE=log_path=/tmp/lzi-race CONFIG_DIR=/tmp/lzi-cfg /tmp/lazyincus-race"
+```
+
+Move through the lists, every main-panel tab, a project switch or two
+(`P`), and the services panel if there's a stack in the working directory,
+for a minute or so; then quit. Any `/tmp/lzi-race.*` file is a race.
+Read-only keys are enough - the races are between reading and refreshing.

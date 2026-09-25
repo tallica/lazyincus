@@ -27,10 +27,10 @@ import (
 func (gui *Gui) renderInstanceInfoToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.instanceInfoStr(instance.Latest()))
+			gui.reRenderMain(ctx, gui.instanceInfoStr(instance.Latest()))
 		},
 		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Before:     gui.clearMain,
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})

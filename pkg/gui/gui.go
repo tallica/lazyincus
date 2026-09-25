@@ -39,13 +39,15 @@ type Gui struct {
 	// if we've suspended the gui (e.g. because we've switched to a subprocess)
 	// we typically want to pause some things that are running like background
 	// refreshes
-	PauseBackgroundThreads bool
+	PauseBackgroundThreads atomic.Bool
 
 	Mutexes
 
 	Panels Panels
 
 	refreshes refreshSeqs
+
+	mainView mainViewState
 
 	// composeProject is the local project as the daemon holds it, backing
 	// the healthcheck line of the services panel's Info tab. Refreshed with
@@ -236,7 +238,7 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for range ticker.C {
-			if !gui.PauseBackgroundThreads {
+			if !gui.PauseBackgroundThreads.Load() {
 				_ = function()
 			}
 		}
@@ -316,7 +318,6 @@ func (gui *Gui) Run() error {
 			}
 		}
 
-		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
@@ -368,19 +369,6 @@ func (gui *Gui) setPanels() {
 		Services:  gui.getServicesPanel(),
 		Menu:      gui.getMenuPanel(),
 	}
-}
-
-func (gui *Gui) reRenderMain() error {
-	mainView := gui.Views.Main
-	if mainView == nil {
-		return nil
-	}
-	if mainView.IsTainted() {
-		gui.g.Update(func(g *gocui.Gui) error {
-			return nil
-		})
-	}
-	return nil
 }
 
 // refreshInstancesQuiet drives the background poll (Incus has no event

@@ -15,10 +15,10 @@ import (
 func (gui *Gui) renderInstanceTopToMain(instance *commands.Instance) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.instanceTopStr(instance))
+			gui.reRenderMain(ctx, gui.instanceTopStr(instance))
 		},
 		Duration:   time.Second * 2,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Before:     gui.clearMain,
 		Wrap:       false,
 		Autoscroll: false,
 	})

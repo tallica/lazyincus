@@ -100,26 +100,6 @@ func (gui *Gui) renderString(g *gocui.Gui, viewName, s string) error {
 	return nil
 }
 
-func (gui *Gui) RenderStringMain(s string) {
-	_ = gui.renderString(gui.g, "main", s)
-}
-
-// reRenderStringMain sets the main view's content, without changing its origin
-func (gui *Gui) reRenderStringMain(s string) {
-	gui.reRenderString("main", s)
-}
-
-// reRenderString sets the view's content, without changing its origin
-func (gui *Gui) reRenderString(viewName, s string) {
-	gui.g.Update(func(*gocui.Gui) error {
-		v, err := gui.g.View(viewName)
-		if err != nil {
-			return nil // return gracefully if view has been deleted
-		}
-		return gui.setViewContent(v, s)
-	})
-}
-
 func (gui *Gui) optionsMapToString(optionsMap map[string]string) string {
 	optionsArray := make([]string, 0, len(optionsMap))
 	for key, description := range optionsMap {
@@ -190,13 +170,6 @@ func (gui *Gui) isPopupPanel(viewName string) bool {
 
 func (gui *Gui) popupPanelFocused() bool {
 	return gui.isPopupPanel(gui.currentViewName())
-}
-
-func (gui *Gui) clearMainView() {
-	mainView := gui.Views.Main
-	mainView.Clear()
-	_ = mainView.SetOrigin(0, 0)
-	_ = mainView.SetCursor(0, 0)
 }
 
 func (gui *Gui) HandleClick(v *gocui.View, itemCount int, selectedLine *int, handleSelect func() error) error {

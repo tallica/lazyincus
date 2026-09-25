@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"sync"
 	"time"
 
 	"github.com/jesseduffield/gocui"
@@ -13,11 +14,21 @@ type appStatus struct {
 	duration   int
 }
 
+// statusManager is shared by every WithWaitingStatus goroutine and the
+// layout that reads it.
 type statusManager struct {
+	mutex    sync.Mutex
 	statuses []appStatus
 }
 
 func (m *statusManager) removeStatus(name string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.removeStatusLocked(name)
+}
+
+func (m *statusManager) removeStatusLocked(name string) {
 	newStatuses := []appStatus{}
 	for _, status := range m.statuses {
 		if status.name != name {
@@ -28,7 +39,10 @@ func (m *statusManager) removeStatus(name string) {
 }
 
 func (m *statusManager) addWaitingStatus(name string) {
-	m.removeStatus(name)
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.removeStatusLocked(name)
 	newStatus := appStatus{
 		name:       name,
 		statusType: "waiting",
@@ -38,7 +52,10 @@ func (m *statusManager) addWaitingStatus(name string) {
 }
 
 func (m *statusManager) addTransientStatus(name string) {
-	m.removeStatus(name)
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.removeStatusLocked(name)
 	newStatus := appStatus{
 		name:       name,
 		statusType: "transient",
@@ -48,6 +65,9 @@ func (m *statusManager) addTransientStatus(name string) {
 }
 
 func (m *statusManager) getStatusString() string {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	if len(m.statuses) == 0 {
 		return ""
 	}

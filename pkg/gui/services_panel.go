@@ -123,10 +123,10 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 func (gui *Gui) renderServiceInfo(row *commands.ServiceRow) tasks.TaskFunc {
 	return gui.NewTickerTask(TickerTaskOpts{
 		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderStringMain(gui.serviceInfoStr(row))
+			gui.reRenderMain(ctx, gui.serviceInfoStr(row))
 		},
 		Duration:   time.Second,
-		Before:     func(ctx context.Context) { gui.clearMainView() },
+		Before:     gui.clearMain,
 		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
 		Autoscroll: false,
 	})
