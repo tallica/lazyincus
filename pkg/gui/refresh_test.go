@@ -96,6 +96,16 @@ func TestAFailedFetchDoesNotHoldBackTheOthers(t *testing.T) {
 	})
 }
 
+func TestProjectSwitchForgetsTheSnapshotsShown(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.settle(t, "Snapshots (a-name-long")
+
+	s.do(t, func() error { return s.gui.switchToProject("other") })
+
+	screen := s.settle(t, "(fake/other)")
+	assert.NotContains(t, screen, "Snapshots (a-name-long")
+}
+
 func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.settle(t, "incusbr0")

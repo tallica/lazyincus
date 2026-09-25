@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Config tab lists every level of what it shows in the order Incus itself does, the way `incus config show` prints it. Only the top level kept that order before; everything nested under it - an instance's state, its network counters, a snapshot - came out alphabetical, which put `swap_usage` ahead of `usage` and split related fields apart.
 
 ### Fixed
+- Switching project clears the snapshots panel. It used to go back to showing the snapshots of whatever instance you'd selected in the project you left, where `d` and `r` would act on them.
 - A confirmation or error whose message wraps no longer loses its last line. The popup was sized by counting the message's characters, but the text wraps at word boundaries and can need more rows than that count, and the count took an error's colour codes for text as well.
 - A row cut to fit its panel no longer splits an emoji sequence in two. The cut counted each emoji joined into a sequence - a family, say - as a wide character of its own, so it came early and could land inside the sequence, leaving half of it and a stray joiner before the ellipsis.
 - Pasting into a list no longer types the pasted text as keypresses. Pasting `mosq` over the instances list used to open the Logs tab, open the config file, ask to stop the instance and quit, one letter each; the paste is now ignored there, and in the filter (`/`) it arrives as text.

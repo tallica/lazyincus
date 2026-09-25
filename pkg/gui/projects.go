@@ -91,6 +91,10 @@ func (gui *Gui) reloadAfterProjectChange() error {
 		panel.ClearItems()
 	}
 
+	// Or the next instance refresh redraws the old project's snapshots.
+	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
+	gui.setSnapshotsTitle("")
+
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
 	// A fetch already in flight was asked about the old scope.
