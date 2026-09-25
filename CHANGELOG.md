@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-25
+
 ### Added
 - `=` expands the focused side panel and collapses it back, so the space the side column gives each list is now a decision you make while reading rather than one you commit to in the config file. `gui.expandFocusedSidePanel` still says which way a session starts, and `=` owns it from then on — a config reload won't pull it back.
-- Releases now carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source. Each release also has a `checksums.txt` to verify the archive you downloaded against.
+- Releases carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source, and a `checksums.txt` to verify the archive you downloaded against. v0.8.1 got its set after it was published; from this release on, every tag builds and publishes them.
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
 
 ### Changed
@@ -189,7 +191,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/tallica/lazyincus/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/tallica/lazyincus/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/tallica/lazyincus/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/tallica/lazyincus/compare/v0.6.1...v0.7.0
