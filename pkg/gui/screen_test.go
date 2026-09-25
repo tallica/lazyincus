@@ -288,6 +288,21 @@ func TestScreenConfirmation(t *testing.T) {
 	assertGolden(t, "confirmation-140x40", s.settle(t, "stop web?"))
 }
 
+// A popup's text wraps at word boundaries, so it can take more rows than its
+// length alone says: three 40-column words need three rows at this width,
+// where a count of characters gives two.
+func TestScreenWordWrappedConfirmation(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.settle(t, "incusbr0")
+
+	words := strings.Repeat("a", 40) + " " + strings.Repeat("b", 40) + " " + strings.Repeat("c", 40)
+	s.do(t, func() error { return s.gui.createConfirmationPanel("Confirm", words, nil, nil) })
+
+	screen := s.settle(t, strings.Repeat("a", 40))
+	assert.Contains(t, screen, strings.Repeat("c", 40))
+	assertGolden(t, "confirmation-wrapped-140x40", screen)
+}
+
 func TestScreenErrorPopup(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.settle(t, "incusbr0")

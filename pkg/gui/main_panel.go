@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 func (gui *Gui) scrollUpMain() error {
@@ -51,16 +52,12 @@ func (gui *Gui) scrollRightMain(g *gocui.Gui, v *gocui.View) error {
 	mainView := gui.Views.Main
 	ox, oy := mainView.Origin()
 
-	content := mainView.ViewBufferLines()
-	var largestNumberOfCharacters int
-	for _, txt := range content {
-		if len(txt) > largestNumberOfCharacters {
-			largestNumberOfCharacters = len(txt)
-		}
+	widest := 0
+	for _, line := range mainView.ViewBufferLines() {
+		widest = max(widest, utils.DisplayWidth(line))
 	}
 
-	sizeX := mainView.InnerWidth()
-	if ox+sizeX >= largestNumberOfCharacters {
+	if ox+mainView.InnerWidth() >= widest {
 		return nil
 	}
 

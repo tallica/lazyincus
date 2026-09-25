@@ -9,7 +9,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
-	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 func (gui *Gui) wrappedConfirmationFunction(function func(*gocui.Gui, *gocui.View) error) func(*gocui.Gui, *gocui.View) error {
@@ -51,41 +50,33 @@ func (gui *Gui) closeConfirmationPrompt() error {
 	return nil
 }
 
-func (gui *Gui) getMessageHeight(wrap bool, message string, width int) int {
-	lines := strings.Split(message, "\n")
-	lineCount := 0
-	if wrap {
-		for _, line := range lines {
-			lineCount += len(line)/width + 1
-		}
-	} else {
-		lineCount = len(lines)
-	}
-	return lineCount
+// popupColumns is where a popup sits across the screen: the middle half.
+func popupColumns(screenWidth int) (int, int) {
+	return screenWidth/2 - screenWidth/4, screenWidth/2 + screenWidth/4
 }
 
-func (gui *Gui) getConfirmationPanelDimensions(wrap bool, prompt string) (int, int, int, int) {
-	width, height := gui.g.Size()
-	panelWidth := width / 2
-	panelHeight := gui.getMessageHeight(wrap, prompt, panelWidth)
-	// A popup taller than the terminal ran off both ends of it rather than
-	// scrolling: focusPoint only moves a view's origin when the content
-	// doesn't fit the view. The clamp is what makes a long menu scroll.
-	panelHeight = utils.Max(1, utils.Min(panelHeight, height-4))
+// popupRows centres rows of content on the screen. A popup taller than the
+// terminal ran off both ends of it rather than scrolling: focusPoint only
+// moves a view's origin when the content doesn't fit the view. The clamp is
+// what makes a long menu scroll.
+func popupRows(screenHeight int, rows int) (int, int) {
+	rows = max(1, min(rows, screenHeight-4))
 
-	return width/2 - panelWidth/2,
-		height/2 - panelHeight/2 - panelHeight%2 - 1,
-		width/2 + panelWidth/2,
-		height/2 + panelHeight/2
+	return screenHeight/2 - rows/2 - rows%2 - 1, screenHeight/2 + rows/2
 }
 
+// prepareConfirmationPanel opens the confirmation popup around prompt, sized
+// to it from the first frame.
 func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {
-	x0, y0, x1, y1 := gui.getConfirmationPanelDimensions(true, prompt)
 	confirmationView := gui.Views.Confirmation
-	_, err := gui.g.SetView("confirmation", x0, y0, x1, y1, 0)
-	if err != nil {
+	confirmationView.SetOrigin(0, 0)
+	confirmationView.SetCursor(0, 0)
+	_ = gui.setViewContent(confirmationView, prompt)
+
+	if err := gui.resizePopupPanel(confirmationView); err != nil {
 		return err
 	}
+
 	confirmationView.Title = title
 	confirmationView.Visible = true
 	gui.g.Update(func(g *gocui.Gui) error {
@@ -119,9 +110,6 @@ func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClos
 			return err
 		}
 		gui.Views.Confirmation.Editable = false
-		if err := gui.renderString(g, "confirmation", prompt); err != nil {
-			return err
-		}
 		return gui.setKeyBindings(g, handleConfirm, handleClose)
 	})
 	return nil

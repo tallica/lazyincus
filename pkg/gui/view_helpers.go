@@ -136,13 +136,24 @@ func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 	return nil
 }
 
+// resizePopupPanel fits a popup to its content. The height is the view's
+// own count of the rows its content takes at the popup's width: gocui wraps
+// at word boundaries, so no count of characters can know where the lines
+// break. Setting the width first is what makes the count right.
 func (gui *Gui) resizePopupPanel(v *gocui.View) error {
-	content := v.Buffer()
-	x0, y0, x1, y1 := gui.getConfirmationPanelDimensions(v.Wrap, content)
-	vx0, vy0, vx1, vy1 := v.Dimensions()
-	if vx0 == x0 && vy0 == y0 && vx1 == x1 && vy1 == y1 {
+	width, height := gui.g.Size()
+	x0, x1 := popupColumns(width)
+	_, vy0, _, vy1 := v.Dimensions()
+
+	if _, err := gui.g.SetView(v.Name(), x0, vy0, x1, vy1, 0); err != nil {
+		return err
+	}
+
+	y0, y1 := popupRows(height, v.ViewLinesHeight())
+	if y0 == vy0 && y1 == vy1 {
 		return nil
 	}
+
 	_, err := gui.g.SetView(v.Name(), x0, y0, x1, y1, 0)
 	return err
 }
