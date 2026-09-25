@@ -29,7 +29,7 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
-- Incus client: `github.com/lxc/incus/v7` (client at `v7.3.0`)
+- Incus client: `github.com/lxc/incus/v7` (client at `v7.4.0`)
 - TUI: `github.com/jesseduffield/gocui` (pinned to
   `v0.3.1-0.20240418080333-8cd33929c513` — the version lazydocker itself
   uses; the latest tagged `v0.3.0` release is missing the `Tabs`/`TabIndex`
