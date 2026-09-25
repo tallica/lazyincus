@@ -176,10 +176,6 @@ func (gui *Gui) HandleClick(v *gocui.View, itemCount int, selectedLine *int, han
 }
 
 func (gui *Gui) handleClickAux(v *gocui.View, itemCount int, selectedLine *int, handleSelect func(*gocui.Gui, *gocui.View) error) error {
-	if gui.popupPanelFocused() && v != nil && !gui.isPopupPanel(v.Name()) {
-		return nil
-	}
-
 	_, cy := v.Cursor()
 	_, oy := v.Origin()
 

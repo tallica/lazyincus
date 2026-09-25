@@ -301,6 +301,13 @@ func (gui *Gui) run(g *gocui.Gui) error {
 
 	g.ErrorHandler = gui.handleError
 
+	// A popup has the keyboard, so a click or a wheel outside it does
+	// nothing; gocui would otherwise move the cursor of the list under it
+	// before any binding of ours could say no.
+	g.ShouldHandleMouseEvent = func(v *gocui.View, _ gocui.Key) bool {
+		return !gui.popupPanelFocused() || gui.isPopupPanel(v.Name())
+	}
+
 	g.SetManager(gocui.ManagerFunc(gui.layout), gocui.ManagerFunc(gui.getFocusLayout()))
 
 	if err := gui.createAllViews(); err != nil {
