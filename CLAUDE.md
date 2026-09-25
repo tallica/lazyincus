@@ -153,6 +153,7 @@ make build       # just the ./lazyincus binary, version stamped
 make vet
 make test
 make lint        # golangci-lint, configured by .golangci.yml
+make audit       # govulncheck: reachable vulnerabilities; CI runs it weekly too
 ```
 
 No `vendor/` directory — plain module mode.

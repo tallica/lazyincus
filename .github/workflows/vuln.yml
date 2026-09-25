@@ -1,0 +1,22 @@
+name: vuln
+
+# govulncheck reports only vulnerabilities the code can reach. Weekly as
+# well as on changes: an advisory can land with nothing here changing.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: make audit
