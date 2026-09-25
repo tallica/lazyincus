@@ -48,25 +48,26 @@ func (i *Instance) composeStart() error {
 }
 
 func (i *Instance) composeStop(timeout int) error {
-	if err := i.markStopped(true); err != nil {
-		return err
-	}
+	return i.whileMarkedStopped(func() error {
+		err := i.updateState("stop", timeout, false)
+		if err == nil {
+			return nil
+		}
 
-	err := i.updateState("stop", timeout, false)
-	if err == nil {
-		return nil
-	}
+		state, _, stateErr := i.Client.GetInstanceState(i.Name)
+		if stateErr != nil {
+			return errors.Join(err, stateErr)
+		}
 
-	state, _, stateErr := i.Client.GetInstanceState(i.Name)
-	if stateErr != nil {
-		return errors.Join(err, stateErr)
-	}
+		// Only Stopped is done: Incus refuses to shut down an instance in
+		// Error cleanly, and a stop that failed mid-freeze or mid-stop
+		// leaves one of those states behind. A forced stop takes any of them.
+		if state.StatusCode == api.Stopped {
+			return nil
+		}
 
-	if state.StatusCode != api.Running {
-		return nil
-	}
-
-	return i.updateState("stop", -1, true)
+		return i.updateState("stop", -1, true)
+	})
 }
 
 func (i *Instance) composeRestart() error {
@@ -78,19 +79,28 @@ func (i *Instance) composeRestart() error {
 }
 
 func (i *Instance) composeKill() error {
-	if err := i.markStopped(true); err != nil {
-		return err
-	}
-
-	return i.updateState("stop", -1, true)
+	return i.whileMarkedStopped(func() error { return i.updateState("stop", -1, true) })
 }
 
 func (i *Instance) composeFreeze() error {
+	return i.whileMarkedStopped(func() error { return i.updateState("freeze", -1, false) })
+}
+
+// whileMarkedStopped marks the instance deliberately stopped, then takes it
+// down. Should that fail, the mark comes off again: left on a replica
+// still running, it would keep ic-healthd from restarting one that later
+// crashed. incus-compose itself leaves it on.
+func (i *Instance) whileMarkedStopped(action func() error) error {
 	if err := i.markStopped(true); err != nil {
 		return err
 	}
 
-	return i.updateState("freeze", -1, false)
+	err := action()
+	if err == nil {
+		return nil
+	}
+
+	return errors.Join(err, i.markStopped(false))
 }
 
 func (i *Instance) composeUnfreeze() error {

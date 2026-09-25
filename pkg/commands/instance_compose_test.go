@@ -17,6 +17,10 @@ type stubbornServer struct {
 	incus.InstanceServer
 
 	running bool
+	// status, when set, is what the instance reports while running.
+	status api.StatusCode
+	// failAll refuses every state change, forced or not.
+	failAll bool
 	stops   []api.InstanceStatePut
 	patches []any
 	// calls is every state change and marker write, in order.
@@ -35,6 +39,10 @@ func (s *stubbornServer) UpdateInstanceState(_ string, put api.InstanceStatePut,
 	s.stops = append(s.stops, put)
 	s.calls = append(s.calls, put.Action+map[bool]string{true: " --force"}[put.Force])
 
+	if s.failAll {
+		return doneOperation{err: errors.New("refused")}, nil
+	}
+
 	if put.Action != "stop" {
 		return doneOperation{}, nil
 	}
@@ -52,6 +60,9 @@ func (s *stubbornServer) GetInstanceState(string) (*api.InstanceState, string, e
 	code := api.Stopped
 	if s.running {
 		code = api.Running
+		if s.status != 0 {
+			code = s.status
+		}
 	}
 
 	return &api.InstanceState{StatusCode: code}, "", nil
@@ -138,4 +149,36 @@ func TestPausingAReplicaMarksItAroundTheFreeze(t *testing.T) {
 	require.NoError(t, replica.Unfreeze())
 
 	assert.Equal(t, []string{"mark true", "freeze", "unfreeze", "mark false"}, server.calls)
+}
+
+// Incus won't shut down an instance in Error cleanly; the stop goes on to
+// the forced one rather than reading the refusal as done.
+func TestStoppingAReplicaInErrorForcesIt(t *testing.T) {
+	server := &stubbornServer{running: true, status: api.Error}
+	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+
+	require.NoError(t, replica.Stop())
+
+	assert.False(t, server.running)
+	assert.Equal(t, []string{"mark true", "stop", "stop --force"}, server.calls)
+}
+
+// A replica that couldn't be taken down is still running, and mustn't keep
+// the mark that tells ic-healthd to leave it alone.
+func TestAFailedStopOrFreezeTakesTheMarkOff(t *testing.T) {
+	for name, act := range map[string]func(*Instance) error{
+		"stop":   (*Instance).Stop,
+		"kill":   (*Instance).ForceStop,
+		"freeze": (*Instance).Freeze,
+	} {
+		t.Run(name, func(t *testing.T) {
+			server := &stubbornServer{running: true, failAll: true}
+			replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+
+			require.Error(t, act(replica))
+
+			assert.Equal(t, "mark true", server.calls[0])
+			assert.Equal(t, "mark false", server.calls[len(server.calls)-1])
+		})
+	}
 }

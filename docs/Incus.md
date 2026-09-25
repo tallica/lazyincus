@@ -80,9 +80,11 @@ inferred.
   its CLI takes only whole services and a replica's row acts on one
   instance (`instance_compose.go`): stop and force stop set
   `user.healthcheck.stopped=true` first, so ic-healthd's restart policy
-  leaves it down, and stop falls back to a forced stop once its 10s are up
-  - Incus fails a shutdown that outlives its timeout and leaves the
-  instance running. Restart is that stop (60s) then a start; start clears
+  leaves it down, and stop falls back to a forced stop unless the clean
+  one left it `Stopped` - Incus fails a shutdown that outlives its timeout
+  and leaves the instance running, and won't cleanly stop one in `Error`
+  at all. An action that fails takes the marker off again, since the
+  instance is still up; incus-compose leaves it on. Restart is that stop (60s) then a start; start clears
   the marker; freeze sets it, a frozen instance answering no healthcheck,
   and unfreeze clears it. The marker is written with a PATCH of that one
   key, answered synchronously, not a read-modify-write that would race
