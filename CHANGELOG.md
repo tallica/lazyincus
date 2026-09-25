@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-26
+
 ### Fixed
 - A paused or stopped instance no longer shows the health it had while it ran. The health column is ic-healthd's verdict, which it rewrites on its own schedule: seconds after a pause or stop, and never while ic-healthd itself is down, so a frozen replica read `healthy` in the meantime - and could make its service read healthy too. Health is shown for running instances only; the status column already says why a stopped one has none.
 - Stopping or restarting one replica of a compose service no longer fails when it's slow to shut down. A replica's row asked Incus for a clean stop and gave up when that timed out, reporting `Failed shutting down instance` and leaving the replica running. Its keys now do what incus-compose does to each of its own instances: a stop gets ten seconds and is then forced, a restart is that stop followed by a start, and a stopped, killed or paused replica is marked as deliberately down, so ic-healthd's restart policy leaves it alone rather than bringing it back. Starting or unpausing it clears the mark.
@@ -195,7 +197,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/tallica/lazyincus/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/tallica/lazyincus/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/tallica/lazyincus/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/tallica/lazyincus/compare/v0.7.0...v0.8.0
