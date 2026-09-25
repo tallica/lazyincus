@@ -293,29 +293,13 @@ func OpensMenuStyle(str string) string {
 	return ColoredString(fmt.Sprintf("%s...", str), color.FgMagenta)
 }
 
-// MarshalIntoYaml gets any json-tagged data and marshal it into yaml saving original json structure.
-// Useful for structs from 3rd-party libs without yaml tags.
-func MarshalIntoYaml(data interface{}) ([]byte, error) {
-	return marshalIntoFormat(data, "yaml")
-}
-
-func marshalIntoFormat(data interface{}, format string) ([]byte, error) {
-	// First marshal struct->json to get the resulting structure declared by json tags
-	dataJSON, err := json.MarshalIndent(data, "", "  ")
+// MarshalIntoYaml renders json-tagged data - the Incus API's structs have
+// no yaml tags - as YAML, in the order the struct declares its fields.
+func MarshalIntoYaml(data any) ([]byte, error) {
+	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
-	switch format {
-	case "json":
-		return dataJSON, err
-	case "yaml":
-		// Use Unmarshal->Marshal hack to convert json into yaml with the original structure preserved
-		var dataMirror yaml.MapSlice
-		if err := yaml.Unmarshal(dataJSON, &dataMirror); err != nil {
-			return nil, err
-		}
-		return yaml.Marshal(dataMirror)
-	default:
-		return nil, errors.New(fmt.Sprintf("Unsupported detailization format: %s", format))
-	}
+
+	return yaml.JSONToYAML(dataJSON)
 }

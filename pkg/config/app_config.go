@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/OpenPeeDeeP/xdg"
-	"github.com/jesseduffield/yaml"
+	"github.com/goccy/go-yaml"
 )
 
 // UserConfig holds all of the user-configurable options
@@ -260,6 +260,17 @@ func loadUserConfig(configDir string, base *UserConfig) (*UserConfig, error) {
 	content, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
+	}
+
+	// goccy/go-yaml zeroes the target for a document with nothing in it,
+	// which is what a fresh install's config file is.
+	var document map[string]any
+	if err := yaml.Unmarshal(content, &document); err != nil {
+		return nil, err
+	}
+
+	if len(document) == 0 {
+		return base, nil
 	}
 
 	if err := yaml.Unmarshal(content, base); err != nil {

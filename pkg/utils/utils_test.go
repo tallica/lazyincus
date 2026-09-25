@@ -58,3 +58,23 @@ func TestTruncateColored(t *testing.T) {
 		assert.EqualValues(t, "untouched", TruncateColored("untouched", 1))
 	})
 }
+
+func TestMarshalIntoYamlKeepsFieldOrder(t *testing.T) {
+	type inner struct {
+		Zulu  int `json:"zulu"`
+		Alpha int `json:"alpha"`
+	}
+
+	data, err := MarshalIntoYaml(struct {
+		Name   string            `json:"name"`
+		Nested inner             `json:"nested"`
+		Config map[string]string `json:"config"`
+	}{
+		Name:   "web",
+		Nested: inner{Zulu: 1, Alpha: 2},
+		Config: map[string]string{"b": "2", "a": "1"},
+	})
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, "name: web\nnested:\n  zulu: 1\n  alpha: 2\nconfig:\n  a: \"1\"\n  b: \"2\"\n", string(data))
+}

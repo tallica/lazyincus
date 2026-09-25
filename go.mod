@@ -7,12 +7,10 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
-	github.com/gookit/color v1.6.1
 	github.com/integrii/flaggy v1.8.0
 	github.com/jesseduffield/gocui v0.3.1-0.20240418080333-8cd33929c513
 	github.com/jesseduffield/kill v0.0.0-20250101124109-e216ddbe133a
 	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996
-	github.com/jesseduffield/yaml v2.1.0+incompatible
 	github.com/lxc/incus/v7 v7.3.0
 	github.com/mattn/go-runewidth v0.0.27
 	github.com/mgutz/str v1.2.0
@@ -66,7 +64,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/go-mtree v0.7.0 // indirect
-	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/zitadel/oidc/v3 v3.48.1 // indirect
 	github.com/zitadel/schema v1.3.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

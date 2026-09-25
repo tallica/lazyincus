@@ -1,7 +1,9 @@
 package gui
 
 import (
-	"github.com/gookit/color"
+	"strconv"
+	"strings"
+
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -24,8 +26,7 @@ var gocuiColorMap = map[string]gocui.Attribute{
 // GetGocuiAttribute gets the gocui color attribute from the string
 func GetGocuiAttribute(key string) gocui.Attribute {
 	if utils.IsValidHexValue(key) {
-		values := color.HEX(key).Values()
-		return gocui.NewRGBColor(int32(values[0]), int32(values[1]), int32(values[2]))
+		return hexColor(key)
 	}
 
 	value, present := gocuiColorMap[key]
@@ -42,4 +43,16 @@ func GetGocuiStyle(keys []string) gocui.Attribute {
 		attribute |= GetGocuiAttribute(key)
 	}
 	return attribute
+}
+
+// hexColor reads a colour IsValidHexValue has accepted: #rgb or #rrggbb.
+func hexColor(hex string) gocui.Attribute {
+	digits := hex[1:]
+	if len(digits) == 3 {
+		digits = strings.Repeat(digits[0:1], 2) + strings.Repeat(digits[1:2], 2) + strings.Repeat(digits[2:3], 2)
+	}
+
+	value, _ := strconv.ParseUint(digits, 16, 32)
+
+	return gocui.NewRGBColor(int32(value>>16&0xff), int32(value>>8&0xff), int32(value&0xff))
 }

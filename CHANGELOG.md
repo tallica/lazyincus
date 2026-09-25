@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Releases now carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source. Each release also has a `checksums.txt` to verify the archive you downloaded against.
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
 
+### Changed
+- The Config tab lists every level of what it shows in the order Incus itself does, the way `incus config show` prints it. Only the top level kept that order before; everything nested under it - an instance's state, its network counters, a snapshot - came out alphabetical, which put `swap_usage` ahead of `usage` and split related fields apart.
+
 ### Fixed
 - A row too wide for its panel now ends in an ellipsis instead of being cut off without a word. gocui draws a long row up to the view's edge and stops, so a clipped `192.0.2.144` read as a short address rather than a hidden one — the kind of thing you copy before noticing. Every side panel and menu marks the cut, and re-cuts as it happens when the width changes, by `+` or by resizing the terminal. A row that only runs long on blank padding is left unmarked, having nothing hidden.
 
