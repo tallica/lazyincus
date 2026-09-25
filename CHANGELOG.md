@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
 
 ### Changed
-- lazyincus asks the daemon for every instance's details in one request every two seconds, the way `incus list` does, instead of one request per instance every second - a dozen instances used to be a dozen requests a second while you did nothing. Type, addresses and snapshot counts are there as soon as the list appears, rather than filling in a moment later.
+- lazyincus asks the daemon for every instance's details in one request every two seconds, the way `incus list` does, instead of one request per instance every second - a dozen instances used to be a dozen requests a second while you did nothing. Type, addresses and snapshot counts are there as soon as the list appears, rather than filling in a moment later, and the snapshots panel keeps up with the same two-second poll: a snapshot taken, deleted or expired outside lazyincus shows within two seconds rather than ten.
 - The Config tab lists every level of what it shows in the order Incus itself does, the way `incus config show` prints it. Only the top level kept that order before; everything nested under it - an instance's state, its network counters, a snapshot - came out alphabetical, which put `swap_usage` ahead of `usage` and split related fields apart.
 
 ### Removed
@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moving through the instances or services list no longer waits on the daemon. Every cursor move used to fetch the selected instance's snapshots before drawing, one request per replica, which on a remote daemon made each keypress as slow as the round trip. The snapshots come with the instance listing now. Opening the project menu (`P`) and switching project no longer freeze the screen either; the status line says it's loading.
 - In the all-projects view, moving straight from one item to another of the same name in a different project shows the second one's details. The main panel took the two for the same item and kept showing the first's.
 - A row too wide for its panel now ends in an ellipsis instead of being cut off without a word. gocui draws a long row up to the view's edge and stops, so a clipped `192.0.2.144` read as a short address rather than a hidden one — the kind of thing you copy before noticing. Every side panel and menu marks the cut, and re-cuts as it happens when the width changes, by `+` or by resizing the terminal. A row that only runs long on blank padding is left unmarked, having nothing hidden.
+
+### Security
+- The `--debug` log, `development.log` in the config directory, is created readable by you alone. It records the commands lazyincus runs and the errors they come back with, and was created readable by every user on the machine. A log that already exists keeps its permissions - `chmod 600` it, or delete it and let the next `--debug` run start a new one.
 
 ## [0.8.1] - 2026-09-20
 
