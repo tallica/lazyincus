@@ -58,8 +58,10 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 - **Nothing machine-specific in the tree.** The repo is public and a push
   is permanent — no credentials, no local paths, no "works on my VM". That
   belongs in what you report, not in a file.
-- **Most of the UI has no test.** Drive a change against a live daemon —
-  see [Verifying in a live TUI](#verifying-in-a-live-tui).
+- **The tests see the screen, not the daemon.** The screen and refresh
+  tests in `pkg/gui` run the real app on a headless gocui over
+  `incustest`'s stand-in daemon; anything that talks to a real one still
+  wants driving live — see [Verifying in a live TUI](#verifying-in-a-live-tui).
 
 ## Source of the port
 
@@ -154,6 +156,11 @@ make lint        # golangci-lint, configured by .golangci.yml
 ```
 
 No `vendor/` directory — plain module mode.
+
+The screen tests compare against `pkg/gui/testdata/screens`. A change
+that moves the layout on purpose rewrites them with
+`go test ./pkg/gui -run TestScreen -update`; read the diff before
+keeping it.
 
 ### Releasing
 

@@ -3,7 +3,10 @@
 package incustest
 
 import (
+	"errors"
+	"net/url"
 	"slices"
+	"sync"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -11,7 +14,7 @@ import (
 
 // Server answers the listing calls lazyincus makes from its fields. It
 // embeds the interface it stands in for, left nil, so a call it doesn't
-// implement panics rather than quietly returning nothing.
+// implement panics rather than quietly returning nothing. Make one with New.
 type Server struct {
 	incus.InstanceServer
 
@@ -23,6 +26,66 @@ type Server struct {
 
 	// project is what UseProject scoped this copy to.
 	project string
+
+	// state is shared by every copy UseProject makes: what a test changes
+	// while the app is running.
+	state *state
+}
+
+type state struct {
+	mutex     sync.Mutex
+	down      bool
+	instances []api.InstanceFull
+	changed   bool
+}
+
+// New is a Server answering from fixture.
+func New(fixture Server) *Server {
+	fixture.state = &state{}
+
+	return &fixture
+}
+
+func (s *Server) shared() *state {
+	return s.state
+}
+
+// SetInstances replaces the instances while the app is running.
+func (s *Server) SetInstances(instances []api.InstanceFull) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.instances = instances
+	shared.changed = true
+}
+
+// SetDown makes every listing fail the way an unreachable daemon's does.
+func (s *Server) SetDown(down bool) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.down = down
+}
+
+// errUnreachable is what the client returns for a daemon it never reached.
+var errUnreachable = &url.Error{Op: "Get", URL: "https://incustest/1.0", Err: errors.New("connection refused")}
+
+func (s *Server) instances() ([]api.InstanceFull, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if shared.down {
+		return nil, errUnreachable
+	}
+
+	if shared.changed {
+		return slices.Clone(shared.instances), nil
+	}
+
+	return slices.Clone(s.Instances), nil
 }
 
 var _ incus.InstanceServer = &Server{}
@@ -51,9 +114,14 @@ func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
 }
 
 func (s *Server) GetProjectNames() ([]string, error) {
+	instances, err := s.instances()
+	if err != nil {
+		return nil, err
+	}
+
 	names := []string{api.ProjectDefaultName}
 
-	for _, instance := range s.Instances {
+	for _, instance := range instances {
 		if !slices.Contains(names, instance.Project) {
 			names = append(names, instance.Project)
 		}
@@ -63,11 +131,16 @@ func (s *Server) GetProjectNames() ([]string, error) {
 }
 
 func (s *Server) GetInstancesFull(api.InstanceType) ([]api.InstanceFull, error) {
-	return inProject(s.Instances, s.scope(), func(i api.InstanceFull) string { return i.Project }), nil
+	instances, err := s.instances()
+	if err != nil {
+		return nil, err
+	}
+
+	return inProject(instances, s.scope(), func(i api.InstanceFull) string { return i.Project }), nil
 }
 
 func (s *Server) GetInstancesFullAllProjects(api.InstanceType) ([]api.InstanceFull, error) {
-	return slices.Clone(s.Instances), nil
+	return s.instances()
 }
 
 func (s *Server) GetImages() ([]api.Image, error) {

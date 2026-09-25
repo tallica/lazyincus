@@ -67,7 +67,7 @@ func fixtureServer() *incustest.Server {
 		InstancePut: api.InstancePut{Architecture: "x86_64"},
 	}}
 
-	return &incustest.Server{
+	return incustest.New(incustest.Server{
 		Instances: []api.InstanceFull{
 			running("default", "web", "192.0.2.10", 2),
 			stopped,
@@ -81,13 +81,14 @@ func fixtureServer() *incustest.Server {
 		Volumes: map[string][]api.StorageVolume{
 			"default": {{Name: "data", Type: "custom", Project: "default"}},
 		},
-	}
+	})
 }
 
 type screen struct {
-	gui  *Gui
-	g    *gocui.Gui
-	done chan error
+	gui    *Gui
+	g      *gocui.Gui
+	server *incustest.Server
+	done   chan error
 }
 
 // startScreen runs the app on a width×height headless terminal until the
@@ -110,7 +111,8 @@ func startScreen(t *testing.T, width, height int, configure func(*config.UserCon
 	log := commands.NewDummyLog()
 	tr := i18n.NewTranslationSet(log, "en")
 	osCommand := commands.NewOSCommand(log, appConfig)
-	incusCommand := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, fixtureServer(), "fake")
+	server := fixtureServer()
+	incusCommand := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, server, "fake")
 	incusCommand.ServerVersion = "7.4"
 
 	gui, err := NewGui(log, incusCommand, osCommand, tr, appConfig)
@@ -129,7 +131,7 @@ func startScreen(t *testing.T, width, height int, configure func(*config.UserCon
 	})
 	require.NoError(t, err)
 
-	s := &screen{gui: gui, g: g, done: make(chan error, 1)}
+	s := &screen{gui: gui, g: g, server: server, done: make(chan error, 1)}
 
 	go func() { s.done <- gui.run(g) }()
 
