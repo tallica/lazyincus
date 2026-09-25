@@ -151,7 +151,7 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 	output += line("Replicas", presentation.ServiceReplicas(service))
 	output += line("Health", service.Health())
 
-	if project := gui.State.ComposeProject; project != nil {
+	if project := gui.composeProject.Load(); project != nil {
 		output += line("Healthcheck", gui.composeHealthcheckStr(project))
 	}
 
@@ -179,7 +179,7 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 
 	for _, instance := range row.Instances() {
 		output += "\n" + gui.instanceHeading(service, instance) + "\n"
-		output += "\n" + gui.instanceInfoStr(instance, omit...)
+		output += "\n" + gui.instanceInfoStr(instance.Latest(), omit...)
 	}
 
 	return output
@@ -334,28 +334,51 @@ func (gui *Gui) composeServiceConfigStr(service *commands.ComposeService) string
 	return utils.ColoredYamlString(string(data))
 }
 
-func (gui *Gui) refreshServices() error {
-	if gui.Views.Services == nil || gui.noLocalComposeProject() {
-		return nil
+// fetchServices reads LocalComposeProject and ComposeServiceDefs off the
+// main loop, which is safe only because both are set once, before it starts.
+func (gui *Gui) fetchServices() (func() error, error) {
+	if gui.noLocalComposeProject() {
+		return func() error { return nil }, nil
 	}
+
+	ticket := gui.refreshes.services.issue()
 
 	services, err := gui.IncusCommand.GetComposeServices(
 		gui.State.LocalComposeProject, gui.State.ComposeServiceDefs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// The project's own config backs the Info tab's healthcheck and resource
 	// lines; fetched here so rendering stays free of API calls.
-	if project, err := gui.IncusCommand.GetComposeProject(gui.State.LocalComposeProject); err != nil {
-		gui.Log.Warn(err)
-	} else {
-		gui.State.ComposeProject = project
+	project, projectErr := gui.IncusCommand.GetComposeProject(gui.State.LocalComposeProject)
+	if projectErr != nil {
+		gui.Log.Warn(projectErr)
 	}
 
-	gui.Panels.Services.SetItems(commands.ServiceRows(services))
+	return func() error {
+		if !gui.refreshes.services.admit(ticket) {
+			return nil
+		}
 
-	return gui.Panels.Services.RerenderList()
+		// A nil project is an answer - no longer compose-managed - where an
+		// error isn't one.
+		if projectErr == nil {
+			gui.composeProject.Store(project)
+		}
+
+		gui.Panels.Services.SetItems(commands.ServiceRows(services))
+
+		if err := gui.Panels.Services.RerenderList(); err != nil {
+			return err
+		}
+
+		return gui.renderSnapshots()
+	}, nil
+}
+
+func (gui *Gui) refreshServices() error {
+	return gui.refresh(nil, gui.fetchServices)
 }
 
 // refreshServicesQuiet is the background poll. A service's instances change
@@ -625,7 +648,9 @@ func (gui *Gui) composeRun(service string, args ...string) error {
 		return err
 	}
 
-	return gui.refreshInstancesAndServices()
+	gui.refreshInBackground(gui.fetchInstances, gui.fetchServices)
+
+	return nil
 }
 
 // composeTarget names what a confirmation prompt is about - the service, or
@@ -895,9 +920,5 @@ func (gui *Gui) handleServiceViewLogs(g *gocui.Gui, v *gocui.View) error {
 // changed what they hold, rather than waiting on the next background poll
 // to notice. Both, because a compose instance has a row in each.
 func (gui *Gui) refreshInstancesAndServices() error {
-	if err := gui.refreshInstances(); err != nil {
-		return err
-	}
-
-	return gui.refreshServices()
+	return gui.refresh(nil, gui.fetchInstances, gui.fetchServices)
 }

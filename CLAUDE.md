@@ -88,6 +88,16 @@ the focused one everything the others don't need. "Focused" there means the
 last side panel to have focus, so stepping into the main panel doesn't
 collapse the list you were reading.
 
+Views, panels and `gui.State` belong to gocui's main loop. A refresh is a
+`fetch` (`pkg/gui/refresh.go`): it asks the daemon off the loop and returns
+the closure that shows the answer, which `gui.refresh` runs on the loop
+through `Update`. So a refresh is never started on the loop — a keypress
+wanting one starts it from `WithWaitingStatus` or `refreshInBackground` —
+and `RerenderList` is never called off it. Each kind of fetch carries a
+`refreshSeq`, so an older fetch that finishes late can't undo a newer one.
+A refresh of several kinds applies each that succeeded even when another
+fails.
+
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width
 reads `gui.mainViewWidth`, which `layout` stores on every pass. The view's

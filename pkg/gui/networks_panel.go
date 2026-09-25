@@ -26,7 +26,7 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 				}
 			},
 			GetItemContextCacheKey: func(network *commands.Network) string {
-				return "networks-" + network.Name
+				return "networks-" + network.Key()
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Network]{
@@ -37,6 +37,9 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 		Gui:            gui.intoInterface(),
 		Sort: func(a *commands.Network, b *commands.Network) bool {
 			return a.Name < b.Name
+		},
+		SameItem: func(a, b *commands.Network) bool {
+			return a.Key() == b.Key()
 		},
 		GetTableCells: func(item *commands.Network) []string {
 			return presentation.GetNetworkDisplayStrings(item, gui.State.SpansProjects.Networks)
@@ -66,22 +69,30 @@ func (gui *Gui) networkConfigStr(network *commands.Network) string {
 	return output
 }
 
-func (gui *Gui) refreshNetworks() error {
-	if gui.Views.Networks == nil {
-		return nil
-	}
+func (gui *Gui) fetchNetworks() (func() error, error) {
+	ticket := gui.refreshes.networks.issue()
 
-	networks, err := gui.IncusCommand.GetNetworks(gui.Panels.Networks.List.GetAllItems())
+	networks, err := gui.IncusCommand.GetNetworks()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	gui.State.SpansProjects.Networks = spansMultipleProjects(
-		lo.Map(networks, func(network *commands.Network, _ int) string { return network.Network.Project }))
+	return func() error {
+		if !gui.refreshes.networks.admit(ticket) {
+			return nil
+		}
 
-	gui.Panels.Networks.SetItems(networks)
+		gui.State.SpansProjects.Networks = spansMultipleProjects(
+			lo.Map(networks, func(network *commands.Network, _ int) string { return network.Network.Project }))
 
-	return gui.Panels.Networks.RerenderList()
+		gui.Panels.Networks.SetItems(networks)
+
+		return gui.Panels.Networks.RerenderList()
+	}, nil
+}
+
+func (gui *Gui) refreshNetworks() error {
+	return gui.refresh(nil, gui.fetchNetworks)
 }
 
 func (gui *Gui) refreshNetworksQuiet() error {

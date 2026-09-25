@@ -22,7 +22,6 @@ type TranslationSet struct {
 	CannotReachDaemonError                     string
 	ConnectionLost                             string
 	ConnectionLostTitle                        string
-	WaitingForInstanceInfo                     string
 	CannotAttachStoppedInstanceError           string
 	CannotAttachAppContainerError              string
 	CannotExecStoppedInstanceError             string
@@ -82,6 +81,7 @@ type TranslationSet struct {
 	SnapshotCreate            string
 	SnapshottingStatus        string
 	RestoringStatus           string
+	LoadingStatus             string
 	VolumesTitle              string
 	NoVolumes                 string
 	DeleteVolume              string
@@ -180,7 +180,6 @@ func englishSet() TranslationSet {
 		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that --remote, INCUS_REMOTE or the CLI's default-remote names the one you meant.",
 		ConnectionLost:                   "Lost the connection to '%s'.\n\nStill trying - this closes itself once the daemon answers again.",
 		ConnectionLostTitle:              "Connection lost",
-		WaitingForInstanceInfo:           "Cannot proceed until incus gives us more information about the instance. Please retry in a few moments.",
 		CannotAttachStoppedInstanceError: "You cannot attach to a stopped instance's console, you need to start it first (which you can do with the 'S' key)",
 		CannotAttachAppContainerError:    "An OCI application container runs its image's entrypoint rather than an init system, so it has no console to attach to. Its output is the Logs tab ('m'), and 'E' gets you a shell.",
 		CannotExecStoppedInstanceError:   "You cannot exec into a stopped instance, you need to start it first (which you can do with the 'S' key)",
@@ -250,6 +249,7 @@ func englishSet() TranslationSet {
 		SnapshotCreate:               "create",
 		SnapshottingStatus:           "snapshotting",
 		RestoringStatus:              "restoring",
+		LoadingStatus:                "loading",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",

@@ -88,7 +88,6 @@ type IGui interface {
 	IsCurrentView(*gocui.View) bool
 	FilterString(view *gocui.View) string
 	IgnoreStrings() []string
-	Update(func() error)
 
 	QueueTask(f func(ctx context.Context)) error
 }
@@ -291,32 +290,31 @@ func (self *SideListPanel[T]) selectedIndex(selected T) int {
 	return self.List.GetIndexBy(func(item T) bool { return self.SameItem(selected, item) })
 }
 
+// RerenderList re-filters and redraws the list. Main loop only, like
+// everything else that touches a view.
 func (self *SideListPanel[T]) RerenderList() error {
 	self.FilterAndSort()
 
-	self.Gui.Update(func() error {
-		table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
-			return self.GetTableCells(item)
-		})
-		renderedTable, err := utils.RenderTable(table)
-		if err != nil {
+	table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
+		return self.GetTableCells(item)
+	})
+	renderedTable, err := utils.RenderTable(table)
+	if err != nil {
+		return err
+	}
+
+	self.table = renderedTable
+	self.writeRows()
+
+	if self.OnRerender != nil {
+		if err := self.OnRerender(); err != nil {
 			return err
 		}
+	}
 
-		self.table = renderedTable
-		self.writeRows()
-
-		if self.OnRerender != nil {
-			if err := self.OnRerender(); err != nil {
-				return err
-			}
-		}
-
-		if self.Gui.IsCurrentView(self.View) {
-			return self.HandleSelect()
-		}
-		return nil
-	})
+	if self.Gui.IsCurrentView(self.View) {
+		return self.HandleSelect()
+	}
 
 	return nil
 }

@@ -78,7 +78,7 @@ func withProjectColumn(columns []string, spansProjects bool) []string {
 }
 
 // InstanceType mirrors the `incus list` TYPE column, "(app)" suffix and
-// all, which appears only once the details are fetched - see IsOCI.
+// all.
 func InstanceType(instance *commands.Instance) string {
 	if instance.IsVM() {
 		return "vm"
@@ -99,16 +99,8 @@ func displayInstanceAddresses(instance *commands.Instance, family string) string
 }
 
 // displayInstanceSnapshotCount mirrors `incus list`'s SNAPSHOTS column.
-// Snapshots only appear in InstanceFull, so like the type/address columns
-// this shows "0" until RefreshInstanceDetails has fetched full details in
-// the background.
 func displayInstanceSnapshotCount(instance *commands.Instance) string {
-	full, ok := instance.Full()
-	if !ok {
-		return "0"
-	}
-
-	return strconv.Itoa(len(full.Snapshots))
+	return strconv.Itoa(len(instance.Instance.Snapshots))
 }
 
 // maxImageAliasWidth keeps the columns after it on screen.

@@ -187,8 +187,7 @@ aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 Lists containers and VMs across every project by default, or one project
 when `P` scopes down - minus the local stack's, when there's a services
 panel holding those. Columns mirror `incus list`'s, with health beside
-status. Type, addresses and snapshot count only appear once
-`RefreshInstanceDetails` has fetched full details in the background.
+status.
 
 Rows sort by name, with stopped instances last (`sortInstances`), and the
 cursor follows the selected item across a re-sort rather than holding its
@@ -251,14 +250,14 @@ belong to, the instance or the service, since the rows alone don't say; a
 panel holding more than one instance's snapshots grows a column naming the
 replica each came from, and groups the list by instance before ordering it
 newest-first, replicas being snapshotted alike. Each panel hands its
-selection over rather than `refreshSnapshots`
+selection over rather than `renderSnapshots`
 reading the focused view, because that read takes `ViewStackMutex`, which
 `switchFocus` holds while it runs an `OnSelect`: reading it there deadlocks
-the app. Listing uses
-`GetInstanceSnapshots` rather than the `InstanceFull.Snapshots` the
-background poll already holds, because create and delete have to show up
-immediately. Snapshot names come back from the API prefixed with the
-instance (`alpine/snap0`); every other call wants the bare name, which
+the app. The rows are the `InstanceFull.Snapshots` the instance listing
+already carries, so moving through a list asks the daemon for nothing;
+create, delete and restore re-run that listing, which is what shows their
+result at once. Snapshot names can come back prefixed with the instance
+(`alpine/snap0`); every other call wants the bare name, which
 `snapshotName` strips. `n` works from the instances panel as well as
 this one - it acts on the selected instance either way - and moves to the
 new snapshot once it exists, so taking one from the instances panel shows

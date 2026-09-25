@@ -52,6 +52,7 @@ func (p *ComposeProject) HealthcheckScope() string {
 // which project the panels are currently scoped to.
 func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) {
 	client := c.Client().UseProject(project)
+	listing := c.runtimes.beginListing()
 
 	fulls, err := client.GetInstancesFull(api.InstanceTypeAny)
 	if err != nil {
@@ -61,21 +62,10 @@ func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) 
 	instances := make([]*Instance, len(fulls))
 
 	for i := range fulls {
-		full := fulls[i]
-
-		inst := &Instance{
-			Name:      full.Name,
-			Project:   project,
-			Instance:  full.Instance,
-			Client:    client,
-			OSCommand: c.OSCommand,
-			Log:       c.Log,
-			Tr:        c.Tr,
-		}
-		inst.setFull(&full)
-
-		instances[i] = inst
+		instances[i] = c.newInstance(fulls[i], project, client, listing)
 	}
+
+	c.runtimes.prune(func(listed string) bool { return listed == project }, instances, listing)
 
 	return instances, nil
 }

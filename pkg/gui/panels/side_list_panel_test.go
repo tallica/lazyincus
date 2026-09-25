@@ -22,7 +22,6 @@ func (stubGui) GetMainView() *gocui.View                               { return 
 func (stubGui) IsCurrentView(*gocui.View) bool                         { return false }
 func (stubGui) FilterString(*gocui.View) string                        { return "" }
 func (stubGui) IgnoreStrings() []string                                { return nil }
-func (stubGui) Update(func() error)                                    {}
 func (stubGui) QueueTask(func(ctx context.Context)) error              { return nil }
 
 type row struct {
@@ -69,7 +68,7 @@ func TestSelectionFollowsItemAcrossResort(t *testing.T) {
 	// alpha stops and sorts to the bottom; the cursor should go with it
 	// rather than stay on row 0, which bravo now occupies.
 	alpha.stopped = true
-	assert.NoError(t, panel.RerenderList())
+	panel.FilterAndSort()
 
 	assert.Equal(t, "alpha", selectedName(t, panel))
 	assert.Equal(t, 2, panel.SelectedIdx)
@@ -121,12 +120,6 @@ func TestSelectionFollowsRebuiltItem(t *testing.T) {
 	assert.Equal(t, 2, panel.SelectedIdx)
 }
 
-// renderingGui runs Update's function in place, so RerenderList writes to
-// the view before returning.
-type renderingGui struct{ stubGui }
-
-func (renderingGui) Update(f func() error) { _ = f() }
-
 func TestRowsRefitWhenPanelResizes(t *testing.T) {
 	g, err := gocui.NewGui(gocui.NewGuiOpts{Headless: true, Width: 40, Height: 10})
 	assert.NoError(t, err)
@@ -138,7 +131,6 @@ func TestRowsRefitWhenPanelResizes(t *testing.T) {
 	}
 
 	panel := newPanel([]*row{{name: "alpha-beta-gamma"}, {name: "delta"}})
-	panel.Gui = renderingGui{}
 	panel.View = view
 
 	assert.NoError(t, panel.RerenderList())

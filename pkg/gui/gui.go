@@ -44,6 +44,13 @@ type Gui struct {
 	Mutexes
 
 	Panels Panels
+
+	refreshes refreshSeqs
+
+	// composeProject is the local project as the daemon holds it, backing
+	// the healthcheck line of the services panel's Info tab. Refreshed with
+	// the services; atomic, the tab rendering off the main loop.
+	composeProject atomic.Pointer[commands.ComposeProject]
 }
 
 type Panels struct {
@@ -113,11 +120,6 @@ type guiState struct {
 	// replica of a selected service - see refreshSnapshotsFor.
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
-
-	// ComposeProject is the local project as the daemon holds it, backing
-	// the healthcheck and resource lines of the services panel's Info tab.
-	// Refreshed with the services, so rendering makes no API calls.
-	ComposeProject *commands.ComposeProject
 
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
@@ -308,31 +310,15 @@ func (gui *Gui) Run() error {
 	}
 
 	go func() {
-		if err := gui.refreshInstances(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshImages(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshVolumes(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshNetworks(); err != nil {
-			gui.Log.Error(err)
-		}
-
-		if err := gui.refreshServices(); err != nil {
-			gui.Log.Error(err)
+		for _, fetch := range gui.allFetches() {
+			if err := gui.refresh(nil, fetch); err != nil {
+				gui.Log.Error(err)
+			}
 		}
 
 		gui.goEvery(time.Millisecond*30, gui.reRenderMain)
-		gui.goEvery(time.Second, gui.updateInstanceDetails)
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
-		gui.goEvery(time.Second*10, gui.refreshSnapshotsQuiet)
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
@@ -366,6 +352,12 @@ func (gui *Gui) handleError(err error) error {
 	return nil
 }
 
+// allFetches is every panel's fetch, in the order startup and a project
+// switch run them.
+func (gui *Gui) allFetches() []fetch {
+	return []fetch{gui.fetchInstances, gui.fetchImages, gui.fetchVolumes, gui.fetchNetworks, gui.fetchServices}
+}
+
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
@@ -388,11 +380,6 @@ func (gui *Gui) reRenderMain() error {
 			return nil
 		})
 	}
-	return nil
-}
-
-func (gui *Gui) updateInstanceDetails() error {
-	gui.IncusCommand.RefreshInstanceDetails(gui.Panels.Instances.List.GetAllItems())
 	return nil
 }
 

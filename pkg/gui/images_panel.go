@@ -27,7 +27,7 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 				}
 			},
 			GetItemContextCacheKey: func(image *commands.Image) string {
-				return "images-" + image.Fingerprint
+				return "images-" + image.Key()
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Image]{
@@ -38,6 +38,9 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 		Gui:            gui.intoInterface(),
 		Sort: func(a *commands.Image, b *commands.Image) bool {
 			return sortImages(a, b)
+		},
+		SameItem: func(a, b *commands.Image) bool {
+			return a.Key() == b.Key()
 		},
 		GetTableCells: func(item *commands.Image) []string {
 			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images)
@@ -80,22 +83,30 @@ func (gui *Gui) imageConfigStr(image *commands.Image) string {
 	return output
 }
 
-func (gui *Gui) refreshImages() error {
-	if gui.Views.Images == nil {
-		return nil
-	}
+func (gui *Gui) fetchImages() (func() error, error) {
+	ticket := gui.refreshes.images.issue()
 
-	images, err := gui.IncusCommand.GetImages(gui.Panels.Images.List.GetAllItems())
+	images, err := gui.IncusCommand.GetImages()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	gui.State.SpansProjects.Images = spansMultipleProjects(
-		lo.Map(images, func(image *commands.Image, _ int) string { return image.Image.Project }))
+	return func() error {
+		if !gui.refreshes.images.admit(ticket) {
+			return nil
+		}
 
-	gui.Panels.Images.SetItems(images)
+		gui.State.SpansProjects.Images = spansMultipleProjects(
+			lo.Map(images, func(image *commands.Image, _ int) string { return image.Image.Project }))
 
-	return gui.Panels.Images.RerenderList()
+		gui.Panels.Images.SetItems(images)
+
+		return gui.Panels.Images.RerenderList()
+	}, nil
+}
+
+func (gui *Gui) refreshImages() error {
+	return gui.refresh(nil, gui.fetchImages)
 }
 
 // refreshImagesQuiet is the background poll. Images only change when someone

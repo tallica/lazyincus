@@ -18,7 +18,7 @@ func instanceInProject(project, name, status string) *commands.Instance {
 func instanceWithStatus(name, status string) *commands.Instance {
 	return &commands.Instance{
 		Name:     name,
-		Instance: api.Instance{InstancePut: api.InstancePut{}, Name: name, Status: status},
+		Instance: api.InstanceFull{Instance: api.Instance{Name: name, Status: status}},
 	}
 }
 

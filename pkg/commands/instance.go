@@ -12,7 +12,6 @@ import (
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/util"
-	"github.com/sasha-s/go-deadlock"
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
@@ -26,28 +25,17 @@ type Instance struct {
 	// address the right instance.
 	Project string
 
-	// Instance holds the summary data returned by GetInstances (status, type,
-	// creation time, ...).
-	Instance api.Instance
+	// Instance is the daemon's whole view of the instance as of the refresh
+	// that built this value: config, state and snapshots. Never updated in
+	// place - the next refresh builds a new Instance; see Latest.
+	Instance api.InstanceFull
 
 	Client    incus.InstanceServer
 	OSCommand *OSCommand
 	Log       *logrus.Entry
 	Tr        *i18n.TranslationSet
 
-	detailsMutex deadlock.Mutex
-	// full holds the full instance details (including current state), lazily
-	// populated in the background by IncusCommand.RefreshInstanceDetails.
-	full *api.InstanceFull
-
-	logMutex          deadlock.Mutex
-	logBuffer         strings.Builder
-	stoppedLogFetched bool
-
-	topMutex deadlock.Mutex
-	// topCommand is whichever of topCommands last worked for this instance,
-	// so the Top tab's poll doesn't re-probe the ones that don't on every tick.
-	topCommand []string
+	runtime *instanceRuntime
 }
 
 // maxConsoleLogBufferBytes caps how much accumulated console output
@@ -55,24 +43,23 @@ type Instance struct {
 // sessions.
 const maxConsoleLogBufferBytes = 256 * 1024
 
-func (i *Instance) setFull(full *api.InstanceFull) {
-	i.detailsMutex.Lock()
-	defer i.detailsMutex.Unlock()
-	i.full = full
+// Key is the instance's identity: names repeat across projects.
+func (i *Instance) Key() string {
+	return i.Project + "/" + i.Name
 }
 
-// Full returns the last-fetched full instance details, if any.
-func (i *Instance) Full() (*api.InstanceFull, bool) {
-	i.detailsMutex.Lock()
-	defer i.detailsMutex.Unlock()
-	return i.full, i.full != nil
-}
+// Latest is the newest refresh's view of this same instance, for whatever
+// outlives the refresh that built this one - a main-panel tab that ticks.
+// The instance itself once a later refresh no longer lists it.
+func (i *Instance) Latest() *Instance {
+	if i.runtime == nil {
+		return i
+	}
 
-// DetailsLoaded tells us whether we've yet fetched the full details for this
-// instance.
-func (i *Instance) DetailsLoaded() bool {
-	_, ok := i.Full()
-	return ok
+	i.runtime.mutex.Lock()
+	defer i.runtime.mutex.Unlock()
+
+	return i.runtime.latest
 }
 
 // IsVM returns true if the instance is a virtual machine rather than a container.
@@ -85,8 +72,7 @@ func (i *Instance) IsVM() bool {
 const ociContainerKey = "volatile.container.oci"
 
 // IsOCI reports whether this is an OCI application container - one running
-// an image's entrypoint rather than an init system. False until the full
-// details are fetched, the key being in the expanded config.
+// an image's entrypoint rather than an init system.
 func (i *Instance) IsOCI() bool {
 	return util.IsTrue(i.config(ociContainerKey))
 }
@@ -293,27 +279,20 @@ func (i *Instance) Image() string {
 	return fingerprint[:shortFingerprintLength]
 }
 
-// config is empty until RefreshInstanceDetails has run.
 func (i *Instance) config(key string) string {
-	full, ok := i.Full()
-	if !ok {
-		return ""
-	}
-
-	return full.ExpandedConfig[key]
+	return i.Instance.ExpandedConfig[key]
 }
 
 // Addresses returns the instance's global-scope IP addresses for an
 // api.InstanceStateNetworkAddress.Family ("inet"/"inet6"), sorted and
-// excluding loopback. Empty until RefreshInstanceDetails has run.
+// excluding loopback.
 func (i *Instance) Addresses(family string) []string {
-	full, ok := i.Full()
-	if !ok || full.State == nil {
+	if i.Instance.State == nil {
 		return nil
 	}
 
 	addresses := []string{}
-	for name, network := range full.State.Network {
+	for name, network := range i.Instance.State.Network {
 		if name == "lo" {
 			continue
 		}
@@ -330,26 +309,10 @@ func (i *Instance) Addresses(family string) []string {
 	return addresses
 }
 
-// ConsoleLog returns one raw fetch of the console log. The endpoint drains
-// on read, so each call returns only what buffered since the last one -
-// anything polling repeatedly wants TailConsoleLog instead.
-func (i *Instance) ConsoleLog() (string, error) {
-	reader, err := i.Client.GetInstanceConsoleLog(i.Name, &incus.InstanceConsoleLogArgs{})
-	if err != nil {
-		return "", err
-	}
-	defer reader.Close()
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return "", err
-	}
-
-	return string(data), nil
-}
-
-// TailConsoleLog accumulates successive ConsoleLog fetches into a capped
-// per-instance buffer, giving pollers a stable growing view.
+// TailConsoleLog accumulates successive console-log fetches into a capped
+// per-instance buffer, giving pollers a stable growing view. It reads the
+// newest refresh's status, a tab that tails the log outliving the refresh
+// that opened it.
 //
 // Drain-on-read only holds while the instance runs; once stopped, incusd
 // serves the whole persisted log file on every request, so we fetch once
@@ -358,45 +321,59 @@ func (i *Instance) ConsoleLog() (string, error) {
 // buffer rather than clearing it, so a transient failure doesn't blank out
 // logs already on screen.
 func (i *Instance) TailConsoleLog() (string, error) {
-	if !i.IsRunning() {
-		i.logMutex.Lock()
-		alreadyFetched := i.stoppedLogFetched
-		buffered := i.logBuffer.String()
-		i.logMutex.Unlock()
-		if alreadyFetched {
-			return buffered, nil
-		}
+	latest := i.Latest()
+	runtime := latest.runtimeOrOwn()
+
+	running := latest.IsRunning()
+
+	runtime.mutex.Lock()
+	alreadyFetched := runtime.stoppedLogFetched
+	buffered := runtime.logBuffer.String()
+	runtime.mutex.Unlock()
+
+	if !running && alreadyFetched {
+		return buffered, nil
 	}
 
-	reader, err := i.Client.GetInstanceConsoleLog(i.Name, &incus.InstanceConsoleLogArgs{})
+	reader, err := latest.Client.GetInstanceConsoleLog(latest.Name, &incus.InstanceConsoleLogArgs{})
 	if err == nil {
 		var data []byte
 		data, err = io.ReadAll(reader)
 		reader.Close()
 		if err == nil && len(data) > 0 {
-			i.appendToLogBuffer(data)
+			runtime.appendToLog(data)
 		}
 	}
 
-	i.logMutex.Lock()
-	i.stoppedLogFetched = !i.IsRunning()
-	buffered := i.logBuffer.String()
-	i.logMutex.Unlock()
+	runtime.mutex.Lock()
+	runtime.stoppedLogFetched = !running
+	buffered = runtime.logBuffer.String()
+	runtime.mutex.Unlock()
 
 	return buffered, err
 }
 
-func (i *Instance) appendToLogBuffer(data []byte) {
-	i.logMutex.Lock()
-	defer i.logMutex.Unlock()
+// runtimeOrOwn is the instance's runtime, or one of its own for an instance
+// no listing attached - a test's.
+func (i *Instance) runtimeOrOwn() *instanceRuntime {
+	if i.runtime == nil {
+		i.runtime = &instanceRuntime{latest: i}
+	}
 
-	i.logBuffer.Write(data)
+	return i.runtime
+}
 
-	if i.logBuffer.Len() > maxConsoleLogBufferBytes {
-		trimmed := i.logBuffer.String()
+func (r *instanceRuntime) appendToLog(data []byte) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.logBuffer.Write(data)
+
+	if r.logBuffer.Len() > maxConsoleLogBufferBytes {
+		trimmed := r.logBuffer.String()
 		trimmed = trimmed[len(trimmed)-maxConsoleLogBufferBytes:]
-		i.logBuffer.Reset()
-		i.logBuffer.WriteString(trimmed)
+		r.logBuffer.Reset()
+		r.logBuffer.WriteString(trimmed)
 	}
 }
 
@@ -414,10 +391,15 @@ var topCommands = [][]string{
 // reports a process count, so this execs `ps` in the instance itself -
 // which needs the guest agent on a VM, and a `ps` binary in the image.
 func (i *Instance) Top() (string, error) {
-	if !i.IsRunning() {
+	latest := i.Latest()
+	if !latest.IsRunning() {
 		return "", ErrInstanceNotRunning
 	}
 
+	return latest.top()
+}
+
+func (i *Instance) top() (string, error) {
 	var lastErr error
 
 	for _, command := range i.candidateTopCommands() {
@@ -443,9 +425,11 @@ func (i *Instance) Top() (string, error) {
 }
 
 func (i *Instance) candidateTopCommands() [][]string {
-	i.topMutex.Lock()
-	cached := i.topCommand
-	i.topMutex.Unlock()
+	runtime := i.runtimeOrOwn()
+
+	runtime.mutex.Lock()
+	cached := runtime.topCommand
+	runtime.mutex.Unlock()
 
 	if cached == nil {
 		return topCommands
@@ -455,9 +439,11 @@ func (i *Instance) candidateTopCommands() [][]string {
 }
 
 func (i *Instance) setTopCommand(command []string) {
-	i.topMutex.Lock()
-	defer i.topMutex.Unlock()
-	i.topCommand = command
+	runtime := i.runtimeOrOwn()
+
+	runtime.mutex.Lock()
+	defer runtime.mutex.Unlock()
+	runtime.topCommand = command
 }
 
 // exec runs a command in the instance and returns its stdout, using the

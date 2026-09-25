@@ -51,7 +51,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			GetItemContextCacheKey: func(instance *commands.Instance) string {
 				// Including the instance status in the cache key so that if the
 				// instance restarts we re-read the logs.
-				return "instances-" + instance.Name + "-" + instance.Instance.Status
+				return "instances-" + instance.Key() + "-" + instance.Instance.Status
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Instance]{
@@ -67,6 +67,9 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		},
 		Sort: func(a *commands.Instance, b *commands.Instance) bool {
 			return sortInstances(a, b)
+		},
+		SameItem: func(a, b *commands.Instance) bool {
+			return a.Key() == b.Key()
 		},
 		Filter: func(instance *commands.Instance) bool {
 			if !gui.State.ShowStoppedInstances && isStopped(instance) {
@@ -114,15 +117,7 @@ func (gui *Gui) isLocalComposeInstance(instance *commands.Instance) bool {
 		return false
 	}
 
-	if instance.Project != gui.State.LocalComposeProject {
-		return false
-	}
-
-	// ComposeService() reads ExpandedConfig, which RefreshInstanceDetails
-	// fills in the background - so until it has, assume an instance in the
-	// stack's project is the stack's, rather than showing its rows here for
-	// a second and then taking them away.
-	return !instance.DetailsLoaded() || instance.ComposeService() != ""
+	return instance.Project == gui.State.LocalComposeProject && instance.ComposeService() != ""
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {
@@ -132,12 +127,7 @@ func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc
 // instanceConfigStr is the dump alone: what used to head it - name, type,
 // status, created, profiles - is the Info tab's identity block now.
 func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
-	full, ok := instance.Full()
-	if !ok {
-		return gui.Tr.WaitingForInstanceInfo
-	}
-
-	data, err := utils.MarshalIntoYaml(full)
+	data, err := utils.MarshalIntoYaml(instance.Instance)
 	if err != nil {
 		return fmt.Sprintf("Error marshalling instance details: %v", err)
 	}
@@ -145,29 +135,42 @@ func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
 	return utils.ColoredYamlString(string(data))
 }
 
-func (gui *Gui) refreshInstances() error {
-	if gui.Views.Instances == nil {
-		return nil
-	}
+func (gui *Gui) fetchInstances() (func() error, error) {
+	ticket := gui.refreshes.instances.issue()
 
-	instances, err := gui.IncusCommand.GetInstances(gui.Panels.Instances.List.GetAllItems())
+	instances, err := gui.IncusCommand.GetInstances()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Computed over what the panel will actually show: with the local stack
-	// gone to the services panel, the instances left can sit in one project
-	// even when the server's don't.
-	standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
-		return gui.isLocalComposeInstance(instance)
-	})
+	return func() error {
+		if !gui.refreshes.instances.admit(ticket) {
+			return nil
+		}
 
-	gui.State.SpansProjects.Instances = spansMultipleProjects(
-		lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
+		// Computed over what the panel will actually show: with the local
+		// stack gone to the services panel, the instances left can sit in
+		// one project even when the server's don't.
+		standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
+			return gui.isLocalComposeInstance(instance)
+		})
 
-	gui.Panels.Instances.SetItems(instances)
+		gui.State.SpansProjects.Instances = spansMultipleProjects(
+			lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
 
-	return gui.Panels.Instances.RerenderList()
+		gui.Panels.Instances.SetItems(instances)
+
+		if err := gui.Panels.Instances.RerenderList(); err != nil {
+			return err
+		}
+
+		// The snapshots come with the instances.
+		return gui.renderSnapshots()
+	}, nil
+}
+
+func (gui *Gui) refreshInstances() error {
+	return gui.refresh(nil, gui.fetchInstances)
 }
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {

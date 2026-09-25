@@ -38,6 +38,9 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 		Sort: func(a *commands.Volume, b *commands.Volume) bool {
 			return sortVolumes(a, b)
 		},
+		SameItem: func(a, b *commands.Volume) bool {
+			return a.Key() == b.Key()
+		},
 		GetTableCells: func(item *commands.Volume) []string {
 			return presentation.GetVolumeDisplayStrings(item, gui.State.SpansProjects.Volumes)
 		},
@@ -85,22 +88,30 @@ func (gui *Gui) volumeConfigStr(volume *commands.Volume) string {
 	return output
 }
 
-func (gui *Gui) refreshVolumes() error {
-	if gui.Views.Volumes == nil {
-		return nil
-	}
+func (gui *Gui) fetchVolumes() (func() error, error) {
+	ticket := gui.refreshes.volumes.issue()
 
-	volumes, err := gui.IncusCommand.GetVolumes(gui.Panels.Volumes.List.GetAllItems())
+	volumes, err := gui.IncusCommand.GetVolumes()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	gui.State.SpansProjects.Volumes = spansMultipleProjects(
-		lo.Map(volumes, func(volume *commands.Volume, _ int) string { return volume.Volume.Project }))
+	return func() error {
+		if !gui.refreshes.volumes.admit(ticket) {
+			return nil
+		}
 
-	gui.Panels.Volumes.SetItems(volumes)
+		gui.State.SpansProjects.Volumes = spansMultipleProjects(
+			lo.Map(volumes, func(volume *commands.Volume, _ int) string { return volume.Volume.Project }))
 
-	return gui.Panels.Volumes.RerenderList()
+		gui.Panels.Volumes.SetItems(volumes)
+
+		return gui.Panels.Volumes.RerenderList()
+	}, nil
+}
+
+func (gui *Gui) refreshVolumes() error {
+	return gui.refresh(nil, gui.fetchVolumes)
 }
 
 func (gui *Gui) refreshVolumesQuiet() error {

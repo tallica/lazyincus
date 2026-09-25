@@ -15,15 +15,10 @@ func (gui *Gui) renderInstanceEnv(instance *commands.Instance) tasks.TaskFunc {
 }
 
 func (gui *Gui) instanceEnvStr(instance *commands.Instance) string {
-	full, ok := instance.Full()
-	if !ok {
-		return gui.Tr.WaitingForInstanceInfo
-	}
-
 	const prefix = "environment."
 
 	vars := []string{}
-	for key, value := range full.ExpandedConfig {
+	for key, value := range instance.Instance.ExpandedConfig {
 		if !strings.HasPrefix(key, prefix) {
 			continue
 		}
