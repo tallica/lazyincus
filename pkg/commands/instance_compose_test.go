@@ -19,6 +19,8 @@ type stubbornServer struct {
 	running bool
 	stops   []api.InstanceStatePut
 	patches []any
+	// calls is every state change and marker write, in order.
+	calls []string
 }
 
 type doneOperation struct {
@@ -31,6 +33,7 @@ func (o doneOperation) Wait() error { return o.err }
 
 func (s *stubbornServer) UpdateInstanceState(_ string, put api.InstanceStatePut, _ string) (incus.Operation, error) {
 	s.stops = append(s.stops, put)
+	s.calls = append(s.calls, put.Action+map[bool]string{true: " --force"}[put.Force])
 
 	if put.Action != "stop" {
 		return doneOperation{}, nil
@@ -56,6 +59,7 @@ func (s *stubbornServer) GetInstanceState(string) (*api.InstanceState, string, e
 
 func (s *stubbornServer) RawQuery(method string, path string, data any, _ string) (*api.Response, string, error) {
 	s.patches = append(s.patches, []any{method, path, data})
+	s.calls = append(s.calls, "mark "+data.(map[string]any)["config"].(map[string]string)[healthStoppedKey])
 
 	return &api.Response{}, "", nil
 }
@@ -110,4 +114,28 @@ func TestStoppingAPlainInstanceDoesNotEscalate(t *testing.T) {
 	assert.True(t, server.running)
 	assert.Len(t, server.stops, 1)
 	assert.Empty(t, server.patches)
+}
+
+// incus-compose's restart is its whole stop, then its start, so a replica
+// that won't shut down is killed rather than left running.
+func TestRestartingAReplicaStopsThenStartsIt(t *testing.T) {
+	server := &stubbornServer{running: true}
+	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+
+	require.NoError(t, replica.Restart())
+
+	assert.Equal(t, []string{"mark true", "stop", "stop --force", "mark false", "start"}, server.calls)
+	assert.Equal(t, composeRestartTimeout, server.stops[0].Timeout)
+}
+
+// A frozen replica answers no healthcheck, so the marker goes on before the
+// freeze and comes off only once it's thawed.
+func TestPausingAReplicaMarksItAroundTheFreeze(t *testing.T) {
+	server := &stubbornServer{running: true}
+	replica := stubbornInstance(server, map[string]string{composeServiceKey: "web"})
+
+	require.NoError(t, replica.Freeze())
+	require.NoError(t, replica.Unfreeze())
+
+	assert.Equal(t, []string{"mark true", "freeze", "unfreeze", "mark false"}, server.calls)
 }
