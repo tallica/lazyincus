@@ -154,7 +154,7 @@ func (i *Instance) Restart() error {
 func (i *Instance) Freeze() error {
 	freeze := func() error { return i.updateState("freeze", -1, false) }
 	if i.isCompose() {
-		return i.whileMarkedStopped(freeze)
+		return i.whileMarkedStopped(api.Frozen, freeze)
 	}
 
 	return freeze()
@@ -174,7 +174,7 @@ func (i *Instance) Unfreeze() error {
 func (i *Instance) ForceStop() error {
 	kill := func() error { return i.updateState("stop", -1, true) }
 	if i.isCompose() {
-		return i.whileMarkedStopped(kill)
+		return i.whileMarkedStopped(api.Stopped, kill)
 	}
 
 	return kill()

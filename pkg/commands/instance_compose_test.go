@@ -20,6 +20,9 @@ type stubbornServer struct {
 	status api.StatusCode
 	// failAll refuses every state change, forced or not.
 	failAll bool
+	// stopsLate finishes the stop by itself just as the forced stop comes,
+	// which Incus then refuses.
+	stopsLate bool
 	// calls is every state change and marker write, in order.
 	calls []string
 	// patch is the last marker write's method, path and body.
@@ -51,6 +54,10 @@ func (s *stubbornServer) UpdateInstanceState(_ string, put api.InstanceStatePut,
 		return doneOperation{}, nil
 	case !put.Force:
 		return doneOperation{err: errors.New(`Failed shutting down instance, status is "Running": context deadline exceeded`)}, nil
+	case s.stopsLate:
+		s.status = api.Stopped
+
+		return doneOperation{err: errors.New("The instance is already stopped")}, nil
 	}
 
 	s.status = api.Stopped
@@ -160,4 +167,27 @@ func TestAFailedStopOrFreezeTakesTheMarkOff(t *testing.T) {
 			assert.Equal(t, "mark false", server.calls[len(server.calls)-1])
 		})
 	}
+}
+
+// The clean stop timed out, then the replica stopped by itself before the
+// forced one: it's down, as asked, and keeps the mark.
+func TestAReplicaThatStopsLateKeepsTheMark(t *testing.T) {
+	server, replica := stubbornReplica(api.Running)
+	server.stopsLate = true
+
+	require.NoError(t, replica.Stop())
+
+	assert.Equal(t, api.Stopped, server.status)
+	assert.Equal(t, []string{"mark true", "stop 10s", "stop --force"}, server.calls)
+}
+
+// A paused replica that can't be stopped is still paused, which the mark
+// is there for.
+func TestAFailedStopOnAPausedReplicaKeepsTheMark(t *testing.T) {
+	server, replica := stubbornReplica(api.Frozen)
+	server.failAll = true
+
+	require.Error(t, replica.Stop())
+
+	assert.Equal(t, []string{"mark true", "stop 10s", "stop --force"}, server.calls)
 }

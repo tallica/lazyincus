@@ -46,7 +46,7 @@ func (i *Instance) composeStart() error {
 }
 
 func (i *Instance) composeStop(timeout int) error {
-	return i.whileMarkedStopped(func() error {
+	return i.whileMarkedStopped(api.Stopped, func() error {
 		err := i.updateState("stop", timeout, false)
 		if err == nil {
 			return nil
@@ -76,10 +76,13 @@ func (i *Instance) composeRestart() error {
 	return i.composeStart()
 }
 
-// whileMarkedStopped takes the mark off again should action fail: left on a
-// replica still running, it would keep ic-healthd from restarting one that
-// later crashed. incus-compose itself leaves it on.
-func (i *Instance) whileMarkedStopped(action func() error) error {
+// whileMarkedStopped goes by where a failed action left the instance. At
+// done - a stop that finished just as its forced stop was refused - it
+// worked. Stopped or frozen otherwise, it's down on purpose and keeps the
+// mark. Still running, it loses it: left on, the mark would keep
+// ic-healthd from restarting it should it crash. incus-compose itself
+// leaves the mark on.
+func (i *Instance) whileMarkedStopped(done api.StatusCode, action func() error) error {
 	if err := i.markStopped(true); err != nil {
 		return err
 	}
@@ -87,6 +90,19 @@ func (i *Instance) whileMarkedStopped(action func() error) error {
 	err := action()
 	if err == nil {
 		return nil
+	}
+
+	state, _, stateErr := i.Client.GetInstanceState(i.Name)
+	if stateErr != nil {
+		return errors.Join(err, stateErr)
+	}
+
+	if state.StatusCode == done {
+		return nil
+	}
+
+	if state.StatusCode == api.Stopped || state.StatusCode == api.Frozen {
+		return err
 	}
 
 	return errors.Join(err, i.markStopped(false))

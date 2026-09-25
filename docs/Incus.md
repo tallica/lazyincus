@@ -83,8 +83,10 @@ inferred.
   leaves it down, and stop falls back to a forced stop unless the clean
   one left it `Stopped` - Incus fails a shutdown that outlives its timeout
   and leaves the instance running, and won't cleanly stop one in `Error`
-  at all. An action that fails takes the marker off again, since the
-  instance is still up; incus-compose leaves it on. Restart is that stop (60s) then a start; start clears
+  at all. When an action fails, the state it left behind decides: stopped
+  or frozen keeps the marker (a stop that finished just as its forced stop
+  was refused counts as done), still running loses it; incus-compose
+  leaves it on either way. Restart is that stop (60s) then a start; start clears
   the marker; freeze sets it, a frozen instance answering no healthcheck,
   and unfreeze clears it. The marker is written with a PATCH of that one
   key, answered synchronously, not a read-modify-write that would race
