@@ -110,9 +110,9 @@ them.
 
 The per-instance keys (`m`, `n`, `E`, `y`) reach the row's instance through
 `withServiceInstance`, which acts directly on the one
-`SelectedInstance` names and otherwise asks which — the reason
-`handleSnapshotCreate` and `handleInstanceCopyIPv4` were split into handler
-and action. The menu is left for a service's own row, that row meaning all
+`SelectedInstance` names and otherwise asks which — the reason the actions
+behind them (`snapshotCreatePrompt`, `instanceCopyIPv4`) take the instance
+rather than reading the selection. The menu is left for a service's own row, that row meaning all
 of its replicas.
 
 Columns work the way the instances panel's do: `gui.serviceColumns` over
@@ -154,9 +154,9 @@ Main panel tabs:
   the heading having just said them: project, image and name always, plus
   health for a lone instance. The compose fields are parsed once at startup by
   `parseComposeConfig` and stored rendered, only display wanting them; the
-  Healthcheck line is the project's, from `State.ComposeProject`
-  (`GetComposeProject` fetches it during `refreshServices`, so rendering
-  makes no API call). The image is `ComposeService.ResolvedImage`, a
+  Healthcheck line is the project's, from `gui.composeProject`
+  (`GetComposeProject` fetches it in `fetchServices`, so rendering makes no
+  API call; the tab renders off the main loop, so it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
   running instance's reference before the compose file's, whose own value
   may carry no registry host. Each refresh builds new `ComposeService`
   values, so the instance count is part of `GetItemContextCacheKey` —

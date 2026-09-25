@@ -17,7 +17,7 @@ See [LICENSE](LICENSE) (MIT, same as upstream),
 attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
 how it was renamed.
 
-![lazyincus — a terminal UI for Incus, showing the instances panel](docs/screenshot.png)
+![lazyincus — a terminal UI for Incus, showing a compose stack's services and their replicas](docs/screenshot.png)
 
 ## Status
 
@@ -87,7 +87,10 @@ go run .
 make run
 ```
 
-Flags: `-d` / `--debug` for debug logging, `--version` to print version info.
+Flags: `-r` / `--remote` picks the remote ([Remotes](#remotes)),
+`-P` / `--project-directory` where to look for a compose file
+([Compose stacks](#compose-stacks)), `-d` / `--debug` for debug logging,
+`--version` to print version info.
 
 ## Remotes
 
@@ -131,7 +134,8 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `1` … `6` | Focus a side panel, numbered top to bottom as shown in its title |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `PgUp`/`PgDn`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel |
+| `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel (and `←`/`→` while it has focus) |
+| `Home` / `End` | Main panel: jump to the top / follow the end again |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, start the service, or the selected replica |
@@ -158,7 +162,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `=` | Expand / collapse the focused side panel |
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
-| `q` | Quit |
+| `q`, `ctrl+c` | Quit |
 
 Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
 for the full list of options and defaults.

@@ -78,9 +78,9 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — nine are defined but never
-      referenced: `MainTitle`, `GlobalTitle`, `ForceRemove`, `NoInstance`,
-      `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
+- [ ] **Unused translation strings** — ten are defined but never
+      referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`, `ForceRemove`,
+      `NoInstance`, `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
       `CreditsTitle`, `CannotDisplayEnvVariables`. Dead weight now that
       attach is wired up. Wire up or delete.
 
@@ -241,9 +241,9 @@ origin, read from `project/instance.go` in the source:
 
 Instances are named `<service>-<index>` (`web-1`, `app-1`).
 
-Two things fall out of this. Those keys live in `ExpandedConfig`, which
-`RefreshInstanceDetails` already fetches — so both are presentation work on
-data lazyincus has in hand, not new API calls.
+Two things fall out of this. Those keys live in `ExpandedConfig`, which the
+instance listing already carries — so both are presentation work on data
+lazyincus has in hand, not new API calls.
 
 - [x] **Service column** — opt-in `service` column reading
       `user.label.incus-compose.service`.

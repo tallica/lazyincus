@@ -83,7 +83,7 @@ your file either).
 |---|---|---|---|
 | `confirmOnQuit` | bool | `false` | Prompt for confirmation when quitting with `q`/`esc` and no other panel is open. |
 | `oS.openCommand` | string | macOS: `open {{filename}}`; Linux: `sh -c "xdg-open {{filename}} >/dev/null"` | Command used to open a file. |
-| `oS.openLinkCommand` | string | macOS: `open {{link}}`; Linux: `sh -c "xdg-open {{link}} >/dev/null"` | Command used to open a URL. |
+| `oS.openLinkCommand` | string | macOS: `open {{link}}`; Linux: `sh -c "xdg-open {{link}} >/dev/null"` | Command used to open a URL. Nothing opens one yet; it's kept for [open in browser](../BACKLOG.md#per-instance-actions). |
 | `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used. |
 | `ignore` | []string | `[]` | List rows are hidden when any displayed column contains one of these substrings — status and IP addresses included, not just the name. |
 

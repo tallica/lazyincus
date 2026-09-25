@@ -41,6 +41,7 @@ pkg/commands/
   incus.go                     IncusCommand: connection, project scoping, list/refresh per resource
   instance.go                  Instance: api.InstanceFull as of one refresh; start/stop/restart/freeze/delete/logs/exec
   instance_runtime.go          what outlives a refresh: the drained console log, the working ps, Latest()
+  instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
   snapshot.go                  Snapshot: create, restore, delete (the list comes with the instances)
   incus_compose.go             compose projects and services, paired with their instances
   compose_config.go            `incus-compose config`: the local project and each service's definition
