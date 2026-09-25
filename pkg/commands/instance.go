@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -125,16 +127,53 @@ func (i *Instance) retryWhileBusy(request func() error) error {
 
 // Start starts the instance.
 func (i *Instance) Start() error {
+	if err := i.markComposeStopped(false); err != nil {
+		return err
+	}
+
 	return i.updateState("start", -1, false)
 }
 
-// Stop stops the instance.
+// composeStopTimeout is `incus-compose stop`'s default, so a replica stopped
+// here gets as long to shut down as its service stopped there.
+const composeStopTimeout = 10
+
+// Stop stops the instance. A compose instance is stopped the way
+// `incus-compose stop` stops one, which takes only whole services: marked
+// as stopped on purpose, then killed if it outlives the timeout. Incus
+// itself reports that as a failure and leaves the instance running.
 func (i *Instance) Stop() error {
-	return i.updateState("stop", 30, false)
+	if i.ComposeService() == "" {
+		return i.updateState("stop", 30, false)
+	}
+
+	if err := i.markComposeStopped(true); err != nil {
+		return err
+	}
+
+	err := i.updateState("stop", composeStopTimeout, false)
+	if err == nil {
+		return nil
+	}
+
+	state, _, stateErr := i.Client.GetInstanceState(i.Name)
+	if stateErr != nil {
+		return errors.Join(err, stateErr)
+	}
+
+	if state.StatusCode != api.Running {
+		return nil
+	}
+
+	return i.updateState("stop", -1, true)
 }
 
 // Restart restarts the instance.
 func (i *Instance) Restart() error {
+	if err := i.markComposeStopped(false); err != nil {
+		return err
+	}
+
 	return i.updateState("restart", 30, false)
 }
 
@@ -151,7 +190,37 @@ func (i *Instance) Unfreeze() error {
 // ForceStop stops the instance without waiting for a clean shutdown,
 // mirroring `incus stop --force`.
 func (i *Instance) ForceStop() error {
+	if err := i.markComposeStopped(true); err != nil {
+		return err
+	}
+
 	return i.updateState("stop", -1, true)
+}
+
+// healthStoppedKey tells ic-healthd a compose instance was stopped on
+// purpose, so a restart policy leaves it down. incus-compose's stop and
+// kill set it and its start clears it; a replica stopped or started here
+// has to do the same, or ic-healthd starts it straight back up.
+const healthStoppedKey = "user.healthcheck.stopped"
+
+// markComposeStopped writes healthStoppedKey on a compose instance, and
+// does nothing on any other. A PATCH of that one key, as incus-compose
+// writes it: ic-healthd stamps its verdict into the same config on a timer,
+// and a read-modify-write would race it. The client has no PATCH of its own,
+// and its raw query adds neither the API version nor the project.
+func (i *Instance) markComposeStopped(stopped bool) error {
+	if i.ComposeService() == "" {
+		return nil
+	}
+
+	path := "/1.0/instances/" + url.PathEscape(i.Name) + "?" + url.Values{"project": {i.Project}}.Encode()
+	patch := map[string]any{"config": map[string]string{healthStoppedKey: strconv.FormatBool(stopped)}}
+
+	return i.retryWhileBusy(func() error {
+		_, _, err := i.Client.RawQuery("PATCH", path, patch, "")
+
+		return err
+	})
 }
 
 // ErrInstanceRunning is what Delete returns when Incus refused to delete the

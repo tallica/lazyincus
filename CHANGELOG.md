@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Stopping one replica of a compose service no longer fails when it's slow to shut down. `s` on a replica's row asked Incus for a clean stop and gave up when that timed out, reporting `Failed shutting down instance` and leaving the replica running. It's now stopped the way `incus-compose stop` stops its instances: ten seconds to shut down, then killed. It's also marked as stopped on purpose, as incus-compose marks them, so ic-healthd's restart policy leaves it down; starting it again clears the mark.
+
 ## [0.9.0] - 2026-09-25
 
 ### Added
