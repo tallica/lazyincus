@@ -43,10 +43,10 @@ checksum:
   name_template: checksums.txt
   algorithm: sha256
 
-# The release notes are the tag's CHANGELOG.md section, passed in by the
-# workflow, rather than a log of commit subjects.
-changelog:
-  disable: true
+# The release notes are the tag's CHANGELOG.md section, which the workflow
+# passes as --release-notes; given that, no log of commit subjects is built.
+# Leave the changelog enabled: disabling it also skips loading that file,
+# and the release goes out with an empty body.
 
 release:
   mode: replace
