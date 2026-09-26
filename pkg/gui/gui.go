@@ -65,6 +65,7 @@ type Panels struct {
 	Snapshots *panels.SideListPanel[*commands.Snapshot]
 	Volumes   *panels.SideListPanel[*commands.Volume]
 	Networks  *panels.SideListPanel[*commands.Network]
+	Profiles  *panels.SideListPanel[*commands.Profile]
 	Services  *panels.SideListPanel[*commands.ServiceRow]
 	Menu      *panels.SideListPanel[*types.MenuItem]
 }
@@ -167,6 +168,7 @@ type spansProjects struct {
 	Images    bool
 	Volumes   bool
 	Networks  bool
+	Profiles  bool
 }
 
 // projectColumns is how many columns a project column puts ahead of the
@@ -386,6 +388,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
+		gui.goEvery(time.Second*10, gui.refreshProfilesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 
@@ -419,7 +422,7 @@ func (gui *Gui) handleError(err error) error {
 // allFetches is every panel's fetch, in the order startup and a project
 // switch run them.
 func (gui *Gui) allFetches() []fetch {
-	return []fetch{gui.fetchInstances, gui.fetchImages, gui.fetchVolumes, gui.fetchNetworks, gui.fetchServices}
+	return []fetch{gui.fetchInstances, gui.fetchImages, gui.fetchVolumes, gui.fetchNetworks, gui.fetchProfiles, gui.fetchServices}
 }
 
 func (gui *Gui) setPanels() {
@@ -429,6 +432,7 @@ func (gui *Gui) setPanels() {
 		Images:    gui.getImagesPanel(),
 		Volumes:   gui.getVolumesPanel(),
 		Networks:  gui.getNetworksPanel(),
+		Profiles:  gui.getProfilesPanel(),
 		Services:  gui.getServicesPanel(),
 		Menu:      gui.getMenuPanel(),
 	}

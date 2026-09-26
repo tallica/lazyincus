@@ -112,8 +112,8 @@ guest clock skew both fail in ways that point at the wrong component.
 
 Three side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance or custom volume is selected,
-or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**
-and **Networks** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
+or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**,
+**Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
 as does pressing `3` again or clicking a tab's name. All list every Incus project by
 default; `P` scopes them to a single project instead, and the footer shows
 the current remote and scope. A project column appears on any panel whose
@@ -144,10 +144,10 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `S` | Start; on the Services panel, start the service, or the selected replica |
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/unpause (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down, or delete the selected replica |
-| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume or network |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica |
+| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each) |
-| `u` | Services panel: bring the service up; on Images, Volumes and Networks, list the instances using it (`esc` brings back the rest and returns to where you were) |
+| `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
 | `m` | Jump to Logs tab |

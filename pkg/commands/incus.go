@@ -401,6 +401,44 @@ func (c *IncusCommand) listImages(client incus.InstanceServer) ([]api.Image, err
 	return client.GetImages()
 }
 
+// GetProfiles lists the profiles, every project's in the all-projects view.
+func (c *IncusCommand) GetProfiles() ([]*Profile, error) {
+	client := c.Client()
+
+	var apiProfiles []api.Profile
+
+	var err error
+
+	if c.IsAllProjects() {
+		apiProfiles, err = client.GetProfilesAllProjects()
+	} else {
+		apiProfiles, err = client.GetProfiles()
+	}
+
+	c.NoteError(err)
+
+	if err != nil {
+		return nil, err
+	}
+
+	ownProfiles := make([]*Profile, len(apiProfiles))
+
+	for i := range apiProfiles {
+		apiProfile := apiProfiles[i]
+
+		ownProfiles[i] = &Profile{
+			Name:      apiProfile.Name,
+			Profile:   apiProfile,
+			Client:    c.clientFor(apiProfile.Project),
+			OSCommand: c.OSCommand,
+			Log:       c.Log,
+			Tr:        c.Tr,
+		}
+	}
+
+	return ownProfiles, nil
+}
+
 // GetNetworks lists the server's networks, managed and unmanaged alike.
 func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 	client := c.Client()

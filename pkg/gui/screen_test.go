@@ -98,6 +98,16 @@ func fixtureServer() *incustest.Server {
 			}},
 			{Name: "eth0", Type: "physical", Project: "default"},
 		},
+		Profiles: []api.Profile{{
+			Name: "default", Project: "default", UsedBy: []string{"/1.0/instances/web", "/1.0/instances/db"},
+			ProfilePut: api.ProfilePut{
+				Description: "Default Incus profile",
+				Devices: map[string]map[string]string{
+					"eth0": {"type": "nic", "network": "incusbr0", "name": "eth0"},
+					"root": {"type": "disk", "pool": "default", "path": "/"},
+				},
+			},
+		}},
 		NetworkLeases: map[string]map[string][]api.NetworkLease{
 			"incusbr0": {"default": {
 				{Hostname: "incusbr0.gw", Address: "192.0.2.1", Type: "GATEWAY"},
@@ -243,7 +253,8 @@ func (s *screen) ready(t *testing.T) string {
 	for {
 		loaded := false
 		s.do(t, func() error {
-			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0
+			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0 &&
+				s.gui.Panels.Profiles.List.Len() > 0
 			return nil
 		})
 
@@ -451,11 +462,13 @@ func TestArrowsStepThroughEveryList(t *testing.T) {
 		return name
 	}
 
-	for _, want := range []string{"snapshots", "images", "volumes", "networks", "instances"} {
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "profiles", "instances"} {
 		s.do(t, s.gui.cycleSideView(1))
 		assert.Equal(t, want, current())
 	}
 
+	s.do(t, s.gui.cycleSideView(-1))
+	assert.Equal(t, "profiles", current())
 	s.do(t, s.gui.cycleSideView(-1))
 	assert.Equal(t, "networks", current())
 
@@ -523,6 +536,19 @@ func TestScreenVolumeSnapshots(t *testing.T) {
 	s.do(t, s.gui.cycleSideView(1))
 	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Instances) })
 	assert.NotContains(t, s.settle(t, "Snapshots (a-name"), "before-migration")
+}
+
+func TestScreenProfiles(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Profiles) })
+	assertGolden(t, "profiles-140x40", s.settle(t, "network=incusbr0"))
+
+	s.do(t, func() error { return s.gui.showProfileUsers(s.gui.Panels.Profiles.List.GetItems()[0]) })
+	screen := s.settle(t, "Instances using default")
+	assert.Contains(t, screen, "│web ")
+	assert.Contains(t, screen, "│db ")
 }
 
 func TestScreenMenu(t *testing.T) {

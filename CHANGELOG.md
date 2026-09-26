@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Profiles** are the Resources panel's fourth tab: every project's profiles, how many instances use each and the devices it hands out, with a Devices tab laying out each device's settings. `u` lists the instances with the profile, `c` edits it in `$EDITOR` and `d` deletes it. When the panel is too narrow for the four tab names they shorten to `Img - Vol - Net - Prof`, so none is cut off the end of the title.
 - Custom volumes have snapshots too: select one in the Volumes list and the Snapshots panel shows its snapshots, `n` takes one (with an expiry, as for instances), and `r` and `d` restore and delete them. A compose stack's data lives in custom volumes, so this is the undo button for the part of it that matters.
 - Networks have a **Forwards** tab: each port a network forward publishes, where it goes, and which instance holds that address, so what's exposed on the uplink reads as instance names instead of internal IPs.
 - Networks have an **ACLs** tab: which ACLs the network applies, what happens to traffic none of their rules match, which NICs on it carry ACLs of their own, and every rule of each, ingress and egress. "Why can't this container reach that one?" is now answered in one place, instead of by piecing together `security.acls` and `incus network acl show`.

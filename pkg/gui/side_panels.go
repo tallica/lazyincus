@@ -29,8 +29,10 @@ type sidePanelDef struct {
 	// setPanels, so it can't go through the panel's own Hide.
 	hidden func() bool
 	// window is the slot the panel shares with others, as one of its tabs;
-	// empty for a panel with a slot of its own.
-	window string
+	// empty for a panel with a slot of its own. shortTitle is its tab's
+	// name when the window's full ones don't fit.
+	window     string
+	shortTitle string
 }
 
 func (def sidePanelDef) windowName() string {
@@ -63,25 +65,36 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			panel:   func() panels.ISideListPanel { return gui.Panels.Snapshots },
 		},
 		{
-			name:    "images",
-			title:   gui.Tr.ImagesTitle,
-			viewPtr: &gui.Views.Images,
-			panel:   func() panels.ISideListPanel { return gui.Panels.Images },
-			window:  resourcesWindow,
+			name:       "images",
+			title:      gui.Tr.ImagesTitle,
+			viewPtr:    &gui.Views.Images,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Images },
+			window:     resourcesWindow,
+			shortTitle: gui.Tr.ImagesShort,
 		},
 		{
-			name:    "volumes",
-			title:   gui.Tr.VolumesTitle,
-			viewPtr: &gui.Views.Volumes,
-			panel:   func() panels.ISideListPanel { return gui.Panels.Volumes },
-			window:  resourcesWindow,
+			name:       "volumes",
+			title:      gui.Tr.VolumesTitle,
+			viewPtr:    &gui.Views.Volumes,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Volumes },
+			window:     resourcesWindow,
+			shortTitle: gui.Tr.VolumesShort,
 		},
 		{
-			name:    "networks",
-			title:   gui.Tr.NetworksTitle,
-			viewPtr: &gui.Views.Networks,
-			panel:   func() panels.ISideListPanel { return gui.Panels.Networks },
-			window:  resourcesWindow,
+			name:       "networks",
+			title:      gui.Tr.NetworksTitle,
+			viewPtr:    &gui.Views.Networks,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Networks },
+			window:     resourcesWindow,
+			shortTitle: gui.Tr.NetworksShort,
+		},
+		{
+			name:       "profiles",
+			title:      gui.Tr.ProfilesTitle,
+			viewPtr:    &gui.Views.Profiles,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Profiles },
+			window:     resourcesWindow,
+			shortTitle: gui.Tr.ProfilesShort,
 		},
 	}
 }

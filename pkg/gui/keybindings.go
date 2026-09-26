@@ -334,6 +334,27 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.HideUnmanagedNetworks,
 		},
 		{
+			ViewName:    "profiles",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Profiles, gui.showProfileUsers),
+			Description: gui.Tr.ShowUsers,
+		},
+		{
+			ViewName:    "profiles",
+			Key:         'c',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Profiles, gui.profileEdit),
+			Description: gui.Tr.EditInEditor,
+		},
+		{
+			ViewName:    "profiles",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Profiles, gui.profileDelete),
+			Description: gui.Tr.Remove,
+		},
+		{
 			ViewName:    "volumes",
 			Key:         'd',
 			Modifier:    gocui.ModNone,

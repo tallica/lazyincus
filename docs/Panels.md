@@ -314,13 +314,16 @@ all-instances view stays instances only.
 
 ## Resources
 
-Images, volumes and networks are three panels sharing one window: a
+Images, volumes, networks and profiles are four panels sharing one window: a
 `window` on their defs puts them in the same slot, and `window.go` is what
 knows about it. The views are stacked at the same position and the layout
 shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
-rather than the list's. Number keys, `tab` and the side column's split
+rather than the list's. When the names don't fit the title, `fitWindowTabs`
+swaps in each def's `shortTitle` (`Img - Vol - Net - Prof`) on the layout
+pass, so a resize refits them: a tab cut off the end is a list nobody knows
+is there. Number keys, `tab` and the side column's split
 all count windows, so the three take one number and one share of the
 height; they read something far less often than instances do.
 
@@ -443,3 +446,19 @@ the listen port, as the daemon's does - and the instance holding that
 address, from the instances' own addresses. A forward's `target_address`,
 which takes every port no entry names, gets a row of its own. Load
 balancers aren't shown; they're OVN's alone.
+
+## Profiles
+
+Every project's profiles in the all-projects view, each project having
+its own `default`, so the project column is there more often than not.
+After the name, how many things use it and the names of the devices it
+hands out, then the description, which is the column that gives way.
+Devices is the first tab, a device a row with its settings as
+`key=value`: what an instance on the profile gets.
+
+`u`, `c` and `d` are the other resources' keys. `u` matches an instance
+that names the profile in its own list or is named in the profile's
+`used_by`, and - as with networks and volumes - a profile in a project
+other than default only reaches that project's instances. `c` is
+`incus profile edit`. Incus refuses to delete a profile in use and says
+so, which is the check `d` relies on.

@@ -24,7 +24,7 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[3]─Images - Volumes - Networks─────────────╮│                                                                                           │
+╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
 │data 0 512.00MiB default custom              ││                                                                                           │
 │web  1           default container           ││                                                                                           │
 │                                             ││                                                                                           │

@@ -21,6 +21,7 @@ type Server struct {
 	Instances []api.InstanceFull
 	Images    []api.Image
 	Networks  []api.Network
+	Profiles  []api.Profile
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
 	// PoolSpace by pool; VolumeUsage in bytes and VolumeSnapshots by volume
@@ -184,6 +185,14 @@ func (s *Server) GetImages() ([]api.Image, error) {
 
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
 	return slices.Clone(s.Images), nil
+}
+
+func (s *Server) GetProfiles() ([]api.Profile, error) {
+	return inProject(s.Profiles, s.scope(), func(p api.Profile) string { return p.Project }), nil
+}
+
+func (s *Server) GetProfilesAllProjects() ([]api.Profile, error) {
+	return slices.Clone(s.Profiles), nil
 }
 
 func (s *Server) GetNetworks() ([]api.Network, error) {

@@ -55,3 +55,20 @@ func TestVolumeIsUsedBy(t *testing.T) {
 	assert.True(t, root.IsUsedBy(instanceWith("stack", "web-1", nil)))
 	assert.False(t, root.IsUsedBy(instanceWith("other", "web-1", nil)))
 }
+
+func TestProfileIsUsedBy(t *testing.T) {
+	profile := &Profile{Name: "default", Profile: api.Profile{
+		Name: "default", Project: "default", UsedBy: []string{"/1.0/instances/db-1?project=stack"},
+	}}
+
+	listed := instanceWith("stack", "web-1", nil)
+	listed.Instance.Profiles = []string{"default"}
+
+	assert.True(t, profile.IsUsedBy(listed))
+	assert.True(t, profile.IsUsedBy(instanceWith("stack", "db-1", nil)))
+	assert.False(t, profile.IsUsedBy(instanceWith("stack", "cache", nil)))
+
+	// Another project's own "default" is a different profile.
+	own := &Profile{Name: "default", Profile: api.Profile{Name: "default", Project: "tenant"}}
+	assert.False(t, own.IsUsedBy(listed))
+}

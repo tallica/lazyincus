@@ -123,7 +123,8 @@ own merits.
       as it swaps the client. Verifying the failure paths needs a second
       reachable daemon, so the unreachable-remote case is the part likeliest
       to ship untested.
-- [ ] **Profiles** — no panel. (Projects have a switcher — see
+- [x] **Profiles** — the Resources panel's fourth tab, with the other
+      resources' `u`, `c` and `d`. (Projects have a switcher — see
       [incus-compose integration](#incus-compose-integration); remotes are
       above.)
 - [x] **`--remote` flag** — names the remote for the session, applied as

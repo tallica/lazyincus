@@ -24,7 +24,7 @@
 │                      │P         switch project                   │                     │
 │                      │+         next screen mode (normal/half/fu…│                     │
 ╰──────────────────────│_         prev screen mode                 │                     │
-╭─[3]─Images - Volumes │=         expand/collapse the focused side…│                     │
+╭─[3]─Img - Vol - Net -│=         expand/collapse the focused side…│                     │
 │Alpine 3.22 amd64 2 01│tab       next panel                       │                     │
 │Debian 13 amd64   0 fe│shift+tab previous panel                   │                     │
 │                      │◄         previous list                    │                     │
