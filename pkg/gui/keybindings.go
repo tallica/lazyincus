@@ -264,6 +264,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
+			ViewName:    "images",
+			Key:         'D',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handlePruneImages,
+			Description: gui.Tr.PruneImages,
+		},
+		{
 			ViewName:    "networks",
 			Key:         'e',
 			Modifier:    gocui.ModNone,

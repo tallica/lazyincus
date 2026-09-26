@@ -10,6 +10,9 @@ import (
 // for snapshot timestamps.
 const DateTimeFormat = "2006/01/02 15:04 MST"
 
+// DateFormat is DateTimeFormat's date alone.
+const DateFormat = "2006/01/02"
+
 // GetSnapshotDisplayStrings takes the name of the instance the snapshot came
 // from, or "" when the title already says it.
 func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []string {

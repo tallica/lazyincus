@@ -32,6 +32,12 @@ type TranslationSet struct {
 	Remove                    string
 	HideStopped               string
 	HideUnmanagedNetworks     string
+	PruneImages               string
+	PruneImagesTitle          string
+	PruneCachedImages         string
+	PruneUnusedImages         string
+	ConfirmPruneImages        string
+	NothingToPrune            string
 	LeasesTitle               string
 	StateTitle                string
 	NoLeases                  string
@@ -218,6 +224,12 @@ func englishSet() TranslationSet {
 		Remove:                 "delete",
 		HideStopped:            "hide/show stopped instances",
 		HideUnmanagedNetworks:  "hide/show unmanaged networks",
+		PruneImages:            "prune unused images",
+		PruneImagesTitle:       "Prune images",
+		PruneCachedImages:      "unused cached images (%d, %s)",
+		PruneUnusedImages:      "every unused image (%d, %s)",
+		ConfirmPruneImages:     "Delete these %d images (%s)? Nothing was created from them.\n\n%s",
+		NothingToPrune:         "No images to prune.",
 		LeasesTitle:            "Leases",
 		StateTitle:             "State",
 		NoLeases:               "No leases",

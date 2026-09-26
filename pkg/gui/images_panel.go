@@ -2,9 +2,12 @@ package gui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
+	"github.com/lxc/incus/v7/shared/units"
 	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/gui/types"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -72,6 +75,9 @@ func (gui *Gui) imageConfigStr(image *commands.Image) string {
 	output += utils.WithPadding("Type: ", padding) + image.Image.Type + "\n"
 	output += utils.WithPadding("Architecture: ", padding) + image.Image.Architecture + "\n"
 	output += utils.WithPadding("Uploaded: ", padding) + image.Image.UploadedAt.String() + "\n"
+	output += utils.WithPadding("Last used: ", padding) + image.Image.LastUsedAt.String() + "\n"
+	output += utils.WithPadding("Cached: ", padding) + fmt.Sprint(image.Image.Cached) + "\n"
+	output += utils.WithPadding("Used by: ", padding) + gui.imageUsersStr(image) + "\n"
 
 	data, err := utils.MarshalIntoYaml(image.Image)
 	if err != nil {
@@ -117,6 +123,100 @@ func (gui *Gui) refreshImagesQuiet() error {
 	}
 
 	return nil
+}
+
+// imageUsersStr names the instances, grouped by project, which is how they
+// read in the instances panel.
+func (gui *Gui) imageUsersStr(image *commands.Image) string {
+	if image.IsUnused() {
+		return gui.Tr.NoInstance
+	}
+
+	byProject := lo.GroupBy(image.UsedBy, func(user string) string {
+		project, _, _ := strings.Cut(user, "/")
+		return project
+	})
+
+	projects := lo.Keys(byProject)
+	slices.Sort(projects)
+
+	groups := lo.Map(projects, func(project string, _ int) string {
+		names := lo.Map(byProject[project], func(user string, _ int) string {
+			_, name, _ := strings.Cut(user, "/")
+			return name
+		})
+
+		return fmt.Sprintf("%s (%s)", strings.Join(names, ", "), project)
+	})
+
+	return strings.Join(groups, "; ")
+}
+
+// handlePruneImages offers the two sizes of prune: the images Incus cached
+// on a launch, which it expires by itself anyway, or every image nothing
+// was created from - where an image copied in on purpose, incus-compose's
+// among them, ends up once nothing runs it.
+func (gui *Gui) handlePruneImages(g *gocui.Gui, v *gocui.View) error {
+	unused := lo.Filter(gui.Panels.Images.List.GetAllItems(), func(image *commands.Image, _ int) bool {
+		return image.IsUnused()
+	})
+
+	cached := lo.Filter(unused, func(image *commands.Image, _ int) bool { return image.Image.Cached })
+
+	item := func(format string, images []*commands.Image) *types.MenuItem {
+		return &types.MenuItem{
+			Label:   fmt.Sprintf(format, len(images), imagesSize(images)),
+			OnPress: func() error { return gui.confirmPruneImages(images) },
+		}
+	}
+
+	return gui.Menu(CreateMenuOptions{
+		Title: gui.Tr.PruneImagesTitle,
+		Items: []*types.MenuItem{
+			item(gui.Tr.PruneCachedImages, cached),
+			item(gui.Tr.PruneUnusedImages, unused),
+		},
+	})
+}
+
+func imagesSize(images []*commands.Image) string {
+	return units.GetByteSizeStringIEC(lo.SumBy(images, func(image *commands.Image) int64 { return image.Image.Size }), 2)
+}
+
+// confirmPruneImages names every image it would delete: a count alone
+// doesn't say whether the one you meant to keep is among them.
+func (gui *Gui) confirmPruneImages(images []*commands.Image) error {
+	if len(images) == 0 {
+		return gui.createErrorPanel(gui.Tr.NothingToPrune)
+	}
+
+	names := lo.Map(images, func(image *commands.Image, _ int) string {
+		return image.Label() + " " + image.ShortFingerprint()
+	})
+
+	prompt := fmt.Sprintf(gui.Tr.ConfirmPruneImages, len(images), imagesSize(images), strings.Join(names, "\n"))
+
+	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
+		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
+			failed := []string{}
+
+			for _, image := range images {
+				if err := image.Delete(); err != nil {
+					failed = append(failed, image.Label()+": "+err.Error())
+				}
+			}
+
+			if err := gui.refreshImages(); err != nil {
+				return err
+			}
+
+			if len(failed) > 0 {
+				return gui.createErrorPanel(strings.Join(failed, "\n"))
+			}
+
+			return nil
+		})
+	}, nil)
 }
 
 func (gui *Gui) imageDelete(image *commands.Image) error {

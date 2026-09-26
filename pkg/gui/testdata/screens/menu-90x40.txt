@@ -25,8 +25,8 @@
 │                      │P         switch project                   │                     │
 ╰──────────────────────│+         next screen mode (normal/half/fu…│                     │
 ╭─[3]─Images - Volumes │_         prev screen mode                 │                     │
-│Alpine 3.22 amd64 0123│=         expand/collapse the focused side…│                     │
-│                      │tab       next panel                       │                     │
+│Alpine 3.22 amd64 2 01│=         expand/collapse the focused side…│                     │
+│Debian 13 amd64   0 fe│tab       next panel                       │                     │
 │                      │shift+tab previous panel                   │                     │
 │                      │1         focus instances panel            │                     │
 │                      │2         focus snapshots panel            │                     │

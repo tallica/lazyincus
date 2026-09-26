@@ -36,7 +36,10 @@ func fixtureServer() *incustest.Server {
 		instance := api.InstanceFull{
 			Instance: api.Instance{
 				Name: name, Project: project, Status: "Running", Type: "container",
-				InstancePut: api.InstancePut{Architecture: "x86_64", Profiles: []string{"default"}},
+				InstancePut: api.InstancePut{
+					Architecture: "x86_64", Profiles: []string{"default"},
+					Config: map[string]string{"volatile.base_image": "0123456789abcdef0123456789abcdef"},
+				},
 				ExpandedConfig: map[string]string{
 					"image.description": "Alpine 3.22 amd64",
 				},
@@ -73,10 +76,18 @@ func fixtureServer() *incustest.Server {
 			stopped,
 			running("default", "a-name-long-enough-to-be-cut-off", "192.0.2.144", 0),
 		},
-		Images: []api.Image{{
-			Fingerprint: "0123456789abcdef0123456789abcdef", Project: "default", Type: "container",
-			Properties: map[string]string{"description": "Alpine 3.22 amd64"},
-		}},
+		Images: []api.Image{
+			{
+				Fingerprint: "0123456789abcdef0123456789abcdef", Project: "default", Type: "container",
+				Properties: map[string]string{"description": "Alpine 3.22 amd64"},
+				Size:       3 << 20, LastUsedAt: time.Date(2026, 9, 20, 6, 0, 0, 0, time.UTC),
+			},
+			{
+				Fingerprint: "fedcba9876543210fedcba9876543210", Project: "default", Type: "container",
+				Properties: map[string]string{"description": "Debian 13 amd64"},
+				Size:       90 << 20, Cached: true,
+			},
+		},
 		Networks: []api.Network{
 			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"},
 			{Name: "eth0", Type: "physical", Project: "default"},
@@ -187,9 +198,9 @@ func (s *screen) do(t *testing.T, f func() error) {
 	}
 }
 
-// ready waits for startup's fetches to land and the screen to settle.
-// Networks are the fixture's last fetch, and drawn behind a tab, so it's
-// their panel rather than the screen that says they've arrived.
+// ready waits for startup's fetches to land and the screen to settle. The
+// resources are drawn behind tabs, so it's their panels rather than the
+// screen that say they've arrived.
 func (s *screen) ready(t *testing.T) string {
 	t.Helper()
 
@@ -198,7 +209,7 @@ func (s *screen) ready(t *testing.T) string {
 	for {
 		loaded := false
 		s.do(t, func() error {
-			loaded = s.gui.Panels.Networks.List.Len() > 0
+			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0
 			return nil
 		})
 
@@ -213,7 +224,7 @@ func (s *screen) ready(t *testing.T) string {
 		time.Sleep(20 * time.Millisecond)
 	}
 
-	return s.settle(t, "amd64 0")
+	return s.settle(t, "Alpine 3.22 amd64")
 }
 
 // settle waits until the screen shows want and has stopped changing, and
@@ -379,6 +390,20 @@ func TestScreenNetworks(t *testing.T) {
 
 	s.do(t, func() error { return s.gui.handleToggleUnmanagedNetworks(s.g, nil) })
 	s.settle(t, "│eth0")
+}
+
+func TestScreenPruneImages(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Images) })
+	s.do(t, func() error { return s.gui.handlePruneImages(s.g, s.gui.Views.Images) })
+	assertGolden(t, "prune-images-140x40", s.settle(t, "every unused image (1, 90.00MiB)"))
+
+	s.do(t, s.gui.Panels.Menu.HandleNextLine)
+	s.do(t, s.gui.Panels.Menu.HandleClick)
+	screen := s.settle(t, "Delete these 1 images")
+	assert.Contains(t, screen, "Debian 13 amd64 fedcba987654")
 }
 
 func TestScreenMenu(t *testing.T) {

@@ -25,8 +25,8 @@
 │                                                                    ││    Received:   0B (0 packets)                                      │
 ╰────────────────────────────────────────────────────────────────────╯│    Sent:       0B (0 packets)                                      │
 ╭─[3]─Images - Volumes - Networks────────────────────────────────────╮│    IP addresses:                                                   │
-│Alpine 3.22 amd64 0123456789ab container                            ││      inet:  192.0.2.144/ (global)                                  │
-│                                                                    ││                                                                    │
+│Alpine 3.22 amd64 2 0123456789ab 3.00MiB  2026/09/20                ││      inet:  192.0.2.144/ (global)                                  │
+│Debian 13 amd64   0 fedcba987654 90.00MiB never      cached         ││                                                                    │
 │                                                                    ││                                                                    │
 │                                                                    ││                                                                    │
 │                                                                    ││                                                                    │

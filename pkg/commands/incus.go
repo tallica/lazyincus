@@ -339,6 +339,11 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 		return nil, err
 	}
 
+	users, err := imageUsers(client)
+	if err != nil {
+		return nil, err
+	}
+
 	ownImages := make([]*Image, len(apiImages))
 
 	for i := range apiImages {
@@ -347,6 +352,7 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 		ownImages[i] = &Image{
 			Fingerprint: apiImage.Fingerprint,
 			Image:       apiImage,
+			UsedBy:      users[apiImage.Fingerprint],
 			Client:      c.clientFor(apiImage.Project),
 			OSCommand:   c.OSCommand,
 			Log:         c.Log,
@@ -355,6 +361,32 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 	}
 
 	return ownImages, nil
+}
+
+// imageUsers maps each image's fingerprint to the instances created from it,
+// by volatile.base_image. Every project's, whatever the panels are scoped
+// to: a project without features.images uses default's images, so an image
+// listed in one project can be what another project's instances came from,
+// and prune has to know. A client limited to some projects falls back to
+// the ones it can see.
+func imageUsers(client incus.InstanceServer) (map[string][]string, error) {
+	instances, err := client.GetInstancesAllProjects(api.InstanceTypeAny)
+	if err != nil {
+		instances, err = client.GetInstances(api.InstanceTypeAny)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	users := map[string][]string{}
+
+	for _, instance := range instances {
+		if fingerprint := instance.Config["volatile.base_image"]; fingerprint != "" {
+			users[fingerprint] = append(users[fingerprint], instance.Project+"/"+instance.Name)
+		}
+	}
+
+	return users, nil
 }
 
 func (c *IncusCommand) listImages(client incus.InstanceServer) ([]api.Image, error) {

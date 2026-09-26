@@ -149,6 +149,27 @@ func (s *Server) GetInstancesFullAllProjects(api.InstanceType) ([]api.InstanceFu
 	return s.instances()
 }
 
+func (s *Server) GetInstances(instanceType api.InstanceType) ([]api.Instance, error) {
+	instances, err := s.GetInstancesFull(instanceType)
+
+	return plain(instances), err
+}
+
+func (s *Server) GetInstancesAllProjects(instanceType api.InstanceType) ([]api.Instance, error) {
+	instances, err := s.GetInstancesFullAllProjects(instanceType)
+
+	return plain(instances), err
+}
+
+func plain(instances []api.InstanceFull) []api.Instance {
+	out := make([]api.Instance, len(instances))
+	for i, instance := range instances {
+		out[i] = instance.Instance
+	}
+
+	return out
+}
+
 func (s *Server) GetImages() ([]api.Image, error) {
 	return inProject(s.Images, s.scope(), func(i api.Image) string { return i.Project }), nil
 }

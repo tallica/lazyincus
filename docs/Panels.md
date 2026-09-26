@@ -326,6 +326,26 @@ in its DESCRIPTION column), else the short fingerprint. Truncated to keep
 the columns after it on screen. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
 only change when someone pulls or deletes one.
 
+Each image carries the instances created from it (`Image.UsedBy`), matched
+on `volatile.base_image`, and the count is the column after the label - red
+at 0 - since whether an image can go is what the panel is for. The images
+fetch lists instances across every project for this, whatever the panels
+are scoped to: a project without `features.images` uses default's images,
+so an image one project lists can be another's instances' base. A client
+refused the all-projects listing falls back to its own project's.
+Instances are matched by fingerprint alone, so the per-project copies
+incus-compose makes of an image all count the same users. Then size, the
+date an instance was last created from it, and `vm` or `cached` where they
+apply; the container type every other image has isn't worth a column.
+
+`D` prunes: a menu of the unused cached images - what Incus cached on a
+launch and expires by itself - or every unused one, each with its count
+and size, then a confirmation naming them all. The second is the one that
+matters with incus-compose, whose copies aren't cached images and are
+never expired: an old tag stays until someone deletes it. Deletes run one
+at a time and a failure doesn't stop the rest; what failed is listed once
+they're done.
+
 ## Volumes
 
 Every storage pool's volumes in one list (`GetVolumes` walks

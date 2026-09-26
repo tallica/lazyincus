@@ -13,7 +13,9 @@ type Image struct {
 	// and go, and an image without one is addressed by fingerprint alone.
 	Fingerprint string
 
-	Image     api.Image
+	Image api.Image
+	// UsedBy are the instances created from the image, as project/name.
+	UsedBy    []string
 	Client    incus.InstanceServer
 	OSCommand *OSCommand
 	Log       *logrus.Entry
@@ -67,6 +69,12 @@ func (i *Image) Label() string {
 	}
 
 	return i.ShortFingerprint()
+}
+
+// IsUnused reports an image no instance was created from, which deleting
+// costs nothing but a download the next time something wants it.
+func (i *Image) IsUnused() bool {
+	return len(i.UsedBy) == 0
 }
 
 func (i *Image) IsVM() bool {
