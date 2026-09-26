@@ -333,6 +333,13 @@ as well as any instance `used_by` names outright; an entry there without
 a project is default's. A network or volume in a project other than
 default only counts that project's instances.
 
+`c` hands the terminal to `incus image edit`, `incus storage volume edit`
+or `incus network edit` with the item's `--project`, the way `E` hands it
+to `incus exec`: the CLI opens the YAML in `$EDITOR` and re-opens it when
+it doesn't validate, which a form of our own would have to reinvent per
+resource. The list re-fetches when the editor exits. A host interface has
+no config to edit, so `c` there says so.
+
 ## Images
 
 Local images (`GetImages`), identified by `Image.Label()`: alias, else the

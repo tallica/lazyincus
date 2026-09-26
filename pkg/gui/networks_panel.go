@@ -279,6 +279,14 @@ func (gui *Gui) showNetworkUsers(network *commands.Network) error {
 	return gui.showUsers(network.Name, network.IsUsedBy)
 }
 
+func (gui *Gui) networkEdit(network *commands.Network) error {
+	if !network.IsManaged() {
+		return gui.createErrorPanel(gui.Tr.CannotEditUnmanagedNetwork)
+	}
+
+	return gui.editInIncus(network.Network.Project, gui.fetchNetworks, "network", "edit", network.Name)
+}
+
 func (gui *Gui) networkDelete(network *commands.Network) error {
 	if !network.IsManaged() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteUnmanagedNetwork)

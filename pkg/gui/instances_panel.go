@@ -359,11 +359,30 @@ func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
 // which otherwise uses whatever project the user's own remote is set to -
 // not necessarily the one the selected instance lives in.
 func instanceCLIArgs(instance *commands.Instance) []string {
-	if instance.Project == "" {
+	return projectCLIArgs(instance.Project)
+}
+
+func projectCLIArgs(project string) []string {
+	if project == "" {
 		return nil
 	}
 
-	return []string{"--project", instance.Project}
+	return []string{"--project", project}
+}
+
+// editInIncus hands the terminal to an `incus ... edit`, which opens the
+// item's YAML in the user's editor and re-opens it on a validation error,
+// then re-lists what it changed.
+func (gui *Gui) editInIncus(project string, refresh fetch, args ...string) error {
+	cmd := gui.OSCommand.NewCmd("incus", append(projectCLIArgs(project), args...)...)
+
+	if err := gui.runSubprocess(cmd); err != nil {
+		return err
+	}
+
+	gui.refreshInBackground(refresh)
+
+	return nil
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

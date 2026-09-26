@@ -146,6 +146,11 @@ func (gui *Gui) showVolumeUsers(volume *commands.Volume) error {
 	return gui.showUsers(volume.Name, volume.IsUsedBy)
 }
 
+func (gui *Gui) volumeEdit(volume *commands.Volume) error {
+	return gui.editInIncus(volume.Volume.Project, gui.fetchVolumes,
+		"storage", "volume", "edit", volume.Pool, volume.Volume.Type+"/"+volume.Name)
+}
+
 func (gui *Gui) volumeDelete(volume *commands.Volume) error {
 	if !volume.IsCustom() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteManagedVolume)

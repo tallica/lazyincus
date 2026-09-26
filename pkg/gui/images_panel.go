@@ -232,6 +232,10 @@ func (gui *Gui) showImageUsers(image *commands.Image) error {
 	return gui.showUsers(image.Label(), image.IsUsedBy)
 }
 
+func (gui *Gui) imageEdit(image *commands.Image) error {
+	return gui.editInIncus(image.Image.Project, gui.fetchImages, "image", "edit", image.Fingerprint)
+}
+
 func (gui *Gui) imageDelete(image *commands.Image) error {
 	prompt := fmt.Sprintf(gui.Tr.DeleteImage, image.Label())
 
