@@ -355,6 +355,16 @@ pool+type+name, since an instance and a custom volume can share a name.
 Only `custom` volumes can be deleted — the rest go away with the instance or
 image they belong to.
 
+After the name come the users count - red for a custom volume nothing has
+attached, the other types always belonging to something - and the size,
+the two a narrow panel should keep. Sizes are a request each
+(`GetStoragePoolVolumeState`), eight in flight at a time, on every poll;
+where the driver can't size a volume the cell is blank (see
+[docs/Incus.md](Incus.md)). Each pool's space is one more request a poll,
+shown on the Config tab with the driver, and so are the users by name:
+`Volume.Users` turns the used_by URLs into an instance's name, or a
+profile's kind and name, with the project where it isn't the volume's.
+
 ## Networks
 
 `GetNetworks`, managed and unmanaged alike, with the unmanaged ones - host

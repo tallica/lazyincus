@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -72,11 +73,25 @@ func (gui *Gui) renderVolumeConfig(volume *commands.Volume) tasks.TaskFunc {
 func (gui *Gui) volumeConfigStr(volume *commands.Volume) string {
 	padding := 14
 	output := ""
+	size := presentation.DisplayVolumeUsage(volume)
+	if size == "" {
+		size = gui.Tr.VolumeSizeUnknown
+	}
+
+	usedBy := strings.Join(volume.Users(), ", ")
+	if usedBy == "" {
+		usedBy = gui.Tr.UsedByNothing
+	}
+
 	output += utils.WithPadding("Name: ", padding) + volume.Name + "\n"
-	output += utils.WithPadding("Pool: ", padding) + volume.Pool + "\n"
+	output += utils.WithPadding("Pool: ", padding) + volume.Pool + " (" + volume.PoolDriver + ")\n"
+	if space := presentation.DisplayPoolSpace(volume); space != "" {
+		output += utils.WithPadding("Pool space: ", padding) + space + "\n"
+	}
 	output += utils.WithPadding("Type: ", padding) + volume.Volume.Type + "\n"
 	output += utils.WithPadding("Content type: ", padding) + volume.Volume.ContentType + "\n"
-	output += utils.WithPadding("Used by: ", padding) + fmt.Sprint(volume.UsedByCount()) + "\n"
+	output += utils.WithPadding("Size: ", padding) + size + "\n"
+	output += utils.WithPadding("Used by: ", padding) + usedBy + "\n"
 
 	data, err := utils.MarshalIntoYaml(volume.Volume)
 	if err != nil {

@@ -1,17 +1,19 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
 │a-name-long-enough-to-be-cut-off running  co…││Name:         data                                                                         │
-│web                              running  co…││Pool:         default                                                                      │
-│db                               stopped  co…││Type:         custom                                                                       │
+│web                              running  co…││Pool:         default (dir)                                                                │
+│db                               stopped  co…││Pool space:   5.00GiB of 50.00GiB used (10%)                                               │
+│                                             ││Type:         custom                                                                       │
 │                                             ││Content type:                                                                              │
-│                                             ││Used by:      0                                                                            │
+│                                             ││Size:         512.00MiB                                                                    │
+│                                             ││Used by:      nothing                                                                      │
 │                                             ││                                                                                           │
 │                                             ││Full details:                                                                              │
 │                                             ││                                                                                           │
 │                                             ││config: null                                                                               │
-│                                             ││description: ""                                                                            │
-│                                             ││name: data                                                                                 │
-╰─────────────────────────────────────────────╯│type: custom                                                                               │
-╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│used_by: null                                                                              │
+╰─────────────────────────────────────────────╯│description: ""                                                                            │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│name: data                                                                                 │
+│                                             ││type: custom                                                                               │
+│                                             ││used_by: null                                                                              │
 │                                             ││location: ""                                                                               │
 │                                             ││content_type: ""                                                                           │
 │                                             ││project: default                                                                           │
@@ -21,12 +23,10 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
 ╭─[3]─Images - Volumes - Networks─────────────╮│                                                                                           │
-│data default custom 0                        ││                                                                                           │
-│                                             ││                                                                                           │
+│data 0 512.00MiB default custom              ││                                                                                           │
+│web  1           default container           ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

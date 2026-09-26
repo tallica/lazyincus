@@ -110,8 +110,13 @@ func fixtureServer() *incustest.Server {
 			},
 		},
 		Volumes: map[string][]api.StorageVolume{
-			"default": {{Name: "data", Type: "custom", Project: "default"}},
+			"default": {
+				{Name: "data", Type: "custom", Project: "default"},
+				{Name: "web", Type: "container", Project: "default", UsedBy: []string{"/1.0/instances/web"}},
+			},
 		},
+		PoolSpace:   map[string]api.ResourcesStoragePoolSpace{"default": {Used: 5 << 30, Total: 50 << 30}},
+		VolumeUsage: map[string]uint64{"data": 512 << 20},
 	})
 }
 

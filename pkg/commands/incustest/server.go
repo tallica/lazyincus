@@ -23,6 +23,9 @@ type Server struct {
 	Networks  []api.Network
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
+	// PoolSpace by pool, and VolumeUsage in bytes by volume name.
+	PoolSpace   map[string]api.ResourcesStoragePoolSpace
+	VolumeUsage map[string]uint64
 	// NetworkLeases by network, then by the project that sees them - the
 	// daemon lists only the asking project's. NetworkStates by network. A
 	// network missing from either is not found, as leases on an unmanaged
@@ -208,7 +211,7 @@ func (s *Server) GetNetworkState(name string) (*api.NetworkState, error) {
 	return &state, nil
 }
 
-func (s *Server) GetStoragePoolNames() ([]string, error) {
+func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 	names := make([]string, 0, len(s.Volumes))
 	for pool := range s.Volumes {
 		names = append(names, pool)
@@ -216,7 +219,32 @@ func (s *Server) GetStoragePoolNames() ([]string, error) {
 
 	slices.Sort(names)
 
-	return names, nil
+	pools := make([]api.StoragePool, len(names))
+	for i, name := range names {
+		pools[i] = api.StoragePool{Name: name, Driver: "dir"}
+	}
+
+	return pools, nil
+}
+
+func (s *Server) GetStoragePoolResources(pool string) (*api.ResourcesStoragePool, error) {
+	space, ok := s.PoolSpace[pool]
+	if !ok {
+		return nil, api.StatusErrorf(404, "Storage pool not found")
+	}
+
+	return &api.ResourcesStoragePool{Space: space}, nil
+}
+
+// GetStoragePoolVolumeState answers from VolumeUsage, by volume name; a
+// volume missing from it has no usage, as on a dir pool without quotas.
+func (s *Server) GetStoragePoolVolumeState(_, _, name string) (*api.StorageVolumeState, error) {
+	usage := &api.StorageVolumeStateUsage{}
+	if used, ok := s.VolumeUsage[name]; ok {
+		usage.Used = used
+	}
+
+	return &api.StorageVolumeState{Usage: usage}, nil
 }
 
 func (s *Server) GetStoragePoolVolumes(pool string) ([]api.StorageVolume, error) {

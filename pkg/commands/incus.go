@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -444,7 +445,7 @@ func (c *IncusCommand) listNetworks(client incus.InstanceServer) ([]api.Network,
 func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	client := c.Client()
 
-	pools, err := client.GetStoragePoolNames()
+	pools, err := client.GetStoragePools()
 	c.NoteError(err)
 
 	if err != nil {
@@ -454,28 +455,63 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	ownVolumes := []*Volume{}
 
 	for _, pool := range pools {
-		apiVolumes, err := c.listVolumes(client, pool)
+		apiVolumes, err := c.listVolumes(client, pool.Name)
 		if err != nil {
 			c.Log.Warn(err)
 			continue
+		}
+
+		var space *api.ResourcesStoragePoolSpace
+		if resources, err := client.GetStoragePoolResources(pool.Name); err == nil {
+			space = &resources.Space
 		}
 
 		for i := range apiVolumes {
 			apiVolume := apiVolumes[i]
 
 			ownVolumes = append(ownVolumes, &Volume{
-				Pool:      pool,
-				Name:      apiVolume.Name,
-				Volume:    apiVolume,
-				Client:    c.clientFor(apiVolume.Project),
-				OSCommand: c.OSCommand,
-				Log:       c.Log,
-				Tr:        c.Tr,
+				Pool:       pool.Name,
+				Name:       apiVolume.Name,
+				Volume:     apiVolume,
+				PoolDriver: pool.Driver,
+				PoolSpace:  space,
+				Client:     c.clientFor(apiVolume.Project),
+				OSCommand:  c.OSCommand,
+				Log:        c.Log,
+				Tr:         c.Tr,
 			})
 		}
 	}
 
+	readVolumeUsage(ownVolumes)
+
 	return ownVolumes, nil
+}
+
+// volumeUsageRequests is how many volumes' usage are asked for at once.
+const volumeUsageRequests = 8
+
+// readVolumeUsage asks after each volume's usage, which the listing doesn't
+// carry: one request a volume, so several in flight at a time. A volume the
+// daemon can't size keeps a nil Usage.
+func readVolumeUsage(volumes []*Volume) {
+	var wait sync.WaitGroup
+
+	slots := make(chan struct{}, volumeUsageRequests)
+
+	for _, volume := range volumes {
+		wait.Go(func() {
+			slots <- struct{}{}
+			defer func() { <-slots }()
+
+			state, err := volume.Client.GetStoragePoolVolumeState(volume.Pool, volume.Volume.Type, volume.Name)
+			if err == nil && state.Usage != nil && state.Usage.Used > 0 {
+				volume.Usage = state.Usage
+			}
+		})
+	}
+
+	wait.Wait()
 }
 
 func listInstances(client incus.InstanceServer, allProjects bool) ([]api.InstanceFull, error) {

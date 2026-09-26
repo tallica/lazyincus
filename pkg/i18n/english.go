@@ -38,6 +38,8 @@ type TranslationSet struct {
 	PruneUnusedImages         string
 	ConfirmPruneImages        string
 	NothingToPrune            string
+	VolumeSizeUnknown         string
+	UsedByNothing             string
 	LeasesTitle               string
 	StateTitle                string
 	NoLeases                  string
@@ -230,6 +232,8 @@ func englishSet() TranslationSet {
 		PruneUnusedImages:      "every unused image (%d, %s)",
 		ConfirmPruneImages:     "Delete these %d images (%s)? Nothing was created from them.\n\n%s",
 		NothingToPrune:         "No images to prune.",
+		VolumeSizeUnknown:      "unknown - the pool's driver doesn't report it",
+		UsedByNothing:          "nothing",
 		LeasesTitle:            "Leases",
 		StateTitle:             "State",
 		NoLeases:               "No leases",

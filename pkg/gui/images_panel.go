@@ -129,7 +129,7 @@ func (gui *Gui) refreshImagesQuiet() error {
 // read in the instances panel.
 func (gui *Gui) imageUsersStr(image *commands.Image) string {
 	if image.IsUnused() {
-		return gui.Tr.NoInstance
+		return gui.Tr.UsedByNothing
 	}
 
 	byProject := lo.GroupBy(image.UsedBy, func(user string) string {

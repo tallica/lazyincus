@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"net/url"
+	"strings"
+
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/sirupsen/logrus"
@@ -13,11 +16,18 @@ type Volume struct {
 	Pool string
 	Name string
 
-	Volume    api.StorageVolume
-	Client    incus.InstanceServer
-	OSCommand *OSCommand
-	Log       *logrus.Entry
-	Tr        *i18n.TranslationSet
+	Volume api.StorageVolume
+	// Usage is what the volume takes on disk, nil where the pool's driver
+	// can't say - a dir pool without project quotas.
+	Usage *api.StorageVolumeStateUsage
+	// PoolDriver and PoolSpace describe the pool it's in, PoolSpace nil if
+	// the daemon wouldn't say.
+	PoolDriver string
+	PoolSpace  *api.ResourcesStoragePoolSpace
+	Client     incus.InstanceServer
+	OSCommand  *OSCommand
+	Log        *logrus.Entry
+	Tr         *i18n.TranslationSet
 }
 
 // Key identifies the volume across refreshes and in the panel's context
@@ -35,6 +45,43 @@ func (v *Volume) IsCustom() bool {
 
 func (v *Volume) UsedByCount() int {
 	return len(v.Volume.UsedBy)
+}
+
+// IsOrphaned reports a custom volume nothing has attached, which is either
+// kept on purpose or forgotten. The other types always belong to something.
+func (v *Volume) IsOrphaned() bool {
+	return v.IsCustom() && v.UsedByCount() == 0
+}
+
+// Users names what the volume's used_by URLs point at: an instance by its
+// name, anything else by its kind and name, and the project when it isn't
+// the volume's own.
+func (v *Volume) Users() []string {
+	users := make([]string, 0, len(v.Volume.UsedBy))
+
+	for _, entry := range v.Volume.UsedBy {
+		parsed, err := url.Parse(entry)
+		if err != nil {
+			users = append(users, entry)
+			continue
+		}
+
+		kind, name, _ := strings.Cut(strings.TrimPrefix(parsed.Path, "/1.0/"), "/")
+		name, _ = url.PathUnescape(name)
+
+		user := name
+		if kind != "instances" {
+			user = strings.TrimSuffix(kind, "s") + " " + name
+		}
+
+		if project := parsed.Query().Get("project"); project != "" && project != v.Volume.Project {
+			user += " (" + project + ")"
+		}
+
+		users = append(users, user)
+	}
+
+	return users
 }
 
 // Delete removes the volume. Incus refuses for volumes backing an instance

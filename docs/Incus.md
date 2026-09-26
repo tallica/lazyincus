@@ -124,6 +124,10 @@ inferred.
   state carries a bridge's ports as host-side veth names;
   `InstanceStateNetwork.HostName` is the same name from the instance's
   side, which is how the State tab names the instance on each port.
+- **Volume usage**: the volume listing carries no sizes; the state
+  endpoint does, one volume a request. A `dir` pool without project quotas
+  answers with a usage of nothing rather than an error (seen against Incus
+  7.4), so a zero is read as unknown, not as empty.
 - **Attach**: `a` shells out to `incus console <name>`, the analog of
   lazydocker's `docker attach`. No detach hint from us - the CLI prints its
   own (`ctrl+a q`) on connect. An OCI application container has no console
