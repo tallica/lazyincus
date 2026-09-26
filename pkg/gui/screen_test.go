@@ -479,6 +479,12 @@ func TestShowUsers(t *testing.T) {
 	s.do(t, s.gui.escape)
 	screen = s.settle(t, "│db ")
 	assert.NotContains(t, screen, "Instances using")
+
+	// Back on the network it was asked of.
+	s.do(t, func() error {
+		assert.Equal(t, "networks", s.gui.currentViewName())
+		return nil
+	})
 }
 
 func TestScreenNetworkACLs(t *testing.T) {

@@ -190,16 +190,19 @@ func (gui *Gui) refreshInstances() error {
 type instanceUsers struct {
 	label string
 	uses  func(*commands.Instance) bool
+	// from is the list `u` was pressed in, which esc returns to.
+	from *gocui.View
 }
 
 // showUsers narrows the instances panel to what uses a resource and moves
-// there; esc in the panel brings the whole list back.
+// there; esc in the panel brings the whole list back and returns to the
+// resource.
 func (gui *Gui) showUsers(label string, uses func(*commands.Instance) bool) error {
 	if !lo.SomeBy(gui.Panels.Instances.List.GetAllItems(), uses) {
 		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.NothingUses, label))
 	}
 
-	gui.State.InstanceUsers = &instanceUsers{label: label, uses: uses}
+	gui.State.InstanceUsers = &instanceUsers{label: label, uses: uses, from: gui.g.CurrentView()}
 	gui.Views.Instances.Title = gui.instancesPanelTitle()
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
@@ -211,10 +214,20 @@ func (gui *Gui) showUsers(label string, uses func(*commands.Instance) bool) erro
 }
 
 func (gui *Gui) clearInstanceUsers() error {
+	from := gui.State.InstanceUsers.from
+
 	gui.State.InstanceUsers = nil
 	gui.Views.Instances.Title = gui.instancesPanelTitle()
 
-	return gui.Panels.Instances.RerenderList()
+	if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return err
+	}
+
+	if from == nil {
+		return nil
+	}
+
+	return gui.switchFocus(from)
 }
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {

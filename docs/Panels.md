@@ -336,7 +336,8 @@ as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
 
 `u` on any of the three narrows the instances panel to what uses the item
-and moves there, its title naming it; `esc` there brings the rest back.
+and moves there, its title naming it; `esc` there brings the rest back and
+returns to the list `u` was pressed in, cursor where it was.
 While narrowed it shows every user, stopped or the local stack's, the
 question being what uses the thing. An image's users are its `UsedBy`.
 A network's or volume's `used_by` names a profile rather than the
