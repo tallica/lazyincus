@@ -27,7 +27,7 @@ func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []stri
 
 	return append(cells,
 		// Local time, matching `incus info`; the API reports UTC.
-		utils.ColoredString(snapshot.Snapshot.CreatedAt.Local().Format(DateTimeFormat), color.FgYellow),
+		utils.ColoredString(snapshot.CreatedAt().Local().Format(DateTimeFormat), color.FgYellow),
 		displaySnapshotExpiry(snapshot),
 		displaySnapshotStateful(snapshot),
 	)
@@ -36,11 +36,11 @@ func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []stri
 // displaySnapshotExpiry marks the snapshots that delete themselves, since
 // that's easy to forget having set. Blank for the ones that don't.
 func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
-	if snapshot.Snapshot.ExpiresAt.IsZero() {
+	if snapshot.ExpiresAt().IsZero() {
 		return ""
 	}
 
-	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgMagenta)
+	return utils.ColoredString("expires "+snapshot.ExpiresAt().Local().Format(DateTimeFormat), color.FgMagenta)
 }
 
 // MinSnapshotNameWidth and MinSnapshotOwnerWidth are as narrow as the name
@@ -51,7 +51,7 @@ const (
 )
 
 func displaySnapshotStateful(snapshot *commands.Snapshot) string {
-	if snapshot.Snapshot.Stateful {
+	if snapshot.IsStateful() {
 		return utils.ColoredString("stateful", color.FgGreen)
 	}
 

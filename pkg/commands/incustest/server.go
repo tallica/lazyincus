@@ -23,9 +23,11 @@ type Server struct {
 	Networks  []api.Network
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
-	// PoolSpace by pool, and VolumeUsage in bytes by volume name.
-	PoolSpace   map[string]api.ResourcesStoragePoolSpace
-	VolumeUsage map[string]uint64
+	// PoolSpace by pool; VolumeUsage in bytes and VolumeSnapshots by volume
+	// name.
+	PoolSpace       map[string]api.ResourcesStoragePoolSpace
+	VolumeUsage     map[string]uint64
+	VolumeSnapshots map[string][]api.StorageVolumeSnapshot
 	// NetworkLeases by network, then by the project that sees them - the
 	// daemon lists only the asking project's. NetworkStates by network. A
 	// network missing from either is not found, as leases on an unmanaged
@@ -241,6 +243,10 @@ func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 	}
 
 	return pools, nil
+}
+
+func (s *Server) GetStoragePoolVolumeSnapshots(_, _, name string) ([]api.StorageVolumeSnapshot, error) {
+	return slices.Clone(s.VolumeSnapshots[name]), nil
 }
 
 func (s *Server) GetStoragePoolResources(pool string) (*api.ResourcesStoragePool, error) {

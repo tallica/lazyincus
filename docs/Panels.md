@@ -299,6 +299,19 @@ gocui has views and keybindings, and the menu itself is lazydocker's
 `SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
 <name>`, not a snapshot operation.
 
+A custom volume selected in the volumes panel is followed the same way,
+its title naming the volume, and `n` there or here snapshots it. A
+volume's snapshots don't come with the volume listing the way an
+instance's do, so the volumes fetch asks for each custom volume's in the
+same fan-out as the sizes; moving through the list still asks for
+nothing. The other volume types are left alone - their snapshots are
+their instance's - and selecting one leaves the panel on what it was
+showing. `commands.Snapshot` is either kind, `Volume` set on a volume's,
+and create, restore and delete take the volume calls for it; restore is
+likewise an update of the volume carrying `Restore`. The `n` popup drops
+its stateful field for a volume, which has no runtime state. The panel's
+all-instances view stays instances only.
+
 ## Resources
 
 Images, volumes and networks are three panels sharing one window: a

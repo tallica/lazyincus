@@ -486,19 +486,20 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 		}
 	}
 
-	readVolumeUsage(ownVolumes)
+	readVolumeDetails(ownVolumes)
 
 	return ownVolumes, nil
 }
 
-// requestsInFlight caps a fan-out of one request per item: volumes' usage,
-// a network's leases per project.
+// requestsInFlight caps a fan-out of one request per item: volumes' usage
+// and snapshots, a network's leases per project.
 const requestsInFlight = 8
 
-// readVolumeUsage asks after each volume's usage, which the listing doesn't
-// carry: one request a volume, so several in flight at a time. A volume the
-// daemon can't size keeps a nil Usage.
-func readVolumeUsage(volumes []*Volume) {
+// readVolumeDetails asks after what the listing doesn't carry: each
+// volume's usage, and a custom volume's snapshots - an instance's own
+// volumes' are the instance's. Requests a volume, several in flight at a
+// time. A volume the daemon can't size keeps a nil Usage.
+func readVolumeDetails(volumes []*Volume) {
 	var wait sync.WaitGroup
 
 	slots := make(chan struct{}, requestsInFlight)
@@ -511,6 +512,12 @@ func readVolumeUsage(volumes []*Volume) {
 			state, err := volume.Client.GetStoragePoolVolumeState(volume.Pool, volume.Volume.Type, volume.Name)
 			if err == nil && state.Usage != nil && state.Usage.Used > 0 {
 				volume.Usage = state.Usage
+			}
+
+			if volume.IsCustom() {
+				if snapshots, err := volume.Client.GetStoragePoolVolumeSnapshots(volume.Pool, volume.Volume.Type, volume.Name); err == nil {
+					volume.SnapshotList = snapshots
+				}
 			}
 		})
 	}

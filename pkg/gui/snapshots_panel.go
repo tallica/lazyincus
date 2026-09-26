@@ -49,11 +49,11 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 				return a.Project < b.Project
 			}
 
-			if a.InstanceName != b.InstanceName {
-				return a.InstanceName < b.InstanceName
+			if a.Owner != b.Owner {
+				return a.Owner < b.Owner
 			}
 
-			return a.Snapshot.CreatedAt.After(b.Snapshot.CreatedAt)
+			return a.CreatedAt().After(b.CreatedAt())
 		},
 		GetTableCells: func(snapshot *commands.Snapshot) []string {
 			return presentation.GetSnapshotDisplayStrings(snapshot, gui.snapshotOwner(snapshot))
@@ -78,12 +78,20 @@ func (gui *Gui) renderSnapshotConfig(snapshot *commands.Snapshot) tasks.TaskFunc
 func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
 	padding := 12
 	output := ""
-	output += utils.WithPadding("Instance: ", padding) + snapshot.InstanceName + "\n"
-	output += utils.WithPadding("Name: ", padding) + snapshot.Name + "\n"
-	output += utils.WithPadding("Taken at: ", padding) + snapshot.Snapshot.CreatedAt.String() + "\n"
-	output += utils.WithPadding("Stateful: ", padding) + fmt.Sprint(snapshot.Snapshot.Stateful) + "\n"
+	if snapshot.Volume != nil {
+		output += utils.WithPadding("Volume: ", padding) + snapshot.Owner + " (" + snapshot.Volume.Pool + ")\n"
+	} else {
+		output += utils.WithPadding("Instance: ", padding) + snapshot.Owner + "\n"
+	}
 
-	data, err := utils.MarshalIntoYaml(snapshot.Snapshot)
+	output += utils.WithPadding("Name: ", padding) + snapshot.Name + "\n"
+	output += utils.WithPadding("Taken at: ", padding) + snapshot.CreatedAt().String() + "\n"
+
+	if snapshot.Volume == nil {
+		output += utils.WithPadding("Stateful: ", padding) + fmt.Sprint(snapshot.IsStateful()) + "\n"
+	}
+
+	data, err := utils.MarshalIntoYaml(snapshot.Details())
 	if err != nil {
 		return fmt.Sprintf("Error marshalling snapshot details: %v", err)
 	}
@@ -93,12 +101,19 @@ func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
 	return output
 }
 
-// renderSnapshots lists the snapshots of the instances the panel follows,
-// as the newest refresh has them: they come with the instance listing, so
-// neither a selection change nor a poll asks the daemon for anything.
+// renderSnapshots lists the snapshots of what the panel follows, as the
+// newest refresh has them: they come with the instance and volume listings,
+// so neither a selection change nor a poll asks the daemon for anything.
 func (gui *Gui) renderSnapshots() error {
 	label, instances := gui.snapshotsSource()
 	gui.setSnapshotsTitle(label)
+
+	if volume, ok := gui.snapshotsVolume(); ok {
+		gui.State.SnapshotsSpan = snapshotsSpan{}
+		gui.Panels.Snapshots.SetItems(volume.Snapshots())
+
+		return gui.Panels.Snapshots.RerenderList()
+	}
 
 	gui.State.SnapshotsSpan = snapshotsSpan{
 		Instances: len(instances) > 1,
@@ -127,12 +142,39 @@ func (gui *Gui) renderSnapshots() error {
 func (gui *Gui) refreshSnapshotsFor(label string, instances ...*commands.Instance) error {
 	gui.State.SnapshotsLabel = label
 	gui.State.SnapshotsInstances = instances
+	gui.State.SnapshotsVolume = ""
 
 	if gui.State.SnapshotsShowAll {
 		return nil
 	}
 
 	return gui.renderSnapshots()
+}
+
+// refreshSnapshotsForVolume points the panel at a custom volume, the volumes
+// panel's selection. Held by key: each volumes refresh builds new values.
+func (gui *Gui) refreshSnapshotsForVolume(volume *commands.Volume) error {
+	gui.State.SnapshotsLabel = volume.Name
+	gui.State.SnapshotsInstances = nil
+	gui.State.SnapshotsVolume = volume.Key()
+
+	if gui.State.SnapshotsShowAll {
+		return nil
+	}
+
+	return gui.renderSnapshots()
+}
+
+// snapshotsVolume is the volume the panel follows, as the newest refresh
+// has it; none while it lists every instance's.
+func (gui *Gui) snapshotsVolume() (*commands.Volume, bool) {
+	if gui.State.SnapshotsShowAll || gui.State.SnapshotsVolume == "" {
+		return nil, false
+	}
+
+	return lo.Find(gui.Panels.Volumes.List.GetAllItems(), func(volume *commands.Volume) bool {
+		return volume.Key() == gui.State.SnapshotsVolume
+	})
 }
 
 // snapshotsSource is what the panel lists and what its title calls it:
@@ -157,22 +199,26 @@ func (gui *Gui) handleToggleAllSnapshots(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) snapshotOwner(snapshot *commands.Snapshot) string {
 	switch {
 	case gui.State.SnapshotsSpan.Projects:
-		return snapshot.Project + "/" + snapshot.InstanceName
+		return snapshot.Project + "/" + snapshot.Owner
 	case gui.State.SnapshotsSpan.Instances:
-		return snapshot.InstanceName
+		return snapshot.Owner
 	default:
 		return ""
 	}
 }
 
 // handleSnapshotCreate snapshots the instance the selected row belongs to
-// while the panel lists every instance's; following a selection, the
-// instances panel's, as before.
+// while the panel lists every instance's, the volume it follows, or the
+// instances panel's selection.
 func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
+	if volume, ok := gui.snapshotsVolume(); ok {
+		return gui.volumeSnapshotCreatePrompt(volume)
+	}
+
 	if gui.State.SnapshotsShowAll {
 		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil {
 			if instance, ok := lo.Find(gui.Panels.Instances.List.GetAllItems(), func(instance *commands.Instance) bool {
-				return instance.Project == snapshot.Project && instance.Name == snapshot.InstanceName
+				return instance.Project == snapshot.Project && instance.Name == snapshot.Owner
 			}); ok {
 				return gui.snapshotCreatePrompt(instance)
 			}
@@ -198,7 +244,12 @@ func (gui *Gui) setSnapshotsTitle(label string) {
 // The options are fields rather than actions - a row shows a value you
 // change in place, and enter always means create, wherever the focus is.
 type snapshotPrompt struct {
-	instance *commands.Instance
+	// label names what's being snapshotted; create takes the snapshot.
+	label  string
+	create func(name string, opts commands.SnapshotOptions) error
+	// statefulField offers stateful, which only an instance has.
+	statefulField bool
+
 	expiry   int
 	stateful bool
 	field    int
@@ -218,11 +269,18 @@ var snapshotExpiries = []struct {
 const (
 	snapshotFieldExpiry = iota
 	snapshotFieldStateful
-	snapshotFieldCount
 )
 
+func (p *snapshotPrompt) fieldCount() int {
+	if p.statefulField {
+		return 2
+	}
+
+	return 1
+}
+
 func (p *snapshotPrompt) moveField(delta int) {
-	p.field = (p.field + delta + snapshotFieldCount) % snapshotFieldCount
+	p.field = (p.field + delta + p.fieldCount()) % p.fieldCount()
 }
 
 // changeField cycles the focused field's value. Both fields wrap, so left
@@ -244,11 +302,34 @@ func (p *snapshotPrompt) options() commands.SnapshotOptions {
 }
 
 func (gui *Gui) snapshotCreatePrompt(instance *commands.Instance) error {
-	prompt := &snapshotPrompt{instance: instance}
+	return gui.openSnapshotPrompt(&snapshotPrompt{
+		label:         instance.Name,
+		statefulField: true,
+		create: func(name string, opts commands.SnapshotOptions) error {
+			return gui.createSnapshot(instance, name, opts)
+		},
+	})
+}
 
+// volumeSnapshotCreatePrompt is the same popup for a custom volume; the
+// others' snapshots are their instance's.
+func (gui *Gui) volumeSnapshotCreatePrompt(volume *commands.Volume) error {
+	if !volume.IsCustom() {
+		return gui.createErrorPanel(gui.Tr.CannotSnapshotInstanceVolume)
+	}
+
+	return gui.openSnapshotPrompt(&snapshotPrompt{
+		label: volume.Name,
+		create: func(name string, opts commands.SnapshotOptions) error {
+			return gui.createVolumeSnapshot(volume, name, opts)
+		},
+	})
+}
+
+func (gui *Gui) openSnapshotPrompt(prompt *snapshotPrompt) error {
 	gui.onNewPopupPanel()
 
-	if err := gui.prepareConfirmationPanel(fmt.Sprintf(gui.Tr.SnapshotNamePrompt, instance.Name), ""); err != nil {
+	if err := gui.prepareConfirmationPanel(fmt.Sprintf(gui.Tr.SnapshotNamePrompt, prompt.label), ""); err != nil {
 		return err
 	}
 
@@ -369,7 +450,7 @@ func (gui *Gui) submitSnapshotPrompt(prompt *snapshotPrompt) error {
 		return err
 	}
 
-	return gui.createSnapshot(prompt.instance, name, prompt.options())
+	return prompt.create(name, prompt.options())
 }
 
 // renderSnapshotOptions draws the fields into their view, parked directly
@@ -381,7 +462,7 @@ func (gui *Gui) renderSnapshotOptions(prompt *snapshotPrompt) error {
 	}{
 		{gui.Tr.SnapshotExpiryField, snapshotExpiries[prompt.expiry].label},
 		{gui.Tr.SnapshotStatefulField, gui.yesNo(prompt.stateful)},
-	}
+	}[:prompt.fieldCount()]
 
 	lines := make([]string, len(rows))
 
@@ -454,17 +535,33 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 				return err
 			}
 
-			return gui.focusSnapshot(instance, name)
+			return gui.focusSnapshot((&commands.Snapshot{Project: instance.Project, Owner: instance.Name, Name: name}).Key())
 		}, gui.fetchInstances, gui.fetchServices)
+	})
+}
+
+func (gui *Gui) createVolumeSnapshot(volume *commands.Volume, name string, opts commands.SnapshotOptions) error {
+	return gui.WithWaitingStatus(gui.Tr.SnapshottingStatus, func() error {
+		if err := volume.CreateSnapshot(name, opts); err != nil {
+			return gui.createErrorPanel(err.Error())
+		}
+
+		return gui.refresh(func() error {
+			if err := gui.refreshSnapshotsForVolume(volume); err != nil {
+				return err
+			}
+
+			return gui.focusSnapshot((&commands.Snapshot{Volume: volume, Name: name}).Key())
+		}, gui.fetchVolumes)
 	})
 }
 
 // focusSnapshot moves to the snapshots panel and puts the cursor on the
 // named snapshot, so a snapshot taken from the instances panel lands you
 // where you can see it.
-func (gui *Gui) focusSnapshot(instance *commands.Instance, name string) error {
+func (gui *Gui) focusSnapshot(key string) error {
 	index := gui.Panels.Snapshots.List.GetIndexBy(func(snapshot *commands.Snapshot) bool {
-		return snapshot.Project == instance.Project && snapshot.InstanceName == instance.Name && snapshot.Name == name
+		return snapshot.Key() == key
 	})
 	if index < 0 {
 		return nil
@@ -476,7 +573,7 @@ func (gui *Gui) focusSnapshot(instance *commands.Instance, name string) error {
 }
 
 func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
-	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, snapshot.InstanceName, snapshot.Name)
+	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, snapshot.Owner, snapshot.Name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RestoringStatus, func() error {
@@ -484,7 +581,7 @@ func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstancesAndServices()
+			return gui.refreshSnapshotOwner(snapshot)
 		})
 	}, nil)
 }
@@ -492,7 +589,7 @@ func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 	// Named with its instance, the panel holding every replica's snapshots
 	// where a service is selected, and replicas sharing snapshot names.
-	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, snapshot.InstanceName)
+	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, snapshot.Owner)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
@@ -500,7 +597,17 @@ func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstancesAndServices()
+			return gui.refreshSnapshotOwner(snapshot)
 		})
 	}, nil)
+}
+
+// refreshSnapshotOwner re-lists what a snapshot was taken of, which is what
+// carries its snapshots.
+func (gui *Gui) refreshSnapshotOwner(snapshot *commands.Snapshot) error {
+	if snapshot.Volume != nil {
+		return gui.refreshVolumes()
+	}
+
+	return gui.refreshInstancesAndServices()
 }

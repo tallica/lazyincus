@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Custom volumes have snapshots too: select one in the Volumes list and the Snapshots panel shows its snapshots, `n` takes one (with an expiry, as for instances), and `r` and `d` restore and delete them. A compose stack's data lives in custom volumes, so this is the undo button for the part of it that matters.
 - Networks have a **Forwards** tab: each port a network forward publishes, where it goes, and which instance holds that address, so what's exposed on the uplink reads as instance names instead of internal IPs.
 - Networks have an **ACLs** tab: which ACLs the network applies, what happens to traffic none of their rules match, which NICs on it carry ACLs of their own, and every rule of each, ingress and egress. "Why can't this container reach that one?" is now answered in one place, instead of by piecing together `security.acls` and `incus network acl show`.
 - `c` on an image, volume or network opens its config in your editor, through `incus image edit`, `incus storage volume edit` or `incus network edit` in the item's own project, and the list shows the change when you're done. A volume's quota, a network's subnet or an image's auto-update no longer means leaving for a shell.

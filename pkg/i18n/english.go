@@ -28,101 +28,102 @@ type TranslationSet struct {
 	CannotAccessIncusSocketError               string
 	CannotKillChildError                       string
 
-	Cancel                     string
-	Remove                     string
-	HideStopped                string
-	HideUnmanagedNetworks      string
-	PruneImages                string
-	PruneImagesTitle           string
-	PruneCachedImages          string
-	PruneUnusedImages          string
-	ConfirmPruneImages         string
-	NothingToPrune             string
-	VolumeSizeUnknown          string
-	UsedByNothing              string
-	ImageUsersUnknown          string
-	ShowUsers                  string
-	InstancesUsing             string
-	NothingUses                string
-	EditInEditor               string
-	CannotEditUnmanagedNetwork string
-	ACLsTitle                  string
-	NoACLs                     string
-	NoACLsUnmanaged            string
-	ACLIngress                 string
-	ACLEgress                  string
-	ForwardsTitle              string
-	NoForwards                 string
-	NoForwardsUnmanaged        string
-	CannotListForwards         string
-	LeasesTitle                string
-	StateTitle                 string
-	NoLeases                   string
-	NoLeasesUnmanaged          string
-	CannotListLeases           string
-	CannotReadNetworkState     string
-	ForceRemove                string
-	ForceStop                  string
-	MustForceToRemove          string
-	Confirm                    string
-	Return                     string
-	FocusMain                  string
-	LcFilter                   string
-	StopInstance               string
-	DeleteInstance             string
-	ForceStopInstance          string
-	RestartingStatus           string
-	StartingStatus             string
-	StoppingStatus             string
-	PausingStatus              string
-	RemovingStatus             string
-	ForceRemovingStatus        string
-	Stop                       string
-	Pause                      string
-	Restart                    string
-	Start                      string
-	PreviousContext            string
-	NextContext                string
-	Attach                     string
-	ViewLogs                   string
-	ExecShell                  string
-	CopyIPv4                   string
-	CopiedToClipboard          string
-	NoIPv4Address              string
-	InstanceTitle              string
-	InstancesTitle             string
-	ImagesTitle                string
-	ResourcesTitle             string
-	PreviousList               string
-	NextList                   string
-	NoImages                   string
-	DeleteImage                string
-	NewSnapshot                string
-	RestoreSnapshot            string
-	RestoreSnapshotShort       string
-	DeleteSnapshot             string
-	SnapshotNamePrompt         string
-	SnapshotOptionsTitle       string
-	SnapshotFocusName          string
-	SnapshotExpiryField        string
-	SnapshotStatefulField      string
-	SnapshotSwitchFocusHint    string
-	SnapshotChangeHint         string
-	SnapshotSubmitHint         string
-	SnapshotChangeValue        string
-	SnapshotCreate             string
-	SnapshottingStatus         string
-	ToggleAllSnapshots         string
-	AllSnapshotsLabel          string
-	RestoringStatus            string
-	LoadingStatus              string
-	VolumesTitle               string
-	NoVolumes                  string
-	DeleteVolume               string
-	CannotDeleteManagedVolume  string
-	NetworksTitle              string
-	NoNetworks                 string
-	DeleteNetwork              string
+	Cancel                       string
+	Remove                       string
+	HideStopped                  string
+	HideUnmanagedNetworks        string
+	PruneImages                  string
+	PruneImagesTitle             string
+	PruneCachedImages            string
+	PruneUnusedImages            string
+	ConfirmPruneImages           string
+	NothingToPrune               string
+	VolumeSizeUnknown            string
+	UsedByNothing                string
+	ImageUsersUnknown            string
+	ShowUsers                    string
+	InstancesUsing               string
+	NothingUses                  string
+	EditInEditor                 string
+	CannotEditUnmanagedNetwork   string
+	ACLsTitle                    string
+	NoACLs                       string
+	NoACLsUnmanaged              string
+	ACLIngress                   string
+	ACLEgress                    string
+	ForwardsTitle                string
+	NoForwards                   string
+	NoForwardsUnmanaged          string
+	CannotListForwards           string
+	CannotSnapshotInstanceVolume string
+	LeasesTitle                  string
+	StateTitle                   string
+	NoLeases                     string
+	NoLeasesUnmanaged            string
+	CannotListLeases             string
+	CannotReadNetworkState       string
+	ForceRemove                  string
+	ForceStop                    string
+	MustForceToRemove            string
+	Confirm                      string
+	Return                       string
+	FocusMain                    string
+	LcFilter                     string
+	StopInstance                 string
+	DeleteInstance               string
+	ForceStopInstance            string
+	RestartingStatus             string
+	StartingStatus               string
+	StoppingStatus               string
+	PausingStatus                string
+	RemovingStatus               string
+	ForceRemovingStatus          string
+	Stop                         string
+	Pause                        string
+	Restart                      string
+	Start                        string
+	PreviousContext              string
+	NextContext                  string
+	Attach                       string
+	ViewLogs                     string
+	ExecShell                    string
+	CopyIPv4                     string
+	CopiedToClipboard            string
+	NoIPv4Address                string
+	InstanceTitle                string
+	InstancesTitle               string
+	ImagesTitle                  string
+	ResourcesTitle               string
+	PreviousList                 string
+	NextList                     string
+	NoImages                     string
+	DeleteImage                  string
+	NewSnapshot                  string
+	RestoreSnapshot              string
+	RestoreSnapshotShort         string
+	DeleteSnapshot               string
+	SnapshotNamePrompt           string
+	SnapshotOptionsTitle         string
+	SnapshotFocusName            string
+	SnapshotExpiryField          string
+	SnapshotStatefulField        string
+	SnapshotSwitchFocusHint      string
+	SnapshotChangeHint           string
+	SnapshotSubmitHint           string
+	SnapshotChangeValue          string
+	SnapshotCreate               string
+	SnapshottingStatus           string
+	ToggleAllSnapshots           string
+	AllSnapshotsLabel            string
+	RestoringStatus              string
+	LoadingStatus                string
+	VolumesTitle                 string
+	NoVolumes                    string
+	DeleteVolume                 string
+	CannotDeleteManagedVolume    string
+	NetworksTitle                string
+	NoNetworks                   string
+	DeleteNetwork                string
 
 	ComposeTitle                  string
 	ServicesTitle                 string
@@ -225,68 +226,69 @@ func englishSet() TranslationSet {
 
 		Confirm: "Confirm",
 
-		Return:                     "return",
-		FocusMain:                  "focus main panel",
-		LcFilter:                   "filter list",
-		Navigate:                   "navigate",
-		Execute:                    "execute",
-		Close:                      "close",
-		Quit:                       "quit",
-		Menu:                       "menu",
-		MenuTitle:                  "Menu",
-		Scroll:                     "scroll",
-		OpenConfig:                 "open lazyincus config",
-		EditConfig:                 "edit lazyincus config",
-		Cancel:                     "cancel",
-		Remove:                     "delete",
-		HideStopped:                "hide/show stopped instances",
-		HideUnmanagedNetworks:      "hide/show unmanaged networks",
-		PruneImages:                "prune unused images",
-		PruneImagesTitle:           "Prune images",
-		PruneCachedImages:          "unused cached images (%d, %s)",
-		PruneUnusedImages:          "every unused image (%d, %s)",
-		ConfirmPruneImages:         "Delete these %d images (%s)? Nothing was created from them.\n\n%s",
-		NothingToPrune:             "No images to prune.",
-		VolumeSizeUnknown:          "unknown - the pool's driver doesn't report it",
-		UsedByNothing:              "nothing",
-		ImageUsersUnknown:          "unknown - the instances couldn't be listed",
-		ShowUsers:                  "show the instances using it",
-		InstancesUsing:             "Instances using %s",
-		NothingUses:                "No instance uses %s.",
-		EditInEditor:               "edit config in $EDITOR",
-		CannotEditUnmanagedNetwork: "Only networks Incus manages have a config to edit.",
-		ACLsTitle:                  "ACLs",
-		NoACLs:                     "No ACLs apply to this network, on it or on the NICs using it.",
-		NoACLsUnmanaged:            "Only networks Incus manages take ACLs.",
-		ACLIngress:                 "Ingress",
-		ACLEgress:                  "Egress",
-		ForwardsTitle:              "Forwards",
-		NoForwards:                 "No forwards on this network.",
-		NoForwardsUnmanaged:        "Only networks Incus manages have forwards.",
-		CannotListForwards:         "Could not list the network's forwards.",
-		LeasesTitle:                "Leases",
-		StateTitle:                 "State",
-		NoLeases:                   "No leases",
-		NoLeasesUnmanaged:          "Only networks Incus manages hand out leases.",
-		CannotListLeases:           "Could not list the network's leases.",
-		CannotReadNetworkState:     "Could not read the network's state.",
-		ForceRemove:                "force delete",
-		ForceStop:                  "force stop",
-		MustForceToRemove:          "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
-		Stop:                       "stop",
-		Pause:                      "pause/unpause",
-		Restart:                    "restart",
-		Start:                      "start",
-		PreviousContext:            "previous tab",
-		NextContext:                "next tab",
-		Attach:                     "attach to console",
-		ViewLogs:                   "view logs",
-		ExecShell:                  "exec shell",
-		CopyIPv4:                   "copy IPv4 address",
-		CopiedToClipboard:          "copied to clipboard:",
-		NoIPv4Address:              "This instance has no IPv4 address yet. It may still be starting up, or may not be running at all.",
-		FilterList:                 "filter list",
-		SortInstancesByState:       "sort instances by state",
+		Return:                       "return",
+		FocusMain:                    "focus main panel",
+		LcFilter:                     "filter list",
+		Navigate:                     "navigate",
+		Execute:                      "execute",
+		Close:                        "close",
+		Quit:                         "quit",
+		Menu:                         "menu",
+		MenuTitle:                    "Menu",
+		Scroll:                       "scroll",
+		OpenConfig:                   "open lazyincus config",
+		EditConfig:                   "edit lazyincus config",
+		Cancel:                       "cancel",
+		Remove:                       "delete",
+		HideStopped:                  "hide/show stopped instances",
+		HideUnmanagedNetworks:        "hide/show unmanaged networks",
+		PruneImages:                  "prune unused images",
+		PruneImagesTitle:             "Prune images",
+		PruneCachedImages:            "unused cached images (%d, %s)",
+		PruneUnusedImages:            "every unused image (%d, %s)",
+		ConfirmPruneImages:           "Delete these %d images (%s)? Nothing was created from them.\n\n%s",
+		NothingToPrune:               "No images to prune.",
+		VolumeSizeUnknown:            "unknown - the pool's driver doesn't report it",
+		UsedByNothing:                "nothing",
+		ImageUsersUnknown:            "unknown - the instances couldn't be listed",
+		ShowUsers:                    "show the instances using it",
+		InstancesUsing:               "Instances using %s",
+		NothingUses:                  "No instance uses %s.",
+		EditInEditor:                 "edit config in $EDITOR",
+		CannotEditUnmanagedNetwork:   "Only networks Incus manages have a config to edit.",
+		ACLsTitle:                    "ACLs",
+		NoACLs:                       "No ACLs apply to this network, on it or on the NICs using it.",
+		NoACLsUnmanaged:              "Only networks Incus manages take ACLs.",
+		ACLIngress:                   "Ingress",
+		ACLEgress:                    "Egress",
+		ForwardsTitle:                "Forwards",
+		NoForwards:                   "No forwards on this network.",
+		NoForwardsUnmanaged:          "Only networks Incus manages have forwards.",
+		CannotListForwards:           "Could not list the network's forwards.",
+		CannotSnapshotInstanceVolume: "Only custom volumes take snapshots here: an instance's own volumes are snapshotted with the instance.",
+		LeasesTitle:                  "Leases",
+		StateTitle:                   "State",
+		NoLeases:                     "No leases",
+		NoLeasesUnmanaged:            "Only networks Incus manages hand out leases.",
+		CannotListLeases:             "Could not list the network's leases.",
+		CannotReadNetworkState:       "Could not read the network's state.",
+		ForceRemove:                  "force delete",
+		ForceStop:                    "force stop",
+		MustForceToRemove:            "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
+		Stop:                         "stop",
+		Pause:                        "pause/unpause",
+		Restart:                      "restart",
+		Start:                        "start",
+		PreviousContext:              "previous tab",
+		NextContext:                  "next tab",
+		Attach:                       "attach to console",
+		ViewLogs:                     "view logs",
+		ExecShell:                    "exec shell",
+		CopyIPv4:                     "copy IPv4 address",
+		CopiedToClipboard:            "copied to clipboard:",
+		NoIPv4Address:                "This instance has no IPv4 address yet. It may still be starting up, or may not be running at all.",
+		FilterList:                   "filter list",
+		SortInstancesByState:         "sort instances by state",
 
 		GlobalTitle:                  "Global",
 		MainTitle:                    "Main",

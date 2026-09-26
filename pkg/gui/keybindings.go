@@ -272,6 +272,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "volumes",
+			Key:         'n',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Volumes, gui.volumeSnapshotCreatePrompt),
+			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "volumes",
 			Key:         'c',
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Volumes, gui.volumeEdit),

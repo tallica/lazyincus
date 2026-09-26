@@ -143,6 +143,9 @@ func fixtureServer() *incustest.Server {
 		},
 		PoolSpace:   map[string]api.ResourcesStoragePoolSpace{"default": {Used: 5 << 30, Total: 50 << 30}},
 		VolumeUsage: map[string]uint64{"data": 512 << 20},
+		VolumeSnapshots: map[string][]api.StorageVolumeSnapshot{"data": {{
+			Name: "before-migration", CreatedAt: time.Date(2026, 9, 22, 6, 0, 0, 0, time.UTC),
+		}}},
 	})
 }
 
@@ -496,6 +499,24 @@ func TestScreenNetworkForwards(t *testing.T) {
 	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("forwards") })
 
 	assertGolden(t, "network-forwards-140x40", s.settle(t, "192.0.2.10:443"))
+}
+
+// The snapshots panel follows a custom volume selected in the volumes list.
+func TestScreenVolumeSnapshots(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Volumes) })
+	screen := s.settle(t, "Snapshots (data)")
+	assert.Contains(t, screen, "before-migration")
+
+	s.do(t, s.gui.Panels.Volumes.HandleNextLine)
+	screen = s.settle(t, "Name:         web")
+	assert.Contains(t, screen, "Snapshots (data)", "an instance's own volume leaves the panel be")
+
+	s.do(t, s.gui.cycleSideView(1))
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Instances) })
+	assert.NotContains(t, s.settle(t, "Snapshots (a-name"), "before-migration")
 }
 
 func TestScreenMenu(t *testing.T) {

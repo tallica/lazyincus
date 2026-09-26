@@ -111,8 +111,8 @@ guest clock skew both fail in ways that point at the wrong component.
 ## Usage
 
 Three side panels: **Instances** (`1`), listing both containers and VMs,
-**Snapshots** (`2`) for whichever instance is selected, or every
-instance's, and **Resources** (`3`), which holds **Images**, **Volumes**
+**Snapshots** (`2`) for whichever instance or custom volume is selected,
+or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**
 and **Networks** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
 as does pressing `3` again or clicking a tab's name. All list every Incus project by
 default; `P` scopes them to a single project instead, and the footer shows
@@ -151,7 +151,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Toggle showing stopped instances; on the Networks tab, the host's unmanaged interfaces |
 | `m` | Jump to Logs tab |
-| `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
+| `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
 | `a` | Attach to the instance's console (`incus console`); on the Snapshots panel, switch between the selected instance's snapshots and every instance's |
 | `E` | Exec a shell into the instance |
