@@ -233,7 +233,7 @@ func (gui *Gui) showImageUsers(image *commands.Image) error {
 }
 
 func (gui *Gui) imageEdit(image *commands.Image) error {
-	return gui.editInIncus(image.Image.Project, gui.fetchImages, "image", "edit", image.Fingerprint)
+	return gui.editInIncus(image.Image.Project, []fetch{gui.fetchImages}, "image", "edit", image.Fingerprint)
 }
 
 func (gui *Gui) imageDelete(image *commands.Image) error {

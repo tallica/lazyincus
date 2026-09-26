@@ -12,6 +12,7 @@
 │                      │m         view logs                        │                     │
 ╰──────────────────────│y         copy IPv4 address                │                     │
 ╭─[2]─Snapshots (a-name│a         attach to console                │                     │
+│                      │c         edit config in $EDITOR           │                     │
 │                      │E         exec shell                       │                     │
 │                      │enter     focus main panel                 │                     │
 │                      │[         previous tab                     │                     │
@@ -22,11 +23,11 @@
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
 │                      │+         next screen mode (normal/half/fu…│                     │
-│                      │_         prev screen mode                 │                     │
-╰──────────────────────│=         expand/collapse the focused side…│                     │
-╭─[3]─Images - Volumes │tab       next panel                       │                     │
-│Alpine 3.22 amd64 2 01│shift+tab previous panel                   │                     │
-│Debian 13 amd64   0 fe│◄         previous list                    │                     │
+╰──────────────────────│_         prev screen mode                 │                     │
+╭─[3]─Images - Volumes │=         expand/collapse the focused side…│                     │
+│Alpine 3.22 amd64 2 01│tab       next panel                       │                     │
+│Debian 13 amd64   0 fe│shift+tab previous panel                   │                     │
+│                      │◄         previous list                    │                     │
 │                      │h         previous list                    │                     │
 │                      │►         next list                        │                     │
 │                      │l         next list                        │                     │
@@ -34,7 +35,6 @@
 │                      │2         focus snapshots panel            │                     │
 │                      │3         focus resources panel            │                     │
 │                      ╰───────────────────────────────────────────╯                     │
-│                            ││                                                          │
 │                            ││                                                          │
 ╰────────────────────────────╯╰──────────────────────────────────────────────────────────╯
 enter: execute, esc: close, ↑ ↓: navigate          Incus v7.4 (fake/all projects) ●  test

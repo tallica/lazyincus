@@ -165,7 +165,7 @@ func (gui *Gui) showVolumeUsers(volume *commands.Volume) error {
 }
 
 func (gui *Gui) volumeEdit(volume *commands.Volume) error {
-	return gui.editInIncus(volume.Volume.Project, gui.fetchVolumes,
+	return gui.editInIncus(volume.Volume.Project, []fetch{gui.fetchVolumes},
 		"storage", "volume", "edit", volume.Pool, volume.Volume.Type+"/"+volume.Name)
 }
 

@@ -145,7 +145,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/unpause (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down, or delete the selected replica |
-| `c` | Images, Volumes and Networks: edit the item's config in `$EDITOR`, through `incus ... edit` |
+| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume or network |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each) |
 | `u` | Services panel: bring the service up; on Images, Volumes and Networks, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |

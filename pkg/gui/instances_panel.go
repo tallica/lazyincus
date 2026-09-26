@@ -386,16 +386,23 @@ func projectCLIArgs(project string) []string {
 // editInIncus hands the terminal to an `incus ... edit`, which opens the
 // item's YAML in the user's editor and re-opens it on a validation error,
 // then re-lists what it changed.
-func (gui *Gui) editInIncus(project string, refresh fetch, args ...string) error {
+func (gui *Gui) editInIncus(project string, refresh []fetch, args ...string) error {
 	cmd := gui.OSCommand.NewCmd("incus", append(projectCLIArgs(project), args...)...)
 
 	if err := gui.runSubprocess(cmd); err != nil {
 		return err
 	}
 
-	gui.refreshInBackground(refresh)
+	gui.refreshInBackground(refresh...)
 
 	return nil
+}
+
+// instanceEdit is `incus config edit`. Incus applies what it can to a
+// running instance and says so when a change waits for a restart.
+func (gui *Gui) instanceEdit(instance *commands.Instance) error {
+	return gui.editInIncus(instance.Project, []fetch{gui.fetchInstances, gui.fetchServices},
+		"config", "edit", instance.Name)
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

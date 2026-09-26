@@ -348,7 +348,9 @@ a project is default's. A network or volume in a project other than
 default only counts that project's instances.
 
 `c` hands the terminal to `incus image edit`, `incus storage volume edit`
-or `incus network edit` with the item's `--project`, the way `E` hands it
+or `incus network edit` with the item's `--project` - and on the instances
+and services panels to `incus config edit`, a service's own row asking
+which replica the way `E` does - the way `E` hands it
 to `incus exec`: the CLI opens the YAML in `$EDITOR` and re-opens it when
 it doesn't validate, which a form of our own would have to reinvent per
 resource. The list re-fetches when the editor exits. A host interface has

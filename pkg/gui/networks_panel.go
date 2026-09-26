@@ -431,7 +431,7 @@ func (gui *Gui) networkEdit(network *commands.Network) error {
 		return gui.createErrorPanel(gui.Tr.CannotEditUnmanagedNetwork)
 	}
 
-	return gui.editInIncus(network.Network.Project, gui.fetchNetworks, "network", "edit", network.Name)
+	return gui.editInIncus(network.Network.Project, []fetch{gui.fetchNetworks}, "network", "edit", network.Name)
 }
 
 func (gui *Gui) networkDelete(network *commands.Network) error {
