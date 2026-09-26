@@ -10,17 +10,17 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// maxImageLabelWidth keeps a long description from pushing the columns after
-// it off the side panel. Cached images carry descriptions like "Alpine edge
+// MinImageLabelWidth is as narrow as the label goes to make room for the
+// columns after it. Cached images carry descriptions like "Alpine edge
 // arm64 (20260911_13:02)", which is informative well before its last word.
-const maxImageLabelWidth = 28
+const MinImageLabelWidth = 28
 
 // GetImageDisplayStrings renders one row of the images panel. The users
 // count comes straight after the label, where a narrow panel still shows
 // it: it's what says whether the image can go.
 func GetImageDisplayStrings(image *commands.Image, showProject bool) []string {
 	cells := []string{
-		utils.Truncate(image.Label(), maxImageLabelWidth),
+		image.Label(),
 		displayImageUsers(image),
 		utils.ColoredString(image.ShortFingerprint(), color.FgCyan),
 		utils.ColoredString(displayImageSize(image), color.FgYellow),

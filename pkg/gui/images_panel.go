@@ -48,6 +48,8 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 		GetTableCells: func(item *commands.Image) []string {
 			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images)
 		},
+		FlexColumn:   func() int { return projectColumns(gui.State.SpansProjects.Images) },
+		FlexMinWidth: presentation.MinImageLabelWidth,
 	}
 }
 

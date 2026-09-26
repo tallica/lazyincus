@@ -97,3 +97,25 @@ func TestPaddingLinesUpWideCells(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "日本 a\nweb  b", table)
 }
+
+func TestRenderTableToWidth(t *testing.T) {
+	rows := [][]string{
+		{"default", "docker.io/library/nginx:alpine", "4"},
+		{"cache", "alpine", "0"},
+	}
+
+	// Room enough: nothing gives way.
+	table, err := RenderTableToWidth(rows, 80, 1, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, "default docker.io/library/nginx:alpine 4\ncache   alpine                         0", table)
+
+	// The flexible column takes what's left.
+	table, err = RenderTableToWidth(rows, 30, 1, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, "default docker.io/library/n… 4\ncache   alpine               0", table)
+
+	// Not below its floor: the rest runs over, for the view to clip.
+	table, err = RenderTableToWidth(rows, 12, 1, 10)
+	assert.NoError(t, err)
+	assert.Equal(t, "default docker.io… 4\ncache   alpine     0", table)
+}

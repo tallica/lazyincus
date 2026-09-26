@@ -162,6 +162,16 @@ type spansProjects struct {
 	Networks  bool
 }
 
+// projectColumns is how many columns a project column puts ahead of the
+// rest: one when the panel spans projects.
+func projectColumns(spans bool) int {
+	if spans {
+		return 1
+	}
+
+	return 0
+}
+
 // spansMultipleProjects reports whether the given projects include more than
 // one distinct non-empty name.
 func spansMultipleProjects(projects []string) bool {

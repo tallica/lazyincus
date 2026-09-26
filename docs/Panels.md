@@ -322,8 +322,10 @@ so a switch shows current rows at once.
 
 Local images (`GetImages`), identified by `Image.Label()`: alias, else the
 description an unaliased cached image carries (what `incus image list` shows
-in its DESCRIPTION column), else the short fingerprint. Truncated to keep
-the columns after it on screen. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
+in its DESCRIPTION column), else the short fingerprint. It takes whatever
+width the columns after it leave, down to 28 characters and cut with an
+ellipsis below that - the `FlexColumn` a side panel can name, which the
+volumes' and snapshots' names are too. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
 only change when someone pulls or deletes one.
 
 Each image carries the instances created from it (`Image.UsedBy`), matched

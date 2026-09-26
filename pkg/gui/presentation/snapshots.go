@@ -17,12 +17,12 @@ const DateFormat = "2006/01/02"
 // from, or "" when the title already says it.
 func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []string {
 	cells := []string{
-		utils.Truncate(snapshot.Name, maxSnapshotNameWidth),
+		snapshot.Name,
 	}
 
 	if owner != "" {
 		cells = append(cells, utils.ColoredString(
-			utils.Truncate(owner, maxSnapshotNameWidth), color.FgCyan))
+			utils.Truncate(owner, MinSnapshotNameWidth), color.FgCyan))
 	}
 
 	return append(cells,
@@ -43,7 +43,9 @@ func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
 	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgMagenta)
 }
 
-const maxSnapshotNameWidth = 22
+// MinSnapshotNameWidth is as narrow as the name goes for the columns after
+// it; the instance it came from keeps to that width outright.
+const MinSnapshotNameWidth = 22
 
 func displaySnapshotStateful(snapshot *commands.Snapshot) string {
 	if snapshot.Snapshot.Stateful {

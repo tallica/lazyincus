@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -141,6 +142,44 @@ func RenderTable(rows [][]string) (string, error) {
 	paddedDisplayRows := getPaddedDisplayStrings(rows, columnPadWidths)
 
 	return strings.Join(paddedDisplayRows, "\n"), nil
+}
+
+// RenderTableToWidth is RenderTable with one column, flex, that gives up
+// width for the table to fit in width: down to minWidth, the column
+// truncated with an ellipsis. Short of that the rows run past width, for
+// the view to clip. flex below 0 is no flexible column.
+func RenderTableToWidth(rows [][]string, width, flex, minWidth int) (string, error) {
+	if len(rows) == 0 || flex < 0 || flex >= len(rows[0]) {
+		return RenderTable(rows)
+	}
+
+	if !displayArraysAligned(rows) {
+		return "", errors.New("Each item must return the same number of strings to display")
+	}
+
+	widths := make([]int, len(rows[0]))
+	for _, cells := range rows {
+		for i, cell := range cells {
+			widths[i] = max(widths[i], DisplayWidth(cell))
+		}
+	}
+
+	total := len(widths) - 1
+	for _, columnWidth := range widths {
+		total += columnWidth
+	}
+
+	if excess := total - width; excess > 0 && widths[flex] > minWidth {
+		widths[flex] = max(minWidth, widths[flex]-excess)
+
+		rows = slices.Clone(rows)
+		for i, cells := range rows {
+			rows[i] = slices.Clone(cells)
+			rows[i][flex] = Truncate(cells[flex], widths[flex])
+		}
+	}
+
+	return strings.Join(getPaddedDisplayStrings(rows, widths[:len(widths)-1]), "\n"), nil
 }
 
 const ellipsis = "…"

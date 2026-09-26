@@ -15,7 +15,7 @@ import (
 // what it costs.
 func GetVolumeDisplayStrings(volume *commands.Volume, showProject bool) []string {
 	cells := []string{
-		utils.Truncate(volume.Name, maxVolumeNameWidth),
+		volume.Name,
 		displayVolumeUsers(volume),
 		utils.ColoredString(DisplayVolumeUsage(volume), color.FgYellow),
 		utils.ColoredString(volume.Pool, color.FgCyan),
@@ -62,6 +62,6 @@ func DisplayPoolSpace(volume *commands.Volume) string {
 		space.Used*100/space.Total)
 }
 
-// maxVolumeNameWidth keeps image-backed volumes, whose names are full
-// fingerprints, from pushing the other columns off the panel.
-const maxVolumeNameWidth = 24
+// MinVolumeNameWidth is as narrow as the name goes to make room for the
+// columns after it: image-backed volumes are named by full fingerprint.
+const MinVolumeNameWidth = 24

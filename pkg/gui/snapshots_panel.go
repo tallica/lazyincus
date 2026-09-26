@@ -58,6 +58,8 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 		GetTableCells: func(snapshot *commands.Snapshot) []string {
 			return presentation.GetSnapshotDisplayStrings(snapshot, gui.snapshotOwner(snapshot))
 		},
+		FlexColumn:   func() int { return 0 },
+		FlexMinWidth: presentation.MinSnapshotNameWidth,
 	}
 }
 
