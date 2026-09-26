@@ -29,7 +29,7 @@ See [BACKLOG.md](BACKLOG.md#blocked).
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
-- Incus client: `github.com/lxc/incus/v7` (client at `v7.4.0`)
+- Incus client: `github.com/lxc/incus/v7` (client at `v7.5.1`)
 - TUI: `github.com/jesseduffield/gocui` (pinned to master,
   `v0.3.1-0.20260331125330-c81715e95462` — the latest tagged `v0.3.0`
   release is missing the `Tabs`/`TabIndex` view fields the main-panel tab
