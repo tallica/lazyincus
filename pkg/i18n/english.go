@@ -111,7 +111,10 @@ type TranslationSet struct {
 	ComposeBuild                  string
 	ComposePull                   string
 	ComposeLogs                   string
+	ComposeStartWithDeps          string
+	ComposeStartOnly              string
 	ComposeDownMenuTitle          string
+	ComposeStartMenuTitle         string
 	ComposeProjectMenuTitle       string
 	ComposeProjectActions         string
 	ComposeServiceScoped          string
@@ -280,7 +283,10 @@ func englishSet() TranslationSet {
 		ComposeBuild:                  "build",
 		ComposePull:                   "pull",
 		ComposeLogs:                   "logs --follow",
+		ComposeStartWithDeps:          "start %s with %s",
+		ComposeStartOnly:              "start %s only",
 		ComposeDownMenuTitle:          "Down",
+		ComposeStartMenuTitle:         "Start",
 		ComposeProjectMenuTitle:       "Project %s",
 		ComposeProjectActions:         "project actions",
 		ComposeDownOption:             "down",

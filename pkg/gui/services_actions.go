@@ -138,11 +138,48 @@ func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
 }
 
 // handleComposeStart runs `incus-compose start` - already-created instances
-// only, unlike `u`, which also creates whatever's missing.
+// only, unlike `u`, which also creates whatever's missing. incus-compose
+// leaves a service's dependencies stopped unless asked, so when any are,
+// a menu asks.
 func (gui *Gui) handleComposeStart(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceStart, func(service *commands.ComposeService) error {
-		return gui.composeRun(service.Name, "start")
+		stopped := service.StoppedDependencies(gui.composeServices())
+		if len(stopped) == 0 {
+			return gui.composeRun(service.Name, "start")
+		}
+
+		return gui.Menu(CreateMenuOptions{
+			Title: gui.Tr.ComposeStartMenuTitle,
+			Items: []*types.MenuItem{
+				{
+					Label: fmt.Sprintf(gui.Tr.ComposeStartWithDeps, service.Name, strings.Join(stopped, ", ")),
+					OnPress: func() error {
+						return gui.composeRun(service.Name, "start", "--with-deps")
+					},
+				},
+				{
+					Label: fmt.Sprintf(gui.Tr.ComposeStartOnly, service.Name),
+					OnPress: func() error {
+						return gui.composeRun(service.Name, "start")
+					},
+				},
+			},
+		})
 	})
+}
+
+// composeServices is every service in the panel, once each.
+func (gui *Gui) composeServices() []*commands.ComposeService {
+	rows := gui.Panels.Services.List.GetAllItems()
+	services := make([]*commands.ComposeService, 0, len(rows))
+
+	for _, row := range rows {
+		if row.Instance == nil {
+			services = append(services, row.Service)
+		}
+	}
+
+	return services
 }
 
 func (gui *Gui) handleComposeStop(g *gocui.Gui, v *gocui.View) error {
@@ -254,14 +291,11 @@ func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) handleComposeProjectMenu(g *gocui.Gui, v *gocui.View) error {
 	// One pause row rather than two, the way `p` is one key: the verb is the
 	// stack's own status, every service voting.
-	rows := gui.Panels.Services.List.GetAllItems()
-	statuses := make([]string, 0, len(rows))
+	services := gui.composeServices()
+	statuses := make([]string, 0, len(services))
 
-	for _, row := range rows {
-		// One vote per service: a replica's row carries the same service.
-		if row.Instance == nil {
-			statuses = append(statuses, row.Service.Status())
-		}
+	for _, service := range services {
+		statuses = append(statuses, service.Status())
 	}
 
 	pauseVerb := composePauseVerb(statuses...)

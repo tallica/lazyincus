@@ -173,6 +173,36 @@ func (s *ComposeService) SortedInstances() []*Instance {
 	return instances
 }
 
+// StoppedDependencies names the services this one depends on that have a
+// stopped instance, which `start --with-deps` would start with it. Direct
+// dependencies only, as that flag follows, and never one with no instances
+// yet: `start` doesn't create them, `up` does.
+func (s *ComposeService) StoppedDependencies(services []*ComposeService) []string {
+	byName := make(map[string]*ComposeService, len(services))
+	for _, service := range services {
+		byName[service.Name] = service
+	}
+
+	var stopped []string
+
+	for _, name := range s.DependsOn {
+		dependency, ok := byName[name]
+		if !ok {
+			continue
+		}
+
+		for _, instance := range dependency.Instances {
+			if strings.EqualFold(instance.Instance.Status, api.Stopped.String()) {
+				stopped = append(stopped, name)
+
+				break
+			}
+		}
+	}
+
+	return stopped
+}
+
 // GetComposeServices pairs the services the compose file declares with the
 // project's instances, matching on the label incus-compose stamps on each
 // (Instance.ComposeService). Instances whose label names no declared service

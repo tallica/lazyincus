@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Starting a service whose dependencies are stopped asks whether to start them too. incus-compose's `start` acts only on the service you name, so `S` on a web service left its redis and database stopped, the web service coming up to nothing. `S` now offers `start --with-deps` when anything in the service's `depends_on` is stopped, naming what it would start, or the service alone; with nothing stopped it starts straight away as before.
+
 ### Changed
 - Built against the Incus 7.5 client, v7.5.1, up from 7.4, along with the newer dependencies it brings.
 - A release is published only once its tagged commit passes the tests, lint and govulncheck. A tag used to build and publish binaries on its own, whatever state the commit was in.

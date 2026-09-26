@@ -54,6 +54,30 @@ func TestComposeServiceStatus(t *testing.T) {
 	}
 }
 
+func TestStoppedDependencies(t *testing.T) {
+	running := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Running"}}}
+	stopped := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Stopped"}}}
+	frozen := &Instance{Instance: api.InstanceFull{Instance: api.Instance{Status: "Frozen"}}}
+
+	services := []*ComposeService{
+		{Name: "db", Instances: []*Instance{stopped}, DependsOn: []string{"disk"}},
+		{Name: "disk", Instances: []*Instance{stopped}},
+		{Name: "cache", Instances: []*Instance{running}},
+		{Name: "queue", Instances: []*Instance{running, stopped}},
+		{Name: "paused", Instances: []*Instance{frozen}},
+		{Name: "never-up"},
+	}
+
+	web := &ComposeService{
+		Name:      "web",
+		DependsOn: []string{"cache", "db", "never-up", "paused", "queue", "undeclared"},
+	}
+
+	// db's own dependency is left out: --with-deps goes one level down.
+	assert.Equal(t, []string{"db", "queue"}, web.StoppedDependencies(services))
+	assert.Empty(t, (&ComposeService{Name: "cache"}).StoppedDependencies(services))
+}
+
 func TestComposeServiceHealth(t *testing.T) {
 	withHealth := func(status string) *Instance {
 		return &Instance{Instance: api.InstanceFull{

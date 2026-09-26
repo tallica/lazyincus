@@ -213,7 +213,10 @@ What the keys run on a service's own row, each of them `incus-compose
 
 - `u` — `up --detach`; `U` adds `--pull always --recreate`, to pick up an
   image the compose file's tag now resolves to (it confirms first)
-- `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms
+- `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms. When a
+  service it depends on is stopped, `S` asks whether to start it along with
+  them (`start --with-deps`) or alone — incus-compose's `start` leaves
+  dependencies alone unless asked
 - `d` — `down`, plain or `--volumes`, after a confirmation
 - `p` — `pause`, or `unpause` when the service is already frozen
 - `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
