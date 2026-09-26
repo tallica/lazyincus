@@ -53,7 +53,8 @@ pkg/gui/
   gui.go                       Gui struct, Run() main loop, background polls, config reload
   refresh.go                   fetch off the main loop, apply on it; the sequence guard between fetches
   tasks_adapter.go             main-panel tasks, and the numbered writes that keep them on the main loop
-  side_panels.go               the ordered side panel definitions; number keys, tab cycling
+  side_panels.go               the ordered side panel definitions; number keys, tab and arrow cycling
+  window.go                    shared slots: the Resources panel's lists as tabs of one window
   views.go                     view creation (createAllViews) and styling (styleAllViews)
   layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
@@ -68,6 +69,6 @@ pkg/gui/
 
 Everything in `pkg/gui` not listed above (`confirmation_panel.go`,
 `menu_panel.go`, `options_menu_panel.go`, `filtering.go`, `main_panel.go`,
-`app_status_manager.go`, `subprocess.go`, `theme.go`, `window.go`,
-`gocui.go`, `panels.go`) is generic gocui plumbing, ported near-verbatim;
+`app_status_manager.go`, `subprocess.go`, `theme.go`, `gocui.go`,
+`panels.go`) is generic gocui plumbing, ported near-verbatim;
 `connection.go` is the connection-lost modal.

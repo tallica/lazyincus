@@ -96,9 +96,9 @@ own merits.
       a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
-- [x] **Horizontal truncation indicator** — `SideListPanel` clips each
-      row itself, through a colour-aware `utils.Truncate`, and the
-      layout re-clips on a width change. lazydocker clips silently, so there
+- [x] **Horizontal truncation indicator** — `SideListPanel` renders its
+      rows at the view's width, clipping each through a colour-aware
+      `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
       mirroring `P` for projects. `pkg/gui/remotes.go` alongside

@@ -89,8 +89,9 @@ top-to-bottom layout order and the number-key order. A panel can be absent
 for the session (`hidden` on the def); everything user-facing is numbered
 over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
 what the app focuses at startup. `tab`/`shift+tab` cycle through them in
-that order, stepping from the last side panel to have focus. The side column
-splits evenly between whichever panels aren't hidden, or — with
+that order, stepping from the last side panel to have focus; `←`/`→` and
+`h`/`l` do the same list by list, a shared slot's lists each a stop. The
+side column splits evenly between whichever panels aren't hidden, or — with
 `gui.State.ExpandSidePanel`, seeded from config and toggled by `=` — gives
 the focused one everything the others don't need. "Focused" there means the
 last side panel to have focus, so stepping into the main panel doesn't
@@ -124,10 +125,12 @@ order:
 - **Instances** — containers and VMs across every project, minus the local
   stack's when the services panel is holding those.
 - **Snapshots** — follows whichever instance the list above it has
-  selected, rather than having a selection of its own.
+  selected, rather than having a selection of its own, or lists every
+  instance's (`a`).
 - **Resources** — how Images, Volumes and Networks share one slot.
-- **Images**, **Volumes**, **Networks** — local images; every pool's
-  volumes in one list; managed and unmanaged networks alike.
+- **Images**, **Volumes**, **Networks** — local images and what uses them;
+  every pool's volumes in one list, with sizes; managed networks, the
+  host's own interfaces behind `e`, with their leases.
 
 ## Talking to Incus
 
