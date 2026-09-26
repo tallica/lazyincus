@@ -439,7 +439,12 @@ func (gui *Gui) networkDelete(network *commands.Network) error {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteUnmanagedNetwork)
 	}
 
-	prompt := fmt.Sprintf(gui.Tr.DeleteNetwork, network.Name)
+	name := gui.qualified(network.Name, network.Network.Project, gui.State.SpansProjects.Networks)
+	if network.UsedByCount() > 0 {
+		return gui.refuseInUse(fmt.Sprintf(gui.Tr.NetworkNamed, name), network.UsedByCount())
+	}
+
+	prompt := fmt.Sprintf(gui.Tr.DeleteNetwork, name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {

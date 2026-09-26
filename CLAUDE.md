@@ -127,10 +127,11 @@ order:
 - **Snapshots** — follows whichever instance the list above it has
   selected, or the custom volume the volumes list has, rather than having
   a selection of its own; or lists every instance's (`e`).
-- **Resources** — how Images, Volumes and Networks share one slot.
+- **Resources** — how Images, Volumes, Networks and Profiles share one slot.
 - **Images**, **Volumes**, **Networks** — local images and what uses them;
   every pool's volumes in one list, with sizes; managed networks, the
   host's own interfaces behind `e`, with their leases.
+- **Profiles** — every project's, with the devices each hands out.
 
 ## Talking to Incus
 

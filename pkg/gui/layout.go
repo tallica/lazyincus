@@ -107,6 +107,8 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 		}
 	}
 
+	gui.fitWindowTabs()
+
 	if gui.Views.Main != nil {
 		mainWidth := gui.Views.Main.InnerWidth()
 		gui.mainViewWidth.Store(int32(mainWidth))

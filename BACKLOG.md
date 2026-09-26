@@ -92,10 +92,9 @@ projects, and remote-switching are Incus concepts with no Docker analog, so
 they never show up in the comparison above and are worth considering on their
 own merits.
 
-- [ ] **Copy menu** — generalize `y` (currently hardcoded to first IPv4) into
-      a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
-      and `OSCommand.CopyToClipboard` plumbing is already generic; this is
-      mostly a menu panel plus entries.
+- [x] **Copy menu** — `y` is a menu of what the item has to copy, on
+      every list. A lease's address isn't among them: the Leases tab has
+      no cursor for a row to be chosen with.
 - [x] **Horizontal truncation indicator** — `SideListPanel` renders its
       rows at the view's width, clipping each through a colour-aware
       `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
@@ -123,7 +122,8 @@ own merits.
       as it swaps the client. Verifying the failure paths needs a second
       reachable daemon, so the unreachable-remote case is the part likeliest
       to ship untested.
-- [ ] **Profiles** — no panel. (Projects have a switcher — see
+- [x] **Profiles** — the Resources panel's fourth tab, with the other
+      resources' `u`, `c` and `d`. (Projects have a switcher — see
       [incus-compose integration](#incus-compose-integration); remotes are
       above.)
 - [x] **`--remote` flag** — names the remote for the session, applied as

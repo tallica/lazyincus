@@ -98,6 +98,16 @@ func fixtureServer() *incustest.Server {
 			}},
 			{Name: "eth0", Type: "physical", Project: "default"},
 		},
+		Profiles: []api.Profile{{
+			Name: "default", Project: "default", UsedBy: []string{"/1.0/instances/web", "/1.0/instances/db"},
+			ProfilePut: api.ProfilePut{
+				Description: "Default Incus profile",
+				Devices: map[string]map[string]string{
+					"eth0": {"type": "nic", "network": "incusbr0", "name": "eth0"},
+					"root": {"type": "disk", "pool": "default", "path": "/"},
+				},
+			},
+		}},
 		NetworkLeases: map[string]map[string][]api.NetworkLease{
 			"incusbr0": {"default": {
 				{Hostname: "incusbr0.gw", Address: "192.0.2.1", Type: "GATEWAY"},
@@ -243,7 +253,8 @@ func (s *screen) ready(t *testing.T) string {
 	for {
 		loaded := false
 		s.do(t, func() error {
-			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0
+			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0 &&
+				s.gui.Panels.Profiles.List.Len() > 0
 			return nil
 		})
 
@@ -451,11 +462,13 @@ func TestArrowsStepThroughEveryList(t *testing.T) {
 		return name
 	}
 
-	for _, want := range []string{"snapshots", "images", "volumes", "networks", "instances"} {
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "profiles", "instances"} {
 		s.do(t, s.gui.cycleSideView(1))
 		assert.Equal(t, want, current())
 	}
 
+	s.do(t, s.gui.cycleSideView(-1))
+	assert.Equal(t, "profiles", current())
 	s.do(t, s.gui.cycleSideView(-1))
 	assert.Equal(t, "networks", current())
 
@@ -523,6 +536,86 @@ func TestScreenVolumeSnapshots(t *testing.T) {
 	s.do(t, s.gui.cycleSideView(1))
 	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Instances) })
 	assert.NotContains(t, s.settle(t, "Snapshots (a-name"), "before-migration")
+}
+
+func TestScreenProfiles(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Profiles) })
+	assertGolden(t, "profiles-140x40", s.settle(t, "network=incusbr0"))
+
+	s.do(t, func() error { return s.gui.showProfileUsers(s.gui.Panels.Profiles.List.GetItems()[0]) })
+	screen := s.settle(t, "Instances using default")
+	assert.Contains(t, screen, "│web ")
+	assert.Contains(t, screen, "│db ")
+}
+
+// y offers what an item has to copy, and nothing it hasn't.
+func TestCopyMenu(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, s.gui.Panels.Instances.HandleNextLine)
+	s.do(t, func() error { return s.gui.instanceCopy(s.gui.Panels.Instances.List.GetItems()[1]) })
+
+	screen := s.settle(t, "╭─Copy")
+	assert.Regexp(t, `│name +web `, screen)
+	assert.Regexp(t, `│IPv4 +192\.0\.2\.10 `, screen)
+	assert.NotContains(t, screen, "IPv6", "web has no IPv6 address")
+	assert.NotContains(t, screen, "all addresses", "nor more than one")
+}
+
+// A prompt names the item's project only when its list holds several
+// projects', and what the daemon would refuse - a profile named default,
+// anything still in use - is said without asking.
+func TestDeletePrompts(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	shows := func(spans bool, open func() error, want string) {
+		t.Helper()
+
+		s.do(t, func() error {
+			s.gui.State.SpansProjects = spansProjects{
+				Instances: spans, Images: spans, Volumes: spans, Networks: spans, Profiles: spans,
+			}
+			return open()
+		})
+
+		// settle fails the test if the text never appears.
+		s.settle(t, want)
+		s.do(t, s.gui.closeConfirmationPrompt)
+	}
+
+	profile := func(name string, usedBy ...string) *commands.Profile {
+		return &commands.Profile{Name: name, Profile: api.Profile{Name: name, Project: "stack", UsedBy: usedBy}}
+	}
+	network := &commands.Network{Name: "br0", Network: api.Network{Name: "br0", Project: "stack", Managed: true}}
+	busy := &commands.Network{Name: "br1", Network: api.Network{
+		Name: "br1", Project: "stack", Managed: true, UsedBy: []string{"/1.0/profiles/default"},
+	}}
+	volume := &commands.Volume{Pool: "default", Name: "data", Volume: api.StorageVolume{
+		Name: "data", Type: "custom", Project: "stack", UsedBy: []string{"/1.0/instances/db?project=stack"},
+	}}
+	image := &commands.Image{Fingerprint: "0123456789abcdef", Image: api.Image{
+		Project: "stack", Aliases: []api.ImageAlias{{Name: "nginx:alpine"}},
+	}}
+	instance := &commands.Instance{Name: "web", Project: "stack"}
+
+	shows(false, func() error { return s.gui.profileDelete(profile("web-only")) }, "delete profile web-only?")
+	shows(true, func() error { return s.gui.profileDelete(profile("web-only")) }, "delete profile web-only in project stack?")
+	shows(true, func() error { return s.gui.profileDelete(profile("default")) }, "default profile can't be deleted")
+	shows(false, func() error { return s.gui.profileDelete(profile("web-only", "/1.0/instances/web")) },
+		"Profile web-only is still in use (used by: 1)")
+
+	shows(false, func() error { return s.gui.networkDelete(network) }, "delete network br0?")
+	shows(true, func() error { return s.gui.networkDelete(busy) }, "Network br1 in project stack is still in use")
+	shows(false, func() error { return s.gui.volumeDelete(volume) }, "Volume data is still in use")
+
+	shows(true, func() error { return s.gui.imageDelete(image) }, "delete image nginx:alpine in project stack?")
+	shows(true, func() error { return s.gui.instanceDelete(instance) }, "delete instance web in project stack?")
+	shows(false, func() error { return s.gui.instanceStop(instance) }, "stop instance web?")
 }
 
 func TestScreenMenu(t *testing.T) {

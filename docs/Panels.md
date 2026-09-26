@@ -5,6 +5,27 @@ what its keys do. The rule they all derive from — `sidePanelDefs()`, and
 what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#panels);
 the keys as a user meets them are in [README.md](../README.md#usage).
 
+## Confirmations
+
+A prompt that stops, deletes or restores something names the item's
+project whenever its list holds more than one project's (`qualified`):
+the same image alias, profile name or instance name can exist in several,
+and "delete image nginx:alpine?" doesn't say which is about to go. With
+one project the name stands alone. A delete the daemon would refuse is
+said instead of asked - any project's `default` profile, and a network,
+custom volume or profile anything still uses - the latter going by the
+listing's `used_by`, which the next poll keeps current; the daemon has
+the last word either way.
+
+## Copying
+
+`y` on any list opens a menu of what the item has to copy, built by
+`copyMenu` from label/value pairs, each value shown beside its label so
+the menu says what lands on the clipboard; a value the item lacks - a
+stopped instance's address - is left out rather than offered empty. A
+network's addresses are Incus's `ipv4.address`/`ipv6.address`, the
+gateway with its prefix, and labelled as such rather than as the subnet.
+
 ## Services
 
 Only there when there's a compose file in lazyincus's own working directory,
@@ -108,10 +129,10 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`m`, `n`, `E`, `y`) reach the row's instance through
+The per-instance keys (`m`, `n`, `c`, `E`, `y`) reach the row's instance through
 `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
-behind them (`snapshotCreatePrompt`, `instanceCopyIPv4`) take the instance
+behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
 rather than reading the selection. The menu is left for a service's own row, that row meaning all
 of its replicas.
 
@@ -314,13 +335,16 @@ all-instances view stays instances only.
 
 ## Resources
 
-Images, volumes and networks are three panels sharing one window: a
+Images, volumes, networks and profiles are four panels sharing one window: a
 `window` on their defs puts them in the same slot, and `window.go` is what
 knows about it. The views are stacked at the same position and the layout
 shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
-rather than the list's. Number keys, `tab` and the side column's split
+rather than the list's. When the names don't fit the title, `fitWindowTabs`
+swaps in each def's `shortTitle` (`Img - Vol - Net - Prof`) on the layout
+pass, so a resize refits them: a tab cut off the end is a list nobody knows
+is there. Number keys, `tab` and the side column's split
 all count windows, so the three take one number and one share of the
 height; they read something far less often than instances do.
 
@@ -443,3 +467,20 @@ the listen port, as the daemon's does - and the instance holding that
 address, from the instances' own addresses. A forward's `target_address`,
 which takes every port no entry names, gets a row of its own. Load
 balancers aren't shown; they're OVN's alone.
+
+## Profiles
+
+Every project's profiles in the all-projects view, each project having
+its own `default`, so the project column is there more often than not.
+After the name, how many things use it and the names of the devices it
+hands out, then the description, which is the column that gives way.
+Devices is the first tab, a device a row with its settings as
+`key=value`: what an instance on the profile gets.
+
+`u`, `c` and `d` are the other resources' keys. `u` matches an instance
+that names the profile in its own list or is named in the profile's
+`used_by`, and - as with networks and volumes - a profile in a project
+other than default only reaches that project's instances. `c` is
+`incus profile edit`. `d` never asks about a project's `default`, which
+the daemon won't delete by name, nor about a profile in use - see
+[Confirmations](#confirmations) - and only ever takes the one project's.

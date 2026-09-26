@@ -18,7 +18,7 @@
 
                                    Network:
                                      eth0:
-  [3] Images - Volumes - Network       Type:
+  [3] Img - Vol - Net - Prof           Type:
  Alpine 3.22 amd64 2 0123456789a…      State:
  Debian 13 amd64   0 fedcba98765…      Host interface: veth144
                                        MTU:        0

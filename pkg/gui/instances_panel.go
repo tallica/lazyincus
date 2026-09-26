@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -250,8 +249,12 @@ func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	})
 }
 
+func (gui *Gui) qualifiedInstance(instance *commands.Instance) string {
+	return gui.qualified(instance.Name, instance.Project, gui.State.SpansProjects.Instances)
+}
+
 func (gui *Gui) instanceStop(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.StopInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.StopInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
@@ -267,7 +270,7 @@ func (gui *Gui) instanceStop(instance *commands.Instance) error {
 // instanceForceStop is `incus stop --force`: the services panel's `f`, which
 // kills a whole service, narrowed to one replica.
 func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.ForceStopInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.ForceStopInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
@@ -307,7 +310,7 @@ func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
 }
 
 func (gui *Gui) instanceDelete(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.DeleteInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.DeleteInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
@@ -339,25 +342,6 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
-}
-
-// instanceCopyIPv4 copies the instance's IPv4 address to the system
-// clipboard. An instance can have several (one per interface); we copy
-// the first, which is the address people generally want to paste somewhere.
-func (gui *Gui) instanceCopyIPv4(inst *commands.Instance) error {
-	addresses := inst.Addresses("inet")
-	if len(addresses) == 0 {
-		return gui.createErrorPanel(gui.Tr.NoIPv4Address)
-	}
-
-	address := addresses[0]
-	if err := gui.OSCommand.CopyToClipboard(address); err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
-
-	gui.WithTransientStatus(fmt.Sprintf("%s %s", gui.Tr.CopiedToClipboard, address), time.Second*2)
-
-	return nil
 }
 
 func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {

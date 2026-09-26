@@ -200,7 +200,7 @@ func (gui *Gui) confirmPruneImages(images []*commands.Image) error {
 	}
 
 	names := lo.Map(images, func(image *commands.Image, _ int) string {
-		return image.Label() + " " + image.ShortFingerprint()
+		return gui.qualified(image.Label()+" "+image.ShortFingerprint(), image.Image.Project, gui.State.SpansProjects.Images)
 	})
 
 	prompt := fmt.Sprintf(gui.Tr.ConfirmPruneImages, len(images), imagesSize(images), strings.Join(names, "\n"))
@@ -237,7 +237,7 @@ func (gui *Gui) imageEdit(image *commands.Image) error {
 }
 
 func (gui *Gui) imageDelete(image *commands.Image) error {
-	prompt := fmt.Sprintf(gui.Tr.DeleteImage, image.Label())
+	prompt := fmt.Sprintf(gui.Tr.DeleteImage, gui.qualified(image.Label(), image.Image.Project, gui.State.SpansProjects.Images))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {

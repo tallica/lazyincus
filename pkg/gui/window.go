@@ -1,8 +1,11 @@
 package gui
 
 import (
+	"strings"
+
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // A window is a slot in the layout. Most side panels have one to themselves;
@@ -75,6 +78,30 @@ func (gui *Gui) windowTitle(window string) string {
 	}
 
 	return gui.windowDefs(window)[0].title
+}
+
+// fitWindowTabs gives a shared window's views their tab names, short ones
+// when the full ones would run past the title: a tab cut off the end is a
+// list nobody knows is there. The layout calls it, so a resize refits.
+func (gui *Gui) fitWindowTabs() {
+	for index, window := range gui.sideWindowNames() {
+		defs := gui.windowDefs(window)
+		if len(defs) < 2 {
+			continue
+		}
+
+		titles := lo.Map(defs, func(def sidePanelDef, _ int) string { return def.title })
+
+		// The frame's corner and rune either side of the prefix.
+		room := (*defs[0].viewPtr).Width() - utils.DisplayWidth(gui.sidePanelTitlePrefix(index)) - 4
+		if utils.DisplayWidth(strings.Join(titles, " - ")) > room {
+			titles = lo.Map(defs, func(def sidePanelDef, _ int) string { return def.shortTitle })
+		}
+
+		for _, def := range defs {
+			(*def.viewPtr).Tabs = titles
+		}
+	}
 }
 
 // handleGoToWindow focuses a window's active view, or its next tab when the
