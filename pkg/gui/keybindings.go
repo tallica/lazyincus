@@ -264,6 +264,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.Remove,
 		},
 		{
+			ViewName:    "networks",
+			Key:         'e',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleUnmanagedNetworks,
+			Description: gui.Tr.HideUnmanagedNetworks,
+		},
+		{
 			ViewName:    "volumes",
 			Key:         'd',
 			Modifier:    gocui.ModNone,

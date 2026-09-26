@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Networks open on a **Leases** tab: every address the network has handed out, one host to a row with its IPv4, IPv6 and MAC side by side. It's the quickest answer to "what's on 10.19.8.88?", and it includes a compose stack's instances, which `incus network list-leases` only shows when asked from their own project. A **State** tab has what `incus network info` does, with each of a bridge's ports named by the instance plugged into it rather than by a veth name.
 - `a` on the Snapshots panel lists every instance's snapshots at once, each row naming the instance it belongs to (and its project, when they span more than one), and `a` again goes back to following the selected instance. Finding a snapshot no longer means stepping through the instances one by one to see which have any. `gui.showAllSnapshots` starts a session that way. In that view, `n` snapshots the instance of the row you're on.
 - Starting a service whose dependencies are stopped asks whether to start them too. incus-compose's `start` acts only on the service you name, so `S` on a web service left its redis and database stopped, the web service coming up to nothing. `S` now offers `start --with-deps` when anything in the service's `depends_on` is stopped, naming what it would start, or the service alone; with nothing stopped it starts straight away as before.
 
 ### Changed
+- The Networks list leaves out the host's own interfaces (`eth0`, `lo` and the like), which Incus reports but doesn't manage, so what's left are the networks you can act on. `e` shows them, the way it shows stopped instances.
 - Images, Volumes and Networks are now one **Resources** panel, `3`, with the three as tabs: `h`/`l` or `←`/`→` switch between them, as do `3` pressed again and a click on a tab's name. They're lists you look at now and then, and as three panels they took more than half the side column from Instances and Snapshots, which you read all the time. The panel comes back to whichever list you used last. The number keys move with it: Resources is `3`, or `4` alongside a Services panel, and `4` to `6` no longer reach the three lists.
 - Built against the Incus 7.5 client, v7.5.1, up from 7.4, along with the newer dependencies it brings.
 - A release is published only once its tagged commit passes the tests, lint and govulncheck. A tag used to build and publish binaries on its own, whatever state the commit was in.

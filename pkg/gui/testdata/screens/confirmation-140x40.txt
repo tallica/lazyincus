@@ -20,12 +20,12 @@
 │                                  │Are you sure you want to stop web?                                   │                                 │
 │                                  ╰─────────────────────────────────────────────────────────────────────╯                                 │
 │                                             ││    State:                                                                                 │
+│                                             ││    Host interface: veth144                                                                │
 │                                             ││    MTU:        0                                                                          │
 │                                             ││    Received:   0B (0 packets)                                                             │
-│                                             ││    Sent:       0B (0 packets)                                                             │
-╰─────────────────────────────────────────────╯│    IP addresses:                                                                          │
-╭─[3]─Images - Volumes - Networks─────────────╮│      inet:  192.0.2.144/ (global)                                                         │
-│Alpine 3.22 amd64 0123456789ab container     ││                                                                                           │
+╰─────────────────────────────────────────────╯│    Sent:       0B (0 packets)                                                             │
+╭─[3]─Images - Volumes - Networks─────────────╮│    IP addresses:                                                                          │
+│Alpine 3.22 amd64 0123456789ab container     ││      inet:  192.0.2.144/ (global)                                                         │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

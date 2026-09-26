@@ -23,6 +23,12 @@ type Server struct {
 	Networks  []api.Network
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
+	// NetworkLeases by network, then by the project that sees them - the
+	// daemon lists only the asking project's. NetworkStates by network. A
+	// network missing from either is not found, as leases on an unmanaged
+	// one are.
+	NetworkLeases map[string]map[string][]api.NetworkLease
+	NetworkStates map[string]api.NetworkState
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -157,6 +163,28 @@ func (s *Server) GetNetworks() ([]api.Network, error) {
 
 func (s *Server) GetNetworksAllProjects() ([]api.Network, error) {
 	return slices.Clone(s.Networks), nil
+}
+
+// errNetworkNotFound is the daemon's answer for leases on a network it
+// doesn't manage.
+var errNetworkNotFound = api.StatusErrorf(404, "Network not found")
+
+func (s *Server) GetNetworkLeases(name string) ([]api.NetworkLease, error) {
+	byProject, ok := s.NetworkLeases[name]
+	if !ok {
+		return nil, errNetworkNotFound
+	}
+
+	return slices.Clone(byProject[s.scope()]), nil
+}
+
+func (s *Server) GetNetworkState(name string) (*api.NetworkState, error) {
+	state, ok := s.NetworkStates[name]
+	if !ok {
+		return nil, errNetworkNotFound
+	}
+
+	return &state, nil
 }
 
 func (s *Server) GetStoragePoolNames() ([]string, error) {

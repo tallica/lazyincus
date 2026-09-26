@@ -31,6 +31,13 @@ type TranslationSet struct {
 	Cancel                    string
 	Remove                    string
 	HideStopped               string
+	HideUnmanagedNetworks     string
+	LeasesTitle               string
+	StateTitle                string
+	NoLeases                  string
+	NoLeasesUnmanaged         string
+	CannotListLeases          string
+	CannotReadNetworkState    string
 	ForceRemove               string
 	ForceStop                 string
 	MustForceToRemove         string
@@ -195,38 +202,45 @@ func englishSet() TranslationSet {
 
 		Confirm: "Confirm",
 
-		Return:               "return",
-		FocusMain:            "focus main panel",
-		LcFilter:             "filter list",
-		Navigate:             "navigate",
-		Execute:              "execute",
-		Close:                "close",
-		Quit:                 "quit",
-		Menu:                 "menu",
-		MenuTitle:            "Menu",
-		Scroll:               "scroll",
-		OpenConfig:           "open lazyincus config",
-		EditConfig:           "edit lazyincus config",
-		Cancel:               "cancel",
-		Remove:               "delete",
-		HideStopped:          "hide/show stopped instances",
-		ForceRemove:          "force delete",
-		ForceStop:            "force stop",
-		MustForceToRemove:    "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
-		Stop:                 "stop",
-		Pause:                "pause/unpause",
-		Restart:              "restart",
-		Start:                "start",
-		PreviousContext:      "previous tab",
-		NextContext:          "next tab",
-		Attach:               "attach to console",
-		ViewLogs:             "view logs",
-		ExecShell:            "exec shell",
-		CopyIPv4:             "copy IPv4 address",
-		CopiedToClipboard:    "copied to clipboard:",
-		NoIPv4Address:        "This instance has no IPv4 address yet. It may still be starting up, or may not be running at all.",
-		FilterList:           "filter list",
-		SortInstancesByState: "sort instances by state",
+		Return:                 "return",
+		FocusMain:              "focus main panel",
+		LcFilter:               "filter list",
+		Navigate:               "navigate",
+		Execute:                "execute",
+		Close:                  "close",
+		Quit:                   "quit",
+		Menu:                   "menu",
+		MenuTitle:              "Menu",
+		Scroll:                 "scroll",
+		OpenConfig:             "open lazyincus config",
+		EditConfig:             "edit lazyincus config",
+		Cancel:                 "cancel",
+		Remove:                 "delete",
+		HideStopped:            "hide/show stopped instances",
+		HideUnmanagedNetworks:  "hide/show unmanaged networks",
+		LeasesTitle:            "Leases",
+		StateTitle:             "State",
+		NoLeases:               "No leases",
+		NoLeasesUnmanaged:      "Only networks Incus manages hand out leases.",
+		CannotListLeases:       "Could not list the network's leases.",
+		CannotReadNetworkState: "Could not read the network's state.",
+		ForceRemove:            "force delete",
+		ForceStop:              "force stop",
+		MustForceToRemove:      "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
+		Stop:                   "stop",
+		Pause:                  "pause/unpause",
+		Restart:                "restart",
+		Start:                  "start",
+		PreviousContext:        "previous tab",
+		NextContext:            "next tab",
+		Attach:                 "attach to console",
+		ViewLogs:               "view logs",
+		ExecShell:              "exec shell",
+		CopyIPv4:               "copy IPv4 address",
+		CopiedToClipboard:      "copied to clipboard:",
+		NoIPv4Address:          "This instance has no IPv4 address yet. It may still be starting up, or may not be running at all.",
+		FilterList:             "filter list",
+		SortInstancesByState:   "sort instances by state",
 
 		GlobalTitle:                  "Global",
 		MainTitle:                    "Main",

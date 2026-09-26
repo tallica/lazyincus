@@ -114,6 +114,16 @@ inferred.
   fetches just once after a stop — otherwise every poll re-appends the whole
   log. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
+- **Network leases**: `GetNetworkLeases` lists only the leases of the
+  asking project's instances, and the gateway's addresses only to the
+  network's own project. A project without `features.networks` uses
+  default's networks, so a compose stack's instances sit on a network that,
+  asked from default, has nothing on it but the gateway (seen against
+  Incus 7.4). `Network.Leases` asks the network's project and then each
+  project its `used_by` URLs name, and merges the answers. A network's
+  state carries a bridge's ports as host-side veth names;
+  `InstanceStateNetwork.HostName` is the same name from the instance's
+  side, which is how the State tab names the instance on each port.
 - **Attach**: `a` shells out to `incus console <name>`, the analog of
   lazydocker's `docker attach`. No detach hint from us - the CLI prints its
   own (`ctrl+a q`) on connect. An OCI application container has no console

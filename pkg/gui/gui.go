@@ -97,6 +97,10 @@ type guiState struct {
 	// if true, we show instances with a 'Stopped' status in the instances panel
 	ShowStoppedInstances bool
 
+	// ShowUnmanagedNetworks lists the host interfaces Incus merely reports
+	// alongside its own networks.
+	ShowUnmanagedNetworks bool
+
 	ScreenMode WindowMaximisation
 
 	// Seeded from expandFocusedSidePanel and then owned by the session, so

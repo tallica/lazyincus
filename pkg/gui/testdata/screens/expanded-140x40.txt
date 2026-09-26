@@ -20,12 +20,12 @@
 │                                             ││  eth0:                                                                                    │
 │                                             ││    Type:                                                                                  │
 │                                             ││    State:                                                                                 │
+│                                             ││    Host interface: veth144                                                                │
 │                                             ││    MTU:        0                                                                          │
 │                                             ││    Received:   0B (0 packets)                                                             │
 │                                             ││    Sent:       0B (0 packets)                                                             │
 │                                             ││    IP addresses:                                                                          │
 │                                             ││      inet:  192.0.2.144/ (global)                                                         │
-│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

@@ -147,7 +147,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted); on the Services panel, bring the service down, or delete the selected replica |
 | `u` | Services panel: bring the service up |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
-| `e` | Toggle showing stopped instances |
+| `e` | Toggle showing stopped instances; on the Networks tab, the host's unmanaged interfaces |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |

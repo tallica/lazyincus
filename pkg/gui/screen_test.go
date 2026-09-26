@@ -45,7 +45,7 @@ func fixtureServer() *incustest.Server {
 				Status:    "Running",
 				Processes: 12,
 				Network: map[string]api.InstanceStateNetwork{
-					"eth0": {Addresses: []api.InstanceStateNetworkAddress{
+					"eth0": {HostName: "veth" + ipv4[len("192.0.2."):], Addresses: []api.InstanceStateNetworkAddress{
 						{Family: "inet", Address: ipv4, Scope: "global"},
 					}},
 				},
@@ -77,7 +77,27 @@ func fixtureServer() *incustest.Server {
 			Fingerprint: "0123456789abcdef0123456789abcdef", Project: "default", Type: "container",
 			Properties: map[string]string{"description": "Alpine 3.22 amd64"},
 		}},
-		Networks: []api.Network{{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"}},
+		Networks: []api.Network{
+			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"},
+			{Name: "eth0", Type: "physical", Project: "default"},
+		},
+		NetworkLeases: map[string]map[string][]api.NetworkLease{
+			"incusbr0": {"default": {
+				{Hostname: "incusbr0.gw", Address: "192.0.2.1", Type: "GATEWAY"},
+				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "192.0.2.10", Type: "DYNAMIC"},
+				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "2001:db8::10", Type: "DYNAMIC"},
+			}},
+		},
+		NetworkStates: map[string]api.NetworkState{
+			"incusbr0": {
+				State: "up", Type: "broadcast", Hwaddr: "10:66:6a:00:00:01", Mtu: 1500,
+				Addresses: []api.NetworkStateAddress{
+					{Family: "inet", Address: "192.0.2.1", Netmask: "24", Scope: "global"},
+				},
+				Counters: &api.NetworkStateCounters{BytesReceived: 2048, PacketsReceived: 20, BytesSent: 1024, PacketsSent: 10},
+				Bridge:   &api.NetworkStateBridge{ID: "8000.10666a000001", UpperDevices: []string{"veth10", "veth99"}},
+			},
+		},
 		Volumes: map[string][]api.StorageVolume{
 			"default": {{Name: "data", Type: "custom", Project: "default"}},
 		},
@@ -341,6 +361,24 @@ func TestScreenResourcesTabs(t *testing.T) {
 	s.settle(t, "Name:         a-name")
 	pressThree()
 	s.settle(t, "incusbr0")
+}
+
+// Networks hold the host's interfaces back until asked for, and lead with
+// who has which address.
+func TestScreenNetworks(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	screen := s.settle(t, "2001:db8::10")
+	assert.NotContains(t, screen, "│eth0")
+	assertGolden(t, "network-leases-140x40", screen)
+
+	s.do(t, s.gui.Panels.Networks.HandleNextMainTab)
+	assertGolden(t, "network-state-140x40", s.settle(t, "Ports:"))
+
+	s.do(t, func() error { return s.gui.handleToggleUnmanagedNetworks(s.g, nil) })
+	s.settle(t, "│eth0")
 }
 
 func TestScreenMenu(t *testing.T) {

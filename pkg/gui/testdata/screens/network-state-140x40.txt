@@ -1,0 +1,40 @@
+╭─[1]─Instances───────────────────────────────╮╭─Leases - State - Config───────────────────────────────────────────────────────────────────╮
+│a-name-long-enough-to-be-cut-off running  co…││State:          up                                                                         │
+│web                              running  co…││Type:           broadcast                                                                  │
+│db                               stopped  co…││MAC address:    10:66:6a:00:00:01                                                          │
+│                                             ││MTU:            1500                                                                       │
+│                                             ││                                                                                           │
+│                                             ││IP addresses:                                                                              │
+│                                             ││  inet:  192.0.2.1/24 (global)                                                             │
+│                                             ││                                                                                           │
+│                                             ││Network usage:                                                                             │
+│                                             ││  Received:       2.00KiB (20 packets)                                                     │
+│                                             ││  Sent:           1.00KiB (10 packets)                                                     │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│Bridge:                                                                                    │
+│                                             ││  ID:             8000.10666a000001                                                        │
+│                                             ││  STP:            false                                                                    │
+│                                             ││  VLAN filtering: false                                                                    │
+│                                             ││  Ports:                                                                                   │
+│                                             ││    veth10  web (eth0)                                                                     │
+│                                             ││    veth99                                                                                 │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[3]─Images - Volumes - Networks─────────────╮│                                                                                           │
+│incusbr0 bridge managed 0                    ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                               Incus v7.4 (fake/all projects) ●  test

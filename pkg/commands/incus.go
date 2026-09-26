@@ -382,9 +382,12 @@ func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 		apiNetwork := apiNetworks[i]
 
 		ownNetworks[i] = &Network{
-			Name:      apiNetwork.Name,
-			Network:   apiNetwork,
-			Client:    c.clientFor(apiNetwork.Project),
+			Name:    apiNetwork.Name,
+			Network: apiNetwork,
+			Client:  c.clientFor(apiNetwork.Project),
+			ClientFor: func(project string) incus.InstanceServer {
+				return c.Client().UseProject(project)
+			},
 			OSCommand: c.OSCommand,
 			Log:       c.Log,
 			Tr:        c.Tr,
