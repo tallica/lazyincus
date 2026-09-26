@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-27
+
 ### Added
 - **Profiles** are the Resources panel's fourth tab: every project's profiles, how many instances use each and the devices it hands out, with a Devices tab laying out each device's settings. `u` lists the instances with the profile, `c` edits it in `$EDITOR` and `d` deletes it, naming the project it's deleted from when the list holds several. A project's `default` profile, which Incus won't delete, is said to be undeletable up front instead of asked about. When the panel is too narrow for the four tab names they shorten to `Img - Vol - Net - Prof`, so none is cut off the end of the title.
 - Custom volumes have snapshots too: select one in the Volumes list and the Snapshots panel shows its snapshots, `n` takes one (with an expiry, as for instances), and `r` and `d` restore and delete them. A compose stack's data lives in custom volumes, so this is the undo button for the part of it that matters.
@@ -223,7 +225,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/tallica/lazyincus/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/tallica/lazyincus/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/tallica/lazyincus/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/tallica/lazyincus/compare/v0.8.0...v0.8.1
