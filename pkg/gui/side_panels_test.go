@@ -54,6 +54,26 @@ func TestServicesPanelHiddenWithoutALocalComposeProject(t *testing.T) {
 	assert.Equal(t, gui.Tr.StandaloneInstancesTitle, gui.sidePanelDefs()[1].title)
 }
 
+func TestResourcesShareAWindow(t *testing.T) {
+	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
+
+	assert.Equal(t, []string{"instances", "snapshots", resourcesWindow}, gui.sideWindowNames())
+	assert.Equal(t, resourcesWindow, gui.windowOfView("volumes"))
+	assert.Equal(t, "instances", gui.windowOfView("instances"))
+	assert.Equal(t, "main", gui.windowOfView("main"))
+
+	assert.Equal(t, "images", gui.activeViewInWindow(resourcesWindow))
+	assert.False(t, gui.isHiddenInWindow("images"))
+	assert.True(t, gui.isHiddenInWindow("networks"))
+
+	gui.noteActiveView("networks")
+	gui.noteActiveView("instances")
+
+	assert.Equal(t, "networks", gui.activeViewInWindow(resourcesWindow))
+	assert.True(t, gui.isHiddenInWindow("images"))
+	assert.False(t, gui.isHiddenInWindow("instances"))
+}
+
 func TestFocusPanelDescription(t *testing.T) {
 	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
 

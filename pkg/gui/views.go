@@ -116,12 +116,22 @@ func (gui *Gui) styleAllViews() {
 
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel
 
-	for index, def := range gui.visibleSidePanelDefs() {
-		view := *def.viewPtr
-		view.Highlight = true
-		view.SelBgColor = selectedLineBgColor
-		view.Title = def.title
-		view.TitlePrefix = gui.sidePanelTitlePrefix(index)
+	for index, window := range gui.sideWindowNames() {
+		defs := gui.windowDefs(window)
+		titles := lo.Map(defs, func(def sidePanelDef, _ int) string { return def.title })
+
+		for tabIndex, def := range defs {
+			view := *def.viewPtr
+			view.Highlight = true
+			view.SelBgColor = selectedLineBgColor
+			view.Title = def.title
+			view.TitlePrefix = gui.sidePanelTitlePrefix(index)
+
+			if len(defs) > 1 {
+				view.Tabs = titles
+				view.TabIndex = tabIndex
+			}
+		}
 	}
 
 	gui.Views.Options.Frame = false

@@ -28,6 +28,17 @@ type sidePanelDef struct {
 	// while styling views and binding keys, both of which happen before
 	// setPanels, so it can't go through the panel's own Hide.
 	hidden func() bool
+	// window is the slot the panel shares with others, as one of its tabs;
+	// empty for a panel with a slot of its own.
+	window string
+}
+
+func (def sidePanelDef) windowName() string {
+	if def.window == "" {
+		return def.name
+	}
+
+	return def.window
 }
 
 func (gui *Gui) sidePanelDefs() []sidePanelDef {
@@ -56,18 +67,21 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:   gui.Tr.ImagesTitle,
 			viewPtr: &gui.Views.Images,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Images },
+			window:  resourcesWindow,
 		},
 		{
 			name:    "volumes",
 			title:   gui.Tr.VolumesTitle,
 			viewPtr: &gui.Views.Volumes,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Volumes },
+			window:  resourcesWindow,
 		},
 		{
 			name:    "networks",
 			title:   gui.Tr.NetworksTitle,
 			viewPtr: &gui.Views.Networks,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Networks },
+			window:  resourcesWindow,
 		},
 	}
 }
@@ -80,16 +94,16 @@ func (gui *Gui) noLocalComposeProject() bool {
 }
 
 // visibleSidePanelDefs drops the panels this session doesn't have. Both the
-// number keys and the layout are numbered over this rather than over every
-// definition, so a hidden panel leaves no gap at `1`.
+// number keys and the layout are numbered over this (by window) rather than
+// over every definition, so a hidden panel leaves no gap at `1`.
 func (gui *Gui) visibleSidePanelDefs() []sidePanelDef {
 	return lo.Filter(gui.sidePanelDefs(), func(def sidePanelDef, _ int) bool {
 		return def.hidden == nil || !def.hidden()
 	})
 }
 
-// focusKey is the key that jumps to the visible panel at this index: `1` for
-// the first, and so on.
+// focusKey is the key that jumps to the visible window at this index: `1`
+// for the first, and so on.
 func focusKey(index int) rune {
 	return rune('1' + index)
 }
@@ -103,7 +117,7 @@ func (gui *Gui) focusPanelDescription(title string) string {
 }
 
 // cycleSidePanel moves focus to the next (offset 1) or previous (offset -1)
-// visible side panel, wrapping at both ends. It steps from the last side
+// visible side window, wrapping at both ends. It steps from the last side
 // panel that had focus, so tabbing out of the main panel continues from the
 // list you were last in rather than jumping back to the first.
 func (gui *Gui) cycleSidePanel(offset int) func() error {
@@ -112,7 +126,7 @@ func (gui *Gui) cycleSidePanel(offset int) func() error {
 			return nil
 		}
 
-		names := gui.sideViewNames()
+		names := gui.sideWindowNames()
 		if len(names) == 0 {
 			return nil
 		}
@@ -124,7 +138,7 @@ func (gui *Gui) cycleSidePanel(offset int) func() error {
 
 		next := names[((index+offset)%len(names)+len(names))%len(names)]
 
-		view, err := gui.g.View(next)
+		view, err := gui.g.View(gui.activeViewInWindow(next))
 		if err != nil {
 			return err
 		}

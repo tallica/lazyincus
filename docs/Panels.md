@@ -15,7 +15,7 @@ with no box invisible.
 
 That gate means panel numbering can't index `sidePanelDefs()` — a hidden
 first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
-number keys, the title prefixes, `sideViewNames` and the startup focus all
+number keys, the title prefixes, `sideWindowNames` and the startup focus all
 run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask.
@@ -298,6 +298,25 @@ Toggling reopens the menu, there being no widget with selection state -
 gocui has views and keybindings, and the menu itself is lazydocker's
 `SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
 <name>`, not a snapshot operation.
+
+## Resources
+
+Images, volumes and networks are three panels sharing one window: a
+`window` on their defs puts them in the same slot, and `window.go` is what
+knows about it. The views are stacked at the same position and the layout
+shows the window's active one, which is whichever was focused there last
+(`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
+on each, each with its own `TabIndex` - so the title reads as the window's
+rather than the list's. Number keys, `tab` and the side column's split
+all count windows, so the three take one number and one share of the
+height; they read something far less often than instances do.
+
+Switching is `h`/`l` and `←`/`→` rather than `[`/`]`, which every side
+panel already spends on the main panel's tabs; the window's number key
+pressed again, and a click on a tab's name, do it too. It's a focus change
+like any other, so a filter on one list is dropped on moving to the next,
+as it is moving between any two panels. The hidden lists keep polling,
+so a switch shows current rows at once.
 
 ## Images
 

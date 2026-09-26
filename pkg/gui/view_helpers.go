@@ -12,13 +12,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (gui *Gui) handleGoTo(view *gocui.View) func(g *gocui.Gui, v *gocui.View) error {
-	return func(g *gocui.Gui, v *gocui.View) error {
-		gui.resetMainView()
-		return gui.switchFocus(view)
-	}
-}
-
 func (gui *Gui) resetMainView() {
 	gui.State.Panels.Main.ObjectKey = ""
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel

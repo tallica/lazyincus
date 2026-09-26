@@ -62,6 +62,9 @@ type TranslationSet struct {
 	InstanceTitle             string
 	InstancesTitle            string
 	ImagesTitle               string
+	ResourcesTitle            string
+	PreviousTab               string
+	NextTab                   string
 	NoImages                  string
 	DeleteImage               string
 	NewSnapshot               string
@@ -234,6 +237,9 @@ func englishSet() TranslationSet {
 		ConfigTitle:                  "Config",
 		EnvTitle:                     "Env",
 		ImagesTitle:                  "Images",
+		ResourcesTitle:               "Resources",
+		PreviousTab:                  "previous list",
+		NextTab:                      "next list",
 		NoImages:                     "No images",
 		DeleteImage:                  "Are you sure you want to delete image %s?",
 		NewSnapshot:                  "new snapshot",

@@ -110,16 +110,17 @@ guest clock skew both fail in ways that point at the wrong component.
 
 ## Usage
 
-Five side panels: **Instances** (`1`), listing both containers and VMs,
+Three side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance is selected, or every
-instance's, **Images** (`3`),
-**Volumes** (`4`) and **Networks** (`5`). All list every Incus project by
+instance's, and **Resources** (`3`), which holds **Images**, **Volumes**
+and **Networks** as tabs — `h`/`l` or `←`/`→` switch between them, as does
+pressing `3` again or clicking a tab's name. All list every Incus project by
 default; `P` scopes them to a single project instead, and the footer shows
 the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
 
-A sixth panel, **Services**, appears when there's a compose file in the
+A fourth panel, **Services**, appears when there's a compose file in the
 working directory — see [Compose stacks](#compose-stacks).
 
 The instances panel's columns (name, status, health, type, IPv4, snapshot
@@ -132,8 +133,9 @@ seconds to catch up with a pause or stop, and never does while it's down.
 
 | Key | Action |
 |---|---|
-| `1` … `6` | Focus a side panel, numbered top to bottom as shown in its title |
+| `1` … `4` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
 | `tab` / `shift+tab` | Next / previous side panel |
+| `h`/`l`, `←`/`→` | Resources panel: previous / next tab (Images, Volumes, Networks) |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel (and `←`/`→` while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |

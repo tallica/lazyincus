@@ -167,6 +167,35 @@ func (s *screen) do(t *testing.T, f func() error) {
 	}
 }
 
+// ready waits for startup's fetches to land and the screen to settle.
+// Networks are the fixture's last fetch, and drawn behind a tab, so it's
+// their panel rather than the screen that says they've arrived.
+func (s *screen) ready(t *testing.T) string {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+
+	for {
+		loaded := false
+		s.do(t, func() error {
+			loaded = s.gui.Panels.Networks.List.Len() > 0
+			return nil
+		})
+
+		if loaded {
+			break
+		}
+
+		if time.Now().After(deadline) {
+			t.Fatal("the networks never arrived")
+		}
+
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	return s.settle(t, "amd64 0")
+}
+
 // settle waits until the screen shows want and has stopped changing, and
 // returns it with trailing blanks trimmed off each line.
 func (s *screen) settle(t *testing.T, want string) string {
@@ -244,19 +273,19 @@ func assertGolden(t *testing.T, name, got string) {
 
 func TestScreenNormal(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	assertGolden(t, "normal-140x40", s.settle(t, "incusbr0"))
+	assertGolden(t, "normal-140x40", s.ready(t))
 }
 
 func TestScreenHalf(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.nextScreenMode)
 	assertGolden(t, "half-140x40", s.settle(t, "192.0.2.10"))
 }
 
 func TestScreenFull(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.nextScreenMode)
 	s.do(t, s.gui.nextScreenMode)
 	assertGolden(t, "full-140x40", s.settle(t, "192.0.2.10"))
@@ -264,19 +293,19 @@ func TestScreenFull(t *testing.T) {
 
 func TestScreenPortrait(t *testing.T) {
 	s := startScreen(t, 84, 50, nil)
-	assertGolden(t, "portrait-84x50", s.settle(t, "incusbr0"))
+	assertGolden(t, "portrait-84x50", s.ready(t))
 }
 
 func TestScreenExpandedSidePanel(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.toggleExpandSidePanel)
-	assertGolden(t, "expanded-140x40", s.settle(t, "incusbr0"))
+	assertGolden(t, "expanded-140x40", s.ready(t))
 }
 
 func TestScreenAllSnapshots(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error { return s.gui.handleToggleAllSnapshots(s.g, s.gui.Views.Snapshots) })
 	assertGolden(t, "all-snapshots-140x40", s.settle(t, "Snapshots (all)"))
 
@@ -291,16 +320,39 @@ func TestScreenAllSnapshotsFromConfig(t *testing.T) {
 	assertGolden(t, "all-snapshots-140x40", s.settle(t, "daily-b"))
 }
 
+func TestScreenResourcesTabs(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	pressThree := func() {
+		s.do(t, func() error { return s.gui.handleGoToWindow(resourcesWindow)(s.g, nil) })
+	}
+
+	pressThree()
+	s.do(t, s.gui.cycleWindowTab(1))
+	assertGolden(t, "resources-volumes-140x40", s.settle(t, "Pool:"))
+
+	// The number key again moves on to the next list.
+	pressThree()
+	s.settle(t, "incusbr0")
+
+	// Leaving and coming back lands on the list last used.
+	s.do(t, s.gui.cycleSidePanel(1))
+	s.settle(t, "Name:         a-name")
+	pressThree()
+	s.settle(t, "incusbr0")
+}
+
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error { return s.gui.handleCreateOptionsMenu(s.g, s.gui.Views.Instances) })
-	assertGolden(t, "menu-90x40", s.settle(t, "focus networks panel"))
+	assertGolden(t, "menu-90x40", s.settle(t, "focus resources panel"))
 }
 
 func TestScreenConfirmation(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error {
 		return s.gui.createConfirmationPanel("Confirm", "Are you sure you want to stop web?", nil, nil)
 	})
@@ -312,7 +364,7 @@ func TestScreenConfirmation(t *testing.T) {
 // where a count of characters gives two.
 func TestScreenWordWrappedConfirmation(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	words := strings.Repeat("a", 40) + " " + strings.Repeat("b", 40) + " " + strings.Repeat("c", 40)
 	s.do(t, func() error { return s.gui.createConfirmationPanel("Confirm", words, nil, nil) })
@@ -324,7 +376,7 @@ func TestScreenWordWrappedConfirmation(t *testing.T) {
 
 func TestScreenErrorPopup(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error { return s.gui.createErrorPanel("instance is running") })
 	assertGolden(t, "error-140x40", s.settle(t, "instance is running"))
 }
@@ -333,7 +385,7 @@ func TestScreenBorders(t *testing.T) {
 	for _, border := range []string{"rounded", "single", "double", "hidden"} {
 		t.Run(border, func(t *testing.T) {
 			s := startScreen(t, 100, 30, func(c *config.UserConfig) { c.Gui.Border = border })
-			assertGolden(t, "border-"+border+"-100x30", s.settle(t, "incusbr0"))
+			assertGolden(t, "border-"+border+"-100x30", s.ready(t))
 		})
 	}
 }

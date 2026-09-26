@@ -80,7 +80,11 @@ applies here.
 panels — view name, title, view pointer, panel accessor. View creation,
 styling (including the `[n]` title prefix), the number keys, the layout and
 `allSidePanels()` all derive from it, so a new panel is one entry there plus
-its own `*_panel.go`, presentation and refresh loop. Order is both the
+its own `*_panel.go`, presentation and refresh loop. A `window` on the def
+puts a panel in a slot it shares with others, as one of its tabs, which is
+how Images, Volumes and Networks become the one Resources panel; the
+number keys, `tab` and the layout count those slots, not views
+(`pkg/gui/window.go`). Order is both the
 top-to-bottom layout order and the number-key order. A panel can be absent
 for the session (`hidden` on the def); everything user-facing is numbered
 over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
@@ -121,6 +125,7 @@ order:
   stack's when the services panel is holding those.
 - **Snapshots** — follows whichever instance the list above it has
   selected, rather than having a selection of its own.
+- **Resources** — how Images, Volumes and Networks share one slot.
 - **Images**, **Volumes**, **Networks** — local images; every pool's
   volumes in one list; managed and unmanaged networks alike.
 

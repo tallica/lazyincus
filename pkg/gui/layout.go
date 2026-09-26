@@ -97,9 +97,13 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 	}
 
 	for _, viewName := range gui.autoPositionedViewNames() {
-		_, err := setViewFromDimensions(viewName, viewName)
+		view, err := setViewFromDimensions(viewName, gui.windowOfView(viewName))
 		if err != nil && !errors.Is(err, gocui.ErrUnknownView) {
 			return err
+		}
+
+		if view != nil && gui.isHiddenInWindow(viewName) {
+			view.Visible = false
 		}
 	}
 

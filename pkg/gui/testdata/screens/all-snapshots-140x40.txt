@@ -5,33 +5,33 @@
 │                                             ││Project:      default                                                                      │
 │                                             ││Image:        Alpine 3.22 amd64                                                            │
 │                                             ││Architecture: x86_64                                                                       │
-╰─────────────────────────────────────────────╯│IPv4:         192.0.2.144                                                                  │
-╭─[2]─Snapshots (all)─────────────────────────╮│Snapshots:    0                                                                            │
-│daily-b web 2026/09/21 06:00 UTC             ││                                                                                           │
-│daily-a web 2026/09/20 06:00 UTC             ││                                                                                           │
-│                                             ││CPU:          (no usage reported)                                                          │
-│                                             ││Memory:       (no usage reported)                                                          │
-│                                             ││Processes:    12                                                                           │
+│                                             ││IPv4:         192.0.2.144                                                                  │
+│                                             ││Snapshots:    0                                                                            │
 │                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│Disk:                                                                                      │
-╭─[3]─Images──────────────────────────────────╮│  (no disk usage reported)                                                                 │
-│Alpine 3.22 amd64 0123456789ab container     ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││CPU:          (no usage reported)                                                          │
+╰─────────────────────────────────────────────╯│Memory:       (no usage reported)                                                          │
+╭─[2]─Snapshots (all)─────────────────────────╮│Processes:    12                                                                           │
+│daily-b web 2026/09/21 06:00 UTC             ││                                                                                           │
+│daily-a web 2026/09/20 06:00 UTC             ││Disk:                                                                                      │
+│                                             ││  (no disk usage reported)                                                                 │
+│                                             ││                                                                                           │
 │                                             ││Network:                                                                                   │
 │                                             ││  eth0:                                                                                    │
 │                                             ││    Type:                                                                                  │
 │                                             ││    State:                                                                                 │
 │                                             ││    MTU:        0                                                                          │
-╰─────────────────────────────────────────────╯│    Received:   0B (0 packets)                                                             │
-╭─[4]─Volumes─────────────────────────────────╮│    Sent:       0B (0 packets)                                                             │
-│data default custom 0                        ││    IP addresses:                                                                          │
-│                                             ││      inet:  192.0.2.144/ (global)                                                         │
+│                                             ││    Received:   0B (0 packets)                                                             │
+│                                             ││    Sent:       0B (0 packets)                                                             │
+╰─────────────────────────────────────────────╯│    IP addresses:                                                                          │
+╭─[3]─Images - Volumes - Networks─────────────╮│      inet:  192.0.2.144/ (global)                                                         │
+│Alpine 3.22 amd64 0123456789ab container     ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[5]─Networks────────────────────────────────╮│                                                                                           │
-│incusbr0 bridge managed 0                    ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

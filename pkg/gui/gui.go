@@ -127,6 +127,10 @@ type guiState struct {
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
 
+	// ActiveWindowViews is the view each shared window shows, by window -
+	// whichever was focused in it last. See window.go.
+	ActiveWindowViews map[string]string
+
 	// Seeded from showAllSnapshots and then owned by the session, as
 	// ExpandSidePanel is.
 	SnapshotsShowAll bool

@@ -416,12 +416,37 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 
 	bindings = append(bindings, gui.servicesKeybindings()...)
 
-	for index, def := range gui.visibleSidePanelDefs() {
+	for index, window := range gui.sideWindowNames() {
 		bindings = append(bindings, &Binding{
-			Handler:     gui.handleGoTo(*def.viewPtr),
+			Handler:     gui.handleGoToWindow(window),
 			Key:         focusKey(index),
-			Description: gui.focusPanelDescription(def.title),
+			Description: gui.focusPanelDescription(gui.windowTitle(window)),
 		})
+
+		defs := gui.windowDefs(window)
+		if len(defs) < 2 {
+			continue
+		}
+
+		for _, def := range defs {
+			for _, key := range []any{'h', gocui.KeyArrowLeft} {
+				bindings = append(bindings, &Binding{
+					ViewName:    def.name,
+					Key:         key,
+					Handler:     wrappedHandler(gui.cycleWindowTab(-1)),
+					Description: gui.Tr.PreviousTab,
+				})
+			}
+
+			for _, key := range []any{'l', gocui.KeyArrowRight} {
+				bindings = append(bindings, &Binding{
+					ViewName:    def.name,
+					Key:         key,
+					Handler:     wrappedHandler(gui.cycleWindowTab(1)),
+					Description: gui.Tr.NextTab,
+				})
+			}
+		}
 	}
 
 	for _, panel := range gui.allListPanels() {
@@ -482,6 +507,19 @@ func (gui *Gui) keybindings(g *gocui.Gui) error {
 
 	if err := g.SetTabClickBinding("main", gui.onMainTabClick); err != nil {
 		return err
+	}
+
+	for _, window := range gui.sideWindowNames() {
+		defs := gui.windowDefs(window)
+		if len(defs) < 2 {
+			continue
+		}
+
+		for _, def := range defs {
+			if err := g.SetTabClickBinding(def.name, gui.onWindowTabClick(window)); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
