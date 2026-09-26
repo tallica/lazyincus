@@ -82,8 +82,8 @@ styling (including the `[n]` title prefix), the number keys, the layout and
 `allSidePanels()` all derive from it, so a new panel is one entry there plus
 its own `*_panel.go`, presentation and refresh loop. A `window` on the def
 puts a panel in a slot it shares with others, as one of its tabs, which is
-how Images, Volumes and Networks become the one Resources panel; the
-number keys, `tab` and the layout count those slots, not views
+how Images, Volumes, Networks and Profiles become the one Resources panel;
+the number keys, `tab` and the layout count those slots, not views
 (`pkg/gui/window.go`). Order is both the
 top-to-bottom layout order and the number-key order. A panel can be absent
 for the session (`hidden` on the def); everything user-facing is numbered

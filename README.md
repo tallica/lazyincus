@@ -22,12 +22,12 @@ how it was renamed.
 ## Status
 
 Past the MVP it started as, and in daily use — still pre-1.0. Panels for
-instances, snapshots, images, volumes, networks and — in a directory with a
-compose file — services, plus the Incus concepts lazydocker has no analog
-for: projects and remotes. Parity with lazydocker in the corners —
-custom and bulk commands, non-English translations — isn't there; see
-"What's not here yet" below, and [BACKLOG.md](BACKLOG.md) for the
-panel-by-panel comparison.
+instances, snapshots, images, volumes, networks, profiles and — in a
+directory with a compose file — services, plus the Incus concepts
+lazydocker has no analog for: projects and remotes. Parity with lazydocker
+in the corners — custom and bulk commands, non-English translations —
+isn't there; see "What's not here yet" below, and
+[BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 > [!WARNING]
 > **AI-assisted project**<br>
@@ -135,7 +135,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 |---|---|
 | `1` … `4` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
 | `tab` / `shift+tab` | Next / previous side panel |
-| `←`/`→`, `h`/`l` | Previous / next list, Images, Volumes and Networks each a stop of their own |
+| `←`/`→`, `h`/`l` | Previous / next list, Images, Volumes, Networks and Profiles each a stop of their own |
 | `↑`/`↓`, `j`/`k` | Navigate |
 | `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L` | Scroll the main panel (and `h`/`l`, `←`/`→` sideways while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |

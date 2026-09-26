@@ -114,6 +114,13 @@ inferred.
   fetches just once after a stop — otherwise every poll re-appends the whole
   log. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
+- **Deletes the daemon refuses**: a profile named `default`, in any
+  project, can't be deleted or renamed - `profileDelete` and
+  `profileRename` in `cmd/incusd/profiles.go` refuse the name before
+  looking at anything else, confirmed on a 7.4 daemon. A network, a custom
+  volume or a profile anything still uses is refused too ("currently in
+  use", "still in use"); an image isn't, whatever was created from it. The
+  app's prompts go by this - see [docs/Panels.md](Panels.md#confirmations).
 - **Network leases**: `GetNetworkLeases` lists only the leases of the
   asking project's instances, and the gateway's addresses only to the
   network's own project. A project without `features.networks` uses

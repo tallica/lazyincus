@@ -42,11 +42,12 @@ pkg/commands/
   instance.go                  Instance: api.InstanceFull as of one refresh; start/stop/restart/freeze/delete/logs/exec
   instance_runtime.go          what outlives a refresh: the drained console log, the working ps, Latest()
   instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
-  snapshot.go                  Snapshot: create, restore, delete (the list comes with the instances)
+  snapshot.go                  Snapshot, an instance's or a custom volume's: create, restore, delete
   incus_compose.go             compose projects and services, paired with their instances
   compose_config.go            `incus-compose config`: the local project and each service's definition
   incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data
-  image.go, network.go, volume.go  the other resources the side panels list
+  image.go, network.go, volume.go, profile.go  the other resources the side panels list
+  used_by.go                   which instances use a network, volume, image or profile
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
   errors.go, dummies.go        error wrapping; NewDummy* constructors for tests
 pkg/gui/
@@ -59,7 +60,8 @@ pkg/gui/
   layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  *_panel.go                   one per side panel: services, instances, snapshots, images, volumes, networks
+  *_panel.go                   one per side panel: services, instances, snapshots, images, volumes, networks, profiles
+  copy.go                      the `y` menu: what each kind of item offers to copy
   services_actions.go          the services panel's compose verbs and menus
   instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
   projects.go                  project scope menu (all projects, or one)

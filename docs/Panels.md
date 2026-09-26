@@ -11,10 +11,9 @@ A prompt that stops, deletes or restores something names the item's
 project whenever its list holds more than one project's (`qualified`):
 the same image alias, profile name or instance name can exist in several,
 and "delete image nginx:alpine?" doesn't say which is about to go. With
-one project the name stands alone. A delete the daemon would refuse is
-said instead of asked - any project's `default` profile, and a network,
-custom volume or profile anything still uses - the latter going by the
-listing's `used_by`, which the next poll keeps current; the daemon has
+one project the name stands alone. A delete the daemon would refuse (see
+[docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
+listing's `used_by`, which the next poll keeps current, and the daemon has
 the last word either way.
 
 ## Copying

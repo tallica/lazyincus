@@ -32,7 +32,7 @@ derive from it automatically.
 ### Side panels
 
 lazydocker has six with a compose file local; lazyincus has four, having
-folded images, volumes and networks into one tabbed Resources panel. Services
+folded images, volumes, networks and profiles into one tabbed Resources panel. Services
 is the Incus analog of lazydocker's docker-compose-specific Services/Project
 panels, and like lazydocker's it pushes the plain instance list down to
 "Standalone Instances". See
