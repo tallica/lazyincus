@@ -10,16 +10,19 @@ import (
 // for snapshot timestamps.
 const DateTimeFormat = "2006/01/02 15:04 MST"
 
-func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, showInstance bool) []string {
+// DateFormat is DateTimeFormat's date alone.
+const DateFormat = "2006/01/02"
+
+// GetSnapshotDisplayStrings takes the name of the instance the snapshot came
+// from, or "" when the title already says it.
+func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []string {
 	cells := []string{
-		utils.Truncate(snapshot.Name, maxSnapshotNameWidth),
+		snapshot.Name,
 	}
 
-	// Only when the panel is holding several instances' snapshots: on one
-	// instance's the column would repeat the name already in the title.
-	if showInstance {
+	if owner != "" {
 		cells = append(cells, utils.ColoredString(
-			utils.Truncate(snapshot.InstanceName, maxSnapshotNameWidth), color.FgCyan))
+			owner, color.FgCyan))
 	}
 
 	return append(cells,
@@ -40,7 +43,12 @@ func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
 	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgMagenta)
 }
 
-const maxSnapshotNameWidth = 22
+// MinSnapshotNameWidth and MinSnapshotOwnerWidth are as narrow as the name
+// and the instance it came from go for the columns after them.
+const (
+	MinSnapshotNameWidth  = 22
+	MinSnapshotOwnerWidth = 22
+)
 
 func displaySnapshotStateful(snapshot *commands.Snapshot) string {
 	if snapshot.Snapshot.Stateful {

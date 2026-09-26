@@ -138,7 +138,7 @@ func (gui *Gui) sideViewNames() []string {
 const collapsedSidePanelHeight = 3
 
 func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
-	sideWindowNames := gui.sideViewNames()
+	sideWindowNames := gui.sideWindowNames()
 
 	if gui.State.ExpandSidePanel {
 		return gui.expandedSidePanelChildren(sideWindowNames, height)

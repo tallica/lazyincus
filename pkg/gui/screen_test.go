@@ -36,7 +36,10 @@ func fixtureServer() *incustest.Server {
 		instance := api.InstanceFull{
 			Instance: api.Instance{
 				Name: name, Project: project, Status: "Running", Type: "container",
-				InstancePut: api.InstancePut{Architecture: "x86_64", Profiles: []string{"default"}},
+				InstancePut: api.InstancePut{
+					Architecture: "x86_64", Profiles: []string{"default"},
+					Config: map[string]string{"volatile.base_image": "0123456789abcdef0123456789abcdef"},
+				},
 				ExpandedConfig: map[string]string{
 					"image.description": "Alpine 3.22 amd64",
 				},
@@ -45,7 +48,7 @@ func fixtureServer() *incustest.Server {
 				Status:    "Running",
 				Processes: 12,
 				Network: map[string]api.InstanceStateNetwork{
-					"eth0": {Addresses: []api.InstanceStateNetworkAddress{
+					"eth0": {HostName: "veth" + ipv4[len("192.0.2."):], Addresses: []api.InstanceStateNetworkAddress{
 						{Family: "inet", Address: ipv4, Scope: "global"},
 					}},
 				},
@@ -73,14 +76,47 @@ func fixtureServer() *incustest.Server {
 			stopped,
 			running("default", "a-name-long-enough-to-be-cut-off", "192.0.2.144", 0),
 		},
-		Images: []api.Image{{
-			Fingerprint: "0123456789abcdef0123456789abcdef", Project: "default", Type: "container",
-			Properties: map[string]string{"description": "Alpine 3.22 amd64"},
-		}},
-		Networks: []api.Network{{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"}},
-		Volumes: map[string][]api.StorageVolume{
-			"default": {{Name: "data", Type: "custom", Project: "default"}},
+		Images: []api.Image{
+			{
+				Fingerprint: "0123456789abcdef0123456789abcdef", Project: "default", Type: "container",
+				Properties: map[string]string{"description": "Alpine 3.22 amd64"},
+				Size:       3 << 20, LastUsedAt: time.Date(2026, 9, 20, 6, 0, 0, 0, time.UTC),
+			},
+			{
+				Fingerprint: "fedcba9876543210fedcba9876543210", Project: "default", Type: "container",
+				Properties: map[string]string{"description": "Debian 13 amd64"},
+				Size:       90 << 20, Cached: true,
+			},
 		},
+		Networks: []api.Network{
+			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"},
+			{Name: "eth0", Type: "physical", Project: "default"},
+		},
+		NetworkLeases: map[string]map[string][]api.NetworkLease{
+			"incusbr0": {"default": {
+				{Hostname: "incusbr0.gw", Address: "192.0.2.1", Type: "GATEWAY"},
+				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "192.0.2.10", Type: "DYNAMIC"},
+				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "2001:db8::10", Type: "DYNAMIC"},
+			}},
+		},
+		NetworkStates: map[string]api.NetworkState{
+			"incusbr0": {
+				State: "up", Type: "broadcast", Hwaddr: "10:66:6a:00:00:01", Mtu: 1500,
+				Addresses: []api.NetworkStateAddress{
+					{Family: "inet", Address: "192.0.2.1", Netmask: "24", Scope: "global"},
+				},
+				Counters: &api.NetworkStateCounters{BytesReceived: 2048, PacketsReceived: 20, BytesSent: 1024, PacketsSent: 10},
+				Bridge:   &api.NetworkStateBridge{ID: "8000.10666a000001", UpperDevices: []string{"veth10", "veth99"}},
+			},
+		},
+		Volumes: map[string][]api.StorageVolume{
+			"default": {
+				{Name: "data", Type: "custom", Project: "default"},
+				{Name: "web", Type: "container", Project: "default", UsedBy: []string{"/1.0/instances/web"}},
+			},
+		},
+		PoolSpace:   map[string]api.ResourcesStoragePoolSpace{"default": {Used: 5 << 30, Total: 50 << 30}},
+		VolumeUsage: map[string]uint64{"data": 512 << 20},
 	})
 }
 
@@ -167,6 +203,35 @@ func (s *screen) do(t *testing.T, f func() error) {
 	}
 }
 
+// ready waits for startup's fetches to land and the screen to settle. The
+// resources are drawn behind tabs, so it's their panels rather than the
+// screen that say they've arrived.
+func (s *screen) ready(t *testing.T) string {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+
+	for {
+		loaded := false
+		s.do(t, func() error {
+			loaded = s.gui.Panels.Images.List.Len() > 0 && s.gui.Panels.Networks.List.Len() > 0
+			return nil
+		})
+
+		if loaded {
+			break
+		}
+
+		if time.Now().After(deadline) {
+			t.Fatal("the networks never arrived")
+		}
+
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	return s.settle(t, "Alpine 3.22 amd64")
+}
+
 // settle waits until the screen shows want and has stopped changing, and
 // returns it with trailing blanks trimmed off each line.
 func (s *screen) settle(t *testing.T, want string) string {
@@ -244,19 +309,19 @@ func assertGolden(t *testing.T, name, got string) {
 
 func TestScreenNormal(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	assertGolden(t, "normal-140x40", s.settle(t, "incusbr0"))
+	assertGolden(t, "normal-140x40", s.ready(t))
 }
 
 func TestScreenHalf(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.nextScreenMode)
 	assertGolden(t, "half-140x40", s.settle(t, "192.0.2.10"))
 }
 
 func TestScreenFull(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.nextScreenMode)
 	s.do(t, s.gui.nextScreenMode)
 	assertGolden(t, "full-140x40", s.settle(t, "192.0.2.10"))
@@ -264,26 +329,121 @@ func TestScreenFull(t *testing.T) {
 
 func TestScreenPortrait(t *testing.T) {
 	s := startScreen(t, 84, 50, nil)
-	assertGolden(t, "portrait-84x50", s.settle(t, "incusbr0"))
+	assertGolden(t, "portrait-84x50", s.ready(t))
 }
 
 func TestScreenExpandedSidePanel(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, s.gui.toggleExpandSidePanel)
-	assertGolden(t, "expanded-140x40", s.settle(t, "incusbr0"))
+	assertGolden(t, "expanded-140x40", s.ready(t))
+}
+
+func TestScreenAllSnapshots(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	s.do(t, func() error { return s.gui.handleToggleAllSnapshots(s.g, s.gui.Views.Snapshots) })
+	assertGolden(t, "all-snapshots-140x40", s.settle(t, "Snapshots (all)"))
+
+	s.do(t, func() error { return s.gui.handleToggleAllSnapshots(s.g, s.gui.Views.Snapshots) })
+	assertGolden(t, "normal-140x40", s.settle(t, "Snapshots (a-name"))
+}
+
+func TestScreenAllSnapshotsFromConfig(t *testing.T) {
+	s := startScreen(t, 140, 40, func(userConfig *config.UserConfig) {
+		userConfig.Gui.ShowAllSnapshots = true
+	})
+	assertGolden(t, "all-snapshots-140x40", s.settle(t, "daily-b"))
+}
+
+func TestScreenResourcesTabs(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	pressThree := func() {
+		s.do(t, func() error { return s.gui.handleGoToWindow(resourcesWindow)(s.g, nil) })
+	}
+
+	pressThree()
+	s.do(t, s.gui.cycleWindowTab(1))
+	assertGolden(t, "resources-volumes-140x40", s.settle(t, "Pool:"))
+
+	// The number key again moves on to the next list.
+	pressThree()
+	s.settle(t, "incusbr0")
+
+	// Leaving and coming back lands on the list last used.
+	s.do(t, s.gui.cycleSidePanel(1))
+	s.settle(t, "Name:         a-name")
+	pressThree()
+	s.settle(t, "incusbr0")
+}
+
+// Networks hold the host's interfaces back until asked for, and lead with
+// who has which address.
+func TestScreenNetworks(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	screen := s.settle(t, "2001:db8::10")
+	assert.NotContains(t, screen, "│eth0")
+	assertGolden(t, "network-leases-140x40", screen)
+
+	s.do(t, s.gui.Panels.Networks.HandleNextMainTab)
+	assertGolden(t, "network-state-140x40", s.settle(t, "Ports:"))
+
+	s.do(t, func() error { return s.gui.handleToggleUnmanagedNetworks(s.g, nil) })
+	s.settle(t, "│eth0")
+}
+
+func TestScreenPruneImages(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Images) })
+	s.do(t, func() error { return s.gui.handlePruneImages(s.g, s.gui.Views.Images) })
+	assertGolden(t, "prune-images-140x40", s.settle(t, "every unused image (1, 90.00MiB)"))
+
+	s.do(t, s.gui.Panels.Menu.HandleNextLine)
+	s.do(t, s.gui.Panels.Menu.HandleClick)
+	screen := s.settle(t, "Delete these 1 images")
+	assert.Contains(t, screen, "Debian 13 amd64 fedcba987654")
+}
+
+// Arrows step through every list, the resources' included, and wrap.
+func TestArrowsStepThroughEveryList(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	current := func() string {
+		name := ""
+		s.do(t, func() error { name = s.gui.currentViewName(); return nil })
+		return name
+	}
+
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "instances"} {
+		s.do(t, s.gui.cycleSideView(1))
+		assert.Equal(t, want, current())
+	}
+
+	s.do(t, s.gui.cycleSideView(-1))
+	assert.Equal(t, "networks", current())
+
+	// The resources panel shows whichever list the arrows reached.
+	assert.Contains(t, s.settle(t, "Leases"), "│incusbr0")
 }
 
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error { return s.gui.handleCreateOptionsMenu(s.g, s.gui.Views.Instances) })
-	assertGolden(t, "menu-90x40", s.settle(t, "focus networks panel"))
+	assertGolden(t, "menu-90x40", s.settle(t, "focus resources panel"))
 }
 
 func TestScreenConfirmation(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error {
 		return s.gui.createConfirmationPanel("Confirm", "Are you sure you want to stop web?", nil, nil)
 	})
@@ -295,7 +455,7 @@ func TestScreenConfirmation(t *testing.T) {
 // where a count of characters gives two.
 func TestScreenWordWrappedConfirmation(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	words := strings.Repeat("a", 40) + " " + strings.Repeat("b", 40) + " " + strings.Repeat("c", 40)
 	s.do(t, func() error { return s.gui.createConfirmationPanel("Confirm", words, nil, nil) })
@@ -307,7 +467,7 @@ func TestScreenWordWrappedConfirmation(t *testing.T) {
 
 func TestScreenErrorPopup(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 	s.do(t, func() error { return s.gui.createErrorPanel("instance is running") })
 	assertGolden(t, "error-140x40", s.settle(t, "instance is running"))
 }
@@ -316,7 +476,7 @@ func TestScreenBorders(t *testing.T) {
 	for _, border := range []string{"rounded", "single", "double", "hidden"} {
 		t.Run(border, func(t *testing.T) {
 			s := startScreen(t, 100, 30, func(c *config.UserConfig) { c.Gui.Border = border })
-			assertGolden(t, "border-"+border+"-100x30", s.settle(t, "incusbr0"))
+			assertGolden(t, "border-"+border+"-100x30", s.ready(t))
 		})
 	}
 }

@@ -1,0 +1,40 @@
+╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
+│a-name-long-enough-to-be-cut-off running  co…││Alias:                                                                                     │
+│web                              running  co…││Fingerprint:  0123456789abcdef0123456789abcdef                                             │
+│db                               stopped  co…││Type:         container                                                                    │
+│                                             ││Architecture:                                                                              │
+│                                             ││Uploaded:     0001-01-01 00:00:00 +0000 UTC                                                │
+│                                             ││Last used:    2026-09-20 06:00:00 +0000 UTC                                                │
+│                                             ││Cached:       false                                                                        │
+│                                             ││Used by:      web, a-name-long-enough-to-be-cut-off (default)                              │
+│                                             ││                                                                                           │
+│                                             ││Full details:                                                                              │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│auto_update: false                                                                         │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│properties:                                                                                │
+│                                             ││  description: Alpine 3.22 amd64                                                           │
+│                                             ││public: false                                                                              │
+│                                             ││expires_at: "0001-01-01T00:00:00Z"                                                         │
+│                                  ╭─Prune images────────────────────────────────────────────────────────╮                                 │
+│                                  │unused cached images (1, 90.00MiB)                                   │                                 │
+│                                  │every unused image (1, 90.00MiB)                                     │                                 │
+│                                  │cancel                                                               │                                 │
+│                                  ╰─────────────────────────────────────────────────────────────────────╯                                 │
+│                                             ││fingerprint: 0123456789abcdef0123456789abcdef                                              │
+│                                             ││size: 3145728                                                                              │
+│                                             ││type: container                                                                            │
+╰─────────────────────────────────────────────╯│created_at: "0001-01-01T00:00:00Z"                                                         │
+╭─[3]─Images - Volumes - Networks─────────────╮│last_used_at: "2026-09-20T06:00:00Z"                                                       │
+│Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││uploaded_at: "0001-01-01T00:00:00Z"                                                        │
+│Debian 13 amd64   0 fedcba987654 90.00MiB ne…││project: default                                                                           │
+│                                             ││locations: null                                                                            │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+enter: execute, esc: close, ↑ ↓: navigate                                                            Incus v7.4 (fake/all projects) ●  test

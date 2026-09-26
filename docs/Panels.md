@@ -15,7 +15,7 @@ with no box invisible.
 
 That gate means panel numbering can't index `sidePanelDefs()` — a hidden
 first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
-number keys, the title prefixes, `sideViewNames` and the startup focus all
+number keys, the title prefixes, `sideWindowNames` and the startup focus all
 run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask.
@@ -258,7 +258,20 @@ already carries, so moving through a list asks the daemon for nothing;
 create, delete and restore re-run that listing, which is what shows their
 result at once. Snapshot names can come back prefixed with the instance
 (`alpine/snap0`); every other call wants the bare name, which
-`snapshotName` strips. `n` works from the instances panel as well as
+`snapshotName` strips.
+
+`a` swaps the selection for every instance the instances panel holds, the
+local stack's replicas included (`gui.showAllSnapshots` picks which way a
+session starts). The panels go on handing their selection over while it's
+on, so turning it off lands on whatever is selected by then; they just
+don't rerender a list that wouldn't change. Rows group by project before
+instance, and name the project with the instance once the list spans
+projects, instance names being unique only within one. `n` from this panel
+then snapshots the selected row's instance, not the instances panel's, and
+the new snapshot is found by project, instance and name, since every
+replica of a service can carry one of the same name.
+
+`n` works from the instances panel as well as
 this one - it acts on the selected instance either way - and moves to the
 new snapshot once it exists, so taking one from the instances panel shows
 you the result. It opens a two-view popup: the editable
@@ -286,13 +299,64 @@ gocui has views and keybindings, and the menu itself is lazydocker's
 `SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
 <name>`, not a snapshot operation.
 
+## Resources
+
+Images, volumes and networks are three panels sharing one window: a
+`window` on their defs puts them in the same slot, and `window.go` is what
+knows about it. The views are stacked at the same position and the layout
+shows the window's active one, which is whichever was focused there last
+(`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
+on each, each with its own `TabIndex` - so the title reads as the window's
+rather than the list's. Number keys, `tab` and the side column's split
+all count windows, so the three take one number and one share of the
+height; they read something far less often than instances do.
+
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the three are
+stops of their own there, where `tab` and the number keys stop at the
+window; `[`/`]` stay the main panel's tabs, which Networks has three of.
+The window's number key pressed again moves to its next list, and a click
+on a tab's name to that one. The arrows are global bindings, and the
+main panel's own - scrolling sideways - win while it has focus. It's a
+focus change
+like any other, so a filter on one list is dropped on moving to the next,
+as it is moving between any two panels. The hidden lists keep polling,
+so a switch shows current rows at once.
+
 ## Images
 
 Local images (`GetImages`), identified by `Image.Label()`: alias, else the
 description an unaliased cached image carries (what `incus image list` shows
-in its DESCRIPTION column), else the short fingerprint. Truncated to keep
-the columns after it on screen. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
+in its DESCRIPTION column), else the short fingerprint. It takes whatever
+width the columns after it leave, down to 28 characters and cut with an
+ellipsis below that - one of the `FlexColumns` a side panel can name, which the
+volumes' and snapshots' names are too, and the instances' and services'
+`image` column wherever the config puts it. With more than one they give
+way in the order named, each to its own floor: the snapshots panel's
+instance column goes first, repeating down a list grouped by it, before
+the snapshot name you act on. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
 only change when someone pulls or deletes one.
+
+Each image carries the instances created from it (`Image.UsedBy`), matched
+on `volatile.base_image`, and the count is the column after the label - red
+at 0 - since whether an image can go is what the panel is for. The images
+fetch lists instances across every project for this, whatever the panels
+are scoped to: a project without `features.images` uses default's images,
+so an image one project lists can be another's instances' base. A client
+refused the all-projects listing falls back to its own project's; one that
+can't list instances at all still gets its images, their users `?` and
+none of them offered to prune.
+Instances are matched by fingerprint alone, so the per-project copies
+incus-compose makes of an image all count the same users. Then size, the
+date an instance was last created from it, and `vm` or `cached` where they
+apply; the container type every other image has isn't worth a column.
+
+`D` prunes: a menu of the unused cached images - what Incus cached on a
+launch and expires by itself - or every unused one, each with its count
+and size, then a confirmation naming them all. The second is the one that
+matters with incus-compose, whose copies aren't cached images and are
+never expired: an old tag stays until someone deletes it. Deletes run one
+at a time and a failure doesn't stop the rest; what failed is listed once
+they're done.
 
 ## Volumes
 
@@ -303,7 +367,28 @@ pool+type+name, since an instance and a custom volume can share a name.
 Only `custom` volumes can be deleted — the rest go away with the instance or
 image they belong to.
 
+After the name come the users count - red for a custom volume nothing has
+attached, the other types always belonging to something - and the size,
+the two a narrow panel should keep. Sizes are a request each
+(`GetStoragePoolVolumeState`), eight in flight at a time, on every poll;
+where the driver can't size a volume the cell is blank (see
+[docs/Incus.md](Incus.md)). Each pool's space is one more request a poll,
+shown on the Config tab with the driver, and so are the users by name:
+`Volume.Users` turns the used_by URLs into an instance's name, or a
+profile's kind and name, with the project where it isn't the volume's.
+
 ## Networks
 
-`GetNetworks`, managed and unmanaged alike. Only managed ones can be
-deleted; the unmanaged entries are host interfaces Incus merely reports.
+`GetNetworks`, managed and unmanaged alike, with the unmanaged ones - host
+interfaces Incus merely reports, and only managed networks can be deleted -
+filtered out until `e` shows them, the way `e` shows stopped instances.
+They outnumber Incus's own networks on most hosts and have nothing to do.
+
+The tabs are Leases, State and Config. Leases is a host a row, IPv4 and
+IPv6 side by side, the gateway first: the daemon lists an entry per
+address, which would give a dual-stack instance two half-rows. Asking for
+them takes a request per project using the network (see
+[docs/Incus.md](Incus.md)). State is `incus network info`, with a bridge's
+ports named by the instance and NIC on the other end. Both are ticker
+tabs, leases every 5s and state every 2s: an instance starting takes a
+lease without changing anything the list's own 10s poll would notice.

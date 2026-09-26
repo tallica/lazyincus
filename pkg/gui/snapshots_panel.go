@@ -45,6 +45,10 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 			// snapshots group by instance rather than interleaving by date;
 			// within an instance, newest first: a rollback almost always
 			// means the last one.
+			if a.Project != b.Project {
+				return a.Project < b.Project
+			}
+
 			if a.InstanceName != b.InstanceName {
 				return a.InstanceName < b.InstanceName
 			}
@@ -52,7 +56,17 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 			return a.Snapshot.CreatedAt.After(b.Snapshot.CreatedAt)
 		},
 		GetTableCells: func(snapshot *commands.Snapshot) []string {
-			return presentation.GetSnapshotDisplayStrings(snapshot, gui.snapshotsSpanInstances())
+			return presentation.GetSnapshotDisplayStrings(snapshot, gui.snapshotOwner(snapshot))
+		},
+		// The instance gives way first: rows group by it, so it repeats down
+		// the list, where the name is what you act on.
+		FlexColumns: func() []utils.FlexColumn {
+			name := utils.FlexColumn{Index: 0, MinWidth: presentation.MinSnapshotNameWidth}
+			if !gui.State.SnapshotsSpan.Instances {
+				return []utils.FlexColumn{name}
+			}
+
+			return []utils.FlexColumn{{Index: 1, MinWidth: presentation.MinSnapshotOwnerWidth}, name}
 		},
 	}
 }
@@ -83,11 +97,19 @@ func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
 // as the newest refresh has them: they come with the instance listing, so
 // neither a selection change nor a poll asks the daemon for anything.
 func (gui *Gui) renderSnapshots() error {
-	gui.setSnapshotsTitle(gui.State.SnapshotsLabel)
+	label, instances := gui.snapshotsSource()
+	gui.setSnapshotsTitle(label)
+
+	gui.State.SnapshotsSpan = snapshotsSpan{
+		Instances: len(instances) > 1,
+		Projects: spansMultipleProjects(lo.Map(instances, func(instance *commands.Instance, _ int) string {
+			return instance.Project
+		})),
+	}
 
 	snapshots := []*commands.Snapshot{}
 
-	for _, instance := range gui.State.SnapshotsInstances {
+	for _, instance := range instances {
 		snapshots = append(snapshots, instance.Latest().Snapshots()...)
 	}
 
@@ -106,13 +128,58 @@ func (gui *Gui) refreshSnapshotsFor(label string, instances ...*commands.Instanc
 	gui.State.SnapshotsLabel = label
 	gui.State.SnapshotsInstances = instances
 
+	if gui.State.SnapshotsShowAll {
+		return nil
+	}
+
 	return gui.renderSnapshots()
 }
 
-// snapshotsSpanInstances reports whether the panel is holding more than one
-// instance's snapshots, which is when a row needs to say whose it is.
-func (gui *Gui) snapshotsSpanInstances() bool {
-	return len(gui.State.SnapshotsInstances) > 1
+// snapshotsSource is what the panel lists and what its title calls it:
+// every instance's snapshots, the local stack's included, or the selection's.
+func (gui *Gui) snapshotsSource() (string, []*commands.Instance) {
+	if gui.State.SnapshotsShowAll {
+		return gui.Tr.AllSnapshotsLabel, gui.Panels.Instances.List.GetAllItems()
+	}
+
+	return gui.State.SnapshotsLabel, gui.State.SnapshotsInstances
+}
+
+func (gui *Gui) handleToggleAllSnapshots(g *gocui.Gui, v *gocui.View) error {
+	gui.State.SnapshotsShowAll = !gui.State.SnapshotsShowAll
+
+	return gui.renderSnapshots()
+}
+
+// snapshotOwner names the instance a row came from when the panel holds more
+// than one instance's snapshots, and its project too when those span
+// projects, where instance names can repeat.
+func (gui *Gui) snapshotOwner(snapshot *commands.Snapshot) string {
+	switch {
+	case gui.State.SnapshotsSpan.Projects:
+		return snapshot.Project + "/" + snapshot.InstanceName
+	case gui.State.SnapshotsSpan.Instances:
+		return snapshot.InstanceName
+	default:
+		return ""
+	}
+}
+
+// handleSnapshotCreate snapshots the instance the selected row belongs to
+// while the panel lists every instance's; following a selection, the
+// instances panel's, as before.
+func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
+	if gui.State.SnapshotsShowAll {
+		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil {
+			if instance, ok := lo.Find(gui.Panels.Instances.List.GetAllItems(), func(instance *commands.Instance) bool {
+				return instance.Project == snapshot.Project && instance.Name == snapshot.InstanceName
+			}); ok {
+				return gui.snapshotCreatePrompt(instance)
+			}
+		}
+	}
+
+	return onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt)(g, v)
 }
 
 // setSnapshotsTitle names what the panel is showing, since the list alone
@@ -382,13 +449,12 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 		return gui.refresh(func() error {
 			// Points the panel at this instance alone: taken from a
 			// replicated service, the one just picked is one of several it
-			// was showing, and focusSnapshot wants the new snapshot
-			// unambiguous.
+			// was showing. A no-op while the panel lists every instance's.
 			if err := gui.refreshSnapshotsFor(instance.Name, instance); err != nil {
 				return err
 			}
 
-			return gui.focusSnapshot(name)
+			return gui.focusSnapshot(instance, name)
 		}, gui.fetchInstances, gui.fetchServices)
 	})
 }
@@ -396,9 +462,10 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 // focusSnapshot moves to the snapshots panel and puts the cursor on the
 // named snapshot, so a snapshot taken from the instances panel lands you
 // where you can see it.
-func (gui *Gui) focusSnapshot(name string) error {
-	index := lo.IndexOf(lo.Map(gui.Panels.Snapshots.List.GetItems(),
-		func(snapshot *commands.Snapshot, _ int) string { return snapshot.Name }), name)
+func (gui *Gui) focusSnapshot(instance *commands.Instance, name string) error {
+	index := gui.Panels.Snapshots.List.GetIndexBy(func(snapshot *commands.Snapshot) bool {
+		return snapshot.Project == instance.Project && snapshot.InstanceName == instance.Name && snapshot.Name == name
+	})
 	if index < 0 {
 		return nil
 	}

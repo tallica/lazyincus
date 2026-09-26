@@ -76,6 +76,10 @@ type GuiConfig struct {
 	// there are enough panels that an even split leaves each one short.
 	ExpandFocusedSidePanel bool `yaml:"expandFocusedSidePanel,omitempty"`
 
+	// ShowAllSnapshots starts the Snapshots panel listing every instance's
+	// snapshots rather than following the selected instance.
+	ShowAllSnapshots bool `yaml:"showAllSnapshots,omitempty"`
+
 	// Determines whether we show the bottom line (the one containing keybinding
 	// info and the status of the app).
 	ShowBottomLine bool `yaml:"showBottomLine"`
@@ -147,6 +151,7 @@ func GetDefaultConfig() UserConfig {
 			},
 			ReturnImmediately:      false,
 			ExpandFocusedSidePanel: false,
+			ShowAllSnapshots:       false,
 			WrapMainPanel:          true,
 			SidePanelWidth:         0.3333,
 			ShowBottomLine:         true,

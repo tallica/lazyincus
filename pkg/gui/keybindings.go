@@ -239,8 +239,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "snapshots",
 			Key:         'n',
 			Modifier:    gocui.ModNone,
-			Handler:     onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt),
+			Handler:     gui.handleSnapshotCreate,
 			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "snapshots",
+			Key:         'a',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleAllSnapshots,
+			Description: gui.Tr.ToggleAllSnapshots,
 		},
 		{
 			ViewName:    "snapshots",
@@ -255,6 +262,20 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotDelete),
 			Description: gui.Tr.Remove,
+		},
+		{
+			ViewName:    "images",
+			Key:         'D',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handlePruneImages,
+			Description: gui.Tr.PruneImages,
+		},
+		{
+			ViewName:    "networks",
+			Key:         'e',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleUnmanagedNetworks,
+			Description: gui.Tr.HideUnmanagedNetworks,
 		},
 		{
 			ViewName:    "volumes",
@@ -407,13 +428,34 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 	)
 
+	// Arrows and h/l step list by list, a shared window's lists included,
+	// the way lazydocker's do; the main panel binds them itself, to scroll
+	// sideways, and a view's own binding comes first.
+	for _, key := range []any{gocui.KeyArrowLeft, 'h'} {
+		bindings = append(bindings, &Binding{
+			ViewName:    "",
+			Key:         key,
+			Handler:     wrappedHandler(gui.cycleSideView(-1)),
+			Description: gui.Tr.PreviousList,
+		})
+	}
+
+	for _, key := range []any{gocui.KeyArrowRight, 'l'} {
+		bindings = append(bindings, &Binding{
+			ViewName:    "",
+			Key:         key,
+			Handler:     wrappedHandler(gui.cycleSideView(1)),
+			Description: gui.Tr.NextList,
+		})
+	}
+
 	bindings = append(bindings, gui.servicesKeybindings()...)
 
-	for index, def := range gui.visibleSidePanelDefs() {
+	for index, window := range gui.sideWindowNames() {
 		bindings = append(bindings, &Binding{
-			Handler:     gui.handleGoTo(*def.viewPtr),
+			Handler:     gui.handleGoToWindow(window),
 			Key:         focusKey(index),
-			Description: gui.focusPanelDescription(def.title),
+			Description: gui.focusPanelDescription(gui.windowTitle(window)),
 		})
 	}
 
@@ -475,6 +517,19 @@ func (gui *Gui) keybindings(g *gocui.Gui) error {
 
 	if err := g.SetTabClickBinding("main", gui.onMainTabClick); err != nil {
 		return err
+	}
+
+	for _, window := range gui.sideWindowNames() {
+		defs := gui.windowDefs(window)
+		if len(defs) < 2 {
+			continue
+		}
+
+		for _, def := range defs {
+			if err := g.SetTabClickBinding(def.name, gui.onWindowTabClick(window)); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

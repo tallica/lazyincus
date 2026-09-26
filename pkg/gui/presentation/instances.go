@@ -37,8 +37,7 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 		return displayInstanceHealth(instance)
 	},
 	"image": func(_ *config.GuiConfig, instance *commands.Instance) string {
-		image := shortImageRef(instance.ComposeImage())
-		return utils.Truncate(image, maxImageAliasWidth)
+		return shortImageRef(instance.ComposeImage())
 	},
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
@@ -46,23 +45,33 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 }
 
 func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool) []string {
+	columns := instanceColumns(guiConfig, showProject)
+
+	cells := make([]string, 0, len(columns))
+	for _, column := range columns {
+		cells = append(cells, instanceColumnRenderers[column](guiConfig, instance))
+	}
+
+	return cells
+}
+
+// InstanceImageColumn is where the image column lands among the ones
+// shown, -1 when it isn't: the panel's flexible column.
+func InstanceImageColumn(guiConfig *config.GuiConfig, showProject bool) int {
+	return lo.IndexOf(instanceColumns(guiConfig, showProject), "image")
+}
+
+// instanceColumns are the columns shown, in order, unknown names dropped.
+func instanceColumns(guiConfig *config.GuiConfig, showProject bool) []string {
 	columns := guiConfig.InstanceColumns
 	if len(columns) == 0 {
 		columns = config.DefaultInstanceColumns
 	}
 
-	columns = withProjectColumn(columns, showProject)
-
-	cells := make([]string, 0, len(columns))
-	for _, column := range columns {
-		render, ok := instanceColumnRenderers[column]
-		if !ok {
-			continue
-		}
-		cells = append(cells, render(guiConfig, instance))
-	}
-
-	return cells
+	return lo.Filter(withProjectColumn(columns, showProject), func(column string, _ int) bool {
+		_, ok := instanceColumnRenderers[column]
+		return ok
+	})
 }
 
 // withProjectColumn puts the project first when the list spans projects,
@@ -103,8 +112,9 @@ func displayInstanceSnapshotCount(instance *commands.Instance) string {
 	return strconv.Itoa(len(instance.Instance.Snapshots))
 }
 
-// maxImageAliasWidth keeps the columns after it on screen.
-const maxImageAliasWidth = 28
+// MinImageAliasWidth is as narrow as the image column goes to make room for
+// the columns after it.
+const MinImageAliasWidth = 28
 
 // shortImageRef keeps a registry reference's last segment; an Incus alias has
 // no dotted host and keeps its slashes, so alpine/3.20 stays whole.

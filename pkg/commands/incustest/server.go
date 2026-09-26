@@ -23,6 +23,15 @@ type Server struct {
 	Networks  []api.Network
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
+	// PoolSpace by pool, and VolumeUsage in bytes by volume name.
+	PoolSpace   map[string]api.ResourcesStoragePoolSpace
+	VolumeUsage map[string]uint64
+	// NetworkLeases by network, then by the project that sees them - the
+	// daemon lists only the asking project's. NetworkStates by network. A
+	// network missing from either is not found, as leases on an unmanaged
+	// one are.
+	NetworkLeases map[string]map[string][]api.NetworkLease
+	NetworkStates map[string]api.NetworkState
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -143,6 +152,27 @@ func (s *Server) GetInstancesFullAllProjects(api.InstanceType) ([]api.InstanceFu
 	return s.instances()
 }
 
+func (s *Server) GetInstances(instanceType api.InstanceType) ([]api.Instance, error) {
+	instances, err := s.GetInstancesFull(instanceType)
+
+	return plain(instances), err
+}
+
+func (s *Server) GetInstancesAllProjects(instanceType api.InstanceType) ([]api.Instance, error) {
+	instances, err := s.GetInstancesFullAllProjects(instanceType)
+
+	return plain(instances), err
+}
+
+func plain(instances []api.InstanceFull) []api.Instance {
+	out := make([]api.Instance, len(instances))
+	for i, instance := range instances {
+		out[i] = instance.Instance
+	}
+
+	return out
+}
+
 func (s *Server) GetImages() ([]api.Image, error) {
 	return inProject(s.Images, s.scope(), func(i api.Image) string { return i.Project }), nil
 }
@@ -159,7 +189,29 @@ func (s *Server) GetNetworksAllProjects() ([]api.Network, error) {
 	return slices.Clone(s.Networks), nil
 }
 
-func (s *Server) GetStoragePoolNames() ([]string, error) {
+// errNetworkNotFound is the daemon's answer for leases on a network it
+// doesn't manage.
+var errNetworkNotFound = api.StatusErrorf(404, "Network not found")
+
+func (s *Server) GetNetworkLeases(name string) ([]api.NetworkLease, error) {
+	byProject, ok := s.NetworkLeases[name]
+	if !ok {
+		return nil, errNetworkNotFound
+	}
+
+	return slices.Clone(byProject[s.scope()]), nil
+}
+
+func (s *Server) GetNetworkState(name string) (*api.NetworkState, error) {
+	state, ok := s.NetworkStates[name]
+	if !ok {
+		return nil, errNetworkNotFound
+	}
+
+	return &state, nil
+}
+
+func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 	names := make([]string, 0, len(s.Volumes))
 	for pool := range s.Volumes {
 		names = append(names, pool)
@@ -167,7 +219,32 @@ func (s *Server) GetStoragePoolNames() ([]string, error) {
 
 	slices.Sort(names)
 
-	return names, nil
+	pools := make([]api.StoragePool, len(names))
+	for i, name := range names {
+		pools[i] = api.StoragePool{Name: name, Driver: "dir"}
+	}
+
+	return pools, nil
+}
+
+func (s *Server) GetStoragePoolResources(pool string) (*api.ResourcesStoragePool, error) {
+	space, ok := s.PoolSpace[pool]
+	if !ok {
+		return nil, api.StatusErrorf(404, "Storage pool not found")
+	}
+
+	return &api.ResourcesStoragePool{Space: space}, nil
+}
+
+// GetStoragePoolVolumeState answers from VolumeUsage, by volume name; a
+// volume missing from it has no usage, as on a dir pool without quotas.
+func (s *Server) GetStoragePoolVolumeState(_, _, name string) (*api.StorageVolumeState, error) {
+	usage := &api.StorageVolumeStateUsage{}
+	if used, ok := s.VolumeUsage[name]; ok {
+		usage.Used = used
+	}
+
+	return &api.StorageVolumeState{Usage: usage}, nil
 }
 
 func (s *Server) GetStoragePoolVolumes(pool string) ([]api.StorageVolume, error) {

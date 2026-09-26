@@ -1,6 +1,10 @@
 package commands
 
 import (
+	"net/url"
+	"slices"
+	"sync"
+
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/sirupsen/logrus"
@@ -12,8 +16,11 @@ import (
 type Network struct {
 	Name string
 
-	Network   api.Network
-	Client    incus.InstanceServer
+	Network api.Network
+	Client  incus.InstanceServer
+	// ClientFor is a client scoped to another project, which the leases
+	// need: see Leases.
+	ClientFor func(project string) incus.InstanceServer
 	OSCommand *OSCommand
 	Log       *logrus.Entry
 	Tr        *i18n.TranslationSet
@@ -32,6 +39,89 @@ func (n *Network) IsManaged() bool {
 // UsedByCount is how many profiles and instances reference the network.
 func (n *Network) UsedByCount() int {
 	return len(n.Network.UsedBy)
+}
+
+// Leases are what the network's DHCP server has handed out, plus the
+// addresses it keeps for itself. Only managed networks have any. The daemon
+// answers with the asking project's leases alone, so this asks every
+// project the network's used_by names too - see docs/Incus.md.
+func (n *Network) Leases() ([]api.NetworkLease, error) {
+	leases, err := n.Client.GetNetworkLeases(n.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if n.ClientFor == nil {
+		return leases, nil
+	}
+
+	projects := n.usedByProjects()
+	answers := make([][]api.NetworkLease, len(projects))
+
+	var wait sync.WaitGroup
+
+	slots := make(chan struct{}, requestsInFlight)
+
+	for i, project := range projects {
+		wait.Go(func() {
+			slots <- struct{}{}
+			defer func() { <-slots }()
+
+			// An error is a project gone since the listing; the rest stand.
+			if more, err := n.ClientFor(project).GetNetworkLeases(n.Name); err == nil {
+				answers[i] = more
+			}
+		})
+	}
+
+	wait.Wait()
+
+	// Merged in used_by's order, not the answers', so rows hold still from
+	// one refresh to the next.
+	for _, more := range answers {
+		for _, lease := range more {
+			if !slices.Contains(leases, lease) {
+				leases = append(leases, lease)
+			}
+		}
+	}
+
+	return leases, nil
+}
+
+// usedByProjects are the projects other than the network's own that its
+// used_by URLs name.
+func (n *Network) usedByProjects() []string {
+	own := n.Network.Project
+	if own == "" {
+		own = api.ProjectDefaultName
+	}
+
+	projects := []string{}
+
+	for _, entry := range n.Network.UsedBy {
+		parsed, err := url.Parse(entry)
+		if err != nil {
+			continue
+		}
+
+		project := parsed.Query().Get("project")
+		if project == "" {
+			project = api.ProjectDefaultName
+		}
+
+		if project != own && !slices.Contains(projects, project) {
+			projects = append(projects, project)
+		}
+	}
+
+	return projects
+}
+
+// State is the interface as the host sees it: addresses, counters and, for
+// a bridge, the ports on it.
+func (n *Network) State() (*api.NetworkState, error) {
+	return n.Client.GetNetworkState(n.Name)
 }
 
 // Delete removes the network. Incus only allows this for managed networks

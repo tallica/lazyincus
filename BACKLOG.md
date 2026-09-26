@@ -31,8 +31,9 @@ derive from it automatically.
 
 ### Side panels
 
-Both have six, and both only when a compose file is local: Services is the
-Incus analog of lazydocker's docker-compose-specific Services/Project
+lazydocker has six with a compose file local; lazyincus has four, having
+folded images, volumes and networks into one tabbed Resources panel. Services
+is the Incus analog of lazydocker's docker-compose-specific Services/Project
 panels, and like lazydocker's it pushes the plain instance list down to
 "Standalone Instances". See
 [incus-compose integration](#incus-compose-integration).
@@ -95,9 +96,9 @@ own merits.
       a menu: name / IPv4 / IPv6 / all addresses. The `Instance.Addresses`
       and `OSCommand.CopyToClipboard` plumbing is already generic; this is
       mostly a menu panel plus entries.
-- [x] **Horizontal truncation indicator** — `SideListPanel` clips each
-      row itself, through a colour-aware `utils.Truncate`, and the
-      layout re-clips on a width change. lazydocker clips silently, so there
+- [x] **Horizontal truncation indicator** — `SideListPanel` renders its
+      rows at the view's width, clipping each through a colour-aware
+      `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
       mirroring `P` for projects. `pkg/gui/remotes.go` alongside

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -339,22 +340,57 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 		return nil, err
 	}
 
+	// The images stand without their users: a client may be allowed one
+	// and not the other.
+	users, usersErr := imageUsers(client)
+	if usersErr != nil {
+		c.Log.Warn(usersErr)
+	}
+
 	ownImages := make([]*Image, len(apiImages))
 
 	for i := range apiImages {
 		apiImage := apiImages[i]
 
 		ownImages[i] = &Image{
-			Fingerprint: apiImage.Fingerprint,
-			Image:       apiImage,
-			Client:      c.clientFor(apiImage.Project),
-			OSCommand:   c.OSCommand,
-			Log:         c.Log,
-			Tr:          c.Tr,
+			Fingerprint:  apiImage.Fingerprint,
+			Image:        apiImage,
+			UsedBy:       users[apiImage.Fingerprint],
+			UsersUnknown: usersErr != nil,
+			Client:       c.clientFor(apiImage.Project),
+			OSCommand:    c.OSCommand,
+			Log:          c.Log,
+			Tr:           c.Tr,
 		}
 	}
 
 	return ownImages, nil
+}
+
+// imageUsers maps each image's fingerprint to the instances created from it,
+// by volatile.base_image. Every project's, whatever the panels are scoped
+// to: a project without features.images uses default's images, so an image
+// listed in one project can be what another project's instances came from,
+// and prune has to know. A client limited to some projects falls back to
+// the ones it can see.
+func imageUsers(client incus.InstanceServer) (map[string][]string, error) {
+	instances, err := client.GetInstancesAllProjects(api.InstanceTypeAny)
+	if err != nil {
+		instances, err = client.GetInstances(api.InstanceTypeAny)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	users := map[string][]string{}
+
+	for _, instance := range instances {
+		if fingerprint := instance.Config["volatile.base_image"]; fingerprint != "" {
+			users[fingerprint] = append(users[fingerprint], instance.Project+"/"+instance.Name)
+		}
+	}
+
+	return users, nil
 }
 
 func (c *IncusCommand) listImages(client incus.InstanceServer) ([]api.Image, error) {
@@ -382,9 +418,12 @@ func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 		apiNetwork := apiNetworks[i]
 
 		ownNetworks[i] = &Network{
-			Name:      apiNetwork.Name,
-			Network:   apiNetwork,
-			Client:    c.clientFor(apiNetwork.Project),
+			Name:    apiNetwork.Name,
+			Network: apiNetwork,
+			Client:  c.clientFor(apiNetwork.Project),
+			ClientFor: func(project string) incus.InstanceServer {
+				return c.Client().UseProject(project)
+			},
 			OSCommand: c.OSCommand,
 			Log:       c.Log,
 			Tr:        c.Tr,
@@ -409,7 +448,7 @@ func (c *IncusCommand) listNetworks(client incus.InstanceServer) ([]api.Network,
 func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	client := c.Client()
 
-	pools, err := client.GetStoragePoolNames()
+	pools, err := client.GetStoragePools()
 	c.NoteError(err)
 
 	if err != nil {
@@ -419,28 +458,64 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	ownVolumes := []*Volume{}
 
 	for _, pool := range pools {
-		apiVolumes, err := c.listVolumes(client, pool)
+		apiVolumes, err := c.listVolumes(client, pool.Name)
 		if err != nil {
 			c.Log.Warn(err)
 			continue
+		}
+
+		var space *api.ResourcesStoragePoolSpace
+		if resources, err := client.GetStoragePoolResources(pool.Name); err == nil {
+			space = &resources.Space
 		}
 
 		for i := range apiVolumes {
 			apiVolume := apiVolumes[i]
 
 			ownVolumes = append(ownVolumes, &Volume{
-				Pool:      pool,
-				Name:      apiVolume.Name,
-				Volume:    apiVolume,
-				Client:    c.clientFor(apiVolume.Project),
-				OSCommand: c.OSCommand,
-				Log:       c.Log,
-				Tr:        c.Tr,
+				Pool:       pool.Name,
+				Name:       apiVolume.Name,
+				Volume:     apiVolume,
+				PoolDriver: pool.Driver,
+				PoolSpace:  space,
+				Client:     c.clientFor(apiVolume.Project),
+				OSCommand:  c.OSCommand,
+				Log:        c.Log,
+				Tr:         c.Tr,
 			})
 		}
 	}
 
+	readVolumeUsage(ownVolumes)
+
 	return ownVolumes, nil
+}
+
+// requestsInFlight caps a fan-out of one request per item: volumes' usage,
+// a network's leases per project.
+const requestsInFlight = 8
+
+// readVolumeUsage asks after each volume's usage, which the listing doesn't
+// carry: one request a volume, so several in flight at a time. A volume the
+// daemon can't size keeps a nil Usage.
+func readVolumeUsage(volumes []*Volume) {
+	var wait sync.WaitGroup
+
+	slots := make(chan struct{}, requestsInFlight)
+
+	for _, volume := range volumes {
+		wait.Go(func() {
+			slots <- struct{}{}
+			defer func() { <-slots }()
+
+			state, err := volume.Client.GetStoragePoolVolumeState(volume.Pool, volume.Volume.Type, volume.Name)
+			if err == nil && state.Usage != nil && state.Usage.Used > 0 {
+				volume.Usage = state.Usage
+			}
+		})
+	}
+
+	wait.Wait()
 }
 
 func listInstances(client incus.InstanceServer, allProjects bool) ([]api.InstanceFull, error) {

@@ -5,33 +5,33 @@
 │                                             ││Project:      default                                                                      │
 │                                             ││Image:        Alpine 3.22 amd64                                                            │
 │                                             ││Architecture: x86_64                                                                       │
-╰─────────────────────────────────────────────╯│IPv4:         192.0.2.144                                                                  │
-╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│Snapshots:    0                                                                            │
+│                                             ││IPv4:         192.0.2.144                                                                  │
+│                                             ││Snapshots:    0                                                                            │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││CPU:          (no usage reported)                                                          │
-│                                             ││Memory:       (no usage reported)                                                          │
-│                                             ││Processes:    12                                                                           │
+╰─────────────────────────────────────────────╯│Memory:       (no usage reported)                                                          │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│Processes:    12                                                                           │
 │                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│Disk:                                                                                      │
-╭─[3]─Images──────────────────────────────────╮│  (no disk usage reported)                                                                 │
-│Alpine 3.22 amd64 0123456789ab container     ││                                                                                           │
+│                                             ││Disk:                                                                                      │
+│                                             ││  (no disk usage reported)                                                                 │
+│                                             ││                                                                                           │
 │                                             ││Network:                                                                                   │
 │                                             ││  eth0:                                                                                    │
 │                                             ││    Type:                                                                                  │
 │                                             ││    State:                                                                                 │
+│                                             ││    Host interface: veth144                                                                │
 │                                             ││    MTU:        0                                                                          │
-╰─────────────────────────────────────────────╯│    Received:   0B (0 packets)                                                             │
-╭─[4]─Volumes─────────────────────────────────╮│    Sent:       0B (0 packets)                                                             │
-│data default custom 0                        ││    IP addresses:                                                                          │
-│                                             ││      inet:  192.0.2.144/ (global)                                                         │
+│                                             ││    Received:   0B (0 packets)                                                             │
+╰─────────────────────────────────────────────╯│    Sent:       0B (0 packets)                                                             │
+╭─[3]─Images - Volumes - Networks─────────────╮│    IP addresses:                                                                          │
+│Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││      inet:  192.0.2.144/ (global)                                                         │
+│Debian 13 amd64   0 fedcba987654 90.00MiB ne…││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[5]─Networks────────────────────────────────╮│                                                                                           │
-│incusbr0 bridge managed 0                    ││                                                                                           │
+│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

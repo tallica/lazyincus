@@ -71,9 +71,14 @@ type SideListPanel[T comparable] struct {
 	// This can be nil if you want to always show the panel
 	Hide func() bool
 
-	// the rendered table before clipping, and the width it was last clipped
-	// to, so a resize re-clips without re-rendering
-	table     string
+	// FlexColumns take the width the rest leave, giving it up in order when
+	// there's too little; nil for none. A func, since a project column ahead
+	// of one comes and goes.
+	FlexColumns func() []utils.FlexColumn
+
+	// the rows' cells, and the width they were last rendered at, so a
+	// resize re-renders them without asking for the cells again
+	rows      [][]string
 	clipWidth int
 }
 
@@ -295,16 +300,13 @@ func (self *SideListPanel[T]) selectedIndex(selected T) int {
 func (self *SideListPanel[T]) RerenderList() error {
 	self.FilterAndSort()
 
-	table := lo.Map(self.List.GetItems(), func(item T, index int) []string {
+	self.rows = lo.Map(self.List.GetItems(), func(item T, index int) []string {
 		return self.GetTableCells(item)
 	})
-	renderedTable, err := utils.RenderTable(table)
-	if err != nil {
+
+	if err := self.writeRows(); err != nil {
 		return err
 	}
-
-	self.table = renderedTable
-	self.writeRows()
 
 	if self.OnRerender != nil {
 		if err := self.OnRerender(); err != nil {
@@ -319,27 +321,40 @@ func (self *SideListPanel[T]) RerenderList() error {
 	return nil
 }
 
-// FitToWidth re-cuts the rows if the panel has changed width since they
+// FitToWidth re-renders the rows if the panel has changed width since they
 // were written. The layout calls it, so a resize is drawn at the new width
 // in the same frame rather than at the panel's next refresh.
 func (self *SideListPanel[T]) FitToWidth() {
 	if self.View.InnerWidth() != self.clipWidth {
-		self.writeRows()
+		// The cells rendered once already, in RerenderList.
+		_ = self.writeRows()
 	}
 }
 
-// writeRows writes the table to the view, each row cut to the view's width
-// and the cut marked: gocui stops a long row at the edge without a sign. The
+// writeRows renders the table to the view's width, each row cut to it and
+// the cut marked: gocui stops a long row at the edge without a sign. The
 // mark goes in the row because drawFrame puts the scrollbar in the border.
-func (self *SideListPanel[T]) writeRows() {
+func (self *SideListPanel[T]) writeRows() error {
 	self.clipWidth = self.View.InnerWidth()
 
-	rows := strings.Split(self.table, "\n")
+	var flex []utils.FlexColumn
+	if self.FlexColumns != nil {
+		flex = self.FlexColumns()
+	}
+
+	table, err := utils.RenderTableToWidth(self.rows, self.clipWidth, flex)
+	if err != nil {
+		return err
+	}
+
+	rows := strings.Split(table, "\n")
 	for index, row := range rows {
 		rows[index] = utils.Truncate(row, self.clipWidth)
 	}
 
 	self.View.SetContent(strings.Join(rows, "\n"))
+
+	return nil
 }
 
 func (self *SideListPanel[T]) SetMainTabIndex(index int) {

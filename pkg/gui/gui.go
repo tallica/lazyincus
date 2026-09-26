@@ -97,6 +97,10 @@ type guiState struct {
 	// if true, we show instances with a 'Stopped' status in the instances panel
 	ShowStoppedInstances bool
 
+	// ShowUnmanagedNetworks lists the host interfaces Incus merely reports
+	// alongside its own networks.
+	ShowUnmanagedNetworks bool
+
 	ScreenMode WindowMaximisation
 
 	// Seeded from expandFocusedSidePanel and then owned by the session, so
@@ -127,6 +131,18 @@ type guiState struct {
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
 
+	// ActiveWindowViews is the view each shared window shows, by window -
+	// whichever was focused in it last. See window.go.
+	ActiveWindowViews map[string]string
+
+	// Seeded from showAllSnapshots and then owned by the session, as
+	// ExpandSidePanel is.
+	SnapshotsShowAll bool
+
+	// What the snapshots panel's rows span as of its last render, which
+	// decides whether a row names its instance and project.
+	SnapshotsSpan snapshotsSpan
+
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
 	// the all-projects view of a server with a single project reads better
@@ -134,11 +150,26 @@ type guiState struct {
 	SpansProjects spansProjects
 }
 
+type snapshotsSpan struct {
+	Instances bool
+	Projects  bool
+}
+
 type spansProjects struct {
 	Instances bool
 	Images    bool
 	Volumes   bool
 	Networks  bool
+}
+
+// projectColumns is how many columns a project column puts ahead of the
+// rest: one when the panel spans projects.
+func projectColumns(spans bool) int {
+	if spans {
+		return 1
+	}
+
+	return 0
 }
 
 // spansMultipleProjects reports whether the given projects include more than
@@ -208,6 +239,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		ShowStoppedInstances: true,
 		ScreenMode:           getScreenMode(config),
 		ExpandSidePanel:      config.UserConfig.Gui.ExpandFocusedSidePanel,
+		SnapshotsShowAll:     config.UserConfig.Gui.ShowAllSnapshots,
 	}
 
 	gui := &Gui{
@@ -461,8 +493,8 @@ func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
 }
 
 // reloadConfig re-applies the settings the app caches rather than reads at
-// the point of use. screenMode, expandFocusedSidePanel and language stay as
-// they were - see docs/Config.md.
+// the point of use. screenMode, expandFocusedSidePanel, showAllSnapshots and
+// language stay as they were - see docs/Config.md.
 func (gui *Gui) reloadConfig() error {
 	if err := gui.Config.ReloadUserConfig(); err != nil {
 		return err

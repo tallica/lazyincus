@@ -34,7 +34,7 @@ func TestRefreshSeqInvalidateTurnsAwayFetchesInFlight(t *testing.T) {
 // not on the same row.
 func TestSelectionFollowsAnInstanceThatResorts(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	s.do(t, s.gui.Panels.Instances.HandleNextLine)
 	s.settle(t, "Name:         web")
@@ -55,7 +55,7 @@ func TestSelectionFollowsAnInstanceThatResorts(t *testing.T) {
 
 func TestProjectSwitchShowsOnlyThatProject(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	s.server.SetInstances(append(fixtureServer().Instances, api.InstanceFull{Instance: api.Instance{
 		Name: "api", Project: "other", Status: "Running", Type: "container",
@@ -72,7 +72,7 @@ func TestProjectSwitchShowsOnlyThatProject(t *testing.T) {
 // instances fetched alongside it still land.
 func TestAFailedFetchDoesNotHoldBackTheOthers(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	applied := make(chan struct{})
 	succeeds := func() (func() error, error) {
@@ -121,7 +121,7 @@ func TestProjectSwitchRedrawsTheSameFirstInstance(t *testing.T) {
 
 func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
-	s.settle(t, "incusbr0")
+	s.ready(t)
 
 	s.server.SetDown(true)
 	require.NoError(t, s.gui.refreshInstancesQuiet())

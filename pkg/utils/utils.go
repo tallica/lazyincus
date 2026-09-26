@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -141,6 +142,68 @@ func RenderTable(rows [][]string) (string, error) {
 	paddedDisplayRows := getPaddedDisplayStrings(rows, columnPadWidths)
 
 	return strings.Join(paddedDisplayRows, "\n"), nil
+}
+
+// FlexColumn is a column that gives up width for a table to fit, down to
+// MinWidth.
+type FlexColumn struct {
+	Index    int
+	MinWidth int
+}
+
+// RenderTableToWidth is RenderTable with columns that give up width for the
+// table to fit in width: each flex column in turn, down to its MinWidth,
+// truncated with an ellipsis. Short of that the rows run past width, for the
+// view to clip. A flex column the rows don't have is skipped.
+func RenderTableToWidth(rows [][]string, width int, flex []FlexColumn) (string, error) {
+	if len(rows) == 0 || len(flex) == 0 {
+		return RenderTable(rows)
+	}
+
+	if !displayArraysAligned(rows) {
+		return "", errors.New("Each item must return the same number of strings to display")
+	}
+
+	widths := make([]int, len(rows[0]))
+	for _, cells := range rows {
+		for i, cell := range cells {
+			widths[i] = max(widths[i], DisplayWidth(cell))
+		}
+	}
+
+	excess := len(widths) - 1 - width
+	for _, columnWidth := range widths {
+		excess += columnWidth
+	}
+
+	shrunk := []int{}
+
+	for _, column := range flex {
+		if excess <= 0 {
+			break
+		}
+
+		if column.Index < 0 || column.Index >= len(widths) || widths[column.Index] <= column.MinWidth {
+			continue
+		}
+
+		narrowed := max(column.MinWidth, widths[column.Index]-excess)
+		excess -= widths[column.Index] - narrowed
+		widths[column.Index] = narrowed
+		shrunk = append(shrunk, column.Index)
+	}
+
+	if len(shrunk) > 0 {
+		rows = slices.Clone(rows)
+		for i, cells := range rows {
+			rows[i] = slices.Clone(cells)
+			for _, index := range shrunk {
+				rows[i][index] = Truncate(cells[index], widths[index])
+			}
+		}
+	}
+
+	return strings.Join(getPaddedDisplayStrings(rows, widths[:len(widths)-1]), "\n"), nil
 }
 
 const ellipsis = "…"
