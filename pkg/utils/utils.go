@@ -144,12 +144,19 @@ func RenderTable(rows [][]string) (string, error) {
 	return strings.Join(paddedDisplayRows, "\n"), nil
 }
 
-// RenderTableToWidth is RenderTable with one column, flex, that gives up
-// width for the table to fit in width: down to minWidth, the column
-// truncated with an ellipsis. Short of that the rows run past width, for
-// the view to clip. flex below 0 is no flexible column.
-func RenderTableToWidth(rows [][]string, width, flex, minWidth int) (string, error) {
-	if len(rows) == 0 || flex < 0 || flex >= len(rows[0]) {
+// FlexColumn is a column that gives up width for a table to fit, down to
+// MinWidth.
+type FlexColumn struct {
+	Index    int
+	MinWidth int
+}
+
+// RenderTableToWidth is RenderTable with columns that give up width for the
+// table to fit in width: each flex column in turn, down to its MinWidth,
+// truncated with an ellipsis. Short of that the rows run past width, for the
+// view to clip. A flex column the rows don't have is skipped.
+func RenderTableToWidth(rows [][]string, width int, flex []FlexColumn) (string, error) {
+	if len(rows) == 0 || len(flex) == 0 {
 		return RenderTable(rows)
 	}
 
@@ -164,18 +171,35 @@ func RenderTableToWidth(rows [][]string, width, flex, minWidth int) (string, err
 		}
 	}
 
-	total := len(widths) - 1
+	excess := len(widths) - 1 - width
 	for _, columnWidth := range widths {
-		total += columnWidth
+		excess += columnWidth
 	}
 
-	if excess := total - width; excess > 0 && widths[flex] > minWidth {
-		widths[flex] = max(minWidth, widths[flex]-excess)
+	shrunk := []int{}
 
+	for _, column := range flex {
+		if excess <= 0 {
+			break
+		}
+
+		if column.Index < 0 || column.Index >= len(widths) || widths[column.Index] <= column.MinWidth {
+			continue
+		}
+
+		narrowed := max(column.MinWidth, widths[column.Index]-excess)
+		excess -= widths[column.Index] - narrowed
+		widths[column.Index] = narrowed
+		shrunk = append(shrunk, column.Index)
+	}
+
+	if len(shrunk) > 0 {
 		rows = slices.Clone(rows)
 		for i, cells := range rows {
 			rows[i] = slices.Clone(cells)
-			rows[i][flex] = Truncate(cells[flex], widths[flex])
+			for _, index := range shrunk {
+				rows[i][index] = Truncate(cells[index], widths[index])
+			}
 		}
 	}
 

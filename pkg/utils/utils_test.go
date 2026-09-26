@@ -105,17 +105,37 @@ func TestRenderTableToWidth(t *testing.T) {
 	}
 
 	// Room enough: nothing gives way.
-	table, err := RenderTableToWidth(rows, 80, 1, 10)
+	table, err := RenderTableToWidth(rows, 80, []FlexColumn{{Index: 1, MinWidth: 10}})
 	assert.NoError(t, err)
 	assert.Equal(t, "default docker.io/library/nginx:alpine 4\ncache   alpine                         0", table)
 
 	// The flexible column takes what's left.
-	table, err = RenderTableToWidth(rows, 30, 1, 10)
+	table, err = RenderTableToWidth(rows, 30, []FlexColumn{{Index: 1, MinWidth: 10}})
 	assert.NoError(t, err)
 	assert.Equal(t, "default docker.io/library/n… 4\ncache   alpine               0", table)
 
 	// Not below its floor: the rest runs over, for the view to clip.
-	table, err = RenderTableToWidth(rows, 12, 1, 10)
+	table, err = RenderTableToWidth(rows, 12, []FlexColumn{{Index: 1, MinWidth: 10}})
 	assert.NoError(t, err)
 	assert.Equal(t, "default docker.io… 4\ncache   alpine     0", table)
+}
+
+// Flexible columns give way in the order given: the second only once the
+// first is at its floor.
+func TestRenderTableToWidthInOrder(t *testing.T) {
+	rows := [][]string{{"nightly-before-upgrade", "incus-compose/ic-healthd", "2026/09/20"}}
+	flex := []FlexColumn{{Index: 1, MinWidth: 12}, {Index: 0, MinWidth: 16}}
+
+	table, err := RenderTableToWidth(rows, 50, flex)
+	assert.NoError(t, err)
+	assert.Equal(t, "nightly-before-upgrade incus-compose/i… 2026/09/20", table)
+
+	table, err = RenderTableToWidth(rows, 40, flex)
+	assert.NoError(t, err)
+	assert.Equal(t, "nightly-before-… incus-compo… 2026/09/20", table)
+
+	// An index the rows don't have is skipped.
+	table, err = RenderTableToWidth([][]string{{"nightly-before-upgrade"}}, 16, flex)
+	assert.NoError(t, err)
+	assert.Equal(t, "nightly-before-…", table)
 }

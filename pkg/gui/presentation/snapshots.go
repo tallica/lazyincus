@@ -22,7 +22,7 @@ func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []stri
 
 	if owner != "" {
 		cells = append(cells, utils.ColoredString(
-			utils.Truncate(owner, MinSnapshotNameWidth), color.FgCyan))
+			owner, color.FgCyan))
 	}
 
 	return append(cells,
@@ -43,9 +43,12 @@ func displaySnapshotExpiry(snapshot *commands.Snapshot) string {
 	return utils.ColoredString("expires "+snapshot.Snapshot.ExpiresAt.Local().Format(DateTimeFormat), color.FgMagenta)
 }
 
-// MinSnapshotNameWidth is as narrow as the name goes for the columns after
-// it; the instance it came from keeps to that width outright.
-const MinSnapshotNameWidth = 22
+// MinSnapshotNameWidth and MinSnapshotOwnerWidth are as narrow as the name
+// and the instance it came from go for the columns after them.
+const (
+	MinSnapshotNameWidth  = 22
+	MinSnapshotOwnerWidth = 22
+)
 
 func displaySnapshotStateful(snapshot *commands.Snapshot) string {
 	if snapshot.Snapshot.Stateful {

@@ -45,8 +45,11 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 		GetTableCells: func(item *commands.Volume) []string {
 			return presentation.GetVolumeDisplayStrings(item, gui.State.SpansProjects.Volumes)
 		},
-		FlexColumn:   func() int { return projectColumns(gui.State.SpansProjects.Volumes) },
-		FlexMinWidth: presentation.MinVolumeNameWidth,
+		FlexColumns: func() []utils.FlexColumn {
+			return []utils.FlexColumn{{
+				Index: projectColumns(gui.State.SpansProjects.Volumes), MinWidth: presentation.MinVolumeNameWidth,
+			}}
+		},
 	}
 }
 

@@ -58,8 +58,16 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 		GetTableCells: func(snapshot *commands.Snapshot) []string {
 			return presentation.GetSnapshotDisplayStrings(snapshot, gui.snapshotOwner(snapshot))
 		},
-		FlexColumn:   func() int { return 0 },
-		FlexMinWidth: presentation.MinSnapshotNameWidth,
+		// The instance gives way first: rows group by it, so it repeats down
+		// the list, where the name is what you act on.
+		FlexColumns: func() []utils.FlexColumn {
+			name := utils.FlexColumn{Index: 0, MinWidth: presentation.MinSnapshotNameWidth}
+			if !gui.State.SnapshotsSpan.Instances {
+				return []utils.FlexColumn{name}
+			}
+
+			return []utils.FlexColumn{{Index: 1, MinWidth: presentation.MinSnapshotOwnerWidth}, name}
+		},
 	}
 }
 

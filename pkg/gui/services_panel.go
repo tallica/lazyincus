@@ -109,10 +109,12 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 		GetTableCells: func(row *commands.ServiceRow) []string {
 			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row)
 		},
-		FlexColumn: func() int {
-			return presentation.ServiceImageColumn(&gui.Config.UserConfig.Gui)
+		FlexColumns: func() []utils.FlexColumn {
+			return []utils.FlexColumn{{
+				Index:    presentation.ServiceImageColumn(&gui.Config.UserConfig.Gui),
+				MinWidth: presentation.MinImageAliasWidth,
+			}}
 		},
-		FlexMinWidth: presentation.MinImageAliasWidth,
 	}
 }
 

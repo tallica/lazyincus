@@ -71,11 +71,10 @@ type SideListPanel[T comparable] struct {
 	// This can be nil if you want to always show the panel
 	Hide func() bool
 
-	// FlexColumn is the index of the column that takes the width the rest
-	// leave, never narrower than FlexMinWidth; nil for none. A func, since
-	// a project column ahead of it comes and goes.
-	FlexColumn   func() int
-	FlexMinWidth int
+	// FlexColumns take the width the rest leave, giving it up in order when
+	// there's too little; nil for none. A func, since a project column ahead
+	// of one comes and goes.
+	FlexColumns func() []utils.FlexColumn
 
 	// the rows' cells, and the width they were last rendered at, so a
 	// resize re-renders them without asking for the cells again
@@ -338,12 +337,12 @@ func (self *SideListPanel[T]) FitToWidth() {
 func (self *SideListPanel[T]) writeRows() error {
 	self.clipWidth = self.View.InnerWidth()
 
-	flex := -1
-	if self.FlexColumn != nil {
-		flex = self.FlexColumn()
+	var flex []utils.FlexColumn
+	if self.FlexColumns != nil {
+		flex = self.FlexColumns()
 	}
 
-	table, err := utils.RenderTableToWidth(self.rows, self.clipWidth, flex, self.FlexMinWidth)
+	table, err := utils.RenderTableToWidth(self.rows, self.clipWidth, flex)
 	if err != nil {
 		return err
 	}
