@@ -12,6 +12,23 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+// qualified names an item with its project when its list holds several
+// projects', where the name alone could be another project's - a prompt
+// has to say which one it's about to delete.
+func (gui *Gui) qualified(name, project string, spans bool) string {
+	if !spans || project == "" {
+		return name
+	}
+
+	return fmt.Sprintf(gui.Tr.InProject, name, project)
+}
+
+// refuseInUse says a delete the daemon would refuse, with what uses the
+// item, instead of asking first. what names it, kind and all.
+func (gui *Gui) refuseInUse(what string, users int) error {
+	return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotDeleteInUse, what, users))
+}
+
 func (gui *Gui) resetMainView() {
 	gui.State.Panels.Main.ObjectKey = ""
 	gui.Views.Main.Wrap = gui.Config.UserConfig.Gui.WrapMainPanel

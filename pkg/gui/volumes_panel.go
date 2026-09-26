@@ -174,7 +174,12 @@ func (gui *Gui) volumeDelete(volume *commands.Volume) error {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteManagedVolume)
 	}
 
-	prompt := fmt.Sprintf(gui.Tr.DeleteVolume, volume.Name)
+	name := gui.qualified(volume.Name, volume.Volume.Project, gui.State.SpansProjects.Volumes)
+	if volume.UsedByCount() > 0 {
+		return gui.refuseInUse(fmt.Sprintf(gui.Tr.VolumeNamed, name), volume.UsedByCount())
+	}
+
+	prompt := fmt.Sprintf(gui.Tr.DeleteVolume, name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {

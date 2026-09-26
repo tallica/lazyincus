@@ -573,7 +573,7 @@ func (gui *Gui) focusSnapshot(key string) error {
 }
 
 func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
-	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, snapshot.Owner, snapshot.Name)
+	prompt := fmt.Sprintf(gui.Tr.RestoreSnapshot, gui.snapshotOwnerName(snapshot), snapshot.Name)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RestoringStatus, func() error {
@@ -589,7 +589,7 @@ func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 	// Named with its instance, the panel holding every replica's snapshots
 	// where a service is selected, and replicas sharing snapshot names.
-	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, snapshot.Owner)
+	prompt := fmt.Sprintf(gui.Tr.DeleteSnapshot, snapshot.Name, gui.snapshotOwnerName(snapshot))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
@@ -600,6 +600,17 @@ func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 			return gui.refreshSnapshotOwner(snapshot)
 		})
 	}, nil)
+}
+
+// snapshotOwnerName is what the snapshot was taken of, for a prompt: with
+// its project where the list it came from spans several.
+func (gui *Gui) snapshotOwnerName(snapshot *commands.Snapshot) string {
+	spans := gui.State.SpansProjects.Instances || gui.State.SnapshotsSpan.Projects
+	if snapshot.Volume != nil {
+		spans = gui.State.SpansProjects.Volumes
+	}
+
+	return gui.qualified(snapshot.Owner, snapshot.Project, spans)
 }
 
 // refreshSnapshotOwner re-lists what a snapshot was taken of, which is what

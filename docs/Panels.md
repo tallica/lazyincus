@@ -5,6 +5,18 @@ what its keys do. The rule they all derive from — `sidePanelDefs()`, and
 what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#panels);
 the keys as a user meets them are in [README.md](../README.md#usage).
 
+## Confirmations
+
+A prompt that stops, deletes or restores something names the item's
+project whenever its list holds more than one project's (`qualified`):
+the same image alias, profile name or instance name can exist in several,
+and "delete image nginx:alpine?" doesn't say which is about to go. With
+one project the name stands alone. A delete the daemon would refuse is
+said instead of asked - any project's `default` profile, and a network,
+custom volume or profile anything still uses - the latter going by the
+listing's `used_by`, which the next poll keeps current; the daemon has
+the last word either way.
+
 ## Copying
 
 `y` on any list opens a menu of what the item has to copy, built by
@@ -469,9 +481,6 @@ Devices is the first tab, a device a row with its settings as
 that names the profile in its own list or is named in the profile's
 `used_by`, and - as with networks and volumes - a profile in a project
 other than default only reaches that project's instances. `c` is
-`incus profile edit`. Incus refuses to delete a profile in use and says
-so, which is the check `d` relies on. It also refuses a project's
-`default` outright (`profileDelete` in the daemon forbids the name), so
-`d` says that without asking. Otherwise the confirmation names the
-project when the list spans several, every project's profiles sharing
-names - and a delete only ever takes the one project's.
+`incus profile edit`. `d` never asks about a project's `default`, which
+the daemon won't delete by name, nor about a profile in use - see
+[Confirmations](#confirmations) - and only ever takes the one project's.

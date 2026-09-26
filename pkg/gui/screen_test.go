@@ -566,20 +566,21 @@ func TestCopyMenu(t *testing.T) {
 	assert.NotContains(t, screen, "all addresses", "nor more than one")
 }
 
-// Deleting a profile names its project only when the list holds several,
-// and a project's default isn't offered for deletion at all.
-func TestProfileDeletePrompt(t *testing.T) {
+// A prompt names the item's project only when its list holds several
+// projects', and what the daemon would refuse - a profile named default,
+// anything still in use - is said without asking.
+func TestDeletePrompts(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.ready(t)
 
-	profile := func(name, project string) *commands.Profile {
-		return &commands.Profile{Name: name, Profile: api.Profile{Name: name, Project: project}}
-	}
+	shows := func(spans bool, open func() error, want string) {
+		t.Helper()
 
-	shows := func(spans bool, p *commands.Profile, want string) {
 		s.do(t, func() error {
-			s.gui.State.SpansProjects.Profiles = spans
-			return s.gui.profileDelete(p)
+			s.gui.State.SpansProjects = spansProjects{
+				Instances: spans, Images: spans, Volumes: spans, Networks: spans, Profiles: spans,
+			}
+			return open()
 		})
 
 		// settle fails the test if the text never appears.
@@ -587,9 +588,34 @@ func TestProfileDeletePrompt(t *testing.T) {
 		s.do(t, s.gui.closeConfirmationPrompt)
 	}
 
-	shows(false, profile("web-only", "default"), "delete profile web-only?")
-	shows(true, profile("web-only", "stack"), "delete profile web-only from project stack?")
-	shows(true, profile("default", "stack"), "default profile can't be deleted")
+	profile := func(name string, usedBy ...string) *commands.Profile {
+		return &commands.Profile{Name: name, Profile: api.Profile{Name: name, Project: "stack", UsedBy: usedBy}}
+	}
+	network := &commands.Network{Name: "br0", Network: api.Network{Name: "br0", Project: "stack", Managed: true}}
+	busy := &commands.Network{Name: "br1", Network: api.Network{
+		Name: "br1", Project: "stack", Managed: true, UsedBy: []string{"/1.0/profiles/default"},
+	}}
+	volume := &commands.Volume{Pool: "default", Name: "data", Volume: api.StorageVolume{
+		Name: "data", Type: "custom", Project: "stack", UsedBy: []string{"/1.0/instances/db?project=stack"},
+	}}
+	image := &commands.Image{Fingerprint: "0123456789abcdef", Image: api.Image{
+		Project: "stack", Aliases: []api.ImageAlias{{Name: "nginx:alpine"}},
+	}}
+	instance := &commands.Instance{Name: "web", Project: "stack"}
+
+	shows(false, func() error { return s.gui.profileDelete(profile("web-only")) }, "delete profile web-only?")
+	shows(true, func() error { return s.gui.profileDelete(profile("web-only")) }, "delete profile web-only in project stack?")
+	shows(true, func() error { return s.gui.profileDelete(profile("default")) }, "default profile can't be deleted")
+	shows(false, func() error { return s.gui.profileDelete(profile("web-only", "/1.0/instances/web")) },
+		"Profile web-only is still in use (used by: 1)")
+
+	shows(false, func() error { return s.gui.networkDelete(network) }, "delete network br0?")
+	shows(true, func() error { return s.gui.networkDelete(busy) }, "Network br1 in project stack is still in use")
+	shows(false, func() error { return s.gui.volumeDelete(volume) }, "Volume data is still in use")
+
+	shows(true, func() error { return s.gui.imageDelete(image) }, "delete image nginx:alpine in project stack?")
+	shows(true, func() error { return s.gui.instanceDelete(instance) }, "delete instance web in project stack?")
+	shows(false, func() error { return s.gui.instanceStop(instance) }, "stop instance web?")
 }
 
 func TestScreenMenu(t *testing.T) {

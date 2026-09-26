@@ -138,8 +138,12 @@ type TranslationSet struct {
 	DevicesTitle                 string
 	NoDevices                    string
 	DeleteProfile                string
-	DeleteProfileInProject       string
 	CannotDeleteDefaultProfile   string
+	InProject                    string
+	CannotDeleteInUse            string
+	VolumeNamed                  string
+	NetworkNamed                 string
+	ProfileNamed                 string
 	NoNetworks                   string
 	DeleteNetwork                string
 
@@ -361,8 +365,12 @@ func englishSet() TranslationSet {
 		DevicesTitle:                 "Devices",
 		NoDevices:                    "The profile hands out no devices.",
 		DeleteProfile:                "Are you sure you want to delete profile %s?",
-		DeleteProfileInProject:       "Are you sure you want to delete profile %s from project %s?",
 		CannotDeleteDefaultProfile:   "A project's default profile can't be deleted: Incus keeps one in every project.",
+		InProject:                    "%s in project %s",
+		CannotDeleteInUse:            "%s is still in use (used by: %d), and Incus won't delete it until nothing uses it. u lists the instances using it.",
+		VolumeNamed:                  "Volume %s",
+		NetworkNamed:                 "Network %s",
+		ProfileNamed:                 "Profile %s",
 		NoNetworks:                   "No networks",
 		DeleteNetwork:                "Are you sure you want to delete network %s?",
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",

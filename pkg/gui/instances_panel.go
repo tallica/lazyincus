@@ -249,8 +249,12 @@ func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	})
 }
 
+func (gui *Gui) qualifiedInstance(instance *commands.Instance) string {
+	return gui.qualified(instance.Name, instance.Project, gui.State.SpansProjects.Instances)
+}
+
 func (gui *Gui) instanceStop(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.StopInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.StopInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
@@ -266,7 +270,7 @@ func (gui *Gui) instanceStop(instance *commands.Instance) error {
 // instanceForceStop is `incus stop --force`: the services panel's `f`, which
 // kills a whole service, narrowed to one replica.
 func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.ForceStopInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.ForceStopInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
@@ -306,7 +310,7 @@ func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
 }
 
 func (gui *Gui) instanceDelete(instance *commands.Instance) error {
-	message := fmt.Sprintf(gui.Tr.DeleteInstance, instance.Name)
+	message := fmt.Sprintf(gui.Tr.DeleteInstance, gui.qualifiedInstance(instance))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
