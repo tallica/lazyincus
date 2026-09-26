@@ -340,9 +340,11 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 		return nil, err
 	}
 
-	users, err := imageUsers(client)
-	if err != nil {
-		return nil, err
+	// The images stand without their users: a client may be allowed one
+	// and not the other.
+	users, usersErr := imageUsers(client)
+	if usersErr != nil {
+		c.Log.Warn(usersErr)
 	}
 
 	ownImages := make([]*Image, len(apiImages))
@@ -351,13 +353,14 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 		apiImage := apiImages[i]
 
 		ownImages[i] = &Image{
-			Fingerprint: apiImage.Fingerprint,
-			Image:       apiImage,
-			UsedBy:      users[apiImage.Fingerprint],
-			Client:      c.clientFor(apiImage.Project),
-			OSCommand:   c.OSCommand,
-			Log:         c.Log,
-			Tr:          c.Tr,
+			Fingerprint:  apiImage.Fingerprint,
+			Image:        apiImage,
+			UsedBy:       users[apiImage.Fingerprint],
+			UsersUnknown: usersErr != nil,
+			Client:       c.clientFor(apiImage.Project),
+			OSCommand:    c.OSCommand,
+			Log:          c.Log,
+			Tr:           c.Tr,
 		}
 	}
 

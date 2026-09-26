@@ -38,6 +38,10 @@ func GetImageDisplayStrings(image *commands.Image, showProject bool) []string {
 // displayImageUsers marks the images nothing was created from, the ones a
 // prune would take.
 func displayImageUsers(image *commands.Image) string {
+	if image.UsersUnknown {
+		return "?"
+	}
+
 	count := strconv.Itoa(len(image.UsedBy))
 	if image.IsUnused() {
 		return utils.ColoredString(count, color.FgRed)

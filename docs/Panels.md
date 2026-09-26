@@ -338,7 +338,9 @@ at 0 - since whether an image can go is what the panel is for. The images
 fetch lists instances across every project for this, whatever the panels
 are scoped to: a project without `features.images` uses default's images,
 so an image one project lists can be another's instances' base. A client
-refused the all-projects listing falls back to its own project's.
+refused the all-projects listing falls back to its own project's; one that
+can't list instances at all still gets its images, their users `?` and
+none of them offered to prune.
 Instances are matched by fingerprint alone, so the per-project copies
 incus-compose makes of an image all count the same users. Then size, the
 date an instance was last created from it, and `vm` or `cached` where they

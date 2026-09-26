@@ -36,4 +36,7 @@ func TestGetImageDisplayStrings(t *testing.T) {
 	assert.Equal(t,
 		[]string{"default", "fedcba987654", "0", "fedcba987654", "", "never", "cached"},
 		plain(GetImageDisplayStrings(cached, true)))
+
+	cached.UsersUnknown = true
+	assert.Equal(t, "?", plain(GetImageDisplayStrings(cached, false))[1])
 }

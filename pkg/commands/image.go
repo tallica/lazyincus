@@ -15,11 +15,14 @@ type Image struct {
 
 	Image api.Image
 	// UsedBy are the instances created from the image, as project/name.
-	UsedBy    []string
-	Client    incus.InstanceServer
-	OSCommand *OSCommand
-	Log       *logrus.Entry
-	Tr        *i18n.TranslationSet
+	UsedBy []string
+	// UsersUnknown is set when the instances couldn't be listed, and UsedBy
+	// is empty for want of an answer rather than for want of users.
+	UsersUnknown bool
+	Client       incus.InstanceServer
+	OSCommand    *OSCommand
+	Log          *logrus.Entry
+	Tr           *i18n.TranslationSet
 }
 
 // Key identifies the image across refreshes: one image can sit in several
@@ -72,9 +75,10 @@ func (i *Image) Label() string {
 }
 
 // IsUnused reports an image no instance was created from, which deleting
-// costs nothing but a download the next time something wants it.
+// costs nothing but a download the next time something wants it. Never
+// true while the users are unknown, prune going by it.
 func (i *Image) IsUnused() bool {
-	return len(i.UsedBy) == 0
+	return !i.UsersUnknown && len(i.UsedBy) == 0
 }
 
 func (i *Image) IsVM() bool {

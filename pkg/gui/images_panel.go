@@ -133,6 +133,10 @@ func (gui *Gui) refreshImagesQuiet() error {
 // imageUsersStr names the instances, grouped by project, which is how they
 // read in the instances panel.
 func (gui *Gui) imageUsersStr(image *commands.Image) string {
+	if image.UsersUnknown {
+		return gui.Tr.ImageUsersUnknown
+	}
+
 	if image.IsUnused() {
 		return gui.Tr.UsedByNothing
 	}
