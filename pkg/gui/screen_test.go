@@ -274,6 +274,23 @@ func TestScreenExpandedSidePanel(t *testing.T) {
 	assertGolden(t, "expanded-140x40", s.settle(t, "incusbr0"))
 }
 
+func TestScreenAllSnapshots(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.settle(t, "incusbr0")
+	s.do(t, func() error { return s.gui.handleToggleAllSnapshots(s.g, s.gui.Views.Snapshots) })
+	assertGolden(t, "all-snapshots-140x40", s.settle(t, "Snapshots (all)"))
+
+	s.do(t, func() error { return s.gui.handleToggleAllSnapshots(s.g, s.gui.Views.Snapshots) })
+	assertGolden(t, "normal-140x40", s.settle(t, "Snapshots (a-name"))
+}
+
+func TestScreenAllSnapshotsFromConfig(t *testing.T) {
+	s := startScreen(t, 140, 40, func(userConfig *config.UserConfig) {
+		userConfig.Gui.ShowAllSnapshots = true
+	})
+	assertGolden(t, "all-snapshots-140x40", s.settle(t, "daily-b"))
+}
+
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
 	s.settle(t, "incusbr0")

@@ -79,6 +79,8 @@ type TranslationSet struct {
 	SnapshotChangeValue       string
 	SnapshotCreate            string
 	SnapshottingStatus        string
+	ToggleAllSnapshots        string
+	AllSnapshotsLabel         string
 	RestoringStatus           string
 	LoadingStatus             string
 	VolumesTitle              string
@@ -235,6 +237,8 @@ func englishSet() TranslationSet {
 		NoImages:                     "No images",
 		DeleteImage:                  "Are you sure you want to delete image %s?",
 		NewSnapshot:                  "new snapshot",
+		ToggleAllSnapshots:           "all instances / selected instance",
+		AllSnapshotsLabel:            "all",
 		RestoreSnapshot:              "Are you sure you want to restore %s to snapshot %s? Anything changed since is lost.",
 		RestoreSnapshotShort:         "restore snapshot",
 		DeleteSnapshot:               "Are you sure you want to delete snapshot %s of %s?",

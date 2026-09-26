@@ -10,16 +10,16 @@ import (
 // for snapshot timestamps.
 const DateTimeFormat = "2006/01/02 15:04 MST"
 
-func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, showInstance bool) []string {
+// GetSnapshotDisplayStrings takes the name of the instance the snapshot came
+// from, or "" when the title already says it.
+func GetSnapshotDisplayStrings(snapshot *commands.Snapshot, owner string) []string {
 	cells := []string{
 		utils.Truncate(snapshot.Name, maxSnapshotNameWidth),
 	}
 
-	// Only when the panel is holding several instances' snapshots: on one
-	// instance's the column would repeat the name already in the title.
-	if showInstance {
+	if owner != "" {
 		cells = append(cells, utils.ColoredString(
-			utils.Truncate(snapshot.InstanceName, maxSnapshotNameWidth), color.FgCyan))
+			utils.Truncate(owner, maxSnapshotNameWidth), color.FgCyan))
 	}
 
 	return append(cells,

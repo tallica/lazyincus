@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `a` on the Snapshots panel lists every instance's snapshots at once, each row naming the instance it belongs to (and its project, when they span more than one), and `a` again goes back to following the selected instance. Finding a snapshot no longer means stepping through the instances one by one to see which have any. `gui.showAllSnapshots` starts a session that way. In that view, `n` snapshots the instance of the row you're on.
 - Starting a service whose dependencies are stopped asks whether to start them too. incus-compose's `start` acts only on the service you name, so `S` on a web service left its redis and database stopped, the web service coming up to nothing. `S` now offers `start --with-deps` when anything in the service's `depends_on` is stopped, naming what it would start, or the service alone; with nothing stopped it starts straight away as before.
 
 ### Changed

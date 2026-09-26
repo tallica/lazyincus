@@ -127,11 +127,24 @@ type guiState struct {
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
 
+	// Seeded from showAllSnapshots and then owned by the session, as
+	// ExpandSidePanel is.
+	SnapshotsShowAll bool
+
+	// What the snapshots panel's rows span as of its last render, which
+	// decides whether a row names its instance and project.
+	SnapshotsSpan snapshotsSpan
+
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
 	// the all-projects view of a server with a single project reads better
 	// without a column repeating that project on every row.
 	SpansProjects spansProjects
+}
+
+type snapshotsSpan struct {
+	Instances bool
+	Projects  bool
 }
 
 type spansProjects struct {
@@ -208,6 +221,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		ShowStoppedInstances: true,
 		ScreenMode:           getScreenMode(config),
 		ExpandSidePanel:      config.UserConfig.Gui.ExpandFocusedSidePanel,
+		SnapshotsShowAll:     config.UserConfig.Gui.ShowAllSnapshots,
 	}
 
 	gui := &Gui{
@@ -461,8 +475,8 @@ func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
 }
 
 // reloadConfig re-applies the settings the app caches rather than reads at
-// the point of use. screenMode, expandFocusedSidePanel and language stay as
-// they were - see docs/Config.md.
+// the point of use. screenMode, expandFocusedSidePanel, showAllSnapshots and
+// language stay as they were - see docs/Config.md.
 func (gui *Gui) reloadConfig() error {
 	if err := gui.Config.ReloadUserConfig(); err != nil {
 		return err

@@ -239,8 +239,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "snapshots",
 			Key:         'n',
 			Modifier:    gocui.ModNone,
-			Handler:     onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt),
+			Handler:     gui.handleSnapshotCreate,
 			Description: gui.Tr.NewSnapshot,
+		},
+		{
+			ViewName:    "snapshots",
+			Key:         'a',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleAllSnapshots,
+			Description: gui.Tr.ToggleAllSnapshots,
 		},
 		{
 			ViewName:    "snapshots",

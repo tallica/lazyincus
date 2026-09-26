@@ -111,7 +111,8 @@ guest clock skew both fail in ways that point at the wrong component.
 ## Usage
 
 Five side panels: **Instances** (`1`), listing both containers and VMs,
-**Snapshots** (`2`) for whichever instance is selected, **Images** (`3`),
+**Snapshots** (`2`) for whichever instance is selected, or every
+instance's, **Images** (`3`),
 **Volumes** (`4`) and **Networks** (`5`). All list every Incus project by
 default; `P` scopes them to a single project instead, and the footer shows
 the current remote and scope. A project column appears on any panel whose
@@ -148,7 +149,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
-| `a` | Attach to the instance's console (`incus console`) |
+| `a` | Attach to the instance's console (`incus console`); on the Snapshots panel, switch between the selected instance's snapshots and every instance's |
 | `E` | Exec a shell into the instance |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |

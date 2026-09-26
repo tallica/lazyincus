@@ -258,7 +258,20 @@ already carries, so moving through a list asks the daemon for nothing;
 create, delete and restore re-run that listing, which is what shows their
 result at once. Snapshot names can come back prefixed with the instance
 (`alpine/snap0`); every other call wants the bare name, which
-`snapshotName` strips. `n` works from the instances panel as well as
+`snapshotName` strips.
+
+`a` swaps the selection for every instance the instances panel holds, the
+local stack's replicas included (`gui.showAllSnapshots` picks which way a
+session starts). The panels go on handing their selection over while it's
+on, so turning it off lands on whatever is selected by then; they just
+don't rerender a list that wouldn't change. Rows group by project before
+instance, and name the project with the instance once the list spans
+projects, instance names being unique only within one. `n` from this panel
+then snapshots the selected row's instance, not the instances panel's, and
+the new snapshot is found by project, instance and name, since every
+replica of a service can carry one of the same name.
+
+`n` works from the instances panel as well as
 this one - it acts on the selected instance either way - and moves to the
 new snapshot once it exists, so taking one from the instances panel shows
 you the result. It opens a two-view popup: the editable
