@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -339,25 +338,6 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 			return gui.refreshInstancesAndServices()
 		})
 	}, nil)
-}
-
-// instanceCopyIPv4 copies the instance's IPv4 address to the system
-// clipboard. An instance can have several (one per interface); we copy
-// the first, which is the address people generally want to paste somewhere.
-func (gui *Gui) instanceCopyIPv4(inst *commands.Instance) error {
-	addresses := inst.Addresses("inet")
-	if len(addresses) == 0 {
-		return gui.createErrorPanel(gui.Tr.NoIPv4Address)
-	}
-
-	address := addresses[0]
-	if err := gui.OSCommand.CopyToClipboard(address); err != nil {
-		return gui.createErrorPanel(err.Error())
-	}
-
-	gui.WithTransientStatus(fmt.Sprintf("%s %s", gui.Tr.CopiedToClipboard, address), time.Second*2)
-
-	return nil
 }
 
 func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {

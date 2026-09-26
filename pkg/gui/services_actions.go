@@ -379,10 +379,6 @@ func (gui *Gui) handleServiceExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.ExecShell, gui.instanceExecShell)
 }
 
-func (gui *Gui) handleServiceCopyIPv4(g *gocui.Gui, v *gocui.View) error {
-	return gui.withServiceInstance(gui.Tr.CopyIPv4, gui.instanceCopyIPv4)
-}
-
 func (gui *Gui) handleServiceSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.NewSnapshot, gui.snapshotCreatePrompt)
 }

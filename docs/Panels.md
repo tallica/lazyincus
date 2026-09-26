@@ -5,6 +5,15 @@ what its keys do. The rule they all derive from — `sidePanelDefs()`, and
 what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#panels);
 the keys as a user meets them are in [README.md](../README.md#usage).
 
+## Copying
+
+`y` on any list opens a menu of what the item has to copy, built by
+`copyMenu` from label/value pairs, each value shown beside its label so
+the menu says what lands on the clipboard; a value the item lacks - a
+stopped instance's address - is left out rather than offered empty. A
+network's addresses are Incus's `ipv4.address`/`ipv6.address`, the
+gateway with its prefix, and labelled as such rather than as the subnet.
+
 ## Services
 
 Only there when there's a compose file in lazyincus's own working directory,
@@ -108,10 +117,10 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`m`, `n`, `E`, `y`) reach the row's instance through
+The per-instance keys (`m`, `n`, `c`, `E`, `y`) reach the row's instance through
 `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
-behind them (`snapshotCreatePrompt`, `instanceCopyIPv4`) take the instance
+behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
 rather than reading the selection. The menu is left for a service's own row, that row meaning all
 of its replicas.
 

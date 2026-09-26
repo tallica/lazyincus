@@ -10,7 +10,7 @@
 │                      │e         show/hide stopped instances      │                     │
 │                      │n         new snapshot                     │                     │
 │                      │m         view logs                        │                     │
-╰──────────────────────│y         copy IPv4 address                │                     │
+╰──────────────────────│y         copy name, address…              │                     │
 ╭─[2]─Snapshots (a-name│a         attach to console                │                     │
 │                      │c         edit config in $EDITOR           │                     │
 │                      │E         exec shell                       │                     │

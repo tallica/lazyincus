@@ -159,7 +159,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
 | `C` | Services panel: menu of the same compose verbs run against the whole stack rather than the selected service ([Compose stacks](#compose-stacks)) |
-| `y` | Copy the instance's IPv4 address to the clipboard |
+| `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |

@@ -551,6 +551,21 @@ func TestScreenProfiles(t *testing.T) {
 	assert.Contains(t, screen, "│db ")
 }
 
+// y offers what an item has to copy, and nothing it hasn't.
+func TestCopyMenu(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, s.gui.Panels.Instances.HandleNextLine)
+	s.do(t, func() error { return s.gui.instanceCopy(s.gui.Panels.Instances.List.GetItems()[1]) })
+
+	screen := s.settle(t, "╭─Copy")
+	assert.Regexp(t, `│name +web `, screen)
+	assert.Regexp(t, `│IPv4 +192\.0\.2\.10 `, screen)
+	assert.NotContains(t, screen, "IPv6", "web has no IPv6 address")
+	assert.NotContains(t, screen, "all addresses", "nor more than one")
+}
+
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
 	s.ready(t)
