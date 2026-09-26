@@ -13,6 +13,9 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+// defaultProfile is the profile every project has, and keeps.
+const defaultProfile = "default"
+
 func (gui *Gui) getProfilesPanel() *panels.SideListPanel[*commands.Profile] {
 	return &panels.SideListPanel[*commands.Profile]{
 		ContextState: &panels.ContextState[*commands.Profile]{
@@ -140,8 +143,18 @@ func (gui *Gui) profileEdit(profile *commands.Profile) error {
 	return gui.editInIncus(profile.Profile.Project, []fetch{gui.fetchProfiles}, "profile", "edit", profile.Name)
 }
 
+// profileDelete names the project when the list spans several, every one
+// of them having profiles of the same names. The daemon refuses to delete
+// any project's default, so that's said without asking.
 func (gui *Gui) profileDelete(profile *commands.Profile) error {
+	if profile.Name == defaultProfile {
+		return gui.createErrorPanel(gui.Tr.CannotDeleteDefaultProfile)
+	}
+
 	prompt := fmt.Sprintf(gui.Tr.DeleteProfile, profile.Name)
+	if gui.State.SpansProjects.Profiles {
+		prompt = fmt.Sprintf(gui.Tr.DeleteProfileInProject, profile.Name, profile.Profile.Project)
+	}
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {

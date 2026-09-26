@@ -566,6 +566,32 @@ func TestCopyMenu(t *testing.T) {
 	assert.NotContains(t, screen, "all addresses", "nor more than one")
 }
 
+// Deleting a profile names its project only when the list holds several,
+// and a project's default isn't offered for deletion at all.
+func TestProfileDeletePrompt(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	profile := func(name, project string) *commands.Profile {
+		return &commands.Profile{Name: name, Profile: api.Profile{Name: name, Project: project}}
+	}
+
+	shows := func(spans bool, p *commands.Profile, want string) {
+		s.do(t, func() error {
+			s.gui.State.SpansProjects.Profiles = spans
+			return s.gui.profileDelete(p)
+		})
+
+		// settle fails the test if the text never appears.
+		s.settle(t, want)
+		s.do(t, s.gui.closeConfirmationPrompt)
+	}
+
+	shows(false, profile("web-only", "default"), "delete profile web-only?")
+	shows(true, profile("web-only", "stack"), "delete profile web-only from project stack?")
+	shows(true, profile("default", "stack"), "default profile can't be deleted")
+}
+
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
 	s.ready(t)

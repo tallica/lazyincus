@@ -470,4 +470,8 @@ that names the profile in its own list or is named in the profile's
 `used_by`, and - as with networks and volumes - a profile in a project
 other than default only reaches that project's instances. `c` is
 `incus profile edit`. Incus refuses to delete a profile in use and says
-so, which is the check `d` relies on.
+so, which is the check `d` relies on. It also refuses a project's
+`default` outright (`profileDelete` in the daemon forbids the name), so
+`d` says that without asking. Otherwise the confirmation names the
+project when the list spans several, every project's profiles sharing
+names - and a delete only ever takes the one project's.
