@@ -130,10 +130,17 @@ type guiState struct {
 	// replica of a selected service - see refreshSnapshotsFor.
 	SnapshotsInstances []*commands.Instance
 	SnapshotsLabel     string
+	// SnapshotsVolume is the key of the custom volume the panel follows
+	// instead, when the volumes panel's selection is one.
+	SnapshotsVolume string
 
 	// ActiveWindowViews is the view each shared window shows, by window -
 	// whichever was focused in it last. See window.go.
 	ActiveWindowViews map[string]string
+
+	// InstanceUsers narrows the instances panel to what uses one resource,
+	// nil for the usual list. See showUsers.
+	InstanceUsers *instanceUsers
 
 	// Seeded from showAllSnapshots and then owned by the session, as
 	// ExpandSidePanel is.
@@ -455,6 +462,10 @@ func (gui *Gui) quit(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) escape() error {
 	if gui.State.Filter.active {
 		return gui.clearFilter()
+	}
+
+	if gui.State.InstanceUsers != nil && gui.currentViewName() == "instances" {
+		return gui.clearInstanceUsers()
 	}
 
 	return nil

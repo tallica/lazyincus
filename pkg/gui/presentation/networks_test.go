@@ -33,3 +33,36 @@ func TestGetNetworkLeaseRows(t *testing.T) {
 		{"web", "10.0.0.20", "fd42::20", "10:66:6a:00:00:02", "dynamic"},
 	}, plain)
 }
+
+func TestGetNetworkForwardRows(t *testing.T) {
+	forwards := []api.NetworkForward{{
+		ListenAddress: "198.51.100.7",
+		NetworkForwardPut: api.NetworkForwardPut{
+			Description: "the rest",
+			Config:      map[string]string{"target_address": "10.0.0.20"},
+			Ports: []api.NetworkForwardPort{
+				{Protocol: "tcp", ListenPort: "443", TargetAddress: "10.0.0.10", Description: "https"},
+				{Protocol: "udp", ListenPort: "5353", TargetPort: "53", TargetAddress: "fd42::10"},
+			},
+		},
+	}}
+
+	owners := map[string]string{"10.0.0.10": "web", "fd42::10": "dns"}
+
+	rows := GetNetworkForwardRows(forwards, func(address string) string { return owners[address] })
+
+	plain := make([][]string, len(rows))
+	for i, row := range rows {
+		plain[i] = make([]string, len(row))
+		for j, cell := range row {
+			plain[i][j] = utils.Decolorise(cell)
+		}
+	}
+
+	assert.Equal(t, [][]string{
+		{"LISTEN", "PROTOCOL", "PORT", "TARGET", "INSTANCE", "DESCRIPTION"},
+		{"198.51.100.7", "tcp", "443", "10.0.0.10:443", "web", "https"},
+		{"198.51.100.7", "udp", "5353", "[fd42::10]:53", "dns", ""},
+		{"198.51.100.7", "any", "other", "10.0.0.20", "", "the rest"},
+	}, plain)
+}

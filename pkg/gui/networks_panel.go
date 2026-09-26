@@ -3,10 +3,12 @@ package gui
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/units"
 	"github.com/samber/lo"
 
@@ -32,6 +34,16 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 						Key:    "state",
 						Title:  gui.Tr.StateTitle,
 						Render: gui.renderNetworkState,
+					},
+					{
+						Key:    "acls",
+						Title:  gui.Tr.ACLsTitle,
+						Render: gui.renderNetworkACLs,
+					},
+					{
+						Key:    "forwards",
+						Title:  gui.Tr.ForwardsTitle,
+						Render: gui.renderNetworkForwards,
 					},
 					{
 						Key:    "config",
@@ -219,6 +231,141 @@ func (gui *Gui) hostInterfaceOwners() map[string]string {
 	return owners
 }
 
+func (gui *Gui) renderNetworkACLs(network *commands.Network) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.networkACLsStr(network) })
+}
+
+// networkACLsStr is what filters the network's traffic: the ACLs on the
+// network, what happens to what none of them match, those on single NICs,
+// then each ACL's rules. It answers "why can't this reach that", which the
+// Config tab's security.acls, a list of names, doesn't.
+func (gui *Gui) networkACLsStr(network *commands.Network) string {
+	if !network.IsManaged() {
+		return gui.Tr.NoACLsUnmanaged
+	}
+
+	onNetwork := network.ACLNames()
+	onNICs := network.NICACLs(gui.Panels.Instances.List.GetAllItems())
+
+	if len(onNetwork) == 0 && len(onNICs) == 0 {
+		return gui.Tr.NoACLs
+	}
+
+	padding := 24
+	output := ""
+
+	if len(onNetwork) > 0 {
+		unmatched := func(direction string) string {
+			action := network.Network.Config["security.acls.default."+direction+".action"]
+			if action == "" {
+				// The daemon's default for traffic no rule matches.
+				return presentation.DisplayACLAction("reject") + " (default)"
+			}
+
+			return presentation.DisplayACLAction(action)
+		}
+
+		output += utils.WithPadding("On the network: ", padding) + strings.Join(onNetwork, ", ") + "\n"
+		output += utils.WithPadding("Unmatched ingress: ", padding) + unmatched("ingress") + "\n"
+		output += utils.WithPadding("Unmatched egress: ", padding) + unmatched("egress") + "\n"
+	}
+
+	nics := lo.Keys(onNICs)
+	slices.Sort(nics)
+
+	if len(nics) > 0 {
+		table, err := utils.RenderTable(lo.Map(nics, func(nic string, _ int) []string {
+			return []string{"  " + nic, strings.Join(onNICs[nic], ", ")}
+		}))
+		if err != nil {
+			return err.Error()
+		}
+
+		output += "\nOn single NICs:\n" + table + "\n"
+	}
+
+	names := lo.Uniq(append(slices.Clone(onNetwork), lo.Flatten(lo.Values(onNICs))...))
+	slices.Sort(names)
+
+	for _, name := range names {
+		output += "\n" + gui.sectionHeading(name) + "\n"
+
+		acl, err := network.ACL(name)
+		if err != nil {
+			output += err.Error() + "\n"
+			continue
+		}
+
+		if acl.Description != "" {
+			output += acl.Description + "\n"
+		}
+
+		for _, direction := range []struct {
+			title string
+			rules []api.NetworkACLRule
+		}{{gui.Tr.ACLIngress, acl.Ingress}, {gui.Tr.ACLEgress, acl.Egress}} {
+			if len(direction.rules) == 0 {
+				continue
+			}
+
+			table, err := utils.RenderTable(presentation.GetACLRuleRows(direction.rules))
+			if err != nil {
+				return err.Error()
+			}
+
+			output += "\n" + direction.title + ":\n" + table + "\n"
+		}
+	}
+
+	return output
+}
+
+func (gui *Gui) renderNetworkForwards(network *commands.Network) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.networkForwardsStr(network) })
+}
+
+func (gui *Gui) networkForwardsStr(network *commands.Network) string {
+	if !network.IsManaged() {
+		return gui.Tr.NoForwardsUnmanaged
+	}
+
+	forwards, err := network.Forwards()
+	if err != nil {
+		return gui.Tr.CannotListForwards + "\n\n" + err.Error()
+	}
+
+	if len(forwards) == 0 {
+		return gui.Tr.NoForwards
+	}
+
+	owners := gui.addressOwners()
+
+	table, err := utils.RenderTable(presentation.GetNetworkForwardRows(forwards, func(address string) string {
+		return owners[address]
+	}))
+	if err != nil {
+		return err.Error()
+	}
+
+	return table
+}
+
+// addressOwners names the instance holding each address, from the newest
+// instance listing.
+func (gui *Gui) addressOwners() map[string]string {
+	owners := map[string]string{}
+
+	for _, instance := range gui.Panels.Instances.List.GetAllItems() {
+		for _, family := range []string{"inet", "inet6"} {
+			for _, address := range instance.Latest().Addresses(family) {
+				owners[address] = instance.Name
+			}
+		}
+	}
+
+	return owners
+}
+
 func (gui *Gui) renderNetworkConfig(network *commands.Network) tasks.TaskFunc {
 	return gui.NewSimpleRenderStringTask(func() string { return gui.networkConfigStr(network) })
 }
@@ -273,6 +420,18 @@ func (gui *Gui) refreshNetworksQuiet() error {
 	}
 
 	return nil
+}
+
+func (gui *Gui) showNetworkUsers(network *commands.Network) error {
+	return gui.showUsers(network.Name, network.IsUsedBy)
+}
+
+func (gui *Gui) networkEdit(network *commands.Network) error {
+	if !network.IsManaged() {
+		return gui.createErrorPanel(gui.Tr.CannotEditUnmanagedNetwork)
+	}
+
+	return gui.editInIncus(network.Network.Project, []fetch{gui.fetchNetworks}, "network", "edit", network.Name)
 }
 
 func (gui *Gui) networkDelete(network *commands.Network) error {

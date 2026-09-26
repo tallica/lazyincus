@@ -2,9 +2,11 @@ package commands
 
 import (
 	"testing"
+	"time"
 
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func listed(project, name, status string) *Instance {
@@ -129,7 +131,32 @@ func TestKeysIncludeTheProject(t *testing.T) {
 	assert.NotEqual(t, image("alpha").Key(), image("beta").Key())
 
 	snapshot := func(project string) *Snapshot {
-		return &Snapshot{Project: project, InstanceName: "web", Name: "daily"}
+		return &Snapshot{Project: project, Owner: "web", Name: "daily"}
 	}
 	assert.NotEqual(t, snapshot("alpha").Key(), snapshot("beta").Key())
+}
+
+func TestVolumeSnapshots(t *testing.T) {
+	expires := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	volume := &Volume{
+		Pool: "default", Name: "data",
+		Volume: api.StorageVolume{Type: "custom", Project: "stack"},
+		SnapshotList: []api.StorageVolumeSnapshot{{
+			Name: "data/nightly", CreatedAt: time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC),
+			StorageVolumeSnapshotPut: api.StorageVolumeSnapshotPut{ExpiresAt: &expires},
+		}},
+	}
+
+	snapshots := volume.Snapshots()
+	require.Len(t, snapshots, 1)
+
+	snapshot := snapshots[0]
+	assert.Equal(t, "nightly", snapshot.Name)
+	assert.Equal(t, "data", snapshot.Owner)
+	assert.Equal(t, expires, snapshot.ExpiresAt())
+	assert.False(t, snapshot.IsStateful())
+
+	// Not the key of an instance snapshot of the same names.
+	instanceSnapshot := &Snapshot{Project: "stack", Owner: "data", Name: "nightly"}
+	assert.NotEqual(t, instanceSnapshot.Key(), snapshot.Key())
 }

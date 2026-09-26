@@ -23,15 +23,20 @@ type Server struct {
 	Networks  []api.Network
 	// Volumes by storage pool.
 	Volumes map[string][]api.StorageVolume
-	// PoolSpace by pool, and VolumeUsage in bytes by volume name.
-	PoolSpace   map[string]api.ResourcesStoragePoolSpace
-	VolumeUsage map[string]uint64
+	// PoolSpace by pool; VolumeUsage in bytes and VolumeSnapshots by volume
+	// name.
+	PoolSpace       map[string]api.ResourcesStoragePoolSpace
+	VolumeUsage     map[string]uint64
+	VolumeSnapshots map[string][]api.StorageVolumeSnapshot
 	// NetworkLeases by network, then by the project that sees them - the
 	// daemon lists only the asking project's. NetworkStates by network. A
 	// network missing from either is not found, as leases on an unmanaged
 	// one are.
 	NetworkLeases map[string]map[string][]api.NetworkLease
 	NetworkStates map[string]api.NetworkState
+	// NetworkACLs by name, NetworkForwards by network.
+	NetworkACLs     map[string]api.NetworkACL
+	NetworkForwards map[string][]api.NetworkForward
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -211,6 +216,19 @@ func (s *Server) GetNetworkState(name string) (*api.NetworkState, error) {
 	return &state, nil
 }
 
+func (s *Server) GetNetworkACL(name string) (*api.NetworkACL, string, error) {
+	acl, ok := s.NetworkACLs[name]
+	if !ok {
+		return nil, "", api.StatusErrorf(404, "Network ACL not found")
+	}
+
+	return &acl, "", nil
+}
+
+func (s *Server) GetNetworkForwards(network string) ([]api.NetworkForward, error) {
+	return slices.Clone(s.NetworkForwards[network]), nil
+}
+
 func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 	names := make([]string, 0, len(s.Volumes))
 	for pool := range s.Volumes {
@@ -225,6 +243,10 @@ func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 	}
 
 	return pools, nil
+}
+
+func (s *Server) GetStoragePoolVolumeSnapshots(_, _, name string) ([]api.StorageVolumeSnapshot, error) {
+	return slices.Clone(s.VolumeSnapshots[name]), nil
 }
 
 func (s *Server) GetStoragePoolResources(pool string) (*api.ResourcesStoragePool, error) {

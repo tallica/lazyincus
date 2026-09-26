@@ -260,7 +260,7 @@ result at once. Snapshot names can come back prefixed with the instance
 (`alpine/snap0`); every other call wants the bare name, which
 `snapshotName` strips.
 
-`a` swaps the selection for every instance the instances panel holds, the
+`e` swaps the selection for every instance the instances panel holds, the
 local stack's replicas included (`gui.showAllSnapshots` picks which way a
 session starts). The panels go on handing their selection over while it's
 on, so turning it off lands on whatever is selected by then; they just
@@ -299,6 +299,19 @@ gocui has views and keybindings, and the menu itself is lazydocker's
 `SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
 <name>`, not a snapshot operation.
 
+A custom volume selected in the volumes panel is followed the same way,
+its title naming the volume, and `n` there or here snapshots it. A
+volume's snapshots don't come with the volume listing the way an
+instance's do, so the volumes fetch asks for each custom volume's in the
+same fan-out as the sizes; moving through the list still asks for
+nothing. The other volume types are left alone - their snapshots are
+their instance's - and selecting one leaves the panel on what it was
+showing. `commands.Snapshot` is either kind, `Volume` set on a volume's,
+and create, restore and delete take the volume calls for it; restore is
+likewise an update of the volume carrying `Restore`. The `n` popup drops
+its stateful field for a volume, which has no runtime state. The panel's
+all-instances view stays instances only.
+
 ## Resources
 
 Images, volumes and networks are three panels sharing one window: a
@@ -321,6 +334,27 @@ focus change
 like any other, so a filter on one list is dropped on moving to the next,
 as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
+
+`u` on any of the three narrows the instances panel to what uses the item
+and moves there, its title naming it; `esc` there brings the rest back and
+returns to the list `u` was pressed in, cursor where it was.
+While narrowed it shows every user, stopped or the local stack's, the
+question being what uses the thing. An image's users are its `UsedBy`.
+A network's or volume's `used_by` names a profile rather than the
+instances that have it, so those match on each instance's expanded
+devices - a NIC's `network` or `parent`, a disk's `pool` and `source` -
+as well as any instance `used_by` names outright; an entry there without
+a project is default's. A network or volume in a project other than
+default only counts that project's instances.
+
+`c` hands the terminal to `incus image edit`, `incus storage volume edit`
+or `incus network edit` with the item's `--project` - and on the instances
+and services panels to `incus config edit`, a service's own row asking
+which replica the way `E` does - the way `E` hands it
+to `incus exec`: the CLI opens the YAML in `$EDITOR` and re-opens it when
+it doesn't validate, which a form of our own would have to reinvent per
+resource. The list re-fetches when the editor exits. A host interface has
+no config to edit, so `c` there says so.
 
 ## Images
 
@@ -381,10 +415,12 @@ profile's kind and name, with the project where it isn't the volume's.
 
 `GetNetworks`, managed and unmanaged alike, with the unmanaged ones - host
 interfaces Incus merely reports, and only managed networks can be deleted -
-filtered out until `e` shows them, the way `e` shows stopped instances.
+filtered out until `e` shows them, the way `e` shows stopped instances
+and every instance's snapshots: `e` is each list's "show what's left out".
+Not `a`, which Instances spends on attach, lazydocker's key for it too.
 They outnumber Incus's own networks on most hosts and have nothing to do.
 
-The tabs are Leases, State and Config. Leases is a host a row, IPv4 and
+The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a row, IPv4 and
 IPv6 side by side, the gateway first: the daemon lists an entry per
 address, which would give a dual-stack instance two half-rows. Asking for
 them takes a request per project using the network (see
@@ -392,3 +428,18 @@ them takes a request per project using the network (see
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a
 lease without changing anything the list's own 10s poll would notice.
+
+ACLs is what filters the network's traffic: the ACLs `security.acls`
+applies to the network, what becomes of traffic none of their rules match
+(`security.acls.default.*.action`, `reject` when unset), the NICs on the
+network carrying ACLs of their own - found the way `u` finds a network's
+users, through each instance's expanded devices - and then every one of
+those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
+change when someone edits one.
+
+Forwards is `incus network forward list` a port to a row: the listen
+address, protocol and port, where it goes - the target port defaulting to
+the listen port, as the daemon's does - and the instance holding that
+address, from the instances' own addresses. A forward's `target_address`,
+which takes every port no entry names, gets a row of its own. Load
+balancers aren't shown; they're OVN's alone.

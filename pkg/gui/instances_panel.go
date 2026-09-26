@@ -72,6 +72,12 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return a.Key() == b.Key()
 		},
 		Filter: func(instance *commands.Instance) bool {
+			// Every user, stopped or the local stack's: the question was
+			// what uses the resource.
+			if users := gui.State.InstanceUsers; users != nil {
+				return users.uses(instance)
+			}
+
 			if !gui.State.ShowStoppedInstances && isStopped(instance) {
 				return false
 			}
@@ -177,6 +183,51 @@ func (gui *Gui) fetchInstances() (func() error, error) {
 
 func (gui *Gui) refreshInstances() error {
 	return gui.refresh(nil, gui.fetchInstances)
+}
+
+// instanceUsers is what the instances panel is narrowed to: the instances
+// using one image, volume or network.
+type instanceUsers struct {
+	label string
+	uses  func(*commands.Instance) bool
+	// from is the list `u` was pressed in, which esc returns to.
+	from *gocui.View
+}
+
+// showUsers narrows the instances panel to what uses a resource and moves
+// there; esc in the panel brings the whole list back and returns to the
+// resource.
+func (gui *Gui) showUsers(label string, uses func(*commands.Instance) bool) error {
+	if !lo.SomeBy(gui.Panels.Instances.List.GetAllItems(), uses) {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.NothingUses, label))
+	}
+
+	gui.State.InstanceUsers = &instanceUsers{label: label, uses: uses, from: gui.g.CurrentView()}
+	gui.Views.Instances.Title = gui.instancesPanelTitle()
+	gui.Panels.Instances.SetSelectedLineIdx(0)
+
+	if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return err
+	}
+
+	return gui.switchFocus(gui.Views.Instances)
+}
+
+func (gui *Gui) clearInstanceUsers() error {
+	from := gui.State.InstanceUsers.from
+
+	gui.State.InstanceUsers = nil
+	gui.Views.Instances.Title = gui.instancesPanelTitle()
+
+	if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return err
+	}
+
+	if from == nil {
+		return nil
+	}
+
+	return gui.switchFocus(from)
 }
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
@@ -321,11 +372,37 @@ func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
 // which otherwise uses whatever project the user's own remote is set to -
 // not necessarily the one the selected instance lives in.
 func instanceCLIArgs(instance *commands.Instance) []string {
-	if instance.Project == "" {
+	return projectCLIArgs(instance.Project)
+}
+
+func projectCLIArgs(project string) []string {
+	if project == "" {
 		return nil
 	}
 
-	return []string{"--project", instance.Project}
+	return []string{"--project", project}
+}
+
+// editInIncus hands the terminal to an `incus ... edit`, which opens the
+// item's YAML in the user's editor and re-opens it on a validation error,
+// then re-lists what it changed.
+func (gui *Gui) editInIncus(project string, refresh []fetch, args ...string) error {
+	cmd := gui.OSCommand.NewCmd("incus", append(projectCLIArgs(project), args...)...)
+
+	if err := gui.runSubprocess(cmd); err != nil {
+		return err
+	}
+
+	gui.refreshInBackground(refresh...)
+
+	return nil
+}
+
+// instanceEdit is `incus config edit`. Incus applies what it can to a
+// running instance and says so when a change waits for a restart.
+func (gui *Gui) instanceEdit(instance *commands.Instance) error {
+	return gui.editInIncus(instance.Project, []fetch{gui.fetchInstances, gui.fetchServices},
+		"config", "edit", instance.Name)
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

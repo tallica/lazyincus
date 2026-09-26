@@ -24,10 +24,12 @@ type Volume struct {
 	// the daemon wouldn't say.
 	PoolDriver string
 	PoolSpace  *api.ResourcesStoragePoolSpace
-	Client     incus.InstanceServer
-	OSCommand  *OSCommand
-	Log        *logrus.Entry
-	Tr         *i18n.TranslationSet
+	// SnapshotList is a custom volume's snapshots, as Snapshots has them.
+	SnapshotList []api.StorageVolumeSnapshot
+	Client       incus.InstanceServer
+	OSCommand    *OSCommand
+	Log          *logrus.Entry
+	Tr           *i18n.TranslationSet
 }
 
 // Key identifies the volume across refreshes and in the panel's context

@@ -42,6 +42,15 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 		SameItem: func(a, b *commands.Volume) bool {
 			return a.Key() == b.Key()
 		},
+		// The snapshots panel follows a custom volume the way it follows an
+		// instance; the other volumes' snapshots are their instance's.
+		OnSelect: func(volume *commands.Volume) error {
+			if !volume.IsCustom() {
+				return nil
+			}
+
+			return gui.refreshSnapshotsForVolume(volume)
+		},
 		GetTableCells: func(item *commands.Volume) []string {
 			return presentation.GetVolumeDisplayStrings(item, gui.State.SpansProjects.Volumes)
 		},
@@ -126,7 +135,16 @@ func (gui *Gui) fetchVolumes() (func() error, error) {
 
 		gui.Panels.Volumes.SetItems(volumes)
 
-		return gui.Panels.Volumes.RerenderList()
+		if err := gui.Panels.Volumes.RerenderList(); err != nil {
+			return err
+		}
+
+		// A followed volume's snapshots come with the volumes.
+		if _, ok := gui.snapshotsVolume(); ok {
+			return gui.renderSnapshots()
+		}
+
+		return nil
 	}, nil
 }
 
@@ -140,6 +158,15 @@ func (gui *Gui) refreshVolumesQuiet() error {
 	}
 
 	return nil
+}
+
+func (gui *Gui) showVolumeUsers(volume *commands.Volume) error {
+	return gui.showUsers(volume.Name, volume.IsUsedBy)
+}
+
+func (gui *Gui) volumeEdit(volume *commands.Volume) error {
+	return gui.editInIncus(volume.Volume.Project, []fetch{gui.fetchVolumes},
+		"storage", "volume", "edit", volume.Pool, volume.Volume.Type+"/"+volume.Name)
 }
 
 func (gui *Gui) volumeDelete(volume *commands.Volume) error {

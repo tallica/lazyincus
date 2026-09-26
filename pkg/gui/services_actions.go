@@ -371,6 +371,10 @@ func (gui *Gui) withServiceInstance(title string, action func(*commands.Instance
 	return gui.Menu(CreateMenuOptions{Title: title, Items: items})
 }
 
+func (gui *Gui) handleServiceEdit(g *gocui.Gui, v *gocui.View) error {
+	return gui.withServiceInstance(gui.Tr.EditInEditor, gui.instanceEdit)
+}
+
 func (gui *Gui) handleServiceExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.ExecShell, gui.instanceExecShell)
 }

@@ -40,6 +40,7 @@ func fixtureServer() *incustest.Server {
 					Architecture: "x86_64", Profiles: []string{"default"},
 					Config: map[string]string{"volatile.base_image": "0123456789abcdef0123456789abcdef"},
 				},
+				ExpandedDevices: map[string]map[string]string{"eth0": {"type": "nic", "network": "incusbr0"}},
 				ExpandedConfig: map[string]string{
 					"image.description": "Alpine 3.22 amd64",
 				},
@@ -65,6 +66,9 @@ func fixtureServer() *incustest.Server {
 		return instance
 	}
 
+	web := running("default", "web", "192.0.2.10", 2)
+	web.ExpandedDevices["eth0"]["security.acls"] = "web-only"
+
 	stopped := api.InstanceFull{Instance: api.Instance{
 		Name: "db", Project: "default", Status: "Stopped", Type: "container",
 		InstancePut: api.InstancePut{Architecture: "x86_64"},
@@ -72,7 +76,7 @@ func fixtureServer() *incustest.Server {
 
 	return incustest.New(incustest.Server{
 		Instances: []api.InstanceFull{
-			running("default", "web", "192.0.2.10", 2),
+			web,
 			stopped,
 			running("default", "a-name-long-enough-to-be-cut-off", "192.0.2.144", 0),
 		},
@@ -89,7 +93,9 @@ func fixtureServer() *incustest.Server {
 			},
 		},
 		Networks: []api.Network{
-			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"},
+			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default", NetworkPut: api.NetworkPut{
+				Config: map[string]string{"security.acls": "isolate", "security.acls.default.egress.action": "allow"},
+			}},
 			{Name: "eth0", Type: "physical", Project: "default"},
 		},
 		NetworkLeases: map[string]map[string][]api.NetworkLease{
@@ -98,6 +104,26 @@ func fixtureServer() *incustest.Server {
 				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "192.0.2.10", Type: "DYNAMIC"},
 				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "2001:db8::10", Type: "DYNAMIC"},
 			}},
+		},
+		NetworkACLs: map[string]api.NetworkACL{
+			"isolate": {NetworkACLPost: api.NetworkACLPost{Name: "isolate"}, NetworkACLPut: api.NetworkACLPut{
+				Description: "Keep the stack to itself",
+				Ingress: []api.NetworkACLRule{
+					{Action: "reject", Source: "10.0.0.0/8", State: "enabled"},
+					{Action: "allow", Protocol: "tcp", DestinationPort: "80,443", State: "logged"},
+				},
+				Egress: []api.NetworkACLRule{{Action: "drop", Destination: "192.0.2.53", Protocol: "udp", DestinationPort: "53", State: "disabled"}},
+			}},
+			"web-only": {NetworkACLPost: api.NetworkACLPost{Name: "web-only"}, NetworkACLPut: api.NetworkACLPut{
+				Ingress: []api.NetworkACLRule{{Action: "allow", Protocol: "tcp", DestinationPort: "80", State: "enabled"}},
+			}},
+		},
+		NetworkForwards: map[string][]api.NetworkForward{
+			"incusbr0": {{ListenAddress: "198.51.100.7", NetworkForwardPut: api.NetworkForwardPut{
+				Ports: []api.NetworkForwardPort{
+					{Protocol: "tcp", ListenPort: "443", TargetAddress: "192.0.2.10", Description: "https"},
+				},
+			}}},
 		},
 		NetworkStates: map[string]api.NetworkState{
 			"incusbr0": {
@@ -117,6 +143,9 @@ func fixtureServer() *incustest.Server {
 		},
 		PoolSpace:   map[string]api.ResourcesStoragePoolSpace{"default": {Used: 5 << 30, Total: 50 << 30}},
 		VolumeUsage: map[string]uint64{"data": 512 << 20},
+		VolumeSnapshots: map[string][]api.StorageVolumeSnapshot{"data": {{
+			Name: "before-migration", CreatedAt: time.Date(2026, 9, 22, 6, 0, 0, 0, time.UTC),
+		}}},
 	})
 }
 
@@ -432,6 +461,68 @@ func TestArrowsStepThroughEveryList(t *testing.T) {
 
 	// The resources panel shows whichever list the arrows reached.
 	assert.Contains(t, s.settle(t, "Leases"), "│incusbr0")
+}
+
+// u narrows the instances to a resource's users, and esc brings them all
+// back.
+func TestShowUsers(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.showNetworkUsers(s.gui.Panels.Networks.List.GetItems()[0]) })
+
+	screen := s.settle(t, "Instances using incusbr0")
+	assert.Contains(t, screen, "│web ")
+	assert.NotContains(t, screen, "│db ")
+
+	s.do(t, s.gui.escape)
+	screen = s.settle(t, "│db ")
+	assert.NotContains(t, screen, "Instances using")
+
+	// Back on the network it was asked of.
+	s.do(t, func() error {
+		assert.Equal(t, "networks", s.gui.currentViewName())
+		return nil
+	})
+}
+
+func TestScreenNetworkACLs(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("acls") })
+
+	assertGolden(t, "network-acls-140x40", s.settle(t, "Egress:"))
+}
+
+func TestScreenNetworkForwards(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("forwards") })
+
+	assertGolden(t, "network-forwards-140x40", s.settle(t, "192.0.2.10:443"))
+}
+
+// The snapshots panel follows a custom volume selected in the volumes list.
+func TestScreenVolumeSnapshots(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Volumes) })
+	screen := s.settle(t, "Snapshots (data)")
+	assert.Contains(t, screen, "before-migration")
+
+	s.do(t, s.gui.Panels.Volumes.HandleNextLine)
+	screen = s.settle(t, "Name:         web")
+	assert.Contains(t, screen, "Snapshots (data)", "an instance's own volume leaves the panel be")
+
+	s.do(t, s.gui.cycleSideView(1))
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Instances) })
+	assert.NotContains(t, s.settle(t, "Snapshots (a-name"), "before-migration")
 }
 
 func TestScreenMenu(t *testing.T) {

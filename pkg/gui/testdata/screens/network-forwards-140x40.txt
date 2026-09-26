@@ -1,23 +1,23 @@
-╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││Name:         data                                                                         │
-│web                              running  co…││Pool:         default (dir)                                                                │
-│db                               stopped  co…││Pool space:   5.00GiB of 50.00GiB used (10%)                                               │
-│                                             ││Type:         custom                                                                       │
-│                                             ││Content type:                                                                              │
-│                                             ││Size:         512.00MiB                                                                    │
-│                                             ││Used by:      nothing                                                                      │
+╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
+│a-name-long-enough-to-be-cut-off running  co…││LISTEN       PROTOCOL PORT TARGET         INSTANCE DESCRIPTION                             │
+│web                              running  co…││198.51.100.7 tcp      443  192.0.2.10:443 web      https                                   │
+│db                               stopped  co…││                                                                                           │
 │                                             ││                                                                                           │
-│                                             ││Full details:                                                                              │
 │                                             ││                                                                                           │
-│                                             ││config: null                                                                               │
-╰─────────────────────────────────────────────╯│description: ""                                                                            │
-╭─[2]─Snapshots (data)────────────────────────╮│name: data                                                                                 │
-│before-migration 2026/09/22 06:00 UTC        ││type: custom                                                                               │
-│                                             ││used_by: null                                                                              │
-│                                             ││location: ""                                                                               │
-│                                             ││content_type: ""                                                                           │
-│                                             ││project: default                                                                           │
-│                                             ││created_at: "0001-01-01T00:00:00Z"                                                         │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
@@ -25,8 +25,8 @@
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
 ╭─[3]─Images - Volumes - Networks─────────────╮│                                                                                           │
-│data 0 512.00MiB default custom              ││                                                                                           │
-│web  1           default container           ││                                                                                           │
+│incusbr0 bridge managed 0                    ││                                                                                           │
+│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

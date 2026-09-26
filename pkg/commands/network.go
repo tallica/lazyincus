@@ -3,6 +3,7 @@ package commands
 import (
 	"net/url"
 	"slices"
+	"strings"
 	"sync"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -122,6 +123,55 @@ func (n *Network) usedByProjects() []string {
 // a bridge, the ports on it.
 func (n *Network) State() (*api.NetworkState, error) {
 	return n.Client.GetNetworkState(n.Name)
+}
+
+// ACLNames are the ACLs the network applies to everything on it.
+func (n *Network) ACLNames() []string {
+	return splitACLs(n.Network.Config["security.acls"])
+}
+
+// NICACLs names each NIC on the network with ACLs of its own, as
+// "instance (nic)", against those ACLs.
+func (n *Network) NICACLs(instances []*Instance) map[string][]string {
+	nics := map[string][]string{}
+
+	for _, instance := range instances {
+		for device, config := range instance.Instance.ExpandedDevices {
+			if config["type"] != "nic" || (config["network"] != n.Name && config["parent"] != n.Name) {
+				continue
+			}
+
+			if acls := splitACLs(config["security.acls"]); len(acls) > 0 && reachable(n.Network.Project, instance) {
+				nics[instance.Name+" ("+device+")"] = acls
+			}
+		}
+	}
+
+	return nics
+}
+
+func (n *Network) ACL(name string) (*api.NetworkACL, error) {
+	acl, _, err := n.Client.GetNetworkACL(name)
+
+	return acl, err
+}
+
+func splitACLs(value string) []string {
+	acls := []string{}
+
+	for _, name := range strings.Split(value, ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			acls = append(acls, name)
+		}
+	}
+
+	return acls
+}
+
+// Forwards are the network's forwards: a listen address on the uplink,
+// each port on it sent to an address inside.
+func (n *Network) Forwards() ([]api.NetworkForward, error) {
+	return n.Client.GetNetworkForwards(n.Name)
 }
 
 // Delete removes the network. Incus only allows this for managed networks
