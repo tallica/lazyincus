@@ -118,6 +118,13 @@ func fixtureServer() *incustest.Server {
 				Ingress: []api.NetworkACLRule{{Action: "allow", Protocol: "tcp", DestinationPort: "80", State: "enabled"}},
 			}},
 		},
+		NetworkForwards: map[string][]api.NetworkForward{
+			"incusbr0": {{ListenAddress: "198.51.100.7", NetworkForwardPut: api.NetworkForwardPut{
+				Ports: []api.NetworkForwardPort{
+					{Protocol: "tcp", ListenPort: "443", TargetAddress: "192.0.2.10", Description: "https"},
+				},
+			}}},
+		},
 		NetworkStates: map[string]api.NetworkState{
 			"incusbr0": {
 				State: "up", Type: "broadcast", Hwaddr: "10:66:6a:00:00:01", Mtu: 1500,
@@ -479,6 +486,16 @@ func TestScreenNetworkACLs(t *testing.T) {
 	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("acls") })
 
 	assertGolden(t, "network-acls-140x40", s.settle(t, "Egress:"))
+}
+
+func TestScreenNetworkForwards(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("forwards") })
+
+	assertGolden(t, "network-forwards-140x40", s.settle(t, "192.0.2.10:443"))
 }
 
 func TestScreenMenu(t *testing.T) {

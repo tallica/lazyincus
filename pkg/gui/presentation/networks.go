@@ -123,6 +123,52 @@ func GetACLRuleRows(rules []api.NetworkACLRule) [][]string {
 	return rows
 }
 
+// GetNetworkForwardRows lays out the network's forwards a port range to a
+// row, under a header, the listen address repeated so each row stands on
+// its own. A forward's target_address takes the ports no entry names.
+// owner names the instance at an address inside, or "".
+func GetNetworkForwardRows(forwards []api.NetworkForward, owner func(address string) string) [][]string {
+	rows := [][]string{{"LISTEN", "PROTOCOL", "PORT", "TARGET", "INSTANCE", "DESCRIPTION"}}
+
+	target := func(address, port string) string {
+		if port == "" {
+			return address
+		}
+
+		return net.JoinHostPort(address, port)
+	}
+
+	for _, forward := range forwards {
+		for _, port := range forward.Ports {
+			targetPort := port.TargetPort
+			if targetPort == "" {
+				targetPort = port.ListenPort
+			}
+
+			rows = append(rows, []string{
+				utils.ColoredString(forward.ListenAddress, color.FgYellow),
+				port.Protocol,
+				port.ListenPort,
+				utils.ColoredString(target(port.TargetAddress, targetPort), color.FgGreen),
+				utils.ColoredString(owner(port.TargetAddress), color.FgCyan),
+				port.Description,
+			})
+		}
+
+		if fallback := forward.Config["target_address"]; fallback != "" {
+			rows = append(rows, []string{
+				utils.ColoredString(forward.ListenAddress, color.FgYellow),
+				"any", "other",
+				utils.ColoredString(fallback, color.FgGreen),
+				utils.ColoredString(owner(fallback), color.FgCyan),
+				forward.Description,
+			})
+		}
+	}
+
+	return rows
+}
+
 // DisplayACLAction colours what a rule does to the traffic it matches.
 func DisplayACLAction(action string) string {
 	switch action {

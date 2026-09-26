@@ -1,4 +1,4 @@
-╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Config────────────────────────────────────────────────────────────╮
+╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
 │a-name-long-enough-to-be-cut-off running  co…││State:          up                                                                         │
 │web                              running  co…││Type:           broadcast                                                                  │
 │db                               stopped  co…││MAC address:    10:66:6a:00:00:01                                                          │

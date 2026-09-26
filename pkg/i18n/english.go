@@ -51,6 +51,10 @@ type TranslationSet struct {
 	NoACLsUnmanaged            string
 	ACLIngress                 string
 	ACLEgress                  string
+	ForwardsTitle              string
+	NoForwards                 string
+	NoForwardsUnmanaged        string
+	CannotListForwards         string
 	LeasesTitle                string
 	StateTitle                 string
 	NoLeases                   string
@@ -256,6 +260,10 @@ func englishSet() TranslationSet {
 		NoACLsUnmanaged:            "Only networks Incus manages take ACLs.",
 		ACLIngress:                 "Ingress",
 		ACLEgress:                  "Egress",
+		ForwardsTitle:              "Forwards",
+		NoForwards:                 "No forwards on this network.",
+		NoForwardsUnmanaged:        "Only networks Incus manages have forwards.",
+		CannotListForwards:         "Could not list the network's forwards.",
 		LeasesTitle:                "Leases",
 		StateTitle:                 "State",
 		NoLeases:                   "No leases",

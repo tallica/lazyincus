@@ -168,6 +168,12 @@ func splitACLs(value string) []string {
 	return acls
 }
 
+// Forwards are the network's forwards: a listen address on the uplink,
+// each port on it sent to an address inside.
+func (n *Network) Forwards() ([]api.NetworkForward, error) {
+	return n.Client.GetNetworkForwards(n.Name)
+}
+
 // Delete removes the network. Incus only allows this for managed networks
 // that nothing is using; it rejects the rest itself.
 func (n *Network) Delete() error {

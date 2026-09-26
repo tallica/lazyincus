@@ -32,8 +32,9 @@ type Server struct {
 	// one are.
 	NetworkLeases map[string]map[string][]api.NetworkLease
 	NetworkStates map[string]api.NetworkState
-	// NetworkACLs by name.
-	NetworkACLs map[string]api.NetworkACL
+	// NetworkACLs by name, NetworkForwards by network.
+	NetworkACLs     map[string]api.NetworkACL
+	NetworkForwards map[string][]api.NetworkForward
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -220,6 +221,10 @@ func (s *Server) GetNetworkACL(name string) (*api.NetworkACL, string, error) {
 	}
 
 	return &acl, "", nil
+}
+
+func (s *Server) GetNetworkForwards(network string) ([]api.NetworkForward, error) {
+	return slices.Clone(s.NetworkForwards[network]), nil
 }
 
 func (s *Server) GetStoragePools() ([]api.StoragePool, error) {

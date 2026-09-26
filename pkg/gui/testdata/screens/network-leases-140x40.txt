@@ -1,4 +1,4 @@
-╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Config────────────────────────────────────────────────────────────╮
+╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
 │a-name-long-enough-to-be-cut-off running  co…││HOSTNAME    IPV4       IPV6         MAC               TYPE                                 │
 │web                              running  co…││incusbr0.gw 192.0.2.1                                 gateway                              │
 │db                               stopped  co…││web         192.0.2.10 2001:db8::10 10:66:6a:00:00:10 dynamic                              │

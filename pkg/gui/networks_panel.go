@@ -41,6 +41,11 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 						Render: gui.renderNetworkACLs,
 					},
 					{
+						Key:    "forwards",
+						Title:  gui.Tr.ForwardsTitle,
+						Render: gui.renderNetworkForwards,
+					},
+					{
 						Key:    "config",
 						Title:  gui.Tr.ConfigTitle,
 						Render: gui.renderNetworkConfig,
@@ -313,6 +318,52 @@ func (gui *Gui) networkACLsStr(network *commands.Network) string {
 	}
 
 	return output
+}
+
+func (gui *Gui) renderNetworkForwards(network *commands.Network) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.networkForwardsStr(network) })
+}
+
+func (gui *Gui) networkForwardsStr(network *commands.Network) string {
+	if !network.IsManaged() {
+		return gui.Tr.NoForwardsUnmanaged
+	}
+
+	forwards, err := network.Forwards()
+	if err != nil {
+		return gui.Tr.CannotListForwards + "\n\n" + err.Error()
+	}
+
+	if len(forwards) == 0 {
+		return gui.Tr.NoForwards
+	}
+
+	owners := gui.addressOwners()
+
+	table, err := utils.RenderTable(presentation.GetNetworkForwardRows(forwards, func(address string) string {
+		return owners[address]
+	}))
+	if err != nil {
+		return err.Error()
+	}
+
+	return table
+}
+
+// addressOwners names the instance holding each address, from the newest
+// instance listing.
+func (gui *Gui) addressOwners() map[string]string {
+	owners := map[string]string{}
+
+	for _, instance := range gui.Panels.Instances.List.GetAllItems() {
+		for _, family := range []string{"inet", "inet6"} {
+			for _, address := range instance.Latest().Addresses(family) {
+				owners[address] = instance.Name
+			}
+		}
+	}
+
+	return owners
 }
 
 func (gui *Gui) renderNetworkConfig(network *commands.Network) tasks.TaskFunc {

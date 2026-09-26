@@ -402,7 +402,7 @@ interfaces Incus merely reports, and only managed networks can be deleted -
 filtered out until `e` shows them, the way `e` shows stopped instances.
 They outnumber Incus's own networks on most hosts and have nothing to do.
 
-The tabs are Leases, State, ACLs and Config. Leases is a host a row, IPv4 and
+The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a row, IPv4 and
 IPv6 side by side, the gateway first: the daemon lists an entry per
 address, which would give a dual-stack instance two half-rows. Asking for
 them takes a request per project using the network (see
@@ -418,3 +418,10 @@ network carrying ACLs of their own - found the way `u` finds a network's
 users, through each instance's expanded devices - and then every one of
 those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
 change when someone edits one.
+
+Forwards is `incus network forward list` a port to a row: the listen
+address, protocol and port, where it goes - the target port defaulting to
+the listen port, as the daemon's does - and the instance holding that
+address, from the instances' own addresses. A forward's `target_address`,
+which takes every port no entry names, gets a row of its own. Load
+balancers aren't shown; they're OVN's alone.
