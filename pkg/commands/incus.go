@@ -491,8 +491,9 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	return ownVolumes, nil
 }
 
-// volumeUsageRequests is how many volumes' usage are asked for at once.
-const volumeUsageRequests = 8
+// requestsInFlight caps a fan-out of one request per item: volumes' usage,
+// a network's leases per project.
+const requestsInFlight = 8
 
 // readVolumeUsage asks after each volume's usage, which the listing doesn't
 // carry: one request a volume, so several in flight at a time. A volume the
@@ -500,7 +501,7 @@ const volumeUsageRequests = 8
 func readVolumeUsage(volumes []*Volume) {
 	var wait sync.WaitGroup
 
-	slots := make(chan struct{}, volumeUsageRequests)
+	slots := make(chan struct{}, requestsInFlight)
 
 	for _, volume := range volumes {
 		wait.Go(func() {

@@ -3,6 +3,7 @@ package commands
 import (
 	"net/url"
 	"slices"
+	"sync"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -54,14 +55,30 @@ func (n *Network) Leases() ([]api.NetworkLease, error) {
 		return leases, nil
 	}
 
-	for _, project := range n.usedByProjects() {
-		more, err := n.ClientFor(project).GetNetworkLeases(n.Name)
-		if err != nil {
-			// A project that has gone since the listing; the rest still
-			// stand.
-			continue
-		}
+	projects := n.usedByProjects()
+	answers := make([][]api.NetworkLease, len(projects))
 
+	var wait sync.WaitGroup
+
+	slots := make(chan struct{}, requestsInFlight)
+
+	for i, project := range projects {
+		wait.Go(func() {
+			slots <- struct{}{}
+			defer func() { <-slots }()
+
+			// An error is a project gone since the listing; the rest stand.
+			if more, err := n.ClientFor(project).GetNetworkLeases(n.Name); err == nil {
+				answers[i] = more
+			}
+		})
+	}
+
+	wait.Wait()
+
+	// Merged in used_by's order, not the answers', so rows hold still from
+	// one refresh to the next.
+	for _, more := range answers {
 		for _, lease := range more {
 			if !slices.Contains(leases, lease) {
 				leases = append(leases, lease)

@@ -16,10 +16,11 @@ func TestNetworkLeasesAskEveryProjectUsingIt(t *testing.T) {
 	gateway := api.NetworkLease{Hostname: "br.gw", Address: "10.0.0.1", Type: "GATEWAY"}
 	web := api.NetworkLease{Hostname: "web-1", Hwaddr: "10:66:6a:00:00:01", Address: "10.0.0.10", Type: "DYNAMIC"}
 	db := api.NetworkLease{Hostname: "db-1", Hwaddr: "10:66:6a:00:00:02", Address: "10.0.0.20", Type: "DYNAMIC"}
+	app := api.NetworkLease{Hostname: "app", Hwaddr: "10:66:6a:00:00:03", Address: "10.0.0.30", Type: "DYNAMIC"}
 
 	server := incustest.New(incustest.Server{
 		NetworkLeases: map[string]map[string][]api.NetworkLease{
-			"br": {"default": {gateway}, "stack": {web, db}},
+			"br": {"default": {gateway}, "stack": {web, db}, "tenant": {app}},
 		},
 	})
 
@@ -28,6 +29,7 @@ func TestNetworkLeasesAskEveryProjectUsingIt(t *testing.T) {
 		Network: api.Network{Name: "br", Project: "default", UsedBy: []string{
 			"/1.0/instances/web-1?project=stack",
 			"/1.0/instances/db-1?project=stack",
+			"/1.0/instances/app?project=tenant",
 			"/1.0/profiles/default?project=gone",
 		}},
 		Client:    server.UseProject("default"),
@@ -36,5 +38,6 @@ func TestNetworkLeasesAskEveryProjectUsingIt(t *testing.T) {
 
 	leases, err := network.Leases()
 	require.NoError(t, err)
-	assert.Equal(t, []api.NetworkLease{gateway, web, db}, leases)
+	// In used_by's order, however the answers arrive.
+	assert.Equal(t, []api.NetworkLease{gateway, web, db, app}, leases)
 }
