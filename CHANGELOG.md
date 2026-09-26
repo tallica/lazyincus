@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Built against the Incus 7.5 client, v7.5.1, up from 7.4, along with the newer dependencies it brings.
+- A release is published only once its tagged commit passes the tests, lint and govulncheck. A tag used to build and publish binaries on its own, whatever state the commit was in.
+
+### Security
+- `golang.org/x/crypto` is now v0.57.0, past the fixes for GO-2026-6354 and GO-2026-6355. govulncheck found neither reachable from lazyincus, which uses x/crypto only through the Incus client's config loading. Dependencies are now checked for reachable vulnerabilities on every change and weekly, and kept current by Dependabot.
+
 ## [0.9.1] - 2026-09-26
 
 ### Fixed
