@@ -66,6 +66,9 @@ func fixtureServer() *incustest.Server {
 		return instance
 	}
 
+	web := running("default", "web", "192.0.2.10", 2)
+	web.ExpandedDevices["eth0"]["security.acls"] = "web-only"
+
 	stopped := api.InstanceFull{Instance: api.Instance{
 		Name: "db", Project: "default", Status: "Stopped", Type: "container",
 		InstancePut: api.InstancePut{Architecture: "x86_64"},
@@ -73,7 +76,7 @@ func fixtureServer() *incustest.Server {
 
 	return incustest.New(incustest.Server{
 		Instances: []api.InstanceFull{
-			running("default", "web", "192.0.2.10", 2),
+			web,
 			stopped,
 			running("default", "a-name-long-enough-to-be-cut-off", "192.0.2.144", 0),
 		},
@@ -90,7 +93,9 @@ func fixtureServer() *incustest.Server {
 			},
 		},
 		Networks: []api.Network{
-			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default"},
+			{Name: "incusbr0", Type: "bridge", Managed: true, Project: "default", NetworkPut: api.NetworkPut{
+				Config: map[string]string{"security.acls": "isolate", "security.acls.default.egress.action": "allow"},
+			}},
 			{Name: "eth0", Type: "physical", Project: "default"},
 		},
 		NetworkLeases: map[string]map[string][]api.NetworkLease{
@@ -98,6 +103,19 @@ func fixtureServer() *incustest.Server {
 				{Hostname: "incusbr0.gw", Address: "192.0.2.1", Type: "GATEWAY"},
 				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "192.0.2.10", Type: "DYNAMIC"},
 				{Hostname: "web", Hwaddr: "10:66:6a:00:00:10", Address: "2001:db8::10", Type: "DYNAMIC"},
+			}},
+		},
+		NetworkACLs: map[string]api.NetworkACL{
+			"isolate": {NetworkACLPost: api.NetworkACLPost{Name: "isolate"}, NetworkACLPut: api.NetworkACLPut{
+				Description: "Keep the stack to itself",
+				Ingress: []api.NetworkACLRule{
+					{Action: "reject", Source: "10.0.0.0/8", State: "enabled"},
+					{Action: "allow", Protocol: "tcp", DestinationPort: "80,443", State: "logged"},
+				},
+				Egress: []api.NetworkACLRule{{Action: "drop", Destination: "192.0.2.53", Protocol: "udp", DestinationPort: "53", State: "disabled"}},
+			}},
+			"web-only": {NetworkACLPost: api.NetworkACLPost{Name: "web-only"}, NetworkACLPut: api.NetworkACLPut{
+				Ingress: []api.NetworkACLRule{{Action: "allow", Protocol: "tcp", DestinationPort: "80", State: "enabled"}},
 			}},
 		},
 		NetworkStates: map[string]api.NetworkState{
@@ -451,6 +469,16 @@ func TestShowUsers(t *testing.T) {
 	s.do(t, s.gui.escape)
 	screen = s.settle(t, "│db ")
 	assert.NotContains(t, screen, "Instances using")
+}
+
+func TestScreenNetworkACLs(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.Panels.Networks.SetMainTab("acls") })
+
+	assertGolden(t, "network-acls-140x40", s.settle(t, "Egress:"))
 }
 
 func TestScreenMenu(t *testing.T) {

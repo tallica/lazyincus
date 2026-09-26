@@ -1,28 +1,28 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Config────────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││HOSTNAME    IPV4       IPV6         MAC               TYPE                                 │
-│web                              running  co…││incusbr0.gw 192.0.2.1                                 gateway                              │
-│db                               stopped  co…││web         192.0.2.10 2001:db8::10 10:66:6a:00:00:10 dynamic                              │
+│a-name-long-enough-to-be-cut-off running  co…││On the network:         isolate                                                            │
+│web                              running  co…││Unmatched ingress:      reject (default)                                                   │
+│db                               stopped  co…││Unmatched egress:       allow                                                              │
 │                                             ││                                                                                           │
+│                                             ││On single NICs:                                                                            │
+│                                             ││  web (eth0) web-only                                                                      │
 │                                             ││                                                                                           │
+│                                             ││── isolate ────────────────────────────────────────────────────────────────────────────────│
+│                                             ││Keep the stack to itself                                                                   │
 │                                             ││                                                                                           │
+│                                             ││Ingress:                                                                                   │
+╰─────────────────────────────────────────────╯│ACTION SOURCE     DESTINATION PROTOCOL PORT   STATE                                        │
+╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│reject 10.0.0.0/8 any         any             enabled                                      │
+│                                             ││allow  any        any         tcp      80,443 logged                                       │
 │                                             ││                                                                                           │
+│                                             ││Egress:                                                                                    │
+│                                             ││ACTION SOURCE DESTINATION PROTOCOL PORT STATE                                              │
+│                                             ││drop   any    192.0.2.53  udp      53   disabled                                           │
 │                                             ││                                                                                           │
+│                                             ││── web-only ───────────────────────────────────────────────────────────────────────────────│
 │                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[2]─Snapshots (a-name-long-enough-to-be-cut─╮│                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
+│                                             ││Ingress:                                                                                   │
+│                                             ││ACTION SOURCE DESTINATION PROTOCOL PORT STATE                                              │
+│                                             ││allow  any    any         tcp      80   enabled                                            │
 ╰─────────────────────────────────────────────╯│                                                                                           │
 ╭─[3]─Images - Volumes - Networks─────────────╮│                                                                                           │
 │incusbr0 bridge managed 0                    ││                                                                                           │

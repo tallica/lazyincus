@@ -402,7 +402,7 @@ interfaces Incus merely reports, and only managed networks can be deleted -
 filtered out until `e` shows them, the way `e` shows stopped instances.
 They outnumber Incus's own networks on most hosts and have nothing to do.
 
-The tabs are Leases, State and Config. Leases is a host a row, IPv4 and
+The tabs are Leases, State, ACLs and Config. Leases is a host a row, IPv4 and
 IPv6 side by side, the gateway first: the daemon lists an entry per
 address, which would give a dual-stack instance two half-rows. Asking for
 them takes a request per project using the network (see
@@ -410,3 +410,11 @@ them takes a request per project using the network (see
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a
 lease without changing anything the list's own 10s poll would notice.
+
+ACLs is what filters the network's traffic: the ACLs `security.acls`
+applies to the network, what becomes of traffic none of their rules match
+(`security.acls.default.*.action`, `reject` when unset), the NICs on the
+network carrying ACLs of their own - found the way `u` finds a network's
+users, through each instance's expanded devices - and then every one of
+those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
+change when someone edits one.

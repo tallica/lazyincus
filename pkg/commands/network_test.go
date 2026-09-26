@@ -41,3 +41,23 @@ func TestNetworkLeasesAskEveryProjectUsingIt(t *testing.T) {
 	// In used_by's order, however the answers arrive.
 	assert.Equal(t, []api.NetworkLease{gateway, web, db, app}, leases)
 }
+
+func TestNetworkACLs(t *testing.T) {
+	network := &Network{Name: "br", Network: api.Network{Project: "default", Config: map[string]string{
+		"security.acls": "isolate, web-only ,",
+	}}}
+
+	assert.Equal(t, []string{"isolate", "web-only"}, network.ACLNames())
+
+	web := &Instance{Name: "web-1", Project: "stack", Instance: api.InstanceFull{Instance: api.Instance{
+		ExpandedDevices: map[string]map[string]string{
+			"eth0": {"type": "nic", "network": "br", "security.acls": "web-only"},
+			"eth1": {"type": "nic", "network": "other", "security.acls": "elsewhere"},
+		},
+	}}}
+	db := &Instance{Name: "db-1", Project: "stack", Instance: api.InstanceFull{Instance: api.Instance{
+		ExpandedDevices: map[string]map[string]string{"eth0": {"type": "nic", "network": "br"}},
+	}}}
+
+	assert.Equal(t, map[string][]string{"web-1 (eth0)": {"web-only"}}, network.NICACLs([]*Instance{web, db}))
+}

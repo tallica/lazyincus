@@ -46,6 +46,11 @@ type TranslationSet struct {
 	NothingUses                string
 	EditInEditor               string
 	CannotEditUnmanagedNetwork string
+	ACLsTitle                  string
+	NoACLs                     string
+	NoACLsUnmanaged            string
+	ACLIngress                 string
+	ACLEgress                  string
 	LeasesTitle                string
 	StateTitle                 string
 	NoLeases                   string
@@ -246,6 +251,11 @@ func englishSet() TranslationSet {
 		NothingUses:                "No instance uses %s.",
 		EditInEditor:               "edit config in $EDITOR",
 		CannotEditUnmanagedNetwork: "Only networks Incus manages have a config to edit.",
+		ACLsTitle:                  "ACLs",
+		NoACLs:                     "No ACLs apply to this network, on it or on the NICs using it.",
+		NoACLsUnmanaged:            "Only networks Incus manages take ACLs.",
+		ACLIngress:                 "Ingress",
+		ACLEgress:                  "Egress",
 		LeasesTitle:                "Leases",
 		StateTitle:                 "State",
 		NoLeases:                   "No leases",

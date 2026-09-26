@@ -3,10 +3,12 @@ package gui
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/units"
 	"github.com/samber/lo"
 
@@ -32,6 +34,11 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 						Key:    "state",
 						Title:  gui.Tr.StateTitle,
 						Render: gui.renderNetworkState,
+					},
+					{
+						Key:    "acls",
+						Title:  gui.Tr.ACLsTitle,
+						Render: gui.renderNetworkACLs,
 					},
 					{
 						Key:    "config",
@@ -217,6 +224,95 @@ func (gui *Gui) hostInterfaceOwners() map[string]string {
 	}
 
 	return owners
+}
+
+func (gui *Gui) renderNetworkACLs(network *commands.Network) tasks.TaskFunc {
+	return gui.NewSimpleRenderStringTask(func() string { return gui.networkACLsStr(network) })
+}
+
+// networkACLsStr is what filters the network's traffic: the ACLs on the
+// network, what happens to what none of them match, those on single NICs,
+// then each ACL's rules. It answers "why can't this reach that", which the
+// Config tab's security.acls, a list of names, doesn't.
+func (gui *Gui) networkACLsStr(network *commands.Network) string {
+	if !network.IsManaged() {
+		return gui.Tr.NoACLsUnmanaged
+	}
+
+	onNetwork := network.ACLNames()
+	onNICs := network.NICACLs(gui.Panels.Instances.List.GetAllItems())
+
+	if len(onNetwork) == 0 && len(onNICs) == 0 {
+		return gui.Tr.NoACLs
+	}
+
+	padding := 24
+	output := ""
+
+	if len(onNetwork) > 0 {
+		unmatched := func(direction string) string {
+			action := network.Network.Config["security.acls.default."+direction+".action"]
+			if action == "" {
+				// The daemon's default for traffic no rule matches.
+				return presentation.DisplayACLAction("reject") + " (default)"
+			}
+
+			return presentation.DisplayACLAction(action)
+		}
+
+		output += utils.WithPadding("On the network: ", padding) + strings.Join(onNetwork, ", ") + "\n"
+		output += utils.WithPadding("Unmatched ingress: ", padding) + unmatched("ingress") + "\n"
+		output += utils.WithPadding("Unmatched egress: ", padding) + unmatched("egress") + "\n"
+	}
+
+	nics := lo.Keys(onNICs)
+	slices.Sort(nics)
+
+	if len(nics) > 0 {
+		table, err := utils.RenderTable(lo.Map(nics, func(nic string, _ int) []string {
+			return []string{"  " + nic, strings.Join(onNICs[nic], ", ")}
+		}))
+		if err != nil {
+			return err.Error()
+		}
+
+		output += "\nOn single NICs:\n" + table + "\n"
+	}
+
+	names := lo.Uniq(append(slices.Clone(onNetwork), lo.Flatten(lo.Values(onNICs))...))
+	slices.Sort(names)
+
+	for _, name := range names {
+		output += "\n" + gui.sectionHeading(name) + "\n"
+
+		acl, err := network.ACL(name)
+		if err != nil {
+			output += err.Error() + "\n"
+			continue
+		}
+
+		if acl.Description != "" {
+			output += acl.Description + "\n"
+		}
+
+		for _, direction := range []struct {
+			title string
+			rules []api.NetworkACLRule
+		}{{gui.Tr.ACLIngress, acl.Ingress}, {gui.Tr.ACLEgress, acl.Egress}} {
+			if len(direction.rules) == 0 {
+				continue
+			}
+
+			table, err := utils.RenderTable(presentation.GetACLRuleRows(direction.rules))
+			if err != nil {
+				return err.Error()
+			}
+
+			output += "\n" + direction.title + ":\n" + table + "\n"
+		}
+	}
+
+	return output
 }
 
 func (gui *Gui) renderNetworkConfig(network *commands.Network) tasks.TaskFunc {

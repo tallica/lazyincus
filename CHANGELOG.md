@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Networks have an **ACLs** tab: which ACLs the network applies, what happens to traffic none of their rules match, which NICs on it carry ACLs of their own, and every rule of each, ingress and egress. "Why can't this container reach that one?" is now answered in one place, instead of by piecing together `security.acls` and `incus network acl show`.
 - `c` on an image, volume or network opens its config in your editor, through `incus image edit`, `incus storage volume edit` or `incus network edit` in the item's own project, and the list shows the change when you're done. A volume's quota, a network's subnet or an image's auto-update no longer means leaving for a shell.
 - `u` on an image, volume or network lists the instances using it: the Instances panel narrows to them, stopped ones and a compose stack's included, and says so in its title. `esc` brings the rest back. A network used through a profile counts every instance with that profile, not just the ones Incus names.
 - The Volumes list shows each volume's size and how many things use it, marking in red a custom volume nothing has attached - a service's data volume left behind after the service went, say. The Config tab names what uses the volume and how full its pool is. Sizes need a pool driver that reports them: zfs, btrfs and lvm do, a `dir` pool without quotas doesn't, and there the column stays blank.

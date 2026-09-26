@@ -93,6 +93,66 @@ func GetNetworkLeaseRows(leases []api.NetworkLease) [][]string {
 	return rows
 }
 
+// GetACLRuleRows lays out one direction's rules under a header, in the order
+// the ACL has them.
+func GetACLRuleRows(rules []api.NetworkACLRule) [][]string {
+	rows := make([][]string, 0, 1+len(rules))
+	rows = append(rows, []string{"ACTION", "SOURCE", "DESTINATION", "PROTOCOL", "PORT", "STATE"})
+
+	for _, rule := range rules {
+		protocol := rule.Protocol
+		if rule.ICMPType != "" {
+			protocol += " type " + rule.ICMPType
+		}
+
+		port := rule.DestinationPort
+		if rule.SourcePort != "" {
+			port = strings.TrimSpace(port + " from " + rule.SourcePort)
+		}
+
+		rows = append(rows, []string{
+			DisplayACLAction(rule.Action),
+			orAny(rule.Source),
+			orAny(rule.Destination),
+			orAny(protocol),
+			port,
+			displayACLState(rule.State),
+		})
+	}
+
+	return rows
+}
+
+// DisplayACLAction colours what a rule does to the traffic it matches.
+func DisplayACLAction(action string) string {
+	switch action {
+	case "allow", "allow-stateless":
+		return utils.ColoredString(action, color.FgGreen)
+	case "reject", "drop":
+		return utils.ColoredString(action, color.FgRed)
+	default:
+		return action
+	}
+}
+
+// displayACLState dims a rule that's switched off; "logged" is enabled and
+// then some.
+func displayACLState(state string) string {
+	if state == "disabled" {
+		return utils.ColoredString(state, color.FgHiBlack)
+	}
+
+	return state
+}
+
+func orAny(value string) string {
+	if value == "" {
+		return "any"
+	}
+
+	return value
+}
+
 // displayLeaseType sets apart the addresses that aren't DHCP's to give out:
 // the network's own, and those pinned in an instance's config.
 func displayLeaseType(kind string) string {
