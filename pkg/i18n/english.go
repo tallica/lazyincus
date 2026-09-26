@@ -41,6 +41,9 @@ type TranslationSet struct {
 	VolumeSizeUnknown         string
 	UsedByNothing             string
 	ImageUsersUnknown         string
+	ShowUsers                 string
+	InstancesUsing            string
+	NothingUses               string
 	LeasesTitle               string
 	StateTitle                string
 	NoLeases                  string
@@ -236,6 +239,9 @@ func englishSet() TranslationSet {
 		VolumeSizeUnknown:      "unknown - the pool's driver doesn't report it",
 		UsedByNothing:          "nothing",
 		ImageUsersUnknown:      "unknown - the instances couldn't be listed",
+		ShowUsers:              "show the instances using it",
+		InstancesUsing:         "Instances using %s",
+		NothingUses:            "No instance uses %s.",
 		LeasesTitle:            "Leases",
 		StateTitle:             "State",
 		NoLeases:               "No leases",

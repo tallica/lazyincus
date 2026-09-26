@@ -189,6 +189,10 @@ func (gui *Gui) servicesPanelTitle() string {
 // services panel has taken the local stack, the way lazydocker's Containers
 // panel becomes "Standalone Containers" alongside its Services panel.
 func (gui *Gui) instancesPanelTitle() string {
+	if users := gui.State.InstanceUsers; users != nil {
+		return fmt.Sprintf(gui.Tr.InstancesUsing, users.label)
+	}
+
 	if gui.noLocalComposeProject() {
 		return gui.Tr.InstancesTitle
 	}

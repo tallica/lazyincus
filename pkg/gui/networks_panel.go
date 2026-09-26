@@ -275,6 +275,10 @@ func (gui *Gui) refreshNetworksQuiet() error {
 	return nil
 }
 
+func (gui *Gui) showNetworkUsers(network *commands.Network) error {
+	return gui.showUsers(network.Name, network.IsUsedBy)
+}
+
 func (gui *Gui) networkDelete(network *commands.Network) error {
 	if !network.IsManaged() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteUnmanagedNetwork)

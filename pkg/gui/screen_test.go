@@ -40,6 +40,7 @@ func fixtureServer() *incustest.Server {
 					Architecture: "x86_64", Profiles: []string{"default"},
 					Config: map[string]string{"volatile.base_image": "0123456789abcdef0123456789abcdef"},
 				},
+				ExpandedDevices: map[string]map[string]string{"eth0": {"type": "nic", "network": "incusbr0"}},
 				ExpandedConfig: map[string]string{
 					"image.description": "Alpine 3.22 amd64",
 				},
@@ -432,6 +433,24 @@ func TestArrowsStepThroughEveryList(t *testing.T) {
 
 	// The resources panel shows whichever list the arrows reached.
 	assert.Contains(t, s.settle(t, "Leases"), "│incusbr0")
+}
+
+// u narrows the instances to a resource's users, and esc brings them all
+// back.
+func TestShowUsers(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Networks) })
+	s.do(t, func() error { return s.gui.showNetworkUsers(s.gui.Panels.Networks.List.GetItems()[0]) })
+
+	screen := s.settle(t, "Instances using incusbr0")
+	assert.Contains(t, screen, "│web ")
+	assert.NotContains(t, screen, "│db ")
+
+	s.do(t, s.gui.escape)
+	screen = s.settle(t, "│db ")
+	assert.NotContains(t, screen, "Instances using")
 }
 
 func TestScreenMenu(t *testing.T) {

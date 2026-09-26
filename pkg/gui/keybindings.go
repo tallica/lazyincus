@@ -265,6 +265,27 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "images",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Images, gui.showImageUsers),
+			Description: gui.Tr.ShowUsers,
+		},
+		{
+			ViewName:    "volumes",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Volumes, gui.showVolumeUsers),
+			Description: gui.Tr.ShowUsers,
+		},
+		{
+			ViewName:    "networks",
+			Key:         'u',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Networks, gui.showNetworkUsers),
+			Description: gui.Tr.ShowUsers,
+		},
+		{
+			ViewName:    "images",
 			Key:         'D',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handlePruneImages,

@@ -135,6 +135,10 @@ type guiState struct {
 	// whichever was focused in it last. See window.go.
 	ActiveWindowViews map[string]string
 
+	// InstanceUsers narrows the instances panel to what uses one resource,
+	// nil for the usual list. See showUsers.
+	InstanceUsers *instanceUsers
+
 	// Seeded from showAllSnapshots and then owned by the session, as
 	// ExpandSidePanel is.
 	SnapshotsShowAll bool
@@ -455,6 +459,10 @@ func (gui *Gui) quit(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) escape() error {
 	if gui.State.Filter.active {
 		return gui.clearFilter()
+	}
+
+	if gui.State.InstanceUsers != nil && gui.currentViewName() == "instances" {
+		return gui.clearInstanceUsers()
 	}
 
 	return nil

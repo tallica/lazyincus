@@ -142,6 +142,10 @@ func (gui *Gui) refreshVolumesQuiet() error {
 	return nil
 }
 
+func (gui *Gui) showVolumeUsers(volume *commands.Volume) error {
+	return gui.showUsers(volume.Name, volume.IsUsedBy)
+}
+
 func (gui *Gui) volumeDelete(volume *commands.Volume) error {
 	if !volume.IsCustom() {
 		return gui.createErrorPanel(gui.Tr.CannotDeleteManagedVolume)

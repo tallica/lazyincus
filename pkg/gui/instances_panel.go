@@ -72,6 +72,12 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return a.Key() == b.Key()
 		},
 		Filter: func(instance *commands.Instance) bool {
+			// Every user, stopped or the local stack's: the question was
+			// what uses the resource.
+			if users := gui.State.InstanceUsers; users != nil {
+				return users.uses(instance)
+			}
+
 			if !gui.State.ShowStoppedInstances && isStopped(instance) {
 				return false
 			}
@@ -177,6 +183,38 @@ func (gui *Gui) fetchInstances() (func() error, error) {
 
 func (gui *Gui) refreshInstances() error {
 	return gui.refresh(nil, gui.fetchInstances)
+}
+
+// instanceUsers is what the instances panel is narrowed to: the instances
+// using one image, volume or network.
+type instanceUsers struct {
+	label string
+	uses  func(*commands.Instance) bool
+}
+
+// showUsers narrows the instances panel to what uses a resource and moves
+// there; esc in the panel brings the whole list back.
+func (gui *Gui) showUsers(label string, uses func(*commands.Instance) bool) error {
+	if !lo.SomeBy(gui.Panels.Instances.List.GetAllItems(), uses) {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.NothingUses, label))
+	}
+
+	gui.State.InstanceUsers = &instanceUsers{label: label, uses: uses}
+	gui.Views.Instances.Title = gui.instancesPanelTitle()
+	gui.Panels.Instances.SetSelectedLineIdx(0)
+
+	if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return err
+	}
+
+	return gui.switchFocus(gui.Views.Instances)
+}
+
+func (gui *Gui) clearInstanceUsers() error {
+	gui.State.InstanceUsers = nil
+	gui.Views.Instances.Title = gui.instancesPanelTitle()
+
+	return gui.Panels.Instances.RerenderList()
 }
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
