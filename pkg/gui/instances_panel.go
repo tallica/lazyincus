@@ -82,6 +82,10 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return presentation.GetInstanceDisplayStrings(
 				&gui.Config.UserConfig.Gui, instance, gui.State.SpansProjects.Instances)
 		},
+		FlexColumn: func() int {
+			return presentation.InstanceImageColumn(&gui.Config.UserConfig.Gui, gui.State.SpansProjects.Instances)
+		},
+		FlexMinWidth: presentation.MinImageAliasWidth,
 	}
 }
 

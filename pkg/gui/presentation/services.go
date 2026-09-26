@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -25,8 +26,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 		return displayHealth(service.Health())
 	},
 	"image": func(_ *config.GuiConfig, service *commands.ComposeService) string {
-		image := shortImageRef(service.ResolvedImage())
-		return utils.Truncate(image, maxImageAliasWidth)
+		return shortImageRef(service.ResolvedImage())
 	},
 	"type": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		if len(service.Instances) == 0 {
@@ -46,22 +46,34 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	},
 }
 
-// replicaIndent sets a replica's row under the service it belongs to, the
-// rows being one list rather than two panels.
-const replicaIndent = "  "
+// ServiceImageColumn is InstanceImageColumn for the services panel.
+func ServiceImageColumn(guiConfig *config.GuiConfig) int {
+	return lo.IndexOf(serviceColumns(guiConfig), "image")
+}
 
-func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.ServiceRow) []string {
+// serviceColumns are the columns shown, in order, unknown names dropped.
+func serviceColumns(guiConfig *config.GuiConfig) []string {
 	columns := guiConfig.ServiceColumns
 	if len(columns) == 0 {
 		columns = config.DefaultServiceColumns
 	}
 
+	return lo.Filter(columns, func(column string, _ int) bool {
+		_, ok := serviceColumnRenderers[column]
+		return ok
+	})
+}
+
+// replicaIndent sets a replica's row under the service it belongs to, the
+// rows being one list rather than two panels.
+const replicaIndent = "  "
+
+func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.ServiceRow) []string {
+	columns := serviceColumns(guiConfig)
+
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		render, ok := serviceColumnRenderers[column]
-		if !ok {
-			continue
-		}
+		render := serviceColumnRenderers[column]
 
 		if row.Instance == nil {
 			cells = append(cells, render(guiConfig, row.Service))
