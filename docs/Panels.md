@@ -260,7 +260,7 @@ result at once. Snapshot names can come back prefixed with the instance
 (`alpine/snap0`); every other call wants the bare name, which
 `snapshotName` strips.
 
-`a` swaps the selection for every instance the instances panel holds, the
+`e` swaps the selection for every instance the instances panel holds, the
 local stack's replicas included (`gui.showAllSnapshots` picks which way a
 session starts). The panels go on handing their selection over while it's
 on, so turning it off lands on whatever is selected by then; they just
@@ -413,7 +413,9 @@ profile's kind and name, with the project where it isn't the volume's.
 
 `GetNetworks`, managed and unmanaged alike, with the unmanaged ones - host
 interfaces Incus merely reports, and only managed networks can be deleted -
-filtered out until `e` shows them, the way `e` shows stopped instances.
+filtered out until `e` shows them, the way `e` shows stopped instances
+and every instance's snapshots: `e` is each list's "show what's left out".
+Not `a`, which Instances spends on attach, lazydocker's key for it too.
 They outnumber Incus's own networks on most hosts and have nothing to do.
 
 The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a row, IPv4 and

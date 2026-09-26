@@ -41,7 +41,7 @@ gui:
   expandFocusedSidePanel: false
 
   # Start the Snapshots panel listing every instance's snapshots instead of
-  # following the selected instance. 'a' toggles it during a session.
+  # following the selected instance. 'e' toggles it during a session.
   showAllSnapshots: false
 
   # Word-wrap the main panel's content.

@@ -19,7 +19,7 @@ options are the exception and still need a restart:
   then own.
 - `gui.expandFocusedSidePanel` — likewise, it only seeds the startup state;
   `=` owns it from then on.
-- `gui.showAllSnapshots` — the same, with `a` on the Snapshots panel.
+- `gui.showAllSnapshots` — the same, with `e` on the Snapshots panel.
 - `gui.language` — English is the only supported language anyway.
 
 A YAML error leaves the config in effect alone. An edit made with `O`
@@ -70,7 +70,7 @@ your file either).
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. |
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |
 | `expandFocusedSidePanel` | bool | `false` | Start with the focused side panel given the space the others aren't using, collapsing them to their title and first row; `=` toggles it during a session. Falls back to an even split when the terminal is too short to fit them all collapsed. |
-| `showAllSnapshots` | bool | `false` | Start with the Snapshots panel listing every instance's snapshots rather than the selected instance's; `a` on that panel toggles it during a session. |
+| `showAllSnapshots` | bool | `false` | Start with the Snapshots panel listing every instance's snapshots rather than the selected instance's; `e` on that panel toggles it during a session. |
 | `sidePanelWidth` | float | `0.3333` | Fraction of screen width used by the Instances side panel. |
 | `showBottomLine` | bool | `true` | Show the bottom status/keybinding line. |
 | `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full` (`fullscreen` is accepted as an alias). |

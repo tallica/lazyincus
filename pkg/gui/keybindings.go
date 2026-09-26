@@ -244,7 +244,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "snapshots",
-			Key:         'a',
+			Key:         'e',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleAllSnapshots,
 			Description: gui.Tr.ToggleAllSnapshots,

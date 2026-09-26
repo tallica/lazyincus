@@ -149,11 +149,11 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each) |
 | `u` | Services panel: bring the service up; on Images, Volumes and Networks, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
-| `e` | Toggle showing stopped instances; on the Networks tab, the host's unmanaged interfaces |
+| `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
-| `a` | Attach to the instance's console (`incus console`); on the Snapshots panel, switch between the selected instance's snapshots and every instance's |
+| `a` | Attach to the instance's console (`incus console`) |
 | `E` | Exec a shell into the instance |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |

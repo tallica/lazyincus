@@ -7,7 +7,7 @@
 │                      │r         restart                          │                     │
 │                      │p         pause/unpause                    │                     │
 │                      │d         delete                           │                     │
-│                      │e         hide/show stopped instances      │                     │
+│                      │e         show/hide stopped instances      │                     │
 │                      │n         new snapshot                     │                     │
 │                      │m         view logs                        │                     │
 ╰──────────────────────│y         copy IPv4 address                │                     │
