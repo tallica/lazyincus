@@ -311,9 +311,13 @@ rather than the list's. Number keys, `tab` and the side column's split
 all count windows, so the three take one number and one share of the
 height; they read something far less often than instances do.
 
-Switching is `h`/`l` and `←`/`→` rather than `[`/`]`, which every side
-panel already spends on the main panel's tabs; the window's number key
-pressed again, and a click on a tab's name, do it too. It's a focus change
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the three are
+stops of their own there, where `tab` and the number keys stop at the
+window; `[`/`]` stay the main panel's tabs, which Networks has three of.
+The window's number key pressed again moves to its next list, and a click
+on a tab's name to that one. The arrows are global bindings, and the
+main panel's own - scrolling sideways - win while it has focus. It's a
+focus change
 like any other, so a filter on one list is dropped on moving to the next,
 as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.

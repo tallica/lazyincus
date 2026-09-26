@@ -113,8 +113,8 @@ guest clock skew both fail in ways that point at the wrong component.
 Three side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance is selected, or every
 instance's, and **Resources** (`3`), which holds **Images**, **Volumes**
-and **Networks** as tabs — `h`/`l` or `←`/`→` switch between them, as does
-pressing `3` again or clicking a tab's name. All list every Incus project by
+and **Networks** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
+as does pressing `3` again or clicking a tab's name. All list every Incus project by
 default; `P` scopes them to a single project instead, and the footer shows
 the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
@@ -135,9 +135,9 @@ seconds to catch up with a pause or stop, and never does while it's down.
 |---|---|
 | `1` … `4` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
 | `tab` / `shift+tab` | Next / previous side panel |
-| `h`/`l`, `←`/`→` | Resources panel: previous / next tab (Images, Volumes, Networks) |
+| `←`/`→`, `h`/`l` | Previous / next list, Images, Volumes and Networks each a stop of their own |
 | `↑`/`↓`, `j`/`k` | Navigate |
-| `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L`, `h`/`l` | Scroll the main panel (and `←`/`→` while it has focus) |
+| `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L` | Scroll the main panel (and `h`/`l`, `←`/`→` sideways while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
 | `[` / `]` | Switch main-panel tab |

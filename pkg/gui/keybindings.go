@@ -428,6 +428,27 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 	)
 
+	// Arrows and h/l step list by list, a shared window's lists included,
+	// the way lazydocker's do; the main panel binds them itself, to scroll
+	// sideways, and a view's own binding comes first.
+	for _, key := range []any{gocui.KeyArrowLeft, 'h'} {
+		bindings = append(bindings, &Binding{
+			ViewName:    "",
+			Key:         key,
+			Handler:     wrappedHandler(gui.cycleSideView(-1)),
+			Description: gui.Tr.PreviousList,
+		})
+	}
+
+	for _, key := range []any{gocui.KeyArrowRight, 'l'} {
+		bindings = append(bindings, &Binding{
+			ViewName:    "",
+			Key:         key,
+			Handler:     wrappedHandler(gui.cycleSideView(1)),
+			Description: gui.Tr.NextList,
+		})
+	}
+
 	bindings = append(bindings, gui.servicesKeybindings()...)
 
 	for index, window := range gui.sideWindowNames() {
@@ -436,31 +457,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Key:         focusKey(index),
 			Description: gui.focusPanelDescription(gui.windowTitle(window)),
 		})
-
-		defs := gui.windowDefs(window)
-		if len(defs) < 2 {
-			continue
-		}
-
-		for _, def := range defs {
-			for _, key := range []any{'h', gocui.KeyArrowLeft} {
-				bindings = append(bindings, &Binding{
-					ViewName:    def.name,
-					Key:         key,
-					Handler:     wrappedHandler(gui.cycleWindowTab(-1)),
-					Description: gui.Tr.PreviousTab,
-				})
-			}
-
-			for _, key := range []any{'l', gocui.KeyArrowRight} {
-				bindings = append(bindings, &Binding{
-					ViewName:    def.name,
-					Key:         key,
-					Handler:     wrappedHandler(gui.cycleWindowTab(1)),
-					Description: gui.Tr.NextTab,
-				})
-			}
-		}
 	}
 
 	for _, panel := range gui.allListPanels() {

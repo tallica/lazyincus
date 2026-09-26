@@ -411,6 +411,29 @@ func TestScreenPruneImages(t *testing.T) {
 	assert.Contains(t, screen, "Debian 13 amd64 fedcba987654")
 }
 
+// Arrows step through every list, the resources' included, and wrap.
+func TestArrowsStepThroughEveryList(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	current := func() string {
+		name := ""
+		s.do(t, func() error { name = s.gui.currentViewName(); return nil })
+		return name
+	}
+
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "instances"} {
+		s.do(t, s.gui.cycleSideView(1))
+		assert.Equal(t, want, current())
+	}
+
+	s.do(t, s.gui.cycleSideView(-1))
+	assert.Equal(t, "networks", current())
+
+	// The resources panel shows whichever list the arrows reached.
+	assert.Contains(t, s.settle(t, "Leases"), "│incusbr0")
+}
+
 func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
 	s.ready(t)

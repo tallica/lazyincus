@@ -1,19 +1,17 @@
 ╭─[1]─Instances──────────────╮╭─Info - Logs - Config - Env - Top─────────────────────────╮
 │a-name-long-enough-to-be-cu…││Name:         a-name-long-enough-to-be-cut-off            │
 │web                        …││Status:       running                                     │
-│db                         …││Type:         container                                   │
-│                            ││Project:      default                                     │
-│                      ╭─Menu──────────────────────────────────────╮                     │
+│db                    ╭─Menu──────────────────────────────────────╮                     │
 │                      │S         start                            │                     │
 │                      │s         stop                             │                     │
 │                      │r         restart                          │                     │
 │                      │p         pause/unpause                    │                     │
 │                      │d         delete                           │                     │
 │                      │e         hide/show stopped instances      │                     │
-╰──────────────────────│n         new snapshot                     │                     │
-╭─[2]─Snapshots (a-name│m         view logs                        │                     │
-│                      │y         copy IPv4 address                │                     │
-│                      │a         attach to console                │                     │
+│                      │n         new snapshot                     │                     │
+│                      │m         view logs                        │                     │
+╰──────────────────────│y         copy IPv4 address                │                     │
+╭─[2]─Snapshots (a-name│a         attach to console                │                     │
 │                      │E         exec shell                       │                     │
 │                      │enter     focus main panel                 │                     │
 │                      │[         previous tab                     │                     │
@@ -23,17 +21,19 @@
 │                      │o         open lazyincus config            │                     │
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
-╰──────────────────────│+         next screen mode (normal/half/fu…│                     │
-╭─[3]─Images - Volumes │_         prev screen mode                 │                     │
-│Alpine 3.22 amd64 2 01│=         expand/collapse the focused side…│                     │
-│Debian 13 amd64   0 fe│tab       next panel                       │                     │
-│                      │shift+tab previous panel                   │                     │
+│                      │+         next screen mode (normal/half/fu…│                     │
+│                      │_         prev screen mode                 │                     │
+╰──────────────────────│=         expand/collapse the focused side…│                     │
+╭─[3]─Images - Volumes │tab       next panel                       │                     │
+│Alpine 3.22 amd64 2 01│shift+tab previous panel                   │                     │
+│Debian 13 amd64   0 fe│◄         previous list                    │                     │
+│                      │h         previous list                    │                     │
+│                      │►         next list                        │                     │
+│                      │l         next list                        │                     │
 │                      │1         focus instances panel            │                     │
 │                      │2         focus snapshots panel            │                     │
 │                      │3         focus resources panel            │                     │
 │                      ╰───────────────────────────────────────────╯                     │
-│                            ││                                                          │
-│                            ││                                                          │
 │                            ││                                                          │
 │                            ││                                                          │
 ╰────────────────────────────╯╰──────────────────────────────────────────────────────────╯

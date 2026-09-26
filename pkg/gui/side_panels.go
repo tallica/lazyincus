@@ -147,6 +147,33 @@ func (gui *Gui) cycleSidePanel(offset int) func() error {
 	}
 }
 
+// cycleSideView is cycleSidePanel over every visible side list rather than
+// every window, so a shared window's lists are stops of their own.
+func (gui *Gui) cycleSideView(offset int) func() error {
+	return func() error {
+		if gui.popupPanelFocused() {
+			return nil
+		}
+
+		names := gui.sideViewNames()
+		if len(names) == 0 {
+			return nil
+		}
+
+		index := lo.IndexOf(names, gui.currentSideViewName())
+		if index < 0 {
+			index = 0
+		}
+
+		view, err := gui.g.View(names[((index+offset)%len(names)+len(names))%len(names)])
+		if err != nil {
+			return err
+		}
+
+		return gui.switchFocus(view)
+	}
+}
+
 // servicesPanelTitle names the compose project the panel acts on. It's the
 // same one on every row, so it belongs in the title rather than in a column
 // - the reasoning the instances panel's project column already follows.
