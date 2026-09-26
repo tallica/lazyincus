@@ -1,14 +1,14 @@
 name: vuln
 
-# govulncheck reports only vulnerabilities the code can reach. Weekly as
-# well as on changes: an advisory can land with nothing here changing.
+# Weekly as well as from CI: an advisory can land with nothing here changing.
 on:
-  push:
-    branches: [master]
-  pull_request:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   govulncheck:

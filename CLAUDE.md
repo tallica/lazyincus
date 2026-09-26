@@ -165,7 +165,10 @@ keeping it.
 
 ### Releasing
 
-Pushing a `v*` tag runs `.github/workflows/release.yml`: GoReleaser builds
+CI is `.github/workflows/ci.yml`: test, lint and govulncheck on every push
+to master, pull request and `v*` tag. govulncheck lives in `vuln.yml`,
+which CI calls and which also runs weekly on its own. On a tag its `release` job waits for all three
+and publishes nothing unless they pass. Then GoReleaser builds
 macOS and Linux binaries for amd64 and arm64, archives each with the
 markdown and LICENSE, and publishes them with a `checksums.txt`. The
 release notes are the tag's `CHANGELOG.md` section
