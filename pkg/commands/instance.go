@@ -82,17 +82,18 @@ func (i *Instance) Status() string {
 // called, across refreshes: the daemon shows no status mid-action (see
 // docs/Incus.md, "Status mid-action").
 func (i *Instance) BeginTransition(status string) (end func()) {
-	runtime := i.runtimeOrOwn()
+	return i.runtimeOrOwn().beginTransition(status)
+}
 
-	runtime.mutex.Lock()
-	runtime.transition = status
-	runtime.mutex.Unlock()
-
-	return func() {
-		runtime.mutex.Lock()
-		runtime.transition = ""
-		runtime.mutex.Unlock()
+// MarkInstance is BeginTransition for an instance known only by name, as an
+// event names it. One no listing has seen yet has nothing to mark.
+func (c *IncusCommand) MarkInstance(project, name, status string) (end func()) {
+	runtime := c.runtimes.find(project + "/" + name)
+	if runtime == nil {
+		return func() {}
 	}
+
+	return runtime.beginTransition(status)
 }
 
 // IsVM returns true if the instance is a virtual machine rather than a container.

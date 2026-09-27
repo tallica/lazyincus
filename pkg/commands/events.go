@@ -3,6 +3,8 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"net/url"
+	"strings"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -13,8 +15,14 @@ import (
 type Event struct {
 	Type    string
 	Project string
-	// Action is a lifecycle event's action, "instance-started".
+	// Action is a lifecycle event's action, "instance-started", or an
+	// operation's description, "Restarting instance".
 	Action string
+	// Operation, Status and Instances are an operation's: its ID, where
+	// it's got to, and the instances it acts on.
+	Operation string
+	Status    api.StatusCode
+	Instances []string
 }
 
 // EventListener is the part of *incus.EventListener lazyincus uses, so a
@@ -92,9 +100,39 @@ func parseEvent(event api.Event, fallbackProject string) (Event, bool) {
 		}
 
 		parsed.Action = lifecycle.Action
+	case api.EventTypeOperation:
+		var operation api.Operation
+		if json.Unmarshal(event.Metadata, &operation) != nil {
+			return Event{}, false
+		}
+
+		parsed.Action = operation.Description
+		parsed.Operation = operation.ID
+		parsed.Status = operation.StatusCode
+
+		for _, path := range operation.Resources["instances"] {
+			if name, ok := instanceName(path); ok {
+				parsed.Instances = append(parsed.Instances, name)
+			}
+		}
 	default:
 		return Event{}, false
 	}
 
 	return parsed, true
+}
+
+// instanceName reads the instance out of "/1.0/instances/web?project=x",
+// leaving out a path to anything below an instance.
+func instanceName(path string) (string, bool) {
+	path, _, _ = strings.Cut(path, "?")
+
+	name, ok := strings.CutPrefix(path, "/1.0/instances/")
+	if !ok || name == "" || strings.Contains(name, "/") {
+		return "", false
+	}
+
+	name, err := url.PathUnescape(name)
+
+	return name, err == nil
 }

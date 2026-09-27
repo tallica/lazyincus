@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Lists update the moment something changes on the daemon, whoever changed it, instead of when their next poll comes round: an image pulled, a profile or volume created, an instance created, started or stopped from a shell or another client shows up within half a second. lazyincus listens to Incus's event stream for it; the Images, Volumes, Networks and Profiles lists used to take up to ten seconds to notice.
+- An instance started, stopped, restarted or restored from anywhere - a shell, another client, incus-compose's healthcheck daemon restarting a service - reads `starting`, `stopping`, `restarting` or `restoring` on its row while it happens, as one lazyincus acts on already did. It used to show `running` until the action was over.
 
 ### Fixed
 - A VM's Logs tab no longer repeats its log over and over. Incus hands a VM's console log out whole on every read, where a container's comes a new part at a time, and lazyincus added each read to the last; a stopped container's log, likewise whole, showed twice.

@@ -93,3 +93,17 @@ func TestListenForEventsFollowsTheProjectInScope(t *testing.T) {
 	assert.Equal(t, "prod", event.Project)
 	assert.Equal(t, "instance-started", event.Action)
 }
+
+func TestParseEventReadsAnOperationsInstances(t *testing.T) {
+	raw := incustest.Operation("prod", "op1", "Restarting instance", api.Running, "web")
+	raw.Metadata = []byte(`{"id":"op1","description":"Restarting instance","status_code":103,
+		"resources":{"instances":["/1.0/instances/web?project=prod","/1.0/instances/web/snapshots/daily","/1.0/instances/my%20vm"]}}`)
+
+	event, ok := parseEvent(raw, "default")
+
+	require.True(t, ok)
+	assert.Equal(t, Event{
+		Type: api.EventTypeOperation, Project: "prod", Action: "Restarting instance",
+		Operation: "op1", Status: api.Running, Instances: []string{"web", "my vm"},
+	}, event)
+}

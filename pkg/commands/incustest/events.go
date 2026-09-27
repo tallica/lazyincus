@@ -129,6 +129,22 @@ func Lifecycle(project, action, source string) api.Event {
 	return api.Event{Type: api.EventTypeLifecycle, Project: project, Metadata: metadata}
 }
 
+// Operation is an operation event: the operation with the given ID, at
+// status, acting on the instances.
+func Operation(project, id, description string, status api.StatusCode, instances ...string) api.Event {
+	paths := make([]string, len(instances))
+	for i, name := range instances {
+		paths[i] = "/1.0/instances/" + name
+	}
+
+	metadata, _ := json.Marshal(api.Operation{
+		ID: id, Description: description, Status: status.String(), StatusCode: status,
+		Resources: map[string][]string{"instances": paths},
+	})
+
+	return api.Event{Type: api.EventTypeOperation, Project: project, Metadata: metadata}
+}
+
 // dropListeners ends every open stream the way a daemon going away does.
 // Called with shared.mutex held.
 func (shared *state) dropListeners() {

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"strings"
+	"sync/atomic"
 
 	"github.com/sasha-s/go-deadlock"
 )
@@ -17,8 +18,30 @@ type instanceRuntime struct {
 	stoppedLogFetched bool
 	topCommand        []string
 	transition        string
+	// transitionMark is whose transition it is (docs/Incus.md, "Status
+	// mid-action").
+	transitionMark uint64
 	// listing is the newest listing that has seen the instance.
 	listing uint64
+}
+
+var transitionMarks atomic.Uint64
+
+func (r *instanceRuntime) beginTransition(status string) (end func()) {
+	mark := transitionMarks.Add(1)
+
+	r.mutex.Lock()
+	r.transition, r.transitionMark = status, mark
+	r.mutex.Unlock()
+
+	return func() {
+		r.mutex.Lock()
+		defer r.mutex.Unlock()
+
+		if r.transitionMark == mark {
+			r.transition = ""
+		}
+	}
 }
 
 // instanceRuntimes holds one instanceRuntime per instance, by Instance.Key.
@@ -63,6 +86,13 @@ func (r *instanceRuntimes) attach(instance *Instance, listing uint64) {
 	runtime.mutex.Unlock()
 
 	instance.runtime = runtime
+}
+
+func (r *instanceRuntimes) find(key string) *instanceRuntime {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	return r.byKey[key]
 }
 
 // prune drops the runtimes of instances a listing no longer has. A listing

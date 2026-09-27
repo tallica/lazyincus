@@ -74,7 +74,14 @@ inferred.
   instance each time it records a healthcheck. The polls stay: nothing
   sends an event for CPU, memory or a DHCP address. `*incus.EventListener`
   has unexported fields, so `commands.EventListener` is the interface in
-  front of it that `incustest` implements.
+  front of it that `incustest` implements. An operation event arrives the
+  moment the daemon takes an action, whoever asked for it, naming the
+  instances it acts on, and again when it's done: a CLI restart of a VM on
+  7.4 read `Restarting instance` Running, then Success with the
+  `instance-restarted` 1.6s later. The description is the operation's only
+  name, so `operationStatuses` matches those strings; one it doesn't know
+  marks nothing. When the stream drops, the marks of operations still under
+  way come off, no event being left to end them.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an
@@ -114,7 +121,10 @@ inferred.
   same: Incus stops it, rolls it back and starts it again. So an action
   lazyincus starts marks the instance itself (`Instance.BeginTransition`)
   until a listing taken after it lands: the row reads `starting`,
-  `stopping`, `restarting` or `restoring`, and keeps its place.
+  `stopping`, `restarting` or `restoring`, and keeps its place. An action
+  anyone else starts gets the same from its operation event (see Events).
+  The action and its event both mark the instance, and only the later mark
+  can end it, so neither ends the other early.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so

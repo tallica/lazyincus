@@ -229,3 +229,33 @@ func TestAStoppedContainersWholeLogReplacesTheBuffer(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "started\nstopped\n", log)
 }
+
+// An action and the event for it both mark the instance; the one that
+// ends first mustn't take the other's mark with it.
+func TestOnlyTheLatestMarkEndsATransition(t *testing.T) {
+	instance := listed("default", "vm", "Running")
+
+	endAction := instance.BeginTransition("Restarting")
+	endEvent := instance.BeginTransition("Restarting")
+
+	endAction()
+	assert.Equal(t, "Restarting", instance.Status())
+
+	endEvent()
+	assert.Equal(t, "Running", instance.Status())
+}
+
+func TestMarkInstanceFindsAListedInstance(t *testing.T) {
+	var command IncusCommand
+
+	instance := listed("default", "vm", "Running")
+	command.runtimes.attach(instance, 1)
+
+	end := command.MarkInstance("default", "vm", "Stopping")
+	assert.Equal(t, "Stopping", instance.Status())
+
+	end()
+	assert.Equal(t, "Running", instance.Status())
+
+	command.MarkInstance("default", "unlisted", "Stopping")()
+}

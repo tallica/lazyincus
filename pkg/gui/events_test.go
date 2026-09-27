@@ -94,3 +94,59 @@ func TestTheEventStreamReopensAfterADrop(t *testing.T) {
 	s.server.SetDown(false)
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 10*time.Second, 50*time.Millisecond)
 }
+
+// A restart started anywhere reads restarting until it's done.
+func TestAnOperationMarksItsInstance(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Running, "web"))
+	require.Eventually(t, func() bool { return strings.Contains(row(s.snapshot(t), "web"), "restarting") },
+		5*time.Second, 50*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Success, "web"))
+	require.Eventually(t, func() bool { return strings.Contains(row(s.snapshot(t), "web"), "running") },
+		5*time.Second, 50*time.Millisecond)
+}
+
+// row is the instances panel's line for the instance.
+func row(screen, name string) string {
+	for line := range strings.Lines(screen) {
+		if strings.HasPrefix(line, "│"+name+" ") {
+			return line
+		}
+	}
+
+	return ""
+}
+
+// No event will say how an operation ends once the stream has gone.
+func TestADroppedStreamTakesItsMarksOff(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Stopping instance", api.Running, "web"))
+	s.settle(t, "stopping")
+
+	s.server.SetDown(true)
+	require.Eventually(t, func() bool { return !strings.Contains(s.snapshot(t), "stopping") }, 5*time.Second, 50*time.Millisecond)
+}
+
+func TestAnOperationWithNoRowStatusMarksNothing(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Executing command", api.Running, "web"))
+	s.server.Emit(incustest.Operation("default", "op2", "Restarting instance", api.Running, "web"))
+	s.settle(t, "restarting")
+
+	s.do(t, func() error {
+		s.gui.events.mutex.Lock()
+		defer s.gui.events.mutex.Unlock()
+		assert.Len(t, s.gui.events.operations, 1)
+		return nil
+	})
+}

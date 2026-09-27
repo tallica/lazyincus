@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jesseduffield/gocui"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/sasha-s/go-deadlock"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -83,7 +84,16 @@ var eventRefreshes = map[string]refreshKind{
 	api.EventLifecycleProfileUpdated: refreshProfiles,
 }
 
-var eventTypes = []string{api.EventTypeLifecycle}
+// operationStatuses is the row status each operation that takes a while
+// shows, by its description (docs/Incus.md, "Events").
+var operationStatuses = map[string]string{
+	"Starting instance":   "Starting",
+	"Stopping instance":   "Stopping",
+	"Restarting instance": "Restarting",
+	"Restoring snapshot":  "Restoring",
+}
+
+var eventTypes = []string{api.EventTypeLifecycle, api.EventTypeOperation}
 
 const (
 	// eventBatchWindow gathers a burst - a compose stack coming up is one
@@ -94,11 +104,13 @@ const (
 	eventRetryMax = 30 * time.Second
 )
 
-// eventBatch is the lists events have asked for since the last refresh.
+// eventBatch is the lists events have asked for since the last refresh,
+// and the marks each operation under way has put on its instances.
 type eventBatch struct {
-	mutex     deadlock.Mutex
-	pending   refreshKind
-	scheduled bool
+	mutex      deadlock.Mutex
+	pending    refreshKind
+	scheduled  bool
+	operations map[string][]func()
 }
 
 // watchEvents keeps a listener open for as long as the app runs, reopening
@@ -124,6 +136,9 @@ func (gui *Gui) watchEvents() {
 		if gui.isStopped() {
 			return
 		}
+
+		// No event will say how the operations under way end.
+		gui.endOperations(gui.takeOperations(""))
 
 		if err == nil {
 			delay = eventRetryMin
@@ -167,6 +182,11 @@ func (gui *Gui) isStopped() bool {
 
 // onEvent runs on the listener's goroutine.
 func (gui *Gui) onEvent(event commands.Event) {
+	if event.Type == api.EventTypeOperation {
+		gui.onOperation(event)
+		return
+	}
+
 	kinds := eventRefreshes[event.Action]
 	if kinds == 0 {
 		return
@@ -190,14 +210,14 @@ func (gui *Gui) queueRefresh(kinds refreshKind) {
 }
 
 func (gui *Gui) flushEvents() {
+	if gui.isStopped() {
+		return
+	}
+
 	gui.events.mutex.Lock()
 	kinds := gui.events.pending
 	gui.events.pending, gui.events.scheduled = 0, false
 	gui.events.mutex.Unlock()
-
-	if gui.isStopped() {
-		return
-	}
 
 	// A subprocess has the terminal; hold the lists until it's back.
 	if gui.PauseBackgroundThreads.Load() {
@@ -234,4 +254,98 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 	}
 
 	return fetches
+}
+
+// onOperation marks the instances an operation is under way on, whoever
+// started it, the way inTransition does lazyincus's own.
+func (gui *Gui) onOperation(event commands.Event) {
+	status, ok := operationStatuses[event.Action]
+	if !ok {
+		return
+	}
+
+	if event.Status.IsFinal() {
+		gui.endOperations(gui.takeOperations(event.Operation))
+		return
+	}
+
+	if event.Status != api.Running {
+		return
+	}
+
+	gui.events.mutex.Lock()
+
+	// An operation reports Running again with each step of progress.
+	if _, marked := gui.events.operations[event.Operation]; marked {
+		gui.events.mutex.Unlock()
+		return
+	}
+
+	ends := make([]func(), 0, len(event.Instances))
+	for _, name := range event.Instances {
+		ends = append(ends, gui.IncusCommand.MarkInstance(event.Project, name, status))
+	}
+
+	if gui.events.operations == nil {
+		gui.events.operations = map[string][]func(){}
+	}
+
+	gui.events.operations[event.Operation] = ends
+	gui.events.mutex.Unlock()
+
+	gui.g.Update(func(*gocui.Gui) error { return gui.rerenderInstanceLists() })
+}
+
+// takeOperations forgets the operation's marks and returns them to end, or
+// every operation's for an empty ID.
+func (gui *Gui) takeOperations(id string) []func() {
+	gui.events.mutex.Lock()
+	defer gui.events.mutex.Unlock()
+
+	if id != "" {
+		ends := gui.events.operations[id]
+		delete(gui.events.operations, id)
+
+		return ends
+	}
+
+	var ends []func()
+	for _, operation := range gui.events.operations {
+		ends = append(ends, operation...)
+	}
+
+	gui.events.operations = nil
+
+	return ends
+}
+
+// endOperations takes the marks off once a listing taken after the
+// operations has applied - before it, the rows would fall back on a poll
+// that may have caught them halfway.
+func (gui *Gui) endOperations(ends []func()) {
+	if len(ends) == 0 {
+		return
+	}
+
+	ended := func() error {
+		for _, end := range ends {
+			end()
+		}
+
+		return gui.rerenderInstanceLists()
+	}
+
+	if gui.isStopped() {
+		for _, end := range ends {
+			end()
+		}
+
+		return
+	}
+
+	go func() {
+		if err := gui.refresh(ended, gui.fetchInstances, gui.fetchServices); err != nil {
+			gui.g.Update(func(*gocui.Gui) error { return ended() })
+		}
+	}()
 }
