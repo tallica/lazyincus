@@ -13,7 +13,7 @@ the same image alias, profile name or instance name can exist in several,
 and "delete image nginx:alpine?" doesn't say which is about to go. With
 one project the name stands alone. A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
-listing's `used_by`, which the next poll keeps current, and the daemon has
+listing's `used_by`, which events and the polls keep current, and the daemon has
 the last word either way.
 
 ## Copying
@@ -395,8 +395,10 @@ volumes' and snapshots' names are too, and the instances' and services'
 `image` column wherever the config puts it. With more than one they give
 way in the order named, each to its own floor: the snapshots panel's
 instance column goes first, repeating down a list grouped by it, before
-the snapshot name you act on. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
-only change when someone pulls or deletes one.
+the snapshot name you act on. `d` deletes after a confirmation. Refreshed
+by the image events rather than the instance list's 2s poll: images only
+change when someone pulls or deletes one, and a slower poll backs the
+events up (see [docs/Incus.md](Incus.md), Events).
 
 Each image carries the instances created from it (`Image.UsedBy`), matched
 on `volatile.base_image`, and the count is the column after the label - red
@@ -455,7 +457,8 @@ them takes a request per project using the network (see
 [docs/Incus.md](Incus.md)). State is `incus network info`, with a bridge's
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a
-lease without changing anything the list's own 10s poll would notice.
+lease without changing anything the list would notice, and no event says
+it did.
 
 ACLs is what filters the network's traffic: the ACLs `security.acls`
 applies to the network, what becomes of traffic none of their rules match
