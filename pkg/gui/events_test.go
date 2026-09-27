@@ -2,6 +2,7 @@ package gui
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,11 +34,11 @@ func TestAnInstanceComingOrGoingRefreshesEveryUsedByCount(t *testing.T) {
 
 func TestABurstOfEventsIsOneRefresh(t *testing.T) {
 	gui := &Gui{stopped: make(chan struct{})}
-	close(gui.stopped) // flushEvents then only drains
 
 	gui.onEvent(commands.Event{Action: api.EventLifecycleInstanceStarted})
 	gui.onEvent(commands.Event{Action: api.EventLifecycleImageDeleted})
 	gui.onEvent(commands.Event{Action: api.EventLifecycleInstanceConsoleRetrieved})
+	close(gui.stopped) // before the flush, which then refreshes nothing
 
 	gui.events.mutex.Lock()
 	assert.Equal(t, refreshInstances|refreshImages, gui.events.pending)
@@ -149,4 +150,51 @@ func TestAnOperationWithNoRowStatusMarksNothing(t *testing.T) {
 		assert.Len(t, s.gui.events.operations, 1)
 		return nil
 	})
+}
+
+// Nothing said what changed while the stream was down, so it catches up
+// when it reopens, rather than when the images poll comes round.
+func TestAReopenedStreamCatchesUp(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.SetDown(true)
+	require.Eventually(t, func() bool { return s.server.Listening() == 0 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.SetImages(append(fixtureServer().Images, api.Image{
+		Fingerprint: "fedcba9876543210fedcba9876543210", Project: "default", Type: "container",
+		Properties: map[string]string{"description": "Pulled while away"},
+	}))
+	s.server.SetDown(false)
+
+	s.settle(t, "Pulled while away")
+}
+
+func TestAWatchedListIsPolledLessWhileTheStreamIsOpen(t *testing.T) {
+	polls := func(live bool) int {
+		gui := &Gui{stopped: make(chan struct{})}
+		defer close(gui.stopped)
+
+		gui.eventsLive.Store(live)
+
+		var mutex sync.Mutex
+		count := 0
+		gui.pollUnlessWatched(5*time.Millisecond, func() error {
+			mutex.Lock()
+			defer mutex.Unlock()
+			count++
+			return nil
+		})
+
+		time.Sleep(100 * time.Millisecond)
+
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		return count
+	}
+
+	assert.Equal(t, 1, polls(true), "only the first poll, at startup")
+	assert.Greater(t, polls(false), 1)
 }

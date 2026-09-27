@@ -44,7 +44,7 @@ func listenInBackground(t *testing.T, command *IncusCommand, server *incustest.S
 	t.Cleanup(cancel)
 
 	go func() {
-		result <- command.ListenForEvents(ctx, []string{api.EventTypeLifecycle}, func(event Event) { events <- event })
+		result <- command.ListenForEvents(ctx, []string{api.EventTypeLifecycle}, func() {}, func(event Event) { events <- event })
 	}()
 
 	require.Eventually(t, func() bool { return server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)

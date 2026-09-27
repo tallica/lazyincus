@@ -68,43 +68,8 @@ Not planned:
       from its i18n set via `scripts/cheatsheet`. Here the README keybinding
       table is hand-maintained, which is why CLAUDE.md has to carry a
       reminder to keep it current.
-- [ ] **Event stream** — lazydocker consumes Docker's `/events`; lazyincus
-      polls, every 2s for instances and 10s for the rest. Incus has one too
-      (`GetEventsAllProjectsByType`, or `GetEventsByType` per project),
-      and it carries what a poll can't:
-      - An **operation** event names the instance and project the moment
-        the daemon takes an action, whoever asked - the `incus` CLI,
-        another client, ic-healthd restarting a service. Its description
-        ("Starting instance", "Stopping instance", "Restarting instance",
-        "Restoring snapshot", "Freezing instance", "Unfreezing instance")
-        maps onto the row statuses `Instance.BeginTransition` already
-        shows for lazyincus's own actions, so a restart from a shell would
-        read `restarting` too. Its `Success`/`Failure` lands the instant
-        the action is done: refresh then, and end the mark once that
-        listing applies, the way `inTransition` does.
-      - A **lifecycle** event (`instance-created`, `-deleted`, `-renamed`,
-        `instance-snapshot-*`, `image-*`, `storage-volume-*`, `network-*`,
-        `profile-*`) refreshes the panels it touches straight away rather
-        than up to 10s later.
-
-      Seen on a 7.4 daemon, a CLI restart:
-      `Restarting instance` Running, `instance-agent-stopped`, then
-      `instance-restarted` and the operation's `Success` together, 1.6s
-      later.
-
-      Things to handle: batch refreshes over ~200ms, since a compose `up`
-      is a burst and ic-healthd's healthcheck writes make an
-      `instance-updated` per instance per tick; reconnect with backoff and
-      poll as now while disconnected, keeping a daemon going away
-      non-fatal; fall back to per-project listeners where a restricted
-      certificate can't have all projects'. Operation descriptions are
-      English strings with no code, matched the way `busyMessage` is; an
-      unknown one just gets no mark. The 2s instance poll stays either
-      way - CPU, memory and a DHCP address arriving have no event - but
-      the 10s ones could slow right down while the stream is up.
-      `incustest` needs an events endpoint for the screen tests to see
-      any of it. `instance-agent-started` could end a `booting` state for
-      VMs, but only opt-in: a VM without the agent would never leave it.
+- [x] **Event stream** — lazyincus listens to Incus's lifecycle and
+      operation events; see [docs/Incus.md](docs/Incus.md).
 
 Not planned:
 

@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -60,6 +61,10 @@ type Gui struct {
 
 	events        eventBatch
 	eventsRescope chan struct{}
+	// eventsLive is whether an event stream is open.
+	eventsLive atomic.Bool
+	// watching is watchEvents, which run waits out.
+	watching sync.WaitGroup
 }
 
 type Panels struct {
@@ -300,6 +305,25 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 	}()
 }
 
+// watchedPollInterval is how often a list the event stream keeps current is
+// polled while the stream is open (docs/Incus.md, "Events").
+const watchedPollInterval = time.Minute
+
+// pollUnlessWatched is goEvery for a list the event stream keeps current.
+func (gui *Gui) pollUnlessWatched(interval time.Duration, function func() error) {
+	var last time.Time
+
+	gui.goEvery(interval, func() error {
+		if gui.eventsLive.Load() && time.Since(last) < watchedPollInterval {
+			return nil
+		}
+
+		last = time.Now()
+
+		return function()
+	})
+}
+
 // Run sets up the gui with keybindings and starts the mainloop
 func (gui *Gui) Run() error {
 	// Before any view exists: whether there's a compose file in the working
@@ -328,6 +352,7 @@ func (gui *Gui) Run() error {
 func (gui *Gui) run(g *gocui.Gui) error {
 	defer gui.taskManager.Close()
 	defer g.Close()
+	defer gui.watching.Wait()
 	defer close(gui.stopped)
 
 	if !gui.Config.UserConfig.Gui.IgnoreMouseEvents {
@@ -380,6 +405,12 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		}
 	}
 
+	gui.watching.Add(1)
+	go func() {
+		defer gui.watching.Done()
+		gui.watchEvents()
+	}()
+
 	go func() {
 		for _, fetch := range gui.allFetches() {
 			if err := gui.refresh(nil, fetch); err != nil {
@@ -387,14 +418,12 @@ func (gui *Gui) run(g *gocui.Gui) error {
 			}
 		}
 
-		go gui.watchEvents()
-
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
-		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
-		gui.goEvery(time.Second*10, gui.refreshProfilesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshImagesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
 		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 

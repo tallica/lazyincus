@@ -72,7 +72,11 @@ inferred.
   Top tab runs, so matching by prefix would have each refresh set off the
   next. `instance-updated` is skipped too - ic-healthd sends one per
   instance each time it records a healthcheck. The polls stay: nothing
-  sends an event for CPU, memory or a DHCP address. `*incus.EventListener`
+  sends an event for CPU, memory or a DHCP address. While a stream is
+  open, the images, volumes, networks and profiles polls drop from 10s to
+  once a minute, left for what has no event - a volume's size, an image's
+  last use, a device attached to an instance - and each time one opens,
+  every list is fetched again for whatever changed while none was. `*incus.EventListener`
   has unexported fields, so `commands.EventListener` is the interface in
   front of it that `incustest` implements. An operation event arrives the
   moment the daemon takes an action, whoever asked for it, naming the

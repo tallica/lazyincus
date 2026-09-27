@@ -54,8 +54,9 @@ func listen(client incus.InstanceServer, allProjects bool, types []string) (Even
 
 // ListenForEvents passes the daemon's events of the given types, for the
 // scope the panels list, to handle until ctx is done or the connection
-// drops. It returns why it stopped: nil for ctx, the drop otherwise.
-func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, handle func(Event)) error {
+// drops, calling opened once they're flowing. It returns why it stopped:
+// nil for ctx, the drop otherwise.
+func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, opened func(), handle func(Event)) error {
 	client, project, allProjects := c.scope()
 
 	listener, err := listen(client, allProjects, types)
@@ -71,6 +72,13 @@ func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, hand
 		listener.Disconnect()
 		return err
 	}
+
+	if ctx.Err() != nil {
+		listener.Disconnect()
+		return nil
+	}
+
+	opened()
 
 	dropped := make(chan error, 1)
 	go func() { dropped <- listener.Wait() }()

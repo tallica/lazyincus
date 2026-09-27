@@ -130,7 +130,8 @@ func (gui *Gui) watchEvents() {
 		}()
 
 		opened := time.Now()
-		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.onEvent)
+		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, gui.onEvent)
+		gui.eventsLive.Store(false)
 		cancel()
 
 		if gui.isStopped() {
@@ -162,6 +163,17 @@ func (gui *Gui) watchEvents() {
 	}
 }
 
+// eventsOpened catches up on whatever changed while no stream was open to
+// say so, and tells the slowed pollers they can stay slow.
+func (gui *Gui) eventsOpened() {
+	if gui.isStopped() {
+		return
+	}
+
+	gui.eventsLive.Store(true)
+	gui.queueRefresh(usedBy)
+}
+
 // rescopeEvents has watchEvents reopen its listener for the scope the
 // panels list now.
 func (gui *Gui) rescopeEvents() {
@@ -182,6 +194,10 @@ func (gui *Gui) isStopped() bool {
 
 // onEvent runs on the listener's goroutine.
 func (gui *Gui) onEvent(event commands.Event) {
+	if gui.isStopped() {
+		return
+	}
+
 	if event.Type == api.EventTypeOperation {
 		gui.onOperation(event)
 		return
