@@ -309,10 +309,6 @@ Not full parity with lazydocker. Not included:
 - Non-English translations
 - Windows support
 
-VM instances are listed and can be started/stopped/deleted like containers,
-but freeze/unfreeze and exec are untested against a real VM — see
-[BACKLOG.md](BACKLOG.md#blocked) for why and what's needed to verify them.
-
 See [CLAUDE.md](CLAUDE.md) for the architecture and the Incus API
 integration details.
 

@@ -400,17 +400,12 @@ What's left:
 
 ## Blocked
 
-Shipped, but never seen working end to end, for want of the one thing the
-development machine can't provide: a real VM instance. That needs a Linux
-machine running Incus directly, or — when the daemon itself runs inside a
-VM, as it does here — hardware nested virtualization, which on Apple
-Silicon means an M3 or later with macOS 15+. Without `/dev/kvm` inside the
-guest, `incus launch ... --vm` fails with `KVM support is missing (no
-/dev/kvm)`, and no hypervisor or Incus flag substitutes for it.
+Nothing now. Freeze/unfreeze and exec shipped before there was a real VM
+to try them on; both have since been verified against one.
 
-- [ ] Verify freeze/unfreeze against a real VM. Both are documented as
-      container-oriented actions, and `p` doesn't check `IsVM()` before
-      offering them — error, silent no-op or actual suspend is unconfirmed.
-- [ ] Verify exec into a real VM. `incus exec` needs the Incus guest agent
-      running inside the VM; without it the shell-out fails with whatever
-      the CLI prints. No special-casing was added.
+- [x] Verify freeze/unfreeze against a real VM. `p` freezes a running VM,
+      which then reads `frozen`, and resumes it, with no `IsVM()` check
+      needed.
+- [x] Verify exec into a real VM. It goes through the Incus guest agent; a
+      VM without one still gets whatever the CLI prints, which hasn't been
+      seen yet.

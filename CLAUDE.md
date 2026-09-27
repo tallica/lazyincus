@@ -23,9 +23,7 @@ the panel-by-panel comparison against lazydocker — is in
 
 Past the MVP it started as and in daily use; still pre-1.0. Developed
 against Incus 7.4, new enough for incus-compose, so the Services panel's
-verbs are exercised for real. VM instances aren't: nothing to hand can nest
-one, leaving the VM-specific paths — freeze/unfreeze, exec — unverified.
-See [BACKLOG.md](BACKLOG.md#blocked).
+verbs are exercised for real, and with a VM alongside the containers.
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
