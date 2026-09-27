@@ -25,7 +25,10 @@ inferred.
   arrived, anything else to mean the daemon answered - and `IsConnected` is
   that verdict. The 2s instance poll drives `gui.syncConnection`, which
   raises a modal on the way down and closes it on the way back up; there's
-  nothing to reconnect, since the client dials per request. `esc` dismisses
+  nothing to reconnect, since the client dials per request. The event
+  stream gets there sooner without judging itself - a dropped websocket
+  isn't a `*url.Error` - by asking for an instance listing the moment it
+  drops, and syncing after the listing its reopening brings. `esc` dismisses
   the modal for the rest of the outage; the footer's `●`/`✗` stands either
   way. Failing to connect at startup has no client to carry on with, so
   `NewIncusCommand` returns a `ConnectError` and `App.KnownError` prints it

@@ -443,3 +443,20 @@ func TestForwardAndACLEventsRedrawTheNetworkTabs(t *testing.T) {
 
 	assert.Equal(t, uint64(2), gui.networkTabs.Load())
 }
+
+// The stream going and coming back is heard at once; the popup saying so
+// needn't wait for the next two-second poll, either way.
+func TestTheConnectionPopupFollowsTheStream(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	popup := func() bool { return strings.Contains(s.snapshot(t), s.gui.Tr.ConnectionLostTitle) }
+
+	s.server.SetDown(true)
+	require.Eventually(t, popup, 800*time.Millisecond, 20*time.Millisecond, "up after the drop")
+
+	s.server.SetDown(false)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 10*time.Second, 20*time.Millisecond)
+	require.Eventually(t, func() bool { return !popup() }, 800*time.Millisecond, 20*time.Millisecond, "down after the reopen")
+}

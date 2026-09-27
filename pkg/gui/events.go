@@ -170,6 +170,10 @@ func (gui *Gui) watchEvents() {
 
 		gui.Log.Warn("event stream: ", err)
 
+		// A dropped stream may be the daemon gone: the instances' listing
+		// is what says, and the popup needn't wait for the poll.
+		gui.queueRefresh(refreshInstances)
+
 		wait = nextRetry(wait, time.Since(opened))
 
 		select {
@@ -348,6 +352,12 @@ func (gui *Gui) flushEvents() {
 
 	if err := gui.refreshEnding(ending, gui.fetchesFor(kinds)...); err != nil {
 		gui.Log.Warn(err)
+	}
+
+	// The listing just said whether the daemon answers - after a reopened
+	// stream's catch-up, that it's back.
+	if kinds&refreshInstances != 0 {
+		gui.syncConnection()
 	}
 }
 
