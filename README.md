@@ -97,6 +97,13 @@ Flags: `-r` / `--remote` picks the remote ([Remotes](#remotes)),
 ([Compose stacks](#compose-stacks)), `-d` / `--debug` for debug logging,
 `--version` to print version info.
 
+Tip: it's a lot of letters for something you open all day. An alias in
+your `~/.zshrc` or `~/.bashrc` shortens it:
+
+```sh
+alias lzi="lazyincus"
+```
+
 ## Remotes
 
 lazyincus talks to whichever remote the `incus` CLI treats as its default.
