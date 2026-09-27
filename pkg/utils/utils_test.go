@@ -139,3 +139,20 @@ func TestRenderTableToWidthInOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "nightly-before-…", table)
 }
+
+func TestConsoleTextKeepsOnlyForegroundColours(t *testing.T) {
+	// A VM's boot, as GRUB and the firmware write it to the serial console.
+	raw := "\x1B[2J\x1B[01;01H\x1B[=3h\x1B[2J\x1B[01;01HBdsDxe: loading\r\n" +
+		"\x1B[0m\x1B[30m\x1B[47mWelcome to GRUB!\n\r\n\r" +
+		"\x1B[0m\x1B[37m\x1B[40m  Booting `Debian'\n\r" +
+		"\x1B[0;1;32m  OK  \x1B[0m \x1B[38;5;208;48;2;1;2;3mhot\x1B[m\n" +
+		"login: \x1Bc\x1B]0;title\x07\x1B[2JBdsDxe"
+
+	want := "BdsDxe: loading\r\n" +
+		"\x1B[0mWelcome to GRUB!\n\r\n\r" +
+		"\x1B[0m  Booting `Debian'\n\r" +
+		"\x1B[0;1;32m  OK  \x1B[0m \x1B[38;5;208mhot\x1B[m\n" +
+		"login: \nBdsDxe"
+
+	assert.Equal(t, want, ConsoleText(raw))
+}

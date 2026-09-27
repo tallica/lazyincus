@@ -368,3 +368,88 @@ func MarshalIntoYaml(data any) ([]byte, error) {
 
 	return yaml.JSONToYAML(dataJSON)
 }
+
+// escapePattern matches one escape sequence: CSI, OSC, or a two-byte ESC
+// sequence. sgrPattern is the CSI that sets colours, clearPattern the ones
+// that clear the screen or reset the terminal.
+var (
+	escapePattern = regexp.MustCompile(`\x1B\[[0-?]*[ -/]*[@-~]|\x1B\][^\x07\x1B]*(?:\x07|\x1B\\)|\x1B[ -~]`)
+	sgrPattern    = regexp.MustCompile(`^\x1B\[([0-9;]*)m$`)
+	clearPattern  = regexp.MustCompile(`^\x1B(?:\[[0-9;]*J|c)$`)
+)
+
+// ConsoleText makes a serial console's output fit to draw in a panel: only
+// its colours survive, less backgrounds and black or white text, and a
+// screen clear becomes a line break (see docs/Incus.md, "Logs").
+func ConsoleText(str string) string {
+	var out strings.Builder
+
+	last := 0
+	for _, loc := range escapePattern.FindAllStringIndex(str, -1) {
+		out.WriteString(str[last:loc[0]])
+		last = loc[1]
+
+		sequence := str[loc[0]:loc[1]]
+		if sgr := sgrPattern.FindStringSubmatch(sequence); sgr != nil {
+			out.WriteString(foregroundOnly(sgr[1]))
+		} else if clearPattern.MatchString(sequence) && !endsLine(out.String()) {
+			out.WriteString("\n")
+		}
+	}
+
+	out.WriteString(str[last:])
+
+	return out.String()
+}
+
+// endsLine is whether text ends at the start of a line, the escapes and
+// carriage returns after its last newline aside.
+func endsLine(text string) bool {
+	tail := text[strings.LastIndexByte(text, '\n')+1:]
+
+	return strings.Trim(Decolorise(tail), "\r") == ""
+}
+
+// foregroundOnly rewrites an SGR's parameters without its backgrounds and
+// black or white foregrounds, or drops it when nothing is left.
+func foregroundOnly(params string) string {
+	fields := strings.Split(params, ";")
+	kept := make([]string, 0, len(fields))
+
+	for i := 0; i < len(fields); i++ {
+		field := fields[i]
+		switch field {
+		case "30", "37", "40", "41", "42", "43", "44", "45", "46", "47":
+			continue
+		case "38", "48":
+			// 38;5;n and 38;2;r;g;b carry their colour in the fields after.
+			width := 0
+			if i+1 < len(fields) {
+				switch fields[i+1] {
+				case "5":
+					width = 2
+				case "2":
+					width = 4
+				}
+			}
+			end := min(i+1+width, len(fields))
+			if field == "38" {
+				kept = append(kept, fields[i:end]...)
+			}
+			i = end - 1
+			continue
+		}
+
+		if len(field) == 3 && strings.HasPrefix(field, "10") {
+			continue // 100-107, bright backgrounds
+		}
+
+		kept = append(kept, field)
+	}
+
+	if len(kept) == 0 {
+		return ""
+	}
+
+	return "\x1B[" + strings.Join(kept, ";") + "m"
+}

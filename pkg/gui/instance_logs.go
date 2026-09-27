@@ -41,7 +41,7 @@ func (gui *Gui) instanceLogStr(instance *commands.Instance) string {
 		return gui.Tr.NothingToDisplay
 	}
 
-	return content
+	return utils.ConsoleText(content)
 }
 
 func (gui *Gui) promptToReturn() {

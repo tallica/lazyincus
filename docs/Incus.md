@@ -114,6 +114,11 @@ inferred.
   fetches just once after a stop — otherwise every poll re-appends the whole
   log. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
+  A VM's console is a serial terminal, and firmware and GRUB write it as
+  one: screen clears, cursor moves, `ESC c` resets, and the whole screen
+  white-on-black. The tab keeps only the colours (`utils.ConsoleText`),
+  less the backgrounds and the black and white that would paint every
+  line of a boot grey, and turns a clear into a line break.
 - **Deletes the daemon refuses**: a profile named `default`, in any
   project, can't be deleted or renamed - `profileDelete` and
   `profileRename` in `cmd/incusd/profiles.go` refuse the name before

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A VM's Logs tab shows its boot as text. The firmware's and GRUB's terminal codes came through as `[2;J[0 ;0 ;H` litter, and GRUB's white-on-black left the whole boot on a grey block; each reboot now also starts on a line of its own instead of after the last login prompt.
+
 ## [0.10.0] - 2026-09-27
 
 ### Added
