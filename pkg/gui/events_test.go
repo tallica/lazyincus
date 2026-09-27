@@ -295,18 +295,14 @@ func projectRow(screen, project, name string) string {
 }
 
 // bareGui is a Gui with no screen or daemon, for what events queue. Paused,
-// its flushes only queue again rather than refresh, which would need both.
-// The test ends it, then waits out any flush already running, whose
-// deadlock mutex reads the options the next test's NewGui writes.
+// its flushes only queue again rather than refresh, which would need both,
+// until the test ends it.
 func bareGui(t *testing.T) *Gui {
 	t.Helper()
 
 	gui := &Gui{stopped: make(chan struct{}), Log: commands.NewDummyLog()}
 	gui.PauseBackgroundThreads.Store(true)
-	t.Cleanup(func() {
-		close(gui.stopped)
-		time.Sleep(2 * eventBatchWindow)
-	})
+	t.Cleanup(func() { close(gui.stopped) })
 
 	return gui
 }

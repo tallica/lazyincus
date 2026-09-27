@@ -242,6 +242,8 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 	}
 }
 
+var deadlockOptions sync.Once
+
 // NewGui builds a new gui handler
 func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
 	initialState := guiState{
@@ -272,8 +274,12 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		eventsRescope: make(chan struct{}, 1),
 	}
 
-	deadlock.Opts.Disable = !gui.Config.Debug
-	deadlock.Opts.DeadlockTimeout = 10 * time.Second
+	// The options are the process's: a later Gui - a test's - rewriting them
+	// would race an earlier one's goroutines still taking locks.
+	deadlockOptions.Do(func() {
+		deadlock.Opts.Disable = !gui.Config.Debug
+		deadlock.Opts.DeadlockTimeout = 10 * time.Second
+	})
 
 	return gui, nil
 }
