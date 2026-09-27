@@ -70,22 +70,23 @@ inferred.
   passed. Only events that change a list count, named one by one: the
   daemon also sends them for reads, an `instance-exec` for every `ps` the
   Top tab runs, so matching by prefix would have each refresh set off the
-  next. `instance-updated` is skipped too - ic-healthd sends one per
-  instance each time it records a healthcheck. The polls stay: nothing
-  sends an event for CPU, memory or a DHCP address. While a stream is
-  open, the images, volumes, networks and profiles polls drop from 10s to
-  once a minute, left for what has no event - a volume's size, an image's
-  last use, a device attached to an instance - and each time one opens,
-  every list is fetched again for whatever changed while none was. `*incus.EventListener`
-  has unexported fields, so `commands.EventListener` is the interface in
-  front of it that `incustest` implements. An operation event arrives the
-  moment the daemon takes an action, whoever asked for it, naming the
-  instances it acts on, and again when it's done: a CLI restart of a VM on
-  7.4 read `Restarting instance` Running, then Success with the
-  `instance-restarted` 1.6s later. The description is the operation's only
-  name, so `operationStatuses` matches those strings; one it doesn't know
-  marks nothing. When the stream drops, the marks of operations still under
-  way come off, no event being left to end them.
+  next. `instance-updated` - a device attached, a profile added - refreshes
+  the lists counting what uses a volume, network or profile, but at most
+  every 10s: ic-healthd sends one per instance each time it records a
+  healthcheck. The polls stay: nothing sends an event for CPU, memory or a
+  DHCP address. While a stream is open, the images, volumes, networks and
+  profiles polls drop from 10s to once a minute, left for what has no
+  event - a volume's size, an image's last use - and each time one opens,
+  every list is fetched again for whatever changed while none was.
+  `*incus.EventListener` has unexported fields, so `commands.EventListener`
+  is the interface in front of it that `incustest` implements. An
+  operation event arrives the moment the daemon takes an action, whoever
+  asked for it, naming the instances it acts on, and again when it's done:
+  a CLI restart of a VM on 7.4 read `Restarting instance` Running, then
+  Success with the `instance-restarted` 1.6s later. The description is the
+  operation's only name, so `operationStatuses` matches those strings; one
+  it doesn't know marks nothing. When the stream drops, the marks of
+  operations still under way come off, no event being left to end them.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an

@@ -20,7 +20,6 @@ func TestEventsFromPollingRefreshNothing(t *testing.T) {
 		api.EventLifecycleInstanceConsoleRetrieved,
 		api.EventLifecycleInstanceLogRetrieved,
 		api.EventLifecycleInstanceExec,
-		api.EventLifecycleInstanceUpdated,
 		api.EventLifecycleImageRetrieved,
 	} {
 		assert.Zero(t, eventRefreshes[action], action)
@@ -197,4 +196,28 @@ func TestAWatchedListIsPolledLessWhileTheStreamIsOpen(t *testing.T) {
 
 	assert.Equal(t, 1, polls(true), "only the first poll, at startup")
 	assert.Greater(t, polls(false), 1)
+}
+
+// An instance-updated refreshes the used-by lists straight away, and one
+// right after it waits out the interval rather than refreshing again.
+func TestInstanceUpdatedRefreshesUsedByAtMostEveryInterval(t *testing.T) {
+	gui := &Gui{stopped: make(chan struct{})}
+	defer close(gui.stopped)
+
+	updated := commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleInstanceUpdated}
+
+	gui.onEvent(updated)
+
+	gui.events.mutex.Lock()
+	assert.Equal(t, refreshVolumes|refreshNetworks|refreshProfiles, gui.events.pending)
+	gui.events.pending = 0
+	gui.events.mutex.Unlock()
+
+	gui.onEvent(updated)
+	gui.onEvent(updated)
+
+	gui.events.mutex.Lock()
+	defer gui.events.mutex.Unlock()
+	assert.Zero(t, gui.events.pending, "within the interval")
+	assert.True(t, gui.events.updateDue, "one more refresh, at the interval's end")
 }

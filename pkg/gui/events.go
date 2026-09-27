@@ -100,6 +100,11 @@ const (
 	// event per instance - into one refresh.
 	eventBatchWindow = 200 * time.Millisecond
 
+	// updatedInterval spaces out the refreshes instance-updated asks for,
+	// ic-healthd sending one per instance every time it records a
+	// healthcheck.
+	updatedInterval = 10 * time.Second
+
 	eventRetryMin = time.Second
 	eventRetryMax = 30 * time.Second
 )
@@ -111,6 +116,11 @@ type eventBatch struct {
 	pending    refreshKind
 	scheduled  bool
 	operations map[string][]func()
+
+	// updatedAt is when an instance-updated last refreshed the used-by
+	// lists; updateDue, that another is waiting out updatedInterval.
+	updatedAt time.Time
+	updateDue bool
 }
 
 // watchEvents keeps a listener open for as long as the app runs, reopening
@@ -203,12 +213,53 @@ func (gui *Gui) onEvent(event commands.Event) {
 		return
 	}
 
+	if event.Action == api.EventLifecycleInstanceUpdated {
+		gui.onInstanceUpdated()
+		return
+	}
+
 	kinds := eventRefreshes[event.Action]
 	if kinds == 0 {
 		return
 	}
 
 	gui.queueRefresh(kinds)
+}
+
+// onInstanceUpdated refreshes the lists counting what an instance's config
+// attaches it to - a volume, a network, a profile - at most once per
+// updatedInterval, the last update in a run of them still getting its
+// refresh. The instances list is the 2s poll's.
+func (gui *Gui) onInstanceUpdated() {
+	gui.events.mutex.Lock()
+
+	if gui.events.updateDue {
+		gui.events.mutex.Unlock()
+		return
+	}
+
+	gui.events.updateDue = true
+	wait := time.Until(gui.events.updatedAt.Add(updatedInterval))
+	gui.events.mutex.Unlock()
+
+	refresh := func() {
+		gui.events.mutex.Lock()
+		gui.events.updateDue, gui.events.updatedAt = false, time.Now()
+		gui.events.mutex.Unlock()
+
+		gui.queueRefresh(refreshVolumes | refreshNetworks | refreshProfiles)
+	}
+
+	if wait <= 0 {
+		refresh()
+		return
+	}
+
+	time.AfterFunc(wait, func() {
+		if !gui.isStopped() {
+			refresh()
+		}
+	})
 }
 
 // queueRefresh adds to the lists the next flush refreshes, scheduling one if
