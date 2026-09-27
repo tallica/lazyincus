@@ -37,12 +37,11 @@ func TestAVMsAgentStartingRefreshesTheInstances(t *testing.T) {
 }
 
 func TestABurstOfEventsIsOneRefresh(t *testing.T) {
-	gui := &Gui{stopped: make(chan struct{})}
+	gui := bareGui(t)
 
 	gui.onEvent(commands.Event{Action: api.EventLifecycleInstanceStarted})
 	gui.onEvent(commands.Event{Action: api.EventLifecycleImageDeleted})
 	gui.onEvent(commands.Event{Action: api.EventLifecycleInstanceConsoleRetrieved})
-	close(gui.stopped) // before the flush, which then refreshes nothing
 
 	gui.events.mutex.Lock()
 	assert.Equal(t, refreshInstances|refreshImages, gui.events.pending)
@@ -206,8 +205,7 @@ func TestAWatchedListIsPolledLessWhileTheStreamIsOpen(t *testing.T) {
 // An instance-updated refreshes the used-by lists straight away, and one
 // right after it waits out the interval rather than refreshing again.
 func TestInstanceUpdatedRefreshesUsedByAtMostEveryInterval(t *testing.T) {
-	gui := &Gui{stopped: make(chan struct{})}
-	defer close(gui.stopped)
+	gui := bareGui(t)
 
 	updated := commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleInstanceUpdated}
 
@@ -225,4 +223,88 @@ func TestInstanceUpdatedRefreshesUsedByAtMostEveryInterval(t *testing.T) {
 	defer gui.events.mutex.Unlock()
 	assert.Zero(t, gui.events.pending, "within the interval")
 	assert.True(t, gui.events.updateDue, "one more refresh, at the interval's end")
+}
+
+func TestTheRetryBacksOffWhileTheDaemonStaysAway(t *testing.T) {
+	waits := make([]time.Duration, 0, 7)
+
+	wait := time.Duration(0)
+	for range 7 {
+		wait = nextRetry(wait, 0)
+		waits = append(waits, wait)
+	}
+
+	assert.Equal(t, []time.Duration{
+		time.Second, 2 * time.Second, 4 * time.Second, 8 * time.Second,
+		16 * time.Second, 30 * time.Second, 30 * time.Second,
+	}, waits)
+}
+
+func TestAStreamThatHeldStartsTheRetryAgain(t *testing.T) {
+	assert.Equal(t, eventRetryMin, nextRetry(16*time.Second, time.Minute))
+}
+
+// Events arriving while a subprocess has the terminal wait for it, rather
+// than being dropped.
+func TestEventsWaitOutASubprocess(t *testing.T) {
+	gui := bareGui(t)
+
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleImageCreated})
+
+	time.Sleep(3 * eventBatchWindow)
+
+	gui.events.mutex.Lock()
+	defer gui.events.mutex.Unlock()
+	assert.Equal(t, refreshImages, gui.events.pending)
+	assert.True(t, gui.events.scheduled)
+}
+
+// Names repeat across projects; an operation marks its own project's.
+func TestAnOperationMarksOnlyItsProjectsInstance(t *testing.T) {
+	s := startScreen(t, 160, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.SetInstances(append(fixtureServer().Instances, api.InstanceFull{Instance: api.Instance{
+		Name: "web", Project: "other", Status: "Running", Type: "container",
+	}}))
+	require.NoError(t, s.gui.refreshInstances())
+	s.settle(t, "│other ")
+
+	s.server.Emit(incustest.Operation("other", "op1", "Stopping instance", api.Running, "web"))
+
+	require.Eventually(t, func() bool {
+		return strings.Contains(projectRow(s.snapshot(t), "other", "web"), "stopping")
+	}, 5*time.Second, 50*time.Millisecond)
+	defaultWeb := projectRow(s.snapshot(t), "default", "web")
+	require.NotEmpty(t, defaultWeb)
+	assert.NotContains(t, defaultWeb, "stopping")
+}
+
+// projectRow is the all-projects instances panel's line for the instance.
+func projectRow(screen, project, name string) string {
+	for line := range strings.Lines(screen) {
+		if fields := strings.Fields(strings.TrimPrefix(line, "│")); len(fields) > 1 && fields[0] == project && fields[1] == name {
+			return line
+		}
+	}
+
+	return ""
+}
+
+// bareGui is a Gui with no screen or daemon, for what events queue. Paused,
+// its flushes only queue again rather than refresh, which would need both.
+// The test ends it, then waits out any flush already running, whose
+// deadlock mutex reads the options the next test's NewGui writes.
+func bareGui(t *testing.T) *Gui {
+	t.Helper()
+
+	gui := &Gui{stopped: make(chan struct{})}
+	gui.PauseBackgroundThreads.Store(true)
+	t.Cleanup(func() {
+		close(gui.stopped)
+		time.Sleep(2 * eventBatchWindow)
+	})
+
+	return gui
 }

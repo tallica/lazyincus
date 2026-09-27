@@ -128,7 +128,7 @@ type eventBatch struct {
 // watchEvents keeps a listener open for as long as the app runs, reopening
 // it after a project switch and, backing off, after a drop.
 func (gui *Gui) watchEvents() {
-	delay := eventRetryMin
+	var wait time.Duration
 
 	for {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -154,25 +154,32 @@ func (gui *Gui) watchEvents() {
 		gui.endOperations(gui.takeOperations(""))
 
 		if err == nil {
-			delay = eventRetryMin
+			wait = 0
 			continue
 		}
 
 		gui.Log.Warn("event stream: ", err)
 
-		if time.Since(opened) > eventRetryMax {
-			delay = eventRetryMin
-		}
+		wait = nextRetry(wait, time.Since(opened))
 
 		select {
 		case <-gui.stopped:
 			return
 		case <-gui.eventsRescope:
-		case <-time.After(delay):
+		case <-time.After(wait):
 		}
-
-		delay = min(delay*2, eventRetryMax)
 	}
+}
+
+// nextRetry is how long to wait before reopening a stream that lasted for
+// lasted, the wait before it having been previous: doubling while the
+// daemon stays away, back to the start after a stream that held.
+func nextRetry(previous, lasted time.Duration) time.Duration {
+	if previous == 0 || lasted > eventRetryMax {
+		return eventRetryMin
+	}
+
+	return min(previous*2, eventRetryMax)
 }
 
 // eventsOpened catches up on whatever changed while no stream was open to
