@@ -1,5 +1,12 @@
-# lazyincus
-
+```
+ _                 _
+| | __ _ _____   _(_)_ __   ___ _   _ ___
+| |/ _` |_  / | | | | '_ \ / __| | | / __|
+| | (_| |/ /| |_| | | | | | (__| |_| \__ \
+|_|\__,_/___|\__, |_|_| |_|\___|\__,_|___/
+             |___/
+```
+---
 lazyincus is a terminal UI (TUI) for
 [Incus](https://linuxcontainers.org/incus/) — a next-generation system
 container, application container, and virtual machine manager. One
