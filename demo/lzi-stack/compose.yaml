@@ -1,0 +1,9 @@
+name: lzi-stack
+services:
+  web:
+    image: docker.io/library/nginx:alpine
+    deploy:
+      replicas: 2
+    depends_on: [cache]
+  cache:
+    image: docker.io/library/redis:alpine
