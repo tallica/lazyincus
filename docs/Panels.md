@@ -231,7 +231,7 @@ new column means one entry in that map plus the default/valid-values list in
 Keybindings live in [README.md](../README.md#usage) — the canonical source,
 keep that table current rather than duplicating it here. Two behaviors it
 doesn't convey: `s`/`d` confirm before acting, and `p` toggles between
-`freeze` and `unfreeze` depending on current status.
+`incus pause` and `incus resume` depending on current status.
 
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:

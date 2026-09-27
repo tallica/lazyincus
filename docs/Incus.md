@@ -142,7 +142,12 @@ inferred.
   same: Incus stops it, rolls it back and starts it again. So an action
   lazyincus starts marks the instance itself (`Instance.BeginTransition`)
   until a listing taken after it lands: the row reads `starting`,
-  `stopping`, `restarting` or `restoring`, and keeps its place. An action
+  `stopping`, `restarting`, `restoring`, `freezing` or `unfreezing`, and
+  keeps its place. Pausing is freezing: the API says `freeze`, `Frozen`
+  and "Freezing instance", the CLI `incus pause` and `incus resume`.
+  lazyincus splits them the way the CLI does, `incus pause` leaving an
+  instance `FROZEN` - `p` and the status bar say pause and resume, a row
+  freezing, frozen, unfreezing. An action
   anyone else starts gets the same from its operation event (see Events).
   The action and its event both mark the instance, and only the later mark
   can end it, so neither ends the other early.

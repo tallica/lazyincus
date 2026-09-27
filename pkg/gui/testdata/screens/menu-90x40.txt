@@ -5,7 +5,7 @@
 │                      │S         start                            │                     │
 │                      │s         stop                             │                     │
 │                      │r         restart                          │                     │
-│                      │p         pause/unpause                    │                     │
+│                      │p         pause/resume                     │                     │
 │                      │d         delete                           │                     │
 │                      │e         show/hide stopped instances      │                     │
 │                      │n         new snapshot                     │                     │

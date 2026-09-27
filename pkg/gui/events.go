@@ -95,6 +95,8 @@ var operationStatuses = map[string]string{
 	"Stopping instance":   "Stopping",
 	"Restarting instance": "Restarting",
 	"Restoring snapshot":  "Restoring",
+	"Freezing instance":   "Freezing",
+	"Unfreezing instance": "Unfreezing",
 }
 
 var eventTypes = []string{api.EventTypeLifecycle, api.EventTypeOperation}

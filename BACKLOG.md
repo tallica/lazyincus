@@ -71,13 +71,13 @@ Not planned:
 - [x] **Event stream** — lazyincus listens to Incus's lifecycle and
       operation events; see [docs/Incus.md](docs/Incus.md).
 - [ ] **More row statuses from operations** — `operationStatuses` covers
-      starting, stopping, restarting and restoring. "Deleting instance",
-      "Rebuilding instance" and "Migrating instance" can take a while too
-      and could read `deleting`, `rebuilding`, `migrating` the same way,
-      each needing its entries in `DisplayStatus`'s maps and
-      `StatusColor`. A deleted instance's mark has no row left to end on,
-      so check it comes off with the listing that drops the row. Freezing
-      and unfreezing aren't worth it: they're over in milliseconds.
+      starting, stopping, restarting, restoring, freezing and unfreezing.
+      "Deleting instance", "Rebuilding instance" and "Migrating instance"
+      can take a while too and could read `deleting`, `rebuilding`,
+      `migrating` the same way, each needing its entries in
+      `DisplayStatus`'s maps and `StatusColor`. A deleted instance's mark
+      has no row left to end on, so check it comes off with the listing
+      that drops the row.
 - [ ] **Events for a restricted certificate** — `ListenForEvents` asks for
       every project's events whenever the panels list every project. A
       certificate restricted to some projects may be refused that, and

@@ -176,7 +176,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "instances",
 			Key:         'p',
 			Modifier:    gocui.ModNone,
-			Handler:     onSelected(gui.Panels.Instances, gui.instancePauseFreeze),
+			Handler:     onSelected(gui.Panels.Instances, gui.instancePauseResume),
 			Description: gui.Tr.Pause,
 		},
 		{

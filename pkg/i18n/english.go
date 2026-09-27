@@ -76,6 +76,7 @@ type TranslationSet struct {
 	StartingStatus               string
 	StoppingStatus               string
 	PausingStatus                string
+	ResumingStatus               string
 	RemovingStatus               string
 	ForceRemovingStatus          string
 	Stop                         string
@@ -231,6 +232,7 @@ func englishSet() TranslationSet {
 		StartingStatus:      "starting",
 		StoppingStatus:      "stopping",
 		PausingStatus:       "pausing",
+		ResumingStatus:      "resuming",
 		RemovingStatus:      "removing",
 		ForceRemovingStatus: "stopping and deleting",
 
@@ -298,7 +300,7 @@ func englishSet() TranslationSet {
 		ForceStop:                    "force stop",
 		MustForceToRemove:            "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
 		Stop:                         "stop",
-		Pause:                        "pause/unpause",
+		Pause:                        "pause/resume",
 		Restart:                      "restart",
 		Start:                        "start",
 		PreviousContext:              "previous tab",

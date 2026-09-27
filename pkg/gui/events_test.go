@@ -109,18 +109,18 @@ func TestAnOperationMarksItsInstance(t *testing.T) {
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
 
 	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Running, "web"))
-	require.Eventually(t, func() bool { return strings.Contains(row(s.snapshot(t), "web"), "restarting") },
+	require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "restarting") },
 		5*time.Second, 50*time.Millisecond)
 
 	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Success, "web"))
-	require.Eventually(t, func() bool { return strings.Contains(row(s.snapshot(t), "web"), "running") },
+	require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "running") },
 		5*time.Second, 50*time.Millisecond)
 }
 
-// row is the instances panel's line for the instance.
-func row(screen, name string) string {
+// webRow is the instances panel's line for web.
+func webRow(screen string) string {
 	for line := range strings.Lines(screen) {
-		if strings.HasPrefix(line, "│"+name+" ") {
+		if strings.HasPrefix(line, "│web ") {
 			return line
 		}
 	}
@@ -352,7 +352,7 @@ func TestARunningAfterItsSuccessMarksNothing(t *testing.T) {
 	s.server.Emit(incustest.Operation("default", "op2", "Stopping instance", api.Running, "a-name-long-enough-to-be-cut-off"))
 	s.settle(t, "stopping")
 
-	assert.NotContains(t, row(s.snapshot(t), "web"), "starting")
+	assert.NotContains(t, webRow(s.snapshot(t)), "starting")
 }
 
 // Applying a fetch can fail after the fetch itself succeeded; refresh then
@@ -390,4 +390,21 @@ func TestEndedOperationsAreBatched(t *testing.T) {
 	assert.Len(t, gui.events.ending, 3)
 	assert.Equal(t, refreshInstances, gui.events.pending)
 	assert.True(t, gui.events.scheduled)
+}
+
+// A pause from the CLI - or a whole service's incus-compose pause - marks
+// each instance it freezes.
+func TestAPauseFromAnywhereMarksItsInstance(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Freezing instance", api.Running, "web"))
+	require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "freezing") },
+		5*time.Second, 50*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Freezing instance", api.Success, "web"))
+	s.server.Emit(incustest.Operation("default", "op2", "Unfreezing instance", api.Running, "web"))
+	require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "unfreezing") },
+		5*time.Second, 50*time.Millisecond)
 }

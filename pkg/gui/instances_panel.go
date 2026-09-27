@@ -298,19 +298,18 @@ func (gui *Gui) inTransition(instance *commands.Instance, status string, action 
 	return gui.refreshEnding([]func(){end}, gui.fetchInstances, gui.fetchServices)
 }
 
-func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {
-	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() (err error) {
-		if instance.Instance.Status == "Frozen" {
-			err = instance.Unfreeze()
-		} else {
-			err = instance.Freeze()
-		}
+// instancePauseResume is `incus pause` or `incus resume`, whichever the
+// instance's state calls for: the CLI's words for the daemon's freeze and
+// unfreeze, the row reading freezing, frozen, unfreezing.
+func (gui *Gui) instancePauseResume(instance *commands.Instance) error {
+	if instance.Instance.Status == "Frozen" {
+		return gui.WithWaitingStatus(gui.Tr.ResumingStatus, func() error {
+			return gui.inTransition(instance, "Unfreezing", instance.Unfreeze)
+		})
+	}
 
-		if err != nil {
-			return gui.createErrorPanel(err.Error())
-		}
-
-		return gui.refreshInstancesAndServices()
+	return gui.WithWaitingStatus(gui.Tr.PausingStatus, func() error {
+		return gui.inTransition(instance, "Freezing", instance.Freeze)
 	})
 }
 
