@@ -338,3 +338,18 @@ func TestEventsAreNotLoggedWithoutDebug(t *testing.T) {
 
 	assert.Empty(t, hook.AllEntries())
 }
+
+// The daemon can send an operation's Running after its Success; it mustn't
+// leave a mark that nothing will end.
+func TestARunningAfterItsSuccessMarksNothing(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Starting instance", api.Success, "web"))
+	s.server.Emit(incustest.Operation("default", "op1", "Starting instance", api.Running, "web"))
+	s.server.Emit(incustest.Operation("default", "op2", "Stopping instance", api.Running, "a-name-long-enough-to-be-cut-off"))
+	s.settle(t, "stopping")
+
+	assert.NotContains(t, row(s.snapshot(t), "web"), "starting")
+}

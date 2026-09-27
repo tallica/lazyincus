@@ -107,3 +107,17 @@ func TestParseEventReadsAnOperationsInstances(t *testing.T) {
 		Operation: "op1", Status: api.Running, Instances: []string{"web", "my vm"},
 	}, event)
 }
+
+func TestListenForEventsKeepsTheirOrder(t *testing.T) {
+	server := incustest.New(incustest.Server{})
+	events, _, _ := listenInBackground(t, newEventsCommand(server), server)
+
+	actions := []string{"instance-created", "instance-started", "instance-stopped", "instance-deleted"}
+	for _, action := range actions {
+		server.Emit(incustest.Lifecycle("default", action, "/1.0/instances/web"))
+	}
+
+	for _, action := range actions {
+		assert.Equal(t, action, (<-events).Action)
+	}
+}

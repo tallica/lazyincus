@@ -5,14 +5,13 @@ import (
 	"slices"
 	"sync"
 
-	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 )
 
 // eventListener is commands.EventListener, spelled out: that package's
 // tests import this one.
 type eventListener = interface {
-	AddHandler(types []string, function func(api.Event)) (*incus.EventTarget, error)
+	AddChannel(types []string, size int) <-chan api.Event
 	Wait() error
 	Disconnect()
 }
@@ -23,25 +22,39 @@ type listener struct {
 	project string
 
 	mutex    sync.Mutex
-	handlers []handler
+	channels []channel
+	ended    bool
 
 	done chan struct{}
 	once sync.Once
 	err  error
 }
 
-type handler struct {
-	types    []string
-	function func(api.Event)
+type channel struct {
+	types []string
+	ch    chan api.Event
 }
 
-func (l *listener) AddHandler(types []string, function func(api.Event)) (*incus.EventTarget, error) {
+// AddChannel is the client's: events in the order sent, the channel closed
+// once the stream ends.
+func (l *listener) AddChannel(types []string, size int) <-chan api.Event {
+	if size <= 0 {
+		size = 1000
+	}
+
+	ch := make(chan api.Event, size)
+
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 
-	l.handlers = append(l.handlers, handler{types: types, function: function})
+	if l.ended {
+		close(ch)
+		return ch
+	}
 
-	return nil, nil
+	l.channels = append(l.channels, channel{types: types, ch: ch})
+
+	return ch
 }
 
 func (l *listener) Wait() error {
@@ -59,9 +72,25 @@ func (l *listener) close(err error) {
 		l.shared.listeners = slices.DeleteFunc(l.shared.listeners, func(open *listener) bool { return open == l })
 		l.shared.mutex.Unlock()
 
-		l.err = err
-		close(l.done)
+		l.end(err)
 	})
+}
+
+// end is close's second half, for a caller that has the listener out of
+// the shared list already. Called once, under l.once.
+func (l *listener) end(err error) {
+	l.err = err
+	close(l.done)
+
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
+	l.ended = true
+	for _, c := range l.channels {
+		close(c.ch)
+	}
+
+	l.channels = nil
 }
 
 func (l *listener) send(event api.Event) {
@@ -70,12 +99,11 @@ func (l *listener) send(event api.Event) {
 	}
 
 	l.mutex.Lock()
-	handlers := slices.Clone(l.handlers)
-	l.mutex.Unlock()
+	defer l.mutex.Unlock()
 
-	for _, h := range handlers {
-		if len(h.types) == 0 || slices.Contains(h.types, event.Type) {
-			h.function(event)
+	for _, c := range l.channels {
+		if len(c.types) == 0 || slices.Contains(c.types, event.Type) {
+			c.ch <- event
 		}
 	}
 }
@@ -152,9 +180,6 @@ func (shared *state) dropListeners() {
 	shared.listeners = nil
 
 	for _, l := range open {
-		l.once.Do(func() {
-			l.err = errUnreachable
-			close(l.done)
-		})
+		l.once.Do(func() { l.end(errUnreachable) })
 	}
 }

@@ -30,7 +30,7 @@ type Event struct {
 // incustest can spell the same type without importing this package, whose
 // tests import it.
 type EventListener = interface {
-	AddHandler(types []string, function func(api.Event)) (*incus.EventTarget, error)
+	AddChannel(types []string, size int) <-chan api.Event
 	Wait() error
 	Disconnect()
 }
@@ -53,9 +53,11 @@ func listen(client incus.InstanceServer, allProjects bool, types []string) (Even
 }
 
 // ListenForEvents passes the daemon's events of the given types, for the
-// scope the panels list, to handle until ctx is done or the connection
-// drops, calling opened once they're flowing. It returns why it stopped:
-// nil for ctx, the drop otherwise.
+// scope the panels list, to handle one at a time in the order the daemon
+// sent them - through AddChannel, not AddHandler: see docs/Incus.md,
+// "Events" - until ctx is done or the connection drops, calling opened once
+// they're flowing. It returns why it stopped: nil for ctx, the drop
+// otherwise.
 func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, opened func(), handle func(Event)) error {
 	client, project, allProjects := c.scope()
 
@@ -64,14 +66,7 @@ func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, open
 		return err
 	}
 
-	if _, err := listener.AddHandler(types, func(event api.Event) {
-		if parsed, ok := parseEvent(event, project); ok {
-			handle(parsed)
-		}
-	}); err != nil {
-		listener.Disconnect()
-		return err
-	}
+	events := listener.AddChannel(types, 0)
 
 	if ctx.Err() != nil {
 		listener.Disconnect()
@@ -80,15 +75,22 @@ func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, open
 
 	opened()
 
-	dropped := make(chan error, 1)
-	go func() { dropped <- listener.Wait() }()
+	for {
+		select {
+		case <-ctx.Done():
+			listener.Disconnect()
+			return nil
+		case event, ok := <-events:
+			// Closed once the listener is done, or has fallen too far
+			// behind to keep every event: Wait says which.
+			if !ok {
+				return listener.Wait()
+			}
 
-	select {
-	case <-ctx.Done():
-		listener.Disconnect()
-		return nil
-	case err := <-dropped:
-		return err
+			if parsed, ok := parseEvent(event, project); ok {
+				handle(parsed)
+			}
+		}
 	}
 }
 

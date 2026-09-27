@@ -89,7 +89,15 @@ inferred.
   a CLI restart of a VM on 7.4 read `Restarting instance` Running, then
   Success with the `instance-restarted` 1.6s later. The description is the
   operation's only name, so `operationStatuses` matches those strings; one
-  it doesn't know marks nothing. When the stream drops, the marks of
+  it doesn't know marks nothing. Order takes care on both ends. The client
+  runs each `AddHandler` call on a goroutine of its own, so a handler can
+  see an operation's Running after its Success - seen on 7.4 as Running
+  before Pending - and a mark nothing would end; `ListenForEvents` reads
+  `AddChannel` instead, which keeps the daemon's order. And the daemon's
+  `Start` (`internal/server/operations`) sends Running only after setting
+  the work off, which a quick operation can finish first, so the last
+  hundred operations to end are remembered and a Running for one of them
+  marks nothing. When the stream drops, the marks of
   operations still under way come off, no event being left to end them.
   Under `--debug` every event the stream delivers, the ones that change
   nothing included, goes to `development.log` in the config directory,

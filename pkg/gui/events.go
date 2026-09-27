@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jesseduffield/gocui"
@@ -119,6 +120,9 @@ type eventBatch struct {
 	pending    refreshKind
 	scheduled  bool
 	operations map[string][]func()
+	// finished is the latest operations to have ended, oldest first, so a
+	// Running sent after its Success marks nothing.
+	finished []string
 
 	// updatedAt is when an instance-updated last refreshed the used-by
 	// lists; updateDue, that another is waiting out updatedInterval.
@@ -368,7 +372,7 @@ func (gui *Gui) onOperation(event commands.Event) {
 	}
 
 	if event.Status.IsFinal() {
-		gui.endOperations(gui.takeOperations(event.Operation))
+		gui.endOperations(gui.finishOperation(event.Operation))
 		return
 	}
 
@@ -378,8 +382,9 @@ func (gui *Gui) onOperation(event commands.Event) {
 
 	gui.events.mutex.Lock()
 
-	// An operation reports Running again with each step of progress.
-	if _, marked := gui.events.operations[event.Operation]; marked {
+	// An operation reports Running again with each step of progress, and
+	// can report it after its Success (docs/Incus.md, "Events").
+	if _, marked := gui.events.operations[event.Operation]; marked || slices.Contains(gui.events.finished, event.Operation) {
 		gui.events.mutex.Unlock()
 		return
 	}
@@ -397,6 +402,23 @@ func (gui *Gui) onOperation(event commands.Event) {
 	gui.events.mutex.Unlock()
 
 	gui.g.Update(func(*gocui.Gui) error { return gui.rerenderInstanceLists() })
+}
+
+// finishedKept is how many ended operations finished remembers: a late
+// Running trails its Success by moments, not by a hundred operations.
+const finishedKept = 100
+
+// finishOperation is takeOperations for an operation that has ended,
+// remembering that it has.
+func (gui *Gui) finishOperation(id string) []func() {
+	gui.events.mutex.Lock()
+	gui.events.finished = append(gui.events.finished, id)
+	if len(gui.events.finished) > finishedKept {
+		gui.events.finished = gui.events.finished[1:]
+	}
+	gui.events.mutex.Unlock()
+
+	return gui.takeOperations(id)
 }
 
 // takeOperations forgets the operation's marks and returns them to end, or
