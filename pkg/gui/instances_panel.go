@@ -286,23 +286,16 @@ func (gui *Gui) inTransition(instance *commands.Instance, status string, action 
 	end := instance.BeginTransition(status)
 	gui.g.Update(func(*gocui.Gui) error { return gui.rerenderInstanceLists() })
 
-	ended := func() error {
-		end()
-		return gui.rerenderInstanceLists()
-	}
-
 	if err := action(); err != nil {
-		gui.g.Update(func(*gocui.Gui) error { return ended() })
+		gui.g.Update(func(*gocui.Gui) error {
+			end()
+			return gui.rerenderInstanceLists()
+		})
+
 		return err
 	}
 
-	// A failed fetch skips ended, so the mark comes off here instead.
-	err := gui.refresh(ended, gui.fetchInstances, gui.fetchServices)
-	if err != nil {
-		gui.g.Update(func(*gocui.Gui) error { return ended() })
-	}
-
-	return err
+	return gui.refreshEnding([]func(){end}, gui.fetchInstances, gui.fetchServices)
 }
 
 func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {

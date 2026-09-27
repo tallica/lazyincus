@@ -64,6 +64,46 @@ func (gui *Gui) refreshInstancesAndServices() error {
 	return gui.refresh(nil, gui.fetchInstances, gui.fetchServices)
 }
 
+// refreshEnding refreshes, then calls every end and redraws the rows they
+// marked: once the listing has landed, or without it when a fetch fails or
+// applying one does. refresh's then runs in neither case, and a mark that
+// nothing ends stays on its row.
+func (gui *Gui) refreshEnding(ends []func(), fetches ...fetch) error {
+	ended := func() error {
+		for _, end := range ends {
+			end()
+		}
+
+		return gui.rerenderInstanceLists()
+	}
+
+	guarded := make([]fetch, len(fetches))
+	for i, fetch := range fetches {
+		guarded[i] = func() (func() error, error) {
+			apply, err := fetch()
+			if err != nil {
+				return nil, err
+			}
+
+			return func() error {
+				if err := apply(); err != nil {
+					_ = ended()
+					return err
+				}
+
+				return nil
+			}, nil
+		}
+	}
+
+	err := gui.refresh(ended, guarded...)
+	if err != nil {
+		gui.g.Update(func(*gocui.Gui) error { return ended() })
+	}
+
+	return err
+}
+
 // refreshInBackground is refresh for a caller on the main loop. A failure
 // goes through the same handler as a keypress's.
 func (gui *Gui) refreshInBackground(fetches ...fetch) {

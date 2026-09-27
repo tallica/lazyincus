@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -352,4 +353,41 @@ func TestARunningAfterItsSuccessMarksNothing(t *testing.T) {
 	s.settle(t, "stopping")
 
 	assert.NotContains(t, row(s.snapshot(t), "web"), "starting")
+}
+
+// Applying a fetch can fail after the fetch itself succeeded; refresh then
+// skips its then, and the marks must come off anyway.
+func TestMarksEndWhenApplyingTheRefreshFails(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	ended := make(chan struct{})
+	failsToApply := func() (func() error, error) {
+		return func() error { return errors.New("render failed") }, nil
+	}
+
+	require.NoError(t, s.gui.refreshEnding([]func(){func() { close(ended) }}, failsToApply))
+
+	select {
+	case <-ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the mark was never ended")
+	}
+}
+
+// Operations ending together share one refresh, and their marks wait out
+// a subprocess along with it rather than being dropped.
+func TestEndedOperationsAreBatched(t *testing.T) {
+	gui := bareGui(t)
+
+	gui.endOperations([]func(){func() {}})
+	gui.endOperations([]func(){func() {}, func() {}})
+
+	time.Sleep(3 * eventBatchWindow)
+
+	gui.events.mutex.Lock()
+	defer gui.events.mutex.Unlock()
+	assert.Len(t, gui.events.ending, 3)
+	assert.Equal(t, refreshInstances, gui.events.pending)
+	assert.True(t, gui.events.scheduled)
 }

@@ -121,8 +121,10 @@ type eventBatch struct {
 	scheduled  bool
 	operations map[string][]func()
 	// finished is the latest operations to have ended, oldest first, so a
-	// Running sent after its Success marks nothing.
+	// Running sent after its Success marks nothing. ending is their marks,
+	// which the next flush ends once its listing lands.
 	finished []string
+	ending   []func()
 
 	// updatedAt is when an instance-updated last refreshed the used-by
 	// lists; updateDue, that another is waiting out updatedInterval.
@@ -322,17 +324,22 @@ func (gui *Gui) flushEvents() {
 	}
 
 	gui.events.mutex.Lock()
-	kinds := gui.events.pending
-	gui.events.pending, gui.events.scheduled = 0, false
+	kinds, ending := gui.events.pending, gui.events.ending
+	gui.events.pending, gui.events.ending, gui.events.scheduled = 0, nil, false
 	gui.events.mutex.Unlock()
 
 	// A subprocess has the terminal; hold the lists until it's back.
 	if gui.PauseBackgroundThreads.Load() {
+		gui.events.mutex.Lock()
+		gui.events.ending = append(ending, gui.events.ending...)
+		gui.events.mutex.Unlock()
+
 		gui.queueRefresh(kinds)
+
 		return
 	}
 
-	if err := gui.refresh(nil, gui.fetchesFor(kinds)...); err != nil {
+	if err := gui.refreshEnding(ending, gui.fetchesFor(kinds)...); err != nil {
 		gui.Log.Warn(err)
 	}
 }
@@ -446,18 +453,11 @@ func (gui *Gui) takeOperations(id string) []func() {
 
 // endOperations takes the marks off once a listing taken after the
 // operations has applied - before it, the rows would fall back on a poll
-// that may have caught them halfway.
+// that may have caught them halfway. It goes through the batch, so a run
+// of operations ending together is one refresh.
 func (gui *Gui) endOperations(ends []func()) {
 	if len(ends) == 0 {
 		return
-	}
-
-	ended := func() error {
-		for _, end := range ends {
-			end()
-		}
-
-		return gui.rerenderInstanceLists()
 	}
 
 	if gui.isStopped() {
@@ -468,9 +468,9 @@ func (gui *Gui) endOperations(ends []func()) {
 		return
 	}
 
-	go func() {
-		if err := gui.refresh(ended, gui.fetchInstances, gui.fetchServices); err != nil {
-			gui.g.Update(func(*gocui.Gui) error { return ended() })
-		}
-	}()
+	gui.events.mutex.Lock()
+	gui.events.ending = append(gui.events.ending, ends...)
+	gui.events.mutex.Unlock()
+
+	gui.queueRefresh(refreshInstances)
 }
