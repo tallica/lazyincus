@@ -28,9 +28,9 @@ func (gui *Gui) renderLogsToMain(content func() string) tasks.TaskFunc {
 	})
 }
 
-// instanceLogStr reads TailConsoleLog rather than ConsoleLog: the endpoint
-// drains on read, so rendering each raw snapshot would blank the panel on
-// every tick with nothing new buffered.
+// instanceLogStr reads TailConsoleLog rather than ConsoleLog: a running
+// container's log drains on read, so rendering each raw snapshot would
+// blank the panel on every tick with nothing new buffered.
 func (gui *Gui) instanceLogStr(instance *commands.Instance) string {
 	content, err := instance.TailConsoleLog()
 	if err != nil {

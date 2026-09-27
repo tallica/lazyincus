@@ -4,8 +4,10 @@ package incustest
 
 import (
 	"errors"
+	"io"
 	"net/url"
 	"slices"
+	"strings"
 	"sync"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -35,6 +37,9 @@ type Server struct {
 	// one are.
 	NetworkLeases map[string]map[string][]api.NetworkLease
 	NetworkStates map[string]api.NetworkState
+	// ConsoleLogs by instance name: what each read of its console log
+	// returns.
+	ConsoleLogs map[string]string
 	// NetworkACLs by name, NetworkForwards by network.
 	NetworkACLs     map[string]api.NetworkACL
 	NetworkForwards map[string][]api.NetworkForward
@@ -284,4 +289,8 @@ func (s *Server) GetStoragePoolVolumes(pool string) ([]api.StorageVolume, error)
 
 func (s *Server) GetStoragePoolVolumesAllProjects(pool string) ([]api.StorageVolume, error) {
 	return slices.Clone(s.Volumes[pool]), nil
+}
+
+func (s *Server) GetInstanceConsoleLog(name string, _ *incus.InstanceConsoleLogArgs) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader(s.ConsoleLogs[name])), nil
 }
