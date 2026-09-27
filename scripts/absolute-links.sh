@@ -4,7 +4,7 @@
 # Usage: scripts/absolute-links.sh v0.8.1 < README.md
 #
 # README.md and CHANGELOG.md link to their neighbours in the repo — docs/,
-# BACKLOG.md, the screenshot. Away from a checkout those links have nothing to
+# BACKLOG.md, the demo gif. Away from a checkout those links have nothing to
 # resolve against: on a release page they hang off the repo root and 404, and
 # in a release tarball the neighbours aren't there at all. Pinning them to the
 # tag points each one at the tree that release shipped with.
