@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
+	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Events lazyincus's own polling makes the daemon send must not refresh
@@ -215,7 +216,7 @@ func TestInstanceUpdatedRefreshesUsedByAtMostEveryInterval(t *testing.T) {
 	gui.onEvent(updated)
 
 	gui.events.mutex.Lock()
-	assert.Equal(t, refreshVolumes|refreshNetworks|refreshProfiles, gui.events.pending)
+	assert.Equal(t, refreshInstances|refreshVolumes|refreshNetworks|refreshProfiles, gui.events.pending)
 	gui.events.pending = 0
 	gui.events.mutex.Unlock()
 
@@ -459,4 +460,50 @@ func TestTheConnectionPopupFollowsTheStream(t *testing.T) {
 	s.server.SetDown(false)
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 10*time.Second, 20*time.Millisecond)
 	require.Eventually(t, func() bool { return !popup() }, 800*time.Millisecond, 20*time.Millisecond, "down after the reopen")
+}
+
+// Reading a tab means the main panel has focus, not the list; a change
+// still has to reach it.
+func TestTheConfigTabFollowsAChangeWhileBeingRead(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.Panels.Instances.SetMainTab("config") })
+	s.settle(t, "volatile.base_image")
+	s.do(t, func() error { return s.gui.handleEnterMain(s.g, s.gui.Views.Instances) })
+
+	instances := fixtureServer().Instances
+	for i := range instances {
+		if instances[i].Name == "a-name-long-enough-to-be-cut-off" {
+			instances[i].Config = map[string]string{
+				"volatile.base_image": "0123456789abcdef0123456789abcdef", "environment.FOOBAR": "2",
+			}
+		}
+	}
+	s.server.SetInstances(instances)
+	require.NoError(t, s.gui.refreshInstances())
+
+	s.settle(t, "environment.FOOBAR")
+	s.do(t, func() error {
+		assert.True(t, s.gui.IsCurrentView(s.gui.Views.Main), "the main panel keeps focus")
+		return nil
+	})
+}
+
+// A service with one instance has no replica row: its own row's Config tab
+// shows the instance's config, and has to follow a change to it.
+func TestAServiceRowFollowsItsInstancesConfig(t *testing.T) {
+	log := commands.NewDummyLog()
+	gui := &Gui{Log: log, Tr: i18n.NewTranslationSet(log, "en")}
+	key := gui.getServicesPanel().ContextState.GetItemContextCacheKey
+
+	instance := &commands.Instance{Name: "redis-1", Project: "playground", Instance: api.InstanceFull{Instance: api.Instance{
+		Status: "Running", InstancePut: api.InstancePut{Config: map[string]string{"environment.FOOBAR": "1"}},
+	}}}
+	row := &commands.ServiceRow{Service: &commands.ComposeService{Name: "redis", Instances: []*commands.Instance{instance}}}
+	before := key(row)
+
+	instance.Instance.Config = map[string]string{"environment.FOOBAR": "2"}
+
+	assert.NotEqual(t, before, key(row))
 }

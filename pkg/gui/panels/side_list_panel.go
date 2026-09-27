@@ -314,11 +314,24 @@ func (self *SideListPanel[T]) RerenderList() error {
 		}
 	}
 
-	if self.Gui.IsCurrentView(self.View) {
+	if self.showsMain() {
 		return self.HandleSelect()
 	}
 
 	return nil
+}
+
+// showsMain is whether the main panel is this panel's: the panel focused,
+// or the main panel entered from it, a tab being read - which is when a
+// change the new items bring has to reach it.
+func (self *SideListPanel[T]) showsMain() bool {
+	if self.Gui.IsCurrentView(self.View) {
+		return true
+	}
+
+	mainView := self.Gui.GetMainView()
+
+	return mainView != nil && self.Gui.IsCurrentView(mainView) && mainView.ParentView == self.View
 }
 
 // FitToWidth re-renders the rows if the panel has changed width since they

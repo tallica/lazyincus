@@ -60,7 +60,14 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 					"-" + strconv.Itoa(len(row.Service.Instances))
 
 				if row.Instance != nil {
-					key += "-" + row.Instance.Instance.Status + "-" + row.Instance.ConfigFingerprint()
+					key += "-" + row.Instance.Instance.Status
+				}
+
+				// The config of every instance the row stands for - a
+				// service's own row too, whose Config tab shows each - so
+				// the tabs follow a change to one.
+				for _, instance := range row.Instances() {
+					key += "-" + instance.ConfigFingerprint()
 				}
 
 				return key

@@ -279,10 +279,11 @@ func (gui *Gui) onEvent(event commands.Event) {
 	gui.queueRefresh(kinds)
 }
 
-// onInstanceUpdated refreshes the lists counting what an instance's config
-// attaches it to - a volume, a network, a profile - at most once per
+// onInstanceUpdated refreshes the instances and services, whose tabs show
+// an instance's config, and the lists counting what that config attaches
+// it to - a volume, a network, a profile - at most once per
 // updatedInterval, the last update in a run of them still getting its
-// refresh. The instances list is the 2s poll's.
+// refresh.
 func (gui *Gui) onInstanceUpdated() {
 	gui.events.mutex.Lock()
 
@@ -300,7 +301,7 @@ func (gui *Gui) onInstanceUpdated() {
 		gui.events.updateDue, gui.events.updatedAt = false, time.Now()
 		gui.events.mutex.Unlock()
 
-		gui.queueRefresh(refreshVolumes | refreshNetworks | refreshProfiles)
+		gui.queueRefresh(usedBy &^ refreshImages)
 	}
 
 	if wait <= 0 {
