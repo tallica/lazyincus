@@ -22,8 +22,9 @@ type Snapshot struct {
 
 	// Volume is the volume a volume snapshot was taken of, nil for an
 	// instance's; VolumeSnapshot is then what the daemon says of it, and
-	// Snapshot otherwise.
+	// Snapshot otherwise. Instance is the instance of an instance's.
 	Volume         *Volume
+	Instance       *Instance
 	Snapshot       api.InstanceSnapshot
 	VolumeSnapshot api.StorageVolumeSnapshot
 
@@ -147,6 +148,7 @@ func (i *Instance) Snapshots() []*Snapshot {
 			Project:   i.Project,
 			Owner:     i.Name,
 			Name:      snapshotName(apiSnapshot.Name),
+			Instance:  i,
 			Snapshot:  apiSnapshot,
 			Client:    i.Client,
 			OSCommand: i.OSCommand,

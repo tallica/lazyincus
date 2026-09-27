@@ -166,6 +166,7 @@ func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 		"Starting":   "S",
 		"Stopping":   "S",
 		"Restarting": "S",
+		"Restoring":  "S",
 		"Freezing":   "P",
 		"Thawed":     "T",
 	}
@@ -178,6 +179,7 @@ func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 		"Starting":   '⟳',
 		"Stopping":   '⟳',
 		"Restarting": '⟳',
+		"Restoring":  '⟳',
 		"Freezing":   '◫',
 		"Thawed":     '▶',
 	}
@@ -205,7 +207,7 @@ func StatusColor(status string) color.Attribute {
 		return color.FgGreen
 	case "Stopped", "Error":
 		return color.FgRed
-	case "Frozen", "Starting", "Stopping", "Restarting", "Freezing", "Thawed":
+	case "Frozen", "Starting", "Stopping", "Restarting", "Restoring", "Freezing", "Thawed":
 		return color.FgYellow
 	default:
 		return color.FgWhite

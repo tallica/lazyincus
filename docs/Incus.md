@@ -97,9 +97,11 @@ inferred.
   `Running` for the whole of its shutdown. A restart goes from `Running` to
   `Running` with a second or two of `Stopped` between, which the 2-second
   poll rarely lands in, and a row that did would drop to the stopped end
-  of the list and back. So an action lazyincus starts marks the instance
-  itself (`Instance.BeginTransition`) until it's done: the row reads
-  `starting`, `stopping` or `restarting`, and keeps its place.
+  of the list and back. Restoring a running instance's snapshot is the
+  same: Incus stops it, rolls it back and starts it again. So an action
+  lazyincus starts marks the instance itself (`Instance.BeginTransition`)
+  until a listing taken after it lands: the row reads `starting`,
+  `stopping`, `restarting` or `restoring`, and keeps its place.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so

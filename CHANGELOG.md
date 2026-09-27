@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Restoring a snapshot says so on the instance's row - `restoring` - until it's done, and the instance keeps its place in the list. Incus stops a running instance to roll it back and starts it again, so the row used to read `running` throughout, or drop to the stopped end of the list for a moment and come back.
+
 ## [0.10.1] - 2026-09-27
 
 ### Fixed

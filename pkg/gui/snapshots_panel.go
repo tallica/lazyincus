@@ -577,6 +577,12 @@ func (gui *Gui) snapshotRestore(snapshot *commands.Snapshot) error {
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RestoringStatus, func() error {
+			// Incus restarts a running instance to restore it; see
+			// docs/Incus.md, "Status mid-action".
+			if snapshot.Instance != nil {
+				return gui.inTransition(snapshot.Instance, "Restoring", snapshot.Restore)
+			}
+
 			if err := snapshot.Restore(); err != nil {
 				return gui.createErrorPanel(err.Error())
 			}
