@@ -26,6 +26,8 @@ gui:
       - bold
     inactiveBorderColor:
       - default
+    # Where the palette's blue is too light to read coloured text on,
+    # a dark grey works on any dark theme, for example: ["#515151"]
     selectedLineBgColor:
       - blue
     optionsTextColor:
