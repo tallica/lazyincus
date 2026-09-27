@@ -7,6 +7,7 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/sasha-s/go-deadlock"
+	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
@@ -191,6 +192,30 @@ func (gui *Gui) eventsOpened() {
 
 	gui.eventsLive.Store(true)
 	gui.queueRefresh(usedBy)
+
+	scope := gui.IncusCommand.ProjectName()
+	if scope == "" {
+		scope = "all projects"
+	}
+
+	gui.Log.WithField("scope", scope).Debug("event stream open")
+}
+
+// logEvent records every event the stream delivers, those that change
+// nothing included, under --debug.
+func (gui *Gui) logEvent(event commands.Event) {
+	if !gui.Log.Logger.IsLevelEnabled(logrus.DebugLevel) {
+		return
+	}
+
+	fields := logrus.Fields{"type": event.Type, "project": event.Project, "action": event.Action}
+	if event.Type == api.EventTypeOperation {
+		fields["operation"] = event.Operation
+		fields["status"] = event.Status.String()
+		fields["instances"] = event.Instances
+	}
+
+	gui.Log.WithFields(fields).Debug("event")
 }
 
 // rescopeEvents has watchEvents reopen its listener for the scope the
@@ -216,6 +241,8 @@ func (gui *Gui) onEvent(event commands.Event) {
 	if gui.isStopped() {
 		return
 	}
+
+	gui.logEvent(event)
 
 	if event.Type == api.EventTypeOperation {
 		gui.onOperation(event)

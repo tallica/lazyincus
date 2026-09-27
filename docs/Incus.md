@@ -91,6 +91,10 @@ inferred.
   operation's only name, so `operationStatuses` matches those strings; one
   it doesn't know marks nothing. When the stream drops, the marks of
   operations still under way come off, no event being left to end them.
+  Under `--debug` every event the stream delivers, the ones that change
+  nothing included, goes to `development.log` in the config directory,
+  with a line each time a stream opens naming what it listens to - the
+  place to look when a list doesn't refresh.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an

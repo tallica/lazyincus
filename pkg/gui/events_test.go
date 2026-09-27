@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/lxc/incus/v7/shared/api"
+	"github.com/sirupsen/logrus"
+	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -299,7 +301,7 @@ func projectRow(screen, project, name string) string {
 func bareGui(t *testing.T) *Gui {
 	t.Helper()
 
-	gui := &Gui{stopped: make(chan struct{})}
+	gui := &Gui{stopped: make(chan struct{}), Log: commands.NewDummyLog()}
 	gui.PauseBackgroundThreads.Store(true)
 	t.Cleanup(func() {
 		close(gui.stopped)
@@ -307,4 +309,36 @@ func bareGui(t *testing.T) *Gui {
 	})
 
 	return gui
+}
+
+func TestEveryEventIsLoggedUnderDebug(t *testing.T) {
+	gui := bareGui(t)
+
+	logger, hook := logtest.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+	gui.Log = logrus.NewEntry(logger)
+
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Project: "default", Action: api.EventLifecycleInstanceExec})
+	gui.onEvent(commands.Event{
+		Type: api.EventTypeOperation, Project: "default", Action: "Executing command",
+		Operation: "op1", Status: api.Running, Instances: []string{"web"},
+	})
+
+	entries := hook.AllEntries()
+	require.Len(t, entries, 2)
+	assert.Equal(t, api.EventLifecycleInstanceExec, entries[0].Data["action"], "logged though it refreshes nothing")
+	assert.Equal(t, "Running", entries[1].Data["status"])
+	assert.Equal(t, []string{"web"}, entries[1].Data["instances"])
+}
+
+func TestEventsAreNotLoggedWithoutDebug(t *testing.T) {
+	gui := bareGui(t)
+
+	logger, hook := logtest.NewNullLogger()
+	logger.SetLevel(logrus.ErrorLevel)
+	gui.Log = logrus.NewEntry(logger)
+
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleInstanceExec})
+
+	assert.Empty(t, hook.AllEntries())
 }
