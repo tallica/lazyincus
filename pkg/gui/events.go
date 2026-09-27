@@ -39,6 +39,8 @@ var eventRefreshes = map[string]refreshKind{
 	api.EventLifecycleInstanceResumed:         refreshInstances,
 	api.EventLifecycleInstanceRestored:        refreshInstances,
 	api.EventLifecycleInstanceMigrated:        refreshInstances,
+	api.EventLifecycleInstanceAgentStarted:    refreshInstances,
+	api.EventLifecycleInstanceAgentStopped:    refreshInstances,
 	api.EventLifecycleInstanceSnapshotCreated: refreshInstances,
 	api.EventLifecycleInstanceSnapshotDeleted: refreshInstances,
 	api.EventLifecycleInstanceSnapshotRenamed: refreshInstances,

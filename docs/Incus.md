@@ -73,8 +73,12 @@ inferred.
   next. `instance-updated` - a device attached, a profile added - refreshes
   the lists counting what uses a volume, network or profile, but at most
   every 10s: ic-healthd sends one per instance each time it records a
-  healthcheck. The polls stay: nothing sends an event for CPU, memory or a
-  DHCP address. While a stream is open, the images, volumes, networks and
+  healthcheck. `instance-agent-started` refreshes the instances: a VM's
+  state comes from its agent once there is one (`renderState` in the qemu
+  driver), and until then from the host side - on 7.4 a restarted VM's
+  address read `eth0` within 2s, then the guest's own `enp5s0` once the
+  agent was up, 7s later. The polls stay: nothing sends an
+  event for CPU, memory or a DHCP address. While a stream is open, the images, volumes, networks and
   profiles polls drop from 10s to once a minute, left for what has no
   event - a volume's size, an image's last use - and each time one opens,
   every list is fetched again for whatever changed while none was.

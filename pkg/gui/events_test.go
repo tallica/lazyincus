@@ -31,6 +31,11 @@ func TestAnInstanceComingOrGoingRefreshesEveryUsedByCount(t *testing.T) {
 	assert.Equal(t, refreshInstances, eventRefreshes[api.EventLifecycleInstanceStopped])
 }
 
+// A VM's agent reports its state once it's up; the list asks again then.
+func TestAVMsAgentStartingRefreshesTheInstances(t *testing.T) {
+	assert.Equal(t, refreshInstances, eventRefreshes[api.EventLifecycleInstanceAgentStarted])
+}
+
 func TestABurstOfEventsIsOneRefresh(t *testing.T) {
 	gui := &Gui{stopped: make(chan struct{})}
 
