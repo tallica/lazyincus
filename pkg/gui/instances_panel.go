@@ -116,7 +116,7 @@ func sortInstances(a *commands.Instance, b *commands.Instance) bool {
 }
 
 func isStopped(instance *commands.Instance) bool {
-	return strings.EqualFold(instance.Instance.Status, "Stopped")
+	return strings.EqualFold(instance.Status(), "Stopped")
 }
 
 // isLocalComposeInstance reports whether the services panel already has this
@@ -241,11 +241,7 @@ func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
 // refreshed.
 func (gui *Gui) instanceStart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.StartingStatus, func() error {
-		if err := instance.Start(); err != nil {
-			return gui.createErrorPanel(err.Error())
-		}
-
-		return gui.refreshInstancesAndServices()
+		return gui.inTransition(instance, "Starting", instance.Start)
 	})
 }
 
@@ -258,11 +254,7 @@ func (gui *Gui) instanceStop(instance *commands.Instance) error {
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
-			if err := instance.Stop(); err != nil {
-				return gui.createErrorPanel(err.Error())
-			}
-
-			return gui.refreshInstancesAndServices()
+			return gui.inTransition(instance, "Stopping", instance.Stop)
 		})
 	}, nil)
 }
@@ -274,23 +266,43 @@ func (gui *Gui) instanceForceStop(instance *commands.Instance) error {
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.StoppingStatus, func() error {
-			if err := instance.ForceStop(); err != nil {
-				return gui.createErrorPanel(err.Error())
-			}
-
-			return gui.refreshInstancesAndServices()
+			return gui.inTransition(instance, "Stopping", instance.ForceStop)
 		})
 	}, nil)
 }
 
 func (gui *Gui) instanceRestart(instance *commands.Instance) error {
 	return gui.WithWaitingStatus(gui.Tr.RestartingStatus, func() error {
-		if err := instance.Restart(); err != nil {
-			return gui.createErrorPanel(err.Error())
-		}
-
-		return gui.refreshInstancesAndServices()
+		return gui.inTransition(instance, "Restarting", instance.Restart)
 	})
+}
+
+// inTransition shows status on the instance's row while action runs off
+// the main loop, then refreshes both lists; see Instance.BeginTransition.
+// The mark comes off only once the refresh has applied: before it, the
+// row would fall back on the last poll, which may have caught the
+// instance stopped halfway through a restart.
+func (gui *Gui) inTransition(instance *commands.Instance, status string, action func() error) error {
+	end := instance.BeginTransition(status)
+	gui.g.Update(func(*gocui.Gui) error { return gui.rerenderInstanceLists() })
+
+	ended := func() error {
+		end()
+		return gui.rerenderInstanceLists()
+	}
+
+	if err := action(); err != nil {
+		gui.g.Update(func(*gocui.Gui) error { return ended() })
+		return err
+	}
+
+	// A failed fetch skips ended, so the mark comes off here instead.
+	err := gui.refresh(ended, gui.fetchInstances, gui.fetchServices)
+	if err != nil {
+		gui.g.Update(func(*gocui.Gui) error { return ended() })
+	}
+
+	return err
 }
 
 func (gui *Gui) instancePauseFreeze(instance *commands.Instance) error {

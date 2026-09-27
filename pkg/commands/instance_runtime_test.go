@@ -160,3 +160,19 @@ func TestVolumeSnapshots(t *testing.T) {
 	instanceSnapshot := &Snapshot{Project: "stack", Owner: "data", Name: "nightly"}
 	assert.NotEqual(t, instanceSnapshot.Key(), snapshot.Key())
 }
+
+func TestTransitionOutlivesARefresh(t *testing.T) {
+	var runtimes instanceRuntimes
+
+	first := listed("default", "vm", "Running")
+	runtimes.attach(first, 1)
+
+	end := first.BeginTransition("Restarting")
+
+	second := listed("default", "vm", "Running")
+	runtimes.attach(second, 2)
+	assert.Equal(t, "Restarting", second.Status())
+
+	end()
+	assert.Equal(t, "Running", second.Status())
+}

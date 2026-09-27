@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- An instance being started, stopped or restarted says so on its row - `starting`, `stopping`, `restarting` - until it's done, and keeps its place in the list. Incus reports a VM as running for the whole of its shutdown, and a restart as running before and after, so the row used to read `running` throughout, apart from a VM restart sometimes dropping it to the bottom of the list, among the stopped instances, for a moment.
 - A VM's Logs tab shows its boot as text. The firmware's and GRUB's terminal codes came through as `[2;J[0 ;0 ;H` litter, and GRUB's white-on-black left the whole boot on a grey block; each reboot now also starts on a line of its own instead of after the last login prompt.
 
 ## [0.10.0] - 2026-09-27

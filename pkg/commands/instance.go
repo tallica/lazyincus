@@ -62,6 +62,39 @@ func (i *Instance) Latest() *Instance {
 	return i.runtime.latest
 }
 
+// Status is the daemon's status, unless BeginTransition says otherwise.
+func (i *Instance) Status() string {
+	if i.runtime == nil {
+		return i.Instance.Status
+	}
+
+	i.runtime.mutex.Lock()
+	defer i.runtime.mutex.Unlock()
+
+	if i.runtime.transition != "" {
+		return i.runtime.transition
+	}
+
+	return i.Instance.Status
+}
+
+// BeginTransition has Status report status until the returned func is
+// called, across refreshes: the daemon shows no status mid-action (see
+// docs/Incus.md, "Status mid-action").
+func (i *Instance) BeginTransition(status string) (end func()) {
+	runtime := i.runtimeOrOwn()
+
+	runtime.mutex.Lock()
+	runtime.transition = status
+	runtime.mutex.Unlock()
+
+	return func() {
+		runtime.mutex.Lock()
+		runtime.transition = ""
+		runtime.mutex.Unlock()
+	}
+}
+
 // IsVM returns true if the instance is a virtual machine rather than a container.
 func (i *Instance) IsVM() bool {
 	return i.Instance.Type == "virtual-machine"

@@ -116,10 +116,10 @@ func (s *ComposeService) Status() string {
 		return ServiceNone
 	}
 
-	status := s.Instances[0].Instance.Status
+	status := s.Instances[0].Status()
 
 	for _, instance := range s.Instances[1:] {
-		if !strings.EqualFold(instance.Instance.Status, status) {
+		if !strings.EqualFold(instance.Status(), status) {
 			return ServicePartial
 		}
 	}

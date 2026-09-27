@@ -8,13 +8,15 @@ import (
 
 // instanceRuntime is what outlives the Instance each refresh replaces: the
 // newest of those, the console log drained from it so far - the endpoint
-// hands each byte out once - and which `ps` worked in it.
+// hands each byte out once - which `ps` worked in it, and what lazyincus
+// is in the middle of doing to it.
 type instanceRuntime struct {
 	mutex             deadlock.Mutex
 	latest            *Instance
 	logBuffer         strings.Builder
 	stoppedLogFetched bool
 	topCommand        []string
+	transition        string
 	// listing is the newest listing that has seen the instance.
 	listing uint64
 }

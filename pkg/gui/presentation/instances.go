@@ -151,7 +151,7 @@ func displayHealth(health string) string {
 
 // getInstanceDisplayStatus returns the colored status of the instance
 func getInstanceDisplayStatus(guiConfig *config.GuiConfig, instance *commands.Instance) string {
-	return DisplayStatus(guiConfig, instance.Instance.Status)
+	return DisplayStatus(guiConfig, instance.Status())
 }
 
 // DisplayStatus renders an instance status the way gui.instanceStatusStyle
@@ -159,25 +159,27 @@ func getInstanceDisplayStatus(guiConfig *config.GuiConfig, instance *commands.In
 // service is its instances, so its status is one of theirs.
 func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 	shortStatusMap := map[string]string{
-		"Running":  "R",
-		"Stopped":  "X",
-		"Frozen":   "P",
-		"Error":    "E",
-		"Starting": "S",
-		"Stopping": "S",
-		"Freezing": "P",
-		"Thawed":   "T",
+		"Running":    "R",
+		"Stopped":    "X",
+		"Frozen":     "P",
+		"Error":      "E",
+		"Starting":   "S",
+		"Stopping":   "S",
+		"Restarting": "S",
+		"Freezing":   "P",
+		"Thawed":     "T",
 	}
 
 	iconStatusMap := map[string]rune{
-		"Running":  '▶',
-		"Stopped":  '⨯',
-		"Frozen":   '◫',
-		"Error":    '!',
-		"Starting": '⟳',
-		"Stopping": '⟳',
-		"Freezing": '◫',
-		"Thawed":   '▶',
+		"Running":    '▶',
+		"Stopped":    '⨯',
+		"Frozen":     '◫',
+		"Error":      '!',
+		"Starting":   '⟳',
+		"Stopping":   '⟳',
+		"Restarting": '⟳',
+		"Freezing":   '◫',
+		"Thawed":     '▶',
 	}
 
 	display := status
@@ -203,7 +205,7 @@ func StatusColor(status string) color.Attribute {
 		return color.FgGreen
 	case "Stopped", "Error":
 		return color.FgRed
-	case "Frozen", "Starting", "Stopping", "Freezing", "Thawed":
+	case "Frozen", "Starting", "Stopping", "Restarting", "Freezing", "Thawed":
 		return color.FgYellow
 	default:
 		return color.FgWhite

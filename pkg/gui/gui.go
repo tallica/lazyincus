@@ -522,6 +522,11 @@ func (gui *Gui) reloadConfig() error {
 	gui.styleAllViews()
 	gui.g.Mouse = !gui.Config.UserConfig.Gui.IgnoreMouseEvents
 
+	return gui.rerenderInstanceLists()
+}
+
+// rerenderInstanceLists redraws both panels an instance can be a row in.
+func (gui *Gui) rerenderInstanceLists() error {
 	if err := gui.Panels.Instances.RerenderList(); err != nil {
 		return err
 	}

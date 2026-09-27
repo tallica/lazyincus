@@ -91,6 +91,15 @@ inferred.
   and unfreeze clears it. The marker is written with a PATCH of that one
   key, answered synchronously, not a read-modify-write that would race
   ic-healthd's own writes to the same config.
+- **Status mid-action**: the daemon has no in-between status for an
+  instance. While a stop holds the instance it reports `Running`, and while
+  a start does, `Stopped` (`statusCode` in each driver), so a VM reads
+  `Running` for the whole of its shutdown. A restart goes from `Running` to
+  `Running` with a second or two of `Stopped` between, which the 2-second
+  poll rarely lands in, and a row that did would drop to the stopped end
+  of the list and back. So an action lazyincus starts marks the instance
+  itself (`Instance.BeginTransition`) until it's done: the row reads
+  `starting`, `stopping` or `restarting`, and keeps its place.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so
