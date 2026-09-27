@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-09-27
+
 ### Fixed
 - An instance being started, stopped or restarted says so on its row - `starting`, `stopping`, `restarting` - until it's done, and keeps its place in the list. Incus reports a VM as running for the whole of its shutdown, and a restart as running before and after, so the row used to read `running` throughout, apart from a VM restart sometimes dropping it to the bottom of the list, among the stopped instances, for a moment.
 - A VM's Logs tab shows its boot as text. The firmware's and GRUB's terminal codes came through as `[2;J[0 ;0 ;H` litter, and GRUB's white-on-black left the whole boot on a grey block; each reboot now also starts on a line of its own instead of after the last login prompt.
@@ -229,7 +231,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/tallica/lazyincus/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/tallica/lazyincus/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/tallica/lazyincus/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/tallica/lazyincus/compare/v0.8.1...v0.9.0
