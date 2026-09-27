@@ -14,6 +14,7 @@ import (
 	"github.com/lxc/incus/v7/shared/util"
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/i18n"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // Instance represents an Incus instance (either a container or a VM).
@@ -94,6 +95,27 @@ func (c *IncusCommand) MarkInstance(project, name, status string) (end func()) {
 	}
 
 	return runtime.beginTransition(status)
+}
+
+// ConfigFingerprint changes with what the Config and Env tabs show of the
+// instance's configuration, ic-healthd's verdicts aside (docs/Panels.md,
+// "Config").
+func (i *Instance) ConfigFingerprint() string {
+	withoutHealth := func(config map[string]string) map[string]string {
+		kept := make(map[string]string, len(config))
+		for key, value := range config {
+			if !strings.HasPrefix(key, "user.healthcheck.") {
+				kept[key] = value
+			}
+		}
+
+		return kept
+	}
+
+	full := i.Instance
+
+	return utils.Fingerprint(withoutHealth(full.Config), withoutHealth(full.ExpandedConfig),
+		full.Devices, full.ExpandedDevices, full.Profiles, full.Description)
 }
 
 // IsVM returns true if the instance is a virtual machine rather than a container.

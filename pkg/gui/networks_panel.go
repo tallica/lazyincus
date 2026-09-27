@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,7 +54,10 @@ func (gui *Gui) getNetworksPanel() *panels.SideListPanel[*commands.Network] {
 				}
 			},
 			GetItemContextCacheKey: func(network *commands.Network) string {
-				return "networks-" + network.Key()
+				// Forwards and ACLs aren't in the network; their events count
+				// towards networkTabs instead.
+				return "networks-" + network.Key() + "-" + utils.Fingerprint(network.Network) +
+					"-" + strconv.FormatUint(gui.networkTabs.Load(), 10)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Network]{

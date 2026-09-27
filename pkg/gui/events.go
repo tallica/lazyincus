@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/jesseduffield/gocui"
@@ -265,6 +266,10 @@ func (gui *Gui) onEvent(event commands.Event) {
 	kinds := eventRefreshes[event.Action]
 	if kinds == 0 {
 		return
+	}
+
+	if strings.HasPrefix(event.Action, "network-forward-") || strings.HasPrefix(event.Action, "network-acl-") {
+		gui.networkTabs.Add(1)
 	}
 
 	gui.queueRefresh(kinds)

@@ -60,7 +60,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 					"-" + strconv.Itoa(len(row.Service.Instances))
 
 				if row.Instance != nil {
-					key += "-" + row.Instance.Instance.Status
+					key += "-" + row.Instance.Instance.Status + "-" + row.Instance.ConfigFingerprint()
 				}
 
 				return key

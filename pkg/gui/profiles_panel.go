@@ -34,7 +34,7 @@ func (gui *Gui) getProfilesPanel() *panels.SideListPanel[*commands.Profile] {
 				}
 			},
 			GetItemContextCacheKey: func(profile *commands.Profile) string {
-				return "profiles-" + profile.Key()
+				return "profiles-" + profile.Key() + "-" + utils.Fingerprint(profile.Profile)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Profile]{

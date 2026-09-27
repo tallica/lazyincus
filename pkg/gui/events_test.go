@@ -408,3 +408,38 @@ func TestAPauseFromAnywhereMarksItsInstance(t *testing.T) {
 	require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "unfreezing") },
 		5*time.Second, 50*time.Millisecond)
 }
+
+// A tab is drawn once for the item it shows; a change a refresh brings
+// draws it again, rather than waiting for the item to be selected anew.
+func TestTheConfigTabFollowsAConfigChange(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.Panels.Instances.SetMainTab("config") })
+	s.settle(t, "volatile.base_image")
+
+	instances := fixtureServer().Instances
+	for i := range instances {
+		if instances[i].Name == "a-name-long-enough-to-be-cut-off" {
+			instances[i].Config = map[string]string{
+				"volatile.base_image": "0123456789abcdef0123456789abcdef", "user.note": "set-from-a-shell",
+			}
+		}
+	}
+	s.server.SetInstances(instances)
+	require.NoError(t, s.gui.refreshInstances())
+
+	s.settle(t, "set-from-a-shell")
+}
+
+// Forwards and ACLs aren't part of the network, so their events alone say
+// its tabs are out of date.
+func TestForwardAndACLEventsRedrawTheNetworkTabs(t *testing.T) {
+	gui := bareGui(t)
+
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleNetworkForwardCreated})
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleNetworkACLUpdated})
+	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleNetworkUpdated})
+
+	assert.Equal(t, uint64(2), gui.networkTabs.Load())
+}

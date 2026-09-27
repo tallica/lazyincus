@@ -65,6 +65,9 @@ type Gui struct {
 	eventsLive atomic.Bool
 	// watching is watchEvents, which run waits out.
 	watching sync.WaitGroup
+	// networkTabs counts the forward and ACL events, which change what a
+	// network's tabs show without changing the network.
+	networkTabs atomic.Uint64
 }
 
 type Panels struct {

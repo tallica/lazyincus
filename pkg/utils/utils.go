@@ -3,8 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -452,4 +454,21 @@ func foregroundOnly(params string) string {
 	}
 
 	return "\x1B[" + strings.Join(kept, ";") + "m"
+}
+
+// Fingerprint is a short digest of the values' JSON, for telling whether an
+// item a refresh brought is the one a tab was drawn from.
+func Fingerprint(values ...any) string {
+	hash := fnv.New64a()
+
+	for _, value := range values {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return ""
+		}
+
+		_, _ = hash.Write(encoded)
+	}
+
+	return strconv.FormatUint(hash.Sum64(), 36)
 }

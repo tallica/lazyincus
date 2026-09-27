@@ -250,7 +250,12 @@ up:
 - **Logs** — polls `Instance.TailConsoleLog()` and re-renders the
   accumulated buffer. See "Logs" below for why a raw snapshot doesn't work.
 - **Config** — YAML dump of `api.InstanceFull`, nothing above it: identity
-  is the Info tab's.
+  is the Info tab's. Drawn once per item, like every tab that isn't polled;
+  the panel's cache key carries `ConfigFingerprint`, so a refresh that
+  brings a changed config draws it again - the same goes for Env and for
+  the other lists' Config tabs, each keyed on its item. ic-healthd's
+  `user.healthcheck.*` writes are left out: it records a verdict every few
+  seconds, and the tab would never hold still.
 - **Env** — `environment.*` entries from `ExpandedConfig` (expanded, so
   profile-inherited variables show up too).
 - **Top** — process list, polled every two seconds. Incus's API reports a
@@ -458,14 +463,17 @@ applies to the network, what becomes of traffic none of their rules match
 network carrying ACLs of their own - found the way `u` finds a network's
 users, through each instance's expanded devices - and then every one of
 those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
-change when someone edits one.
+change when someone edits one, and a `network-acl-*` event says so -
+forwards and ACLs being no part of the network, the event bumps
+`gui.networkTabs`, which the cache key carries, and the tab is drawn again.
 
 Forwards is `incus network forward list` a port to a row: the listen
 address, protocol and port, where it goes - the target port defaulting to
 the listen port, as the daemon's does - and the instance holding that
 address, from the instances' own addresses. A forward's `target_address`,
 which takes every port no entry names, gets a row of its own. Load
-balancers aren't shown; they're OVN's alone.
+balancers aren't shown; they're OVN's alone. Redrawn on a
+`network-forward-*` event, the way ACLs is.
 
 ## Profiles
 

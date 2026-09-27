@@ -27,7 +27,9 @@ func (gui *Gui) getVolumesPanel() *panels.SideListPanel[*commands.Volume] {
 				}
 			},
 			GetItemContextCacheKey: func(volume *commands.Volume) string {
-				return "volumes-" + volume.Key()
+				// Not the usage, which changes all the time and would redraw
+				// the tab with every poll.
+				return "volumes-" + volume.Key() + "-" + utils.Fingerprint(volume.Volume)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Volume]{

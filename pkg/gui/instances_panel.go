@@ -48,9 +48,9 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 				}
 			},
 			GetItemContextCacheKey: func(instance *commands.Instance) string {
-				// Including the instance status in the cache key so that if the
-				// instance restarts we re-read the logs.
-				return "instances-" + instance.Key() + "-" + instance.Instance.Status
+				// The status, so a restart re-reads the logs; the config, so
+				// the Config and Env tabs follow a change to it.
+				return "instances-" + instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Instance]{

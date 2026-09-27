@@ -259,3 +259,17 @@ func TestMarkInstanceFindsAListedInstance(t *testing.T) {
 
 	command.MarkInstance("default", "unlisted", "Stopping")()
 }
+
+// ic-healthd rewrites its verdict every few seconds; a tab redrawn on each
+// would never hold still. Any other change to the config counts.
+func TestConfigFingerprintIgnoresHealthVerdicts(t *testing.T) {
+	instance := listed("default", "web", "Running")
+	instance.Instance.Config = map[string]string{"user.healthcheck.status": "healthy", "limits.cpu": "2"}
+	before := instance.ConfigFingerprint()
+
+	instance.Instance.Config = map[string]string{"user.healthcheck.status": "unhealthy", "limits.cpu": "2"}
+	assert.Equal(t, before, instance.ConfigFingerprint())
+
+	instance.Instance.Config = map[string]string{"user.healthcheck.status": "unhealthy", "limits.cpu": "4"}
+	assert.NotEqual(t, before, instance.ConfigFingerprint())
+}
