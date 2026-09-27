@@ -57,6 +57,10 @@ type state struct {
 	down      bool
 	instances []api.InstanceFull
 	changed   bool
+	images    []api.Image
+	// imagesSet is changed's counterpart for images.
+	imagesSet bool
+	listeners []*listener
 }
 
 // New is a Server answering from fixture.
@@ -80,13 +84,40 @@ func (s *Server) SetInstances(instances []api.InstanceFull) {
 	shared.changed = true
 }
 
-// SetDown makes every listing fail the way an unreachable daemon's does.
+// SetImages replaces the images while the app is running.
+func (s *Server) SetImages(images []api.Image) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.images = images
+	shared.imagesSet = true
+}
+
+func (s *Server) images() []api.Image {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if shared.imagesSet {
+		return slices.Clone(shared.images)
+	}
+
+	return slices.Clone(s.Images)
+}
+
+// SetDown makes every listing fail the way an unreachable daemon's does,
+// and drops the open event streams.
 func (s *Server) SetDown(down bool) {
 	shared := s.shared()
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()
 
 	shared.down = down
+
+	if down {
+		shared.dropListeners()
+	}
 }
 
 // errUnreachable is what the client returns for a daemon it never reached.
@@ -185,11 +216,11 @@ func plain(instances []api.InstanceFull) []api.Instance {
 }
 
 func (s *Server) GetImages() ([]api.Image, error) {
-	return inProject(s.Images, s.scope(), func(i api.Image) string { return i.Project }), nil
+	return inProject(s.images(), s.scope(), func(i api.Image) string { return i.Project }), nil
 }
 
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
-	return slices.Clone(s.Images), nil
+	return s.images(), nil
 }
 
 func (s *Server) GetProfiles() ([]api.Profile, error) {

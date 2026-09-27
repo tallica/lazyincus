@@ -57,6 +57,9 @@ type Gui struct {
 
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
+
+	events        eventBatch
+	eventsRescope chan struct{}
 }
 
 type Panels struct {
@@ -261,6 +264,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		statusManager: &statusManager{},
 		taskManager:   tasks.NewTaskManager(log, tr),
 		stopped:       make(chan struct{}),
+		eventsRescope: make(chan struct{}, 1),
 	}
 
 	deadlock.Opts.Disable = !gui.Config.Debug
@@ -383,6 +387,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 			}
 		}
 
+		go gui.watchEvents()
+
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
 		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
@@ -438,10 +444,11 @@ func (gui *Gui) setPanels() {
 	}
 }
 
-// refreshInstancesQuiet drives the background poll (Incus has no event
-// stream to subscribe to). It also reports on the connection every tick,
-// whether or not the refresh succeeded - this is what notices a daemon that
-// has gone away, and the footer is otherwise drawn once at startup.
+// refreshInstancesQuiet drives the background poll, which events don't
+// replace (docs/Incus.md, "Events"). It also reports on the connection
+// every tick, whether or not the refresh succeeded - this is what notices a
+// daemon that has gone away, and the footer is otherwise drawn once at
+// startup.
 func (gui *Gui) refreshInstancesQuiet() error {
 	if err := gui.refreshInstances(); err != nil {
 		gui.Log.Warn(err)

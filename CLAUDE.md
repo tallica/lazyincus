@@ -103,7 +103,9 @@ wanting one starts it from `WithWaitingStatus` or `refreshInBackground` —
 and `RerenderList` is never called off it. Each kind of fetch carries a
 `refreshSeq`, so an older fetch that finishes late can't undo a newer one.
 A refresh of several kinds applies each that succeeded even when another
-fails.
+fails. Refreshes come from the pollers, from actions, and from the daemon's
+event stream (`pkg/gui/events.go`), which says straight away when something
+changes; see [docs/Incus.md](docs/Incus.md).
 
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width

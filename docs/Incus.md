@@ -62,6 +62,19 @@ inferred.
   config, state and snapshots in one request, cheap enough for the
   2-second poll. The alternative, a plain list plus `GetInstanceFull` per
   instance, is one request per instance per tick.
+- **Events**: `GetEventsAllProjectsByType`, or `GetEventsByType` for one
+  project, is a websocket the daemon sends lifecycle events down as things
+  change, whoever changed them. lazyincus keeps one open for the scope the
+  panels list, reopening it after a project switch and, backing off, after
+  a drop, and refreshes the lists an event touches once a 200ms burst has
+  passed. Only events that change a list count, named one by one: the
+  daemon also sends them for reads, an `instance-exec` for every `ps` the
+  Top tab runs, so matching by prefix would have each refresh set off the
+  next. `instance-updated` is skipped too - ic-healthd sends one per
+  instance each time it records a healthcheck. The polls stay: nothing
+  sends an event for CPU, memory or a DHCP address. `*incus.EventListener`
+  has unexported fields, so `commands.EventListener` is the interface in
+  front of it that `incustest` implements.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an
