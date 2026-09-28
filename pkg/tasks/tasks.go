@@ -37,14 +37,20 @@ func NewTaskManager(log *logrus.Entry, translationSet *i18n.TranslationSet) *Tas
 
 // Close closes the task manager, killing whatever task may currently be running
 func (t *TaskManager) Close() {
-	if t.currentTask == nil {
+	// Not waitingMutex: NewTask holds it while the last task stops, which a
+	// stuck one never does.
+	t.taskIDMutex.Lock()
+	task := t.currentTask
+	t.taskIDMutex.Unlock()
+
+	if task == nil {
 		return
 	}
 
 	c := make(chan struct{}, 1)
 
 	go func() {
-		t.currentTask.Stop()
+		task.Stop()
 		c <- struct{}{}
 	}()
 
@@ -81,13 +87,17 @@ func (t *TaskManager) NewTask(f func(ctx context.Context)) error {
 			t.Log.Info("task stopped")
 		}
 
-		t.currentTask = &Task{
+		task := &Task{
 			ctx:           ctx,
 			cancel:        cancel,
 			notifyStopped: notifyStopped,
 			Log:           t.Log,
 			f:             f,
 		}
+
+		t.taskIDMutex.Lock()
+		t.currentTask = task
+		t.taskIDMutex.Unlock()
 
 		go func() {
 			f(ctx)
