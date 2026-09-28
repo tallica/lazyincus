@@ -529,3 +529,49 @@ func TestAServiceRowFollowsItsInstancesConfig(t *testing.T) {
 
 	assert.NotEqual(t, before, key(row))
 }
+
+// An image's, volume's, network's or profile's Config tab is drawn again
+// when a refresh brings a change to it.
+func TestAResourcesKeyFollowsItsConfig(t *testing.T) {
+	log := commands.NewDummyLog()
+	gui := &Gui{Log: log, Tr: i18n.NewTranslationSet(log, "en")}
+
+	image := &commands.Image{Fingerprint: "abc"}
+	imageKey := gui.getImagesPanel().ContextState.GetItemContextCacheKey
+	before := imageKey(image)
+	image.Image.Properties = map[string]string{"description": "changed"}
+	assert.NotEqual(t, before, imageKey(image), "image")
+
+	volume := &commands.Volume{Pool: "default", Name: "data"}
+	volumeKey := gui.getVolumesPanel().ContextState.GetItemContextCacheKey
+	before = volumeKey(volume)
+	volume.Volume.Config = map[string]string{"size": "10GiB"}
+	assert.NotEqual(t, before, volumeKey(volume), "volume")
+
+	network := &commands.Network{Name: "incusbr0"}
+	networkKey := gui.getNetworksPanel().ContextState.GetItemContextCacheKey
+	before = networkKey(network)
+	network.Network.Config = map[string]string{"ipv4.nat": "false"}
+	assert.NotEqual(t, before, networkKey(network), "network")
+
+	profile := &commands.Profile{Name: "default"}
+	profileKey := gui.getProfilesPanel().ContextState.GetItemContextCacheKey
+	before = profileKey(profile)
+	profile.Profile.Config = map[string]string{"limits.cpu": "2"}
+	assert.NotEqual(t, before, profileKey(profile), "profile")
+}
+
+// A volume's usage changes with every write to it; a tab redrawn for each
+// would never hold still.
+func TestAVolumesKeyIgnoresItsUsage(t *testing.T) {
+	log := commands.NewDummyLog()
+	gui := &Gui{Log: log, Tr: i18n.NewTranslationSet(log, "en")}
+	key := gui.getVolumesPanel().ContextState.GetItemContextCacheKey
+
+	volume := &commands.Volume{Pool: "default", Name: "data", Usage: &api.StorageVolumeStateUsage{Used: 1024}}
+	before := key(volume)
+
+	volume.Usage = &api.StorageVolumeStateUsage{Used: 2048}
+
+	assert.Equal(t, before, key(volume))
+}
