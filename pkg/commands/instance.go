@@ -377,17 +377,16 @@ func (i *Instance) Addresses(family string) []string {
 	return addresses
 }
 
-// TailConsoleLog accumulates successive console-log fetches into a capped
-// per-instance buffer, giving pollers a stable growing view. It reads the
-// newest refresh's status, a tab that tails the log outliving the refresh
-// that opened it.
+// TailConsoleLog keeps the console log in a capped per-instance buffer,
+// giving pollers a stable growing view. It reads the newest refresh's
+// status, a tab that tails the log outliving the refresh that opened it.
 //
-// Drain-on-read only holds while the instance runs; once stopped, incusd
-// serves the whole persisted log file on every request, so we fetch once
-// after a stop and then leave the buffer alone - otherwise every tick
-// re-appends the entire log. A fetch error returns the last-known-good
-// buffer rather than clearing it, so a transient failure doesn't blank out
-// logs already on screen.
+// Only a running container's fetch is what arrived since the last one, and
+// is added to the buffer; a VM's, and a stopped instance's, is the whole
+// log, and replaces it (docs/Incus.md, "Logs"). A stopped instance's is
+// fetched once and then left alone. A fetch error returns the
+// last-known-good buffer rather than clearing it, so a transient failure
+// doesn't blank out logs already on screen.
 func (i *Instance) TailConsoleLog() (string, error) {
 	latest := i.Latest()
 	runtime := latest.runtimeOrOwn()
@@ -408,8 +407,12 @@ func (i *Instance) TailConsoleLog() (string, error) {
 		var data []byte
 		data, err = io.ReadAll(reader)
 		reader.Close()
-		if err == nil && len(data) > 0 {
+		switch {
+		case err != nil || len(data) == 0:
+		case running && !latest.IsVM():
 			runtime.appendToLog(data)
+		default:
+			runtime.replaceLog(data)
 		}
 	}
 
@@ -431,10 +434,24 @@ func (i *Instance) runtimeOrOwn() *instanceRuntime {
 	return i.runtime
 }
 
+func (r *instanceRuntime) replaceLog(data []byte) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.logBuffer.Reset()
+	r.writeLog(data)
+}
+
 func (r *instanceRuntime) appendToLog(data []byte) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
+	r.writeLog(data)
+}
+
+// writeLog adds to the buffer, keeping its last maxConsoleLogBufferBytes.
+// Called with r.mutex held.
+func (r *instanceRuntime) writeLog(data []byte) {
 	r.logBuffer.Write(data)
 
 	if r.logBuffer.Len() > maxConsoleLogBufferBytes {

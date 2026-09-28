@@ -119,11 +119,12 @@ inferred.
   the `incus` CLI itself — `incus console <name> --show-log` twice in a row
   shows output then nothing). `TailConsoleLog` therefore accumulates reads
   into a capped 256 KiB per-instance buffer, and the tab polls that.
-  Drain-on-read only holds while the instance runs; once stopped, incusd
-  serves the persisted log file in full on every request
-  (`instanceConsoleLogGet`), so `TailConsoleLog` checks `IsRunning()` and
-  fetches just once after a stop — otherwise every poll re-appends the whole
-  log. There's no header-based staleness check available: the client returns
+  Drain-on-read only holds for a running container. A VM's read drains
+  QEMU's ring buffer into a log file and returns the whole file
+  (`ConsoleLog` in the qemu driver), and a stopped instance's is its
+  persisted log in full (`instanceConsoleLogGet`), so either replaces the
+  buffer rather than adding to it - added, a VM's log repeated itself once
+  a second - and a stopped instance's is fetched just once. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
   A VM's console is a serial terminal, and firmware and GRUB write it as
   one: screen clears, cursor moves, `ESC c` resets, and the whole screen

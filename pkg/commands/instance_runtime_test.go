@@ -7,6 +7,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
 func listed(project, name, status string) *Instance {
@@ -175,4 +176,56 @@ func TestTransitionOutlivesARefresh(t *testing.T) {
 
 	end()
 	assert.Equal(t, "Running", second.Status())
+}
+
+// consoleInstance is an instance whose console log the stand-in serves.
+func consoleInstance(kind, status, log string) *Instance {
+	instance := listed("default", "web", status)
+	instance.Instance.Type = kind
+	instance.Client = incustest.New(incustest.Server{ConsoleLogs: map[string]string{"web": log}})
+
+	return instance
+}
+
+// A VM's console log comes back whole each time: the daemon keeps it in a
+// file. Read three times, it's still there once.
+func TestAVMsConsoleLogIsNotRepeated(t *testing.T) {
+	instance := consoleInstance("virtual-machine", "Running", "Booting Debian\n")
+
+	for range 3 {
+		_, err := instance.TailConsoleLog()
+		require.NoError(t, err)
+	}
+
+	log, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+	assert.Equal(t, "Booting Debian\n", log)
+}
+
+// A running container's read is only what arrived since the last one.
+func TestARunningContainersConsoleLogAccumulates(t *testing.T) {
+	instance := consoleInstance("container", "Running", "line\n")
+
+	_, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+
+	log, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+	assert.Equal(t, "line\nline\n", log)
+}
+
+// Stopped, any instance's read is the whole log; it replaces what the
+// running reads gathered rather than repeating it.
+func TestAStoppedContainersWholeLogReplacesTheBuffer(t *testing.T) {
+	instance := consoleInstance("container", "Running", "started\n")
+
+	_, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+
+	instance.Instance.Status = "Stopped"
+	instance.Client = incustest.New(incustest.Server{ConsoleLogs: map[string]string{"web": "started\nstopped\n"}})
+
+	log, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+	assert.Equal(t, "started\nstopped\n", log)
 }
