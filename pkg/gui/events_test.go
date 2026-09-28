@@ -2,6 +2,7 @@ package gui
 
 import (
 	"errors"
+	"maps"
 	"strings"
 	"sync"
 	"testing"
@@ -136,6 +137,60 @@ func TestAnOperationThatDoesNotSucceedEndsItsMark(t *testing.T) {
 				5*time.Second, 50*time.Millisecond)
 		})
 	}
+}
+
+// A compose stack's instances have rows only in the services panel, which
+// is where a restart by ic-healthd or incus-compose has to show.
+func TestAnOperationMarksAServicesRow(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.State.LocalComposeProject = "default"
+		s.gui.State.ComposeServiceDefs = []commands.ComposeService{{Name: "web"}}
+
+		instances := fixtureServer().Instances
+		for i := range instances {
+			if instances[i].Name == "web" {
+				instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
+				instances[i].ExpandedConfig["user.label.incus-compose.service"] = "web"
+			}
+		}
+		s.server.SetInstances(instances)
+	})
+	s.ready(t)
+	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return strings.Contains(serviceRow(s.snapshot(t), "web"), "running") },
+		5*time.Second, 50*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Running, "web"))
+	require.Eventually(t, func() bool { return strings.Contains(serviceRow(s.snapshot(t), "web"), "restarting") },
+		5*time.Second, 50*time.Millisecond)
+
+	s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Success, "web"))
+	require.Eventually(t, func() bool {
+		row := serviceRow(s.snapshot(t), "web")
+		return strings.Contains(row, "running") && !strings.Contains(row, "restarting")
+	}, 5*time.Second, 50*time.Millisecond)
+}
+
+// serviceRow is the services panel's line for the service, cut at the
+// panel's edge.
+func serviceRow(screen, name string) string {
+	inPanel := false
+
+	for line := range strings.Lines(screen) {
+		switch {
+		case strings.Contains(line, "Services ("):
+			inPanel = true
+		case strings.HasPrefix(line, "╰"):
+			inPanel = false
+		case inPanel:
+			if row, ok := strings.CutPrefix(line, "│"+name+" "); ok {
+				row, _, _ = strings.Cut(row, "│")
+				return row
+			}
+		}
+	}
+
+	return ""
 }
 
 // webRow is the instances panel's line for web, cut at the panel's edge:
