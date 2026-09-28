@@ -2,7 +2,6 @@ package gui
 
 import (
 	"errors"
-	"maps"
 	"strings"
 	"sync"
 	"testing"
@@ -143,19 +142,9 @@ func TestAnOperationThatDoesNotSucceedEndsItsMark(t *testing.T) {
 // is where a restart by ic-healthd or incus-compose has to show.
 func TestAnOperationMarksAServicesRow(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
-		s.gui.State.LocalComposeProject = "default"
-		s.gui.State.ComposeServiceDefs = []commands.ComposeService{{Name: "web"}}
-
-		instances := fixtureServer().Instances
-		for i := range instances {
-			if instances[i].Name == "web" {
-				instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
-				instances[i].ExpandedConfig["user.label.incus-compose.service"] = "web"
-			}
-		}
-		s.server.SetInstances(instances)
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
+		labelled(s, map[string]string{"web": "web"})
 	})
-	s.ready(t)
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
 	require.Eventually(t, func() bool { return strings.Contains(serviceRow(s.snapshot(t), "web"), "running") },
 		5*time.Second, 50*time.Millisecond)

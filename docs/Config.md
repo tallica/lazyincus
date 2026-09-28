@@ -89,6 +89,14 @@ your file either).
 | `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used. |
 | `ignore` | []string | `[]` | List rows are hidden when any displayed column contains one of these substrings — status and IP addresses included, not just the name. |
 
+## State
+
+`state.yml`, beside `config.yml`, is what lazyincus remembers rather than
+what you configure: the stacks added to the Stacks panel with `a`, as a
+`stacks` list of absolute directories. lazyincus writes it, where
+`config.yml` is only ever yours to change. It's safe to edit by hand, and
+a missing file is an empty list.
+
 ## What's not here (yet)
 
 Ported from lazydocker's config so far: `gui`, `confirmOnQuit`, `oS`,

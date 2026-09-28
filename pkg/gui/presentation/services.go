@@ -17,7 +17,7 @@ import (
 var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.ComposeService) string{
 	"name": func(_ *config.GuiConfig, service *commands.ComposeService) string { return service.Name },
 	"status": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
-		return displayServiceStatus(guiConfig, service)
+		return DisplayRolledUpStatus(guiConfig, service.Status())
 	},
 	"replicas": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return ServiceReplicas(service)
@@ -155,14 +155,12 @@ var serviceStatusStyles = map[string]map[string]string{
 	"icon":  {commands.ServicePartial: "◐", commands.ServiceNone: "·"},
 }
 
-// displayServiceStatus hands an instance status to the instances panel's
-// own renderer, a service being its instances, and styles the two states
-// that are the service's alone. "none" is white rather than red: a service
-// the compose file declares and nothing is running is the normal state of
-// a stack that's down, not a fault.
-func displayServiceStatus(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
-	status := service.Status()
-
+// DisplayRolledUpStatus hands an instance status to the instances panel's
+// own renderer, a service or a stack being its instances, and styles the
+// two states that are a rollup's alone. "none" is white rather than red:
+// declared and not running is the normal state of a stack that's down, not
+// a fault.
+func DisplayRolledUpStatus(guiConfig *config.GuiConfig, status string) string {
 	statusColor := color.FgWhite
 
 	switch status {

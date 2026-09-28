@@ -366,7 +366,7 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 	var fetches []fetch
 
 	if kinds&refreshInstances != 0 {
-		fetches = append(fetches, gui.fetchInstances, gui.fetchServices)
+		fetches = append(fetches, gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 	}
 
 	if kinds&refreshImages != 0 {

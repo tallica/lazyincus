@@ -120,13 +120,16 @@ Each panel's own behaviour — what it lists, its columns, its main-panel
 tabs, what its keys do — is in [docs/Panels.md](docs/Panels.md), in this
 order:
 
-- **Services** — a compose stack's services, one row each, with a
-  replicated service's instances under it. Present only when there's a
-  compose file in the working directory, and then it's `[1]`. A service is
-  its instances, so the two panels share statuses, columns and renderers;
-  only `partial`, `none` and the replica count are the service's own.
-- **Instances** — containers and VMs across every project, minus the local
-  stack's when the services panel is holding those.
+- **Stacks** — compose project directories: the working directory's, or
+  `-P`'s, and every one added with `a`, saved in `state.yml`. Present only
+  when `incus-compose` is on `PATH`, and then it's `[1]`.
+- **Services** — the selected stack's services, one row each, with a
+  replicated service's instances under it; there whenever Stacks is. A
+  service is its instances, so the two panels share statuses, columns and
+  renderers; only `partial`, `none` and the replica count are the
+  service's own.
+- **Instances** — containers and VMs across every project, minus the
+  listed stacks' when the services panel is holding those.
 - **Snapshots** — follows whichever instance the list above it has
   selected, or the custom volume the volumes list has, rather than having
   a selection of its own; or lists every instance's (`e`).
@@ -243,7 +246,7 @@ tmux new-session -d -s lzr -x 140 -y 40 \
 ```
 
 Move through the lists, every main-panel tab, a project switch or two
-(`P`), and the services panel if there's a stack in the working directory,
+(`P`), and the stacks and services panels if incus-compose is installed,
 for a minute or so; then quit. Any `/tmp/lzi-race.*` file is a race.
 Read-only keys are enough - the races are between reading and refreshing.
 For the event stream, change something from a shell meanwhile - create

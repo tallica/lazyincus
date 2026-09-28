@@ -18,6 +18,7 @@ type Views struct {
 	Profiles  *gocui.View
 	Snapshots *gocui.View
 	Services  *gocui.View
+	Stacks    *gocui.View
 
 	// main panel
 	Main *gocui.View

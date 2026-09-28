@@ -561,6 +561,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		})
 	}
 
+	bindings = append(bindings, gui.stacksKeybindings()...)
 	bindings = append(bindings, gui.servicesKeybindings()...)
 
 	for index, window := range gui.sideWindowNames() {
@@ -666,7 +667,33 @@ func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
 	}
 }
 
+// stacksKeybindings is the Stacks panel's keys: adding and removing a stack,
+// then the Services panel's compose verbs, in its order, over the whole
+// stack.
+func (gui *Gui) stacksKeybindings() []*Binding {
+	binding := func(key rune, handler func(*gocui.Gui, *gocui.View) error, description string) *Binding {
+		return &Binding{ViewName: "stacks", Key: key, Modifier: gocui.ModNone, Handler: handler, Description: description}
+	}
+
+	return []*Binding{
+		binding('a', gui.handleStackAdd, gui.Tr.AddStack),
+		binding('D', onSelected(gui.Panels.Stacks, gui.stackRemove), gui.Tr.RemoveStack),
+		binding('u', gui.onStackTarget(gui.composeUp), gui.Tr.ComposeUp),
+		binding('d', gui.onStackTarget(gui.composeDownMenu), gui.Tr.ComposeDown),
+		binding('U', gui.onStackTarget(gui.composeUpPullRecreate), gui.Tr.ComposeUpPullRecreate),
+		binding('S', gui.onStackTarget(gui.composeVerb("", "start")), gui.Tr.Start),
+		binding('s', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeStop, "stop")), gui.Tr.Stop),
+		binding('r', gui.onStackTarget(gui.composeVerb("", "restart")), gui.Tr.Restart),
+		binding('p', gui.onStack(gui.stackPause), gui.Tr.Pause),
+		binding('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
+		binding('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
+		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
+		binding('C', gui.onStack(gui.stackMenu), gui.Tr.ComposeProjectActions),
+	}
+}
+
 // servicesKeybindings is the Services panel's own keys, in the order the
+
 // keybinding menu lists them - which depends on the selected row. A
 // service's own row leads with the compose verbs the panel is there for;
 // a replica's row leads with the instances panel's keys, in the instances

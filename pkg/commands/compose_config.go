@@ -3,35 +3,78 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"sort"
 	"strings"
 
 	"github.com/goccy/go-yaml"
 )
 
-// composeConfig runs `incus-compose config --format json` for the compose
-// file in the working directory. It resolves the remote first, so it's a
-// real, if fast, subprocess call.
-func (c *IncusCommand) composeConfig() (string, error) {
-	return c.OSCommand.RunExecutableWithOutput(c.OSCommand.NewCmd("incus-compose", "config", "--format", "json"))
+// composeDirEnv is incus-compose's own variable for --project-directory.
+const composeDirEnv = "INCUS_COMPOSE_PROJECT_DIRECTORY"
+
+// ComposeCmd is an incus-compose command against the stack in dir. The
+// directory goes in the environment as well as being the working directory:
+// `-P` sets composeDirEnv for the whole process, which would otherwise
+// point every stack at the one it names.
+func (c *IncusCommand) ComposeCmd(dir string, args ...string) *exec.Cmd {
+	cmd := c.OSCommand.NewCmd("incus-compose", args...)
+	cmd.Dir = dir
+	// exec.Cmd keeps the last of a duplicated variable.
+	cmd.Env = append(cmd.Env, composeDirEnv+"="+dir)
+
+	return cmd
 }
 
-// LocalComposeConfig is the compose project in the working directory: the
-// name incus-compose would act on and the services its file declares.
-func (c *IncusCommand) LocalComposeConfig() (string, []ComposeService, error) {
-	output, err := c.composeConfig()
-	if err != nil {
-		return "", nil, err
+// composeConfig runs `incus-compose config --format json` for the stack in
+// dir. It resolves the remote first, so it's a real, if fast, subprocess
+// call.
+func (c *IncusCommand) composeConfig(dir string) (string, error) {
+	return c.OSCommand.RunExecutableWithOutput(c.ComposeCmd(dir, "config", "--format", "json"))
+}
+
+// LoadComposeStack reads the stack in dir: the project name incus-compose
+// would act on and the services its file declares. A directory with no
+// compose file still comes back, Err saying why.
+func (c *IncusCommand) LoadComposeStack(dir string) *ComposeStack {
+	stack := &ComposeStack{Dir: dir}
+
+	// Said without a subprocess, and in fewer words than incus-compose's.
+	if stack.Err = CheckStackDir(dir); stack.Err != nil {
+		return stack
 	}
 
-	return parseComposeConfig(output)
+	output, err := c.composeConfig(dir)
+	if err == nil {
+		stack.Name, stack.Services, err = parseComposeConfig(output)
+	}
+
+	stack.Err = err
+
+	return stack
 }
 
-// ComposeServiceConfig is one service's definition from the compose file,
-// as incus-compose normalized it, in YAML. found is false for a service the
-// file no longer declares.
-func (c *IncusCommand) ComposeServiceConfig(service string) (definition string, found bool, err error) {
-	output, err := c.composeConfig()
+// ComposeStackConfig is the whole of `incus-compose config` for the stack
+// in dir, in YAML - through JSON, for the reason ComposeServiceConfig gives.
+func (c *IncusCommand) ComposeStackConfig(dir string) (string, error) {
+	output, err := c.composeConfig(dir)
+	if err != nil {
+		return "", err
+	}
+
+	data, err := yaml.JSONToYAML([]byte(output))
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
+// ComposeServiceConfig is one service's definition from the compose file in
+// dir, as incus-compose normalized it, in YAML. found is false for a service
+// the file no longer declares.
+func (c *IncusCommand) ComposeServiceConfig(dir, service string) (definition string, found bool, err error) {
+	output, err := c.composeConfig(dir)
 	if err != nil {
 		return "", false, err
 	}

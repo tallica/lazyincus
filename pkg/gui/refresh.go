@@ -152,10 +152,11 @@ type refreshSeqs struct {
 	networks  refreshSeq
 	profiles  refreshSeq
 	services  refreshSeq
+	stacks    refreshSeq
 }
 
 func (s *refreshSeqs) invalidateAll() {
-	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services} {
+	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services, &s.stacks} {
 		seq.invalidate()
 	}
 }

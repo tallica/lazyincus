@@ -149,6 +149,22 @@ type TranslationSet struct {
 	DeleteNetwork                string
 
 	ComposeTitle                  string
+	StacksTitle                   string
+	NoStacks                      string
+	NoStackSelected               string
+	AddStack                      string
+	RemoveStack                   string
+	AddStackPrompt                string
+	AddStackHint                  string
+	AddingStackStatus             string
+	StackAlreadyListed            string
+	StackNotComposeProject        string
+	CannotRemoveLocalStack        string
+	ConfirmRemoveStack            string
+	StackNotRunning               string
+	StackRunningCount             string
+	StackListedLocal              string
+	StackListedSaved              string
 	ServicesTitle                 string
 	ServicesTitleProject          string
 	NoServices                    string
@@ -378,7 +394,24 @@ func englishSet() TranslationSet {
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
 
-		ComposeTitle:                  "Compose",
+		ComposeTitle:           "Compose",
+		StacksTitle:            "Stacks",
+		NoStacks:               "No stacks - press 'a' to add a compose project's directory.",
+		NoStackSelected:        "No stack selected - add one to the Stacks panel with 'a'.",
+		AddStack:               "add stack",
+		RemoveStack:            "remove stack from the list",
+		AddStackPrompt:         "Add stack: compose project directory",
+		AddStackHint:           "enter to add · esc to cancel",
+		AddingStackStatus:      "adding stack",
+		StackAlreadyListed:     "%s is already listed.",
+		StackNotComposeProject: "%s isn't a compose project incus-compose can read:\n\n%v",
+		CannotRemoveLocalStack: "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to remove.",
+		ConfirmRemoveStack:     "Remove stack %s (%s) from the list? Nothing in it is stopped or deleted.",
+		StackNotRunning:        "Nothing is running in this stack - press 'u' to bring it up.",
+		StackRunningCount:      "%d/%d running",
+		StackListedLocal:       "at startup (working directory or -P)",
+		StackListedSaved:       "saved in state.yml",
+
 		ServicesTitle:                 "Services",
 		ServicesTitleProject:          "Services (%s)",
 		NoServices:                    "No services",

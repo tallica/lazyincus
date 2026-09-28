@@ -16,11 +16,6 @@ type ComposeProject struct {
 	Name        string
 	Description string
 	Config      map[string]string
-
-	// Local is true when this project matches the compose file in the
-	// directory lazyincus was started from - see (*Gui).localComposeProject
-	// and CLAUDE.md's "Compose" section for what that gates.
-	Local bool
 }
 
 const (
@@ -70,7 +65,7 @@ func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) 
 	return instances, nil
 }
 
-// ComposeService is one service of the local compose file, together with
+// ComposeService is one service of a stack's compose file, together with
 // whatever instances the daemon currently holds for it. The service list
 // comes from the compose file rather than from the daemon, so a service
 // nothing is running still gets an entry - with no instances, and status
@@ -93,8 +88,10 @@ type ComposeService struct {
 	Devices   []string
 	DependsOn []string
 
-	// Project is the Incus project incus-compose created for the stack.
+	// Project is the Incus project incus-compose created for the stack, and
+	// Dir the stack's directory, which every verb on the service runs in.
 	Project string
+	Dir     string
 
 	Instances []*Instance
 }
@@ -112,19 +109,12 @@ const (
 // Replicas that disagree make the service ServicePartial, and no instances
 // at all ServiceNone.
 func (s *ComposeService) Status() string {
-	if len(s.Instances) == 0 {
-		return ServiceNone
+	statuses := make([]string, 0, len(s.Instances))
+	for _, instance := range s.Instances {
+		statuses = append(statuses, instance.Status())
 	}
 
-	status := s.Instances[0].Status()
-
-	for _, instance := range s.Instances[1:] {
-		if !strings.EqualFold(instance.Status(), status) {
-			return ServicePartial
-		}
-	}
-
-	return status
+	return RollUpStatus(statuses)
 }
 
 // ResolvedImage is the image reference with its registry host, which the
@@ -203,22 +193,23 @@ func (s *ComposeService) StoppedDependencies(services []*ComposeService) []strin
 	return stopped
 }
 
-// GetComposeServices pairs the services the compose file declares with the
-// project's instances, matching on the label incus-compose stamps on each
-// (Instance.ComposeService). Instances whose label names no declared service
-// - a one-off from `incus-compose run`, say - belong to no row and are left
-// out.
-func (c *IncusCommand) GetComposeServices(project string, declared []ComposeService) ([]*ComposeService, error) {
-	instances, err := c.GetProjectInstances(project)
+// GetComposeServices pairs the services the stack's compose file declares
+// with its project's instances, matching on the label incus-compose stamps
+// on each (Instance.ComposeService). Instances whose label names no declared
+// service - a one-off from `incus-compose run`, say - belong to no row and
+// are left out.
+func (c *IncusCommand) GetComposeServices(stack *ComposeStack) ([]*ComposeService, error) {
+	instances, err := c.GetProjectInstances(stack.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	services := make([]*ComposeService, 0, len(declared))
-	byName := make(map[string]*ComposeService, len(declared))
+	services := make([]*ComposeService, 0, len(stack.Services))
+	byName := make(map[string]*ComposeService, len(stack.Services))
 
-	for _, service := range declared {
-		service.Project = project
+	for _, service := range stack.Services {
+		service.Project = stack.Name
+		service.Dir = stack.Dir
 		services = append(services, &service)
 		byName[service.Name] = services[len(services)-1]
 	}
@@ -232,8 +223,8 @@ func (c *IncusCommand) GetComposeServices(project string, declared []ComposeServ
 	return services, nil
 }
 
-// GetComposeProject fetches the one compose-managed project by name, for the
-// header the services panel draws above its rows. A project that exists but
+// GetComposeProject fetches a compose-managed project by name, for the
+// healthcheck line the Info tabs draw. A project that exists but
 // isn't compose-managed reads as absent: nothing else here would know what
 // to do with it.
 func (c *IncusCommand) GetComposeProject(name string) (*ComposeProject, error) {
@@ -250,7 +241,6 @@ func (c *IncusCommand) GetComposeProject(name string) (*ComposeProject, error) {
 		Name:        project.Name,
 		Description: project.Description,
 		Config:      project.Config,
-		Local:       true,
 	}, nil
 }
 

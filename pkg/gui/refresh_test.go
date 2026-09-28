@@ -9,7 +9,6 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tallica/lazyincus/pkg/commands"
 )
 
 func TestRefreshSeqTurnsAwayAnOlderFetch(t *testing.T) {
@@ -143,13 +142,11 @@ func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 // started from a shell.
 func TestTheInstancesPollRefreshesTheServices(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
-		s.gui.State.LocalComposeProject = "default"
-		s.gui.State.ComposeServiceDefs = []commands.ComposeService{{Name: "web"}}
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
 
 		// No stream, so no catch-up refreshing the services instead.
 		t.Cleanup(s.server.HoldListen())
 	})
-	s.ready(t)
 
 	webInstances := func() int {
 		count := -1

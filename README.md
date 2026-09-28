@@ -27,8 +27,8 @@ six-minute walkthrough on asciinema.org.
 ## Status
 
 Past the MVP it started as, and in daily use — still pre-1.0. Panels for
-instances, snapshots, images, volumes, networks, profiles and — in a
-directory with a compose file — services, plus the Incus concepts
+instances, snapshots, images, volumes, networks, profiles and — with
+incus-compose installed — compose stacks and their services, plus the Incus concepts
 lazydocker has no analog for: projects and remotes. Parity with lazydocker
 in the corners — custom and bulk commands, non-English translations —
 isn't there; see "What's not here yet" below, and
@@ -93,7 +93,7 @@ make run
 ```
 
 Flags: `-r` / `--remote` picks the remote ([Remotes](#remotes)),
-`-P` / `--project-directory` where to look for a compose file
+`-P` / `--project-directory` which compose stack to list first
 ([Compose stacks](#compose-stacks)), `-d` / `--debug` for debug logging,
 `--version` to print version info.
 
@@ -132,8 +132,9 @@ the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
 
-A fourth panel, **Services**, appears when there's a compose file in the
-working directory — see [Compose stacks](#compose-stacks).
+With [incus-compose](#compose-stacks) installed, two more panels come
+first: **Stacks** (`1`) and the selected stack's **Services** (`2`), the
+others shifting down two numbers.
 
 The instances panel's columns (name, status, health, type, IPv4, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -145,7 +146,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 
 | Key | Action |
 |---|---|
-| `1` … `4` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
+| `1` … `5` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `←`/`→`, `h`/`l` | Previous / next list, Images, Volumes, Networks and Profiles each a stop of their own |
 | `↑`/`↓`, `j`/`k` | Navigate |
@@ -158,19 +159,20 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `p` | Pause/resume (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica |
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile |
-| `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each) |
+| `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
 | `m` | Jump to Logs tab |
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
-| `a` | Attach to the instance's console (`incus console`) |
+| `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
 | `E` | Exec a shell into the instance |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
-| `C` | Services panel: menu of the same compose verbs run against the whole stack rather than the selected service ([Compose stacks](#compose-stacks)) |
+| `C` | Stacks and Services panels: menu of the compose verbs run against the whole stack ([Compose stacks](#compose-stacks)) |
+| `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
@@ -197,29 +199,43 @@ compose file and no `incus-compose` binary in sight. `health` is on by
 default; the other two you add through `gui.instanceColumns` — see
 [docs/Config.md](docs/Config.md).
 
-**As a panel, from the compose file.** Start lazyincus from a directory
-holding a compose file and a **Services** panel appears above the others as
-`1`, titled with the compose project, with every other panel shifting down
-a number. It needs the `incus-compose` binary on `PATH`. To run from
-somewhere else, name the directory:
+**As panels, from the compose files.** With the `incus-compose` binary on
+`PATH`, a **Stacks** panel comes first, as `1`, listing compose stacks —
+directories with a compose file in them — and a **Services** panel under
+it, as `2`, shows the services of whichever stack is selected, titled with
+its compose project. Every other panel shifts down two numbers.
+
+The directory lazyincus starts in is a stack when it holds a compose file,
+listed first. To start with another, name it:
 
 ```sh
 lazyincus --project-directory ~/stacks/zigbee2mqtt
 ```
 
 `-P` is the short form, and `INCUS_COMPOSE_PROJECT_DIRECTORY` in the
-environment does the same — the flag sets that variable, so incus-compose
-resolves the stack exactly as it would on its own command line.
+environment does the same. Any other stack you add with `a` on the Stacks
+panel: type its directory — `~` and relative paths work — and it's listed
+from then on, in every session, saved in `state.yml` beside the config
+file ([docs/Config.md](docs/Config.md#state)). `D` takes a stack you added
+off the list again, after asking; nothing in it is stopped or deleted.
 
-The rows come from the compose file rather than the daemon, so a service
-the file declares but nothing is running still gets one, in state `none`.
-Otherwise a service carries the status of the instances under it —
+A stack's row says how its instances are doing, as one status: theirs when
+they agree, `partial` when they don't, `none` when nothing is deployed, and
+`error` when its compose file can't be read — the Info tab says why. Its
+keys are the Services panel's compose verbs below, run against the whole
+stack, `C`'s menu included; the Info tab counts each service's running
+instances, and the Config tab is the whole of `incus-compose config`.
+
+The Services rows come from the compose file rather than the daemon, so a
+service the file declares but nothing is running still gets one, in state
+`none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
-disagree. The stack's own instances move out of the instances panel, which
-becomes **Standalone Instances** (`2`); every other project's instances
-stay there.
+disagree. Every listed stack's instances move out of the instances panel,
+which becomes **Standalone Instances** (`3`); a project no stack lists
+keeps its instances there.
 
-A service with replicas lists them under it, one indented row each,
+A service with replicas
+ lists them under it, one indented row each,
 rendered in the same columns as the service. Selecting a replica points
 everything that needs a single instance at it. The service's own row above
 them means all of its replicas, which is what selecting the service has

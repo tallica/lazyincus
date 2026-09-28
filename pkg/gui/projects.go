@@ -5,6 +5,7 @@ import (
 
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/gui/types"
 )
 
@@ -84,11 +85,13 @@ func (gui *Gui) switchToProject(name string) error {
 }
 
 func (gui *Gui) reloadAfterProjectChange() error {
-	// Everything the panels hold belongs to the scope we just left. Dropping
-	// it also stops the next refresh matching new items against stale ones by
-	// name.
+	// Everything the panels hold belongs to the scope we just left, but for
+	// the stacks: they're directories, in no project. Dropping it also stops
+	// the next refresh matching new items against stale ones by name.
 	for _, panel := range gui.allSidePanels() {
-		panel.ClearItems()
+		if panel != panels.ISideListPanel(gui.Panels.Stacks) {
+			panel.ClearItems()
+		}
 	}
 
 	// Or the next instance refresh redraws the old project's snapshots.

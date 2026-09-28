@@ -31,17 +31,17 @@ derive from it automatically.
 
 ### Side panels
 
-lazydocker has six with a compose file local; lazyincus has four, having
-folded images, volumes, networks and profiles into one tabbed Resources panel. Services
-is the Incus analog of lazydocker's docker-compose-specific Services/Project
-panels, and like lazydocker's it pushes the plain instance list down to
-"Standalone Instances". See
-[incus-compose integration](#incus-compose-integration).
+lazydocker has six with a compose file local; lazyincus has three, or five
+with incus-compose installed, having folded images, volumes, networks and
+profiles into one tabbed Resources panel. Stacks and Services are the Incus
+analog of lazydocker's docker-compose-specific Project/Services panels, and
+like lazydocker's they push the plain instance list down to "Standalone
+Instances". See [incus-compose integration](#incus-compose-integration).
 
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
       credits tab (`CreditsTitle` is ported but unused). Ours has no
-      always-present panel to host it: Services is absent without a compose
-      file, so this needs somewhere else.
+      always-present panel to host it: Stacks is absent without
+      incus-compose, so this needs somewhere else.
 
 ### Per-instance actions
 
@@ -218,18 +218,16 @@ none of it is needed to make typing a command useful.
       `incus` as a subprocess. The prompt seeds with the selected row's
       `--project` (`instanceCLIArgs`), cursor after it, so the common case
       is typing the verb alone and the uncommon one is deleting a prefix.
-      Reuses the editable `Views.Confirmation` prompt the snapshot `n`
-      popup sets up, and `runSubprocess`, so an interactive command works
+      Reuses `openTextPrompt`, the one Stacks' `a` asks for a directory
+      with, and `runSubprocess`, so an interactive command works
       and the panels refresh afterwards the way `composeRun` refreshes
       them. Tokenize respecting quotes rather than splitting on whitespace,
       and don't route through `sh -c`: pipes and `$(...)` aren't worth an
       unconfirmed prompt that runs what it's given.
 - [ ] **Typed incus-compose command (`;`)** — the same prompt against
-      `incus-compose`, gated on `noLocalComposeProject` the way the
-      Services panel is: without a compose file the binary only errors.
-      Nothing to prefill — `-P` already points it at the right directory
-      at startup — beyond the selected service's name as a trailing
-      argument.
+      `incus-compose`, on the Stacks and Services panels, run through
+      `ComposeCmd` in the selected stack's directory. Nothing to prefill
+      beyond the selected service's name as a trailing argument.
 
 Keys aren't settled: `:` and `;` are both free and read as a pair on one
 physical key, `!` being the alternative if `;` is too easy to hit by
@@ -305,8 +303,8 @@ lazyincus has in hand, not new API calls.
       `volatile.base_image` is a fingerprint, so this is the only place an
       instance's image appears by name.
 - [x] **A services panel** — the other half of what lazydocker's Services
-      panel gave you, shipped: when a compose file is in the working
-      directory, one row per service it declares, and the instances panel
+      panel gave you, shipped: for the stack selected in Stacks, one row
+      per service its compose file declares, and the instances panel
       becomes "Standalone Instances" without them. See
       [docs/Panels.md](docs/Panels.md#services).
 
@@ -321,20 +319,24 @@ lazyincus has in hand, not new API calls.
 
 ### 3. Project panel
 
-lazydocker's sixth side panel. Its list, its local-project gate
-(`CannotManageNonLocalService`) and its compose verbs all live in the
-Services panel now — a list of every compose project on the server was rows
-nothing could act on, so it went with the rewrite. What's left is the part
-of lazydocker's panel that was a main-panel tab rather than the list:
+lazydocker's sixth side panel, shipped as Stacks
+([docs/Panels.md](docs/Panels.md#stacks)): a list of compose project
+directories, the local one and any added with `a`, whose selection the
+Services panel follows. It lists directories rather than every compose
+project on the server, a project with no compose file in reach being rows
+nothing could act on. lazydocker's local-project gate
+(`CannotManageNonLocalService`) is what that choice replaces. What's left
+is the part of lazydocker's panel that was a main-panel tab rather than
+the list:
 
-- [x] **The verbs** and **the compose config tab** — shipped on the
-      Services panel, per-service.
+- [x] **The verbs** and **the compose config tab** — shipped on both
+      panels: per service on Services, per stack on Stacks.
 - [ ] **Credits tab** — the home the
       [missing credits surface](#side-panels) is waiting for. It lost the
       panel it was going to live on, so it needs somewhere else.
 - [ ] **Aggregate logs tab** — lazydocker tails every container in the
       project at once, interleaved. `incus-compose logs -f` is the analog
-      and is in the Services panel's `C` menu as a subprocess. The Logs tab
+      and is in the `C` menu of both panels as a subprocess. The Logs tab
       on a replicated service's own row now stacks each replica's
       `TailConsoleLog` buffer under a heading, which covers one service;
       what's left is the whole project in one tab, and ordering the
@@ -345,7 +347,7 @@ of lazydocker's panel that was a main-panel tab rather than the list:
 `incus-compose backup` snapshots a project's data volumes into a
 `<project>-backup` Incus project: `create`, `list`, `verify`, `restore` and
 `delete` (which also prunes, with `--keep-last`). `list` and `verify` take
-`--format json`, so a panel reads them the way `localComposeProject` reads
+`--format json`, so a panel reads them the way `LoadComposeStack` reads
 `incus-compose config` — a shell-out and an unmarshal, no new daemon calls.
 `list` gives a timestamp, an optional name, and per-volume source and backup
 project/pool/name; `verify` gives a per-volume status.
@@ -363,8 +365,8 @@ for a panel over a menu of verbs.
       the `ic-backup-` prefix are recognisable; whether that reads better
       as a marker in a column or as a filter is the open question.
 - [ ] **A Backups panel** — one `sidePanelDefs()` entry plus its
-      `backups_panel.go`, `hidden` without a local compose project the way
-      Services is. Rows are backups by timestamp, with the name, volume
+      `backups_panel.go`, following the selected stack the way Services
+      does. Rows are backups by timestamp, with the name, volume
       count and pool `list` returns; the main-panel tab is the volume
       mapping, and `verify` fills in a status column on demand rather than
       on every refresh, since it walks the restore points. The verbs become

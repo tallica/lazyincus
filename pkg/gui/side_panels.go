@@ -46,11 +46,18 @@ func (def sidePanelDef) windowName() string {
 func (gui *Gui) sidePanelDefs() []sidePanelDef {
 	return []sidePanelDef{
 		{
+			name:    "stacks",
+			title:   gui.Tr.StacksTitle,
+			viewPtr: &gui.Views.Stacks,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Stacks },
+			hidden:  gui.composeUnavailable,
+		},
+		{
 			name:    "services",
 			title:   gui.servicesPanelTitle(),
 			viewPtr: &gui.Views.Services,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Services },
-			hidden:  gui.noLocalComposeProject,
+			hidden:  gui.composeUnavailable,
 		},
 		{
 			name:    "instances",
@@ -99,11 +106,10 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 	}
 }
 
-// noLocalComposeProject is the services panel's whole reason to exist or
-// not: no compose file in lazyincus's working directory, no services to act
-// on. Resolved once at startup, so it doesn't change mid-session.
-func (gui *Gui) noLocalComposeProject() bool {
-	return gui.State.LocalComposeProject == ""
+// composeUnavailable hides the Stacks and Services panels: without
+// incus-compose there's no reading a compose file, nor acting on one.
+func (gui *Gui) composeUnavailable() bool {
+	return !gui.State.ComposeAvailable
 }
 
 // visibleSidePanelDefs drops the panels this session doesn't have. Both the
@@ -191,22 +197,23 @@ func (gui *Gui) cycleSideView(offset int) func() error {
 // same one on every row, so it belongs in the title rather than in a column
 // - the reasoning the instances panel's project column already follows.
 func (gui *Gui) servicesPanelTitle() string {
-	if gui.noLocalComposeProject() {
+	stack := gui.selectedStack.Load()
+	if stack == nil || stack.Name == "" {
 		return gui.Tr.ServicesTitle
 	}
 
-	return fmt.Sprintf(gui.Tr.ServicesTitleProject, gui.State.LocalComposeProject)
+	return fmt.Sprintf(gui.Tr.ServicesTitleProject, stack.Name)
 }
 
 // instancesPanelTitle marks the panel as holding what's left once the
-// services panel has taken the local stack, the way lazydocker's Containers
+// services panel has taken the stacks', the way lazydocker's Containers
 // panel becomes "Standalone Containers" alongside its Services panel.
 func (gui *Gui) instancesPanelTitle() string {
 	if users := gui.State.InstanceUsers; users != nil {
 		return fmt.Sprintf(gui.Tr.InstancesUsing, users.label)
 	}
 
-	if gui.noLocalComposeProject() {
+	if len(gui.State.StackProjects) == 0 {
 		return gui.Tr.InstancesTitle
 	}
 

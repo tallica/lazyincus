@@ -77,7 +77,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 			List: panels.NewFilteredList[*commands.ServiceRow](),
 			View: gui.Views.Services,
 		},
-		NoItemsMessage: gui.Tr.NoServices,
+		NoItemsMessage: gui.Tr.NoStackSelected,
 		Gui:            gui.intoInterface(),
 		// The snapshots panel shows the selected row's instances while this
 		// panel has focus, the way it follows the instances panel. A
@@ -91,9 +91,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 
 			return gui.refreshSnapshotsFor(label, row.Instances()...)
 		},
-		// No compose file in the working directory means no services to act
-		// on, and the panel would be a title over an empty list.
-		Hide: gui.noLocalComposeProject,
+		Hide: gui.composeUnavailable,
 		// Compose file order is arbitrary (a JSON object), so name is the
 		// only stable order there is; a service's replicas follow it, named
 		// in order themselves.
@@ -311,7 +309,7 @@ func (gui *Gui) serviceConfigStr(row *commands.ServiceRow) string {
 // config`, re-rendered as YAML: the command prints the whole project, and
 // the panel is already one row per service.
 func (gui *Gui) composeServiceConfigStr(service *commands.ComposeService) string {
-	definition, found, err := gui.IncusCommand.ComposeServiceConfig(service.Name)
+	definition, found, err := gui.IncusCommand.ComposeServiceConfig(service.Dir, service.Name)
 	if err != nil {
 		return fmt.Sprintf("Error running `incus-compose config`: %v", err)
 	}
@@ -323,24 +321,38 @@ func (gui *Gui) composeServiceConfigStr(service *commands.ComposeService) string
 	return utils.ColoredYamlString(definition)
 }
 
-// fetchServices reads LocalComposeProject and ComposeServiceDefs off the
-// main loop, which is safe only because both are set once, before it starts.
+// fetchServices lists the services of the stack the Stacks panel has
+// selected. The ticket comes before the stack is read: followStack swaps the
+// stack before it invalidates, so a fetch it doesn't turn away has the new
+// one.
 func (gui *Gui) fetchServices() (func() error, error) {
-	if gui.noLocalComposeProject() {
+	if gui.composeUnavailable() {
 		return func() error { return nil }, nil
 	}
 
 	ticket := gui.refreshes.services.issue()
 
-	services, err := gui.IncusCommand.GetComposeServices(
-		gui.State.LocalComposeProject, gui.State.ComposeServiceDefs)
+	stack := gui.selectedStack.Load()
+	if stack == nil || stack.Name == "" {
+		return func() error {
+			if !gui.refreshes.services.admit(ticket) {
+				return nil
+			}
+
+			gui.Panels.Services.SetItems(nil)
+
+			return gui.Panels.Services.RerenderList()
+		}, nil
+	}
+
+	services, err := gui.IncusCommand.GetComposeServices(stack)
 	if err != nil {
 		return nil, err
 	}
 
-	// The project's own config backs the Info tab's healthcheck and resource
-	// lines; fetched here so rendering stays free of API calls.
-	project, projectErr := gui.IncusCommand.GetComposeProject(gui.State.LocalComposeProject)
+	// The project's own config backs the Info tabs' healthcheck line;
+	// fetched here so rendering stays free of API calls.
+	project, projectErr := gui.IncusCommand.GetComposeProject(stack.Name)
 	if projectErr != nil {
 		gui.Log.Warn(projectErr)
 	}
@@ -364,20 +376,4 @@ func (gui *Gui) fetchServices() (func() error, error) {
 
 		return gui.renderSnapshots()
 	}, nil
-}
-
-// localComposeProject finds the compose project, if any, whose compose
-// file lives in lazyincus's own working directory - the only one the
-// services panel can act on. Absence of a compose file here (incus-compose
-// exits 1 with "no compose.yaml found") isn't an error worth surfacing:
-// most servers running compose stacks aren't being administered from this
-// directory.
-func (gui *Gui) localComposeProject() (string, []commands.ComposeService) {
-	name, services, err := gui.IncusCommand.LocalComposeConfig()
-	if err != nil {
-		gui.Log.Info(err)
-		return "", nil
-	}
-
-	return name, services
 }

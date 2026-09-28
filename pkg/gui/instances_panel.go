@@ -71,8 +71,8 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 			return a.Key() == b.Key()
 		},
 		Filter: func(instance *commands.Instance) bool {
-			// Every user, stopped or the local stack's: the question was
-			// what uses the resource.
+			// Every user, stopped or a stack's: the question was what uses
+			// the resource.
 			if users := gui.State.InstanceUsers; users != nil {
 				return users.uses(instance)
 			}
@@ -81,7 +81,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 				return false
 			}
 
-			return !gui.isLocalComposeInstance(instance)
+			return !gui.isStackInstance(instance)
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
 			return presentation.GetInstanceDisplayStrings(
@@ -119,16 +119,12 @@ func isStopped(instance *commands.Instance) bool {
 	return strings.EqualFold(instance.Status(), "Stopped")
 }
 
-// isLocalComposeInstance reports whether the services panel already has this
-// instance, which is what makes this panel the standalone one. Only the
-// local stack moves: another project's compose instances have no panel of
-// their own, so they stay here.
-func (gui *Gui) isLocalComposeInstance(instance *commands.Instance) bool {
-	if gui.noLocalComposeProject() {
-		return false
-	}
-
-	return instance.Project == gui.State.LocalComposeProject && instance.ComposeService() != ""
+// isStackInstance reports whether a listed stack has this instance, and so
+// the services panel, which is what makes this panel the standalone one.
+// Compose instances of a project no stack lists have no other panel, so
+// they stay here.
+func (gui *Gui) isStackInstance(instance *commands.Instance) bool {
+	return gui.State.StackProjects[instance.Project] && instance.ComposeService() != ""
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {
@@ -159,16 +155,7 @@ func (gui *Gui) fetchInstances() (func() error, error) {
 			return nil
 		}
 
-		// Computed over what the panel will actually show: with the local
-		// stack gone to the services panel, the instances left can sit in
-		// one project even when the server's don't.
-		standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
-			return gui.isLocalComposeInstance(instance)
-		})
-
-		gui.State.SpansProjects.Instances = spansMultipleProjects(
-			lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
-
+		gui.setInstancesSpan(instances)
 		gui.Panels.Instances.SetItems(instances)
 
 		if err := gui.Panels.Instances.RerenderList(); err != nil {
@@ -178,6 +165,18 @@ func (gui *Gui) fetchInstances() (func() error, error) {
 		// The snapshots come with the instances.
 		return gui.renderSnapshots()
 	}, nil
+}
+
+// setInstancesSpan is computed over what the panel will actually show: with
+// the stacks gone to the services panel, the instances left can sit in one
+// project even when the server's don't.
+func (gui *Gui) setInstancesSpan(instances []*commands.Instance) {
+	standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
+		return gui.isStackInstance(instance)
+	})
+
+	gui.State.SpansProjects.Instances = spansMultipleProjects(
+		lo.Map(standalone, func(instance *commands.Instance, _ int) string { return instance.Project }))
 }
 
 func (gui *Gui) refreshInstances() error {
