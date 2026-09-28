@@ -44,10 +44,11 @@ verbs are exercised for real, and with a VM alongside the containers.
   stricter than `go vet`, and a lint failure is no better found later.
 - **CHANGELOG.md is part of the change, not a follow-up.** Anything a user
   would notice goes under `## [Unreleased]` in the same breath as the code:
-  one line each, leading with what the user sees or does differently, in
-  10–25 words or so. A reason only when the change makes no sense without
-  it; how it works belongs in the docs and the commit message. Entries
-  before 0.11.0 are longer - don't take their voice from those.
+  one line each, leading with what the user sees or does differently,
+  usually under 25 words. Go longer only for a caveat that would otherwise
+  look like a bug, or a key that moved; how it works belongs in the docs
+  and the commit message. Entries before 0.10.0 are longer - don't take
+  their voice from those.
 - **One home per fact.** The map above says which file owns what. Link to
   the home instead of restating it — a fact in two places is a fact that
   will go stale in one of them.

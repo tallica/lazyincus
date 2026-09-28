@@ -29,36 +29,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.1] - 2026-09-27
 
 ### Fixed
-- An instance being started, stopped or restarted says so on its row - `starting`, `stopping`, `restarting` - until it's done, and keeps its place in the list. Incus reports a VM as running for the whole of its shutdown, and a restart as running before and after, so the row used to read `running` throughout, apart from a VM restart sometimes dropping it to the bottom of the list, among the stopped instances, for a moment.
-- A VM's Logs tab shows its boot as text. The firmware's and GRUB's terminal codes came through as `[2;J[0 ;0 ;H` litter, and GRUB's white-on-black left the whole boot on a grey block; each reboot now also starts on a line of its own instead of after the last login prompt.
+- Rows show `starting`, `stopping` or `restarting` until the action is done, and keep their place; a VM used to read `running` throughout.
+- A VM's Logs tab shows its boot as clean text, without terminal codes or a grey block, each reboot on a line of its own.
 
 ## [0.10.0] - 2026-09-27
 
 ### Added
-- **Profiles** are the Resources panel's fourth tab: every project's profiles, how many instances use each and the devices it hands out, with a Devices tab laying out each device's settings. `u` lists the instances with the profile, `c` edits it in `$EDITOR` and `d` deletes it, naming the project it's deleted from when the list holds several. A project's `default` profile, which Incus won't delete, is said to be undeletable up front instead of asked about. When the panel is too narrow for the four tab names they shorten to `Img - Vol - Net - Prof`, so none is cut off the end of the title.
-- Custom volumes have snapshots too: select one in the Volumes list and the Snapshots panel shows its snapshots, `n` takes one (with an expiry, as for instances), and `r` and `d` restore and delete them. A compose stack's data lives in custom volumes, so this is the undo button for the part of it that matters.
-- Networks have a **Forwards** tab: each port a network forward publishes, where it goes, and which instance holds that address, so what's exposed on the uplink reads as instance names instead of internal IPs.
-- Networks have an **ACLs** tab: which ACLs the network applies, what happens to traffic none of their rules match, which NICs on it carry ACLs of their own, and every rule of each, ingress and egress. "Why can't this container reach that one?" is now answered in one place, instead of by piecing together `security.acls` and `incus network acl show`.
-- `c` opens the selected item's config in your editor: an instance's through `incus config edit` (on the Services panel the replica's, asking which from a service's own row), an image's, volume's or network's through `incus image edit`, `incus storage volume edit` or `incus network edit`, each in the item's own project, and the list shows the change when you're done. Incus applies what it can to a running instance and says when a change waits for a restart. A volume's quota, a network's subnet or an image's auto-update no longer means leaving for a shell.
-- `u` on an image, volume or network lists the instances using it: the Instances panel narrows to them, stopped ones and a compose stack's included, and says so in its title. `esc` brings the rest back and returns you to the image, volume or network you asked about. A network used through a profile counts every instance with that profile, not just the ones Incus names.
-- The Volumes list shows each volume's size and how many things use it, marking in red a custom volume nothing has attached - a service's data volume left behind after the service went, say. The Config tab names what uses the volume and how full its pool is. Sizes need a pool driver that reports them: zfs, btrfs and lvm do, a `dir` pool without quotas doesn't, and there the column stays blank.
-- The Images list says how many instances were created from each image, marking the unused ones in red, when one was last used, and which are VM or cached images. `D` prunes: every image nothing was created from, or only the cached ones, with a confirmation naming each image and the space it frees. incus-compose leaves an image behind for every tag it has pulled and never expires them, so this is where stale ones pile up. The Config tab names the instances using the image.
-- Networks open on a **Leases** tab: every address the network has handed out, one host to a row with its IPv4, IPv6 and MAC side by side. It's the quickest answer to "what's on 10.19.8.88?", and it includes a compose stack's instances, which `incus network list-leases` only shows when asked from their own project. A **State** tab has what `incus network info` does, with each of a bridge's ports named by the instance plugged into it rather than by a veth name.
-- `e` on the Snapshots panel lists every instance's snapshots at once, each row naming the instance it belongs to (and its project, when they span more than one), and `e` again goes back to following the selected instance - the same key that shows stopped instances and the host's network interfaces. Finding a snapshot no longer means stepping through the instances one by one to see which have any. `gui.showAllSnapshots` starts a session that way. In that view, `n` snapshots the instance of the row you're on.
-- Starting a service whose dependencies are stopped asks whether to start them too. incus-compose's `start` acts only on the service you name, so `S` on a web service left its redis and database stopped, the web service coming up to nothing. `S` now offers `start --with-deps` when anything in the service's `depends_on` is stopped, naming what it would start, or the service alone; with nothing stopped it starts straight away as before.
+- A **Profiles** tab in Resources: each profile's users and devices; `u` lists its instances, `c` edits it, `d` deletes it.
+- Custom volumes have snapshots: select one to see them in Snapshots; `n` takes one, `r` restores, `d` deletes.
+- A network **Forwards** tab: each published port, where it goes, and the instance holding that address.
+- A network **ACLs** tab: the ACLs applied, their default actions, NICs with ACLs of their own, and every rule.
+- `c` edits the selected instance, image, volume or network in `$EDITOR`, through `incus ... edit`.
+- `u` on an image, volume or network narrows Instances to what uses it; `esc` goes back.
+- The Volumes list shows each volume's size and users, marking unattached custom volumes red. Sizes stay blank on a pool that doesn't report them, such as `dir` without quotas.
+- The Images list shows each image's users, last use and kind; `D` prunes unused or cached images.
+- Network **Leases** and **State** tabs: every lease, one host to a row, and `incus network info` with ports named by instance.
+- `e` on Snapshots lists every instance's snapshots at once; `gui.showAllSnapshots` starts that way.
+- `S` on a service with stopped dependencies offers to start them too (`start --with-deps`).
 
 ### Changed
-- A prompt that stops, deletes or restores something now says which project the item is in whenever the list holds more than one project's, so deleting `docker.io/library/nginx:alpine` says which of the projects holding that alias loses it. Deleting a network, custom volume or profile that's still in use no longer asks first only for Incus to refuse: it says it's in use, how many things use it, and that `u` lists them.
-- `y` opens a menu of what the selected item has to copy, each value shown beside its label, and works on every list: an instance's name, IPv4, IPv6 or all its addresses; an image's fingerprint or alias; a volume's name or pool; a network's name or addresses; a profile's name; a snapshot's name or `owner/snapshot`, the form `incus copy` takes. It used to copy an instance's first IPv4 and nothing else. In the menu `y` again copies the highlighted value, so `y y` copies the name.
-- `←`/`→` and `h`/`l` move to the previous or next list, as they do in lazydocker, with Images, Volumes and Networks each a stop of their own; `[`/`]` switch the main panel's tabs as before. In the main panel they still scroll sideways. `tab`/`shift+tab` move a panel at a time.
-- Image labels, volume names, snapshot names and the instance each came from, and the Instances and Services panels' `image` column use the room a wider panel gives them instead of being cut at a fixed length, so full screen or a wide terminal shows `docker.io/library/eclipse-mosquitto:2.1-alpine` whole. In a narrow panel they're cut where they were before.
-- The Networks list leaves out the host's own interfaces (`eth0`, `lo` and the like), which Incus reports but doesn't manage, so what's left are the networks you can act on. `e` shows them, the way it shows stopped instances.
-- Images, Volumes and Networks are now one **Resources** panel, `3`, with the three as tabs: `3` pressed again or a click on a tab's name switch between them, and the arrow keys reach each of them in turn. They're lists you look at now and then, and as three panels they took more than half the side column from Instances and Snapshots, which you read all the time. The panel comes back to whichever list you used last. The number keys move with it: Resources is `3`, or `4` alongside a Services panel, and `4` to `6` no longer reach the three lists.
-- Built against the Incus 7.5 client, v7.5.1, up from 7.4, along with the newer dependencies it brings.
-- A release is published only once its tagged commit passes the tests, lint and govulncheck. A tag used to build and publish binaries on its own, whatever state the commit was in.
+- Stop, delete and restore prompts name the item's project when the list spans several; deleting something in use says so instead of asking.
+- `y` opens a copy menu on every list - an instance's name or addresses, an image's fingerprint, and so on; `y y` copies the name.
+- `←`/`→` and `h`/`l` move between lists, as in lazydocker; `tab`/`shift+tab` move a panel at a time.
+- Long names use the room a wider panel gives them instead of a fixed cut.
+- The Networks list hides the host's unmanaged interfaces; `e` shows them.
+- Images, Volumes and Networks share one **Resources** panel, `3` (`4` with Services); `3` again switches tabs. `4`–`6` no longer reach those lists.
+- Built against the Incus 7.5 client (v7.5.1).
+- A release is published only once its commit passes the tests, lint and govulncheck.
 
 ### Security
-- `golang.org/x/crypto` is now v0.57.0, past the fixes for GO-2026-6354 and GO-2026-6355. govulncheck found neither reachable from lazyincus, which uses x/crypto only through the Incus client's config loading. Dependencies are now checked for reachable vulnerabilities on every change and weekly, and kept current by Dependabot.
+- `golang.org/x/crypto` v0.57.0, fixing GO-2026-6354 and GO-2026-6355 (neither reachable from lazyincus); dependencies are checked weekly and kept current by Dependabot.
 
 ## [0.9.1] - 2026-09-26
 
