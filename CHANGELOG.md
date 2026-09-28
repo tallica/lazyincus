@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-28
+
 ### Added
 - `--debug` logs every event lazyincus hears from Incus, and each time it starts listening, to `development.log` in the config directory - the first thing to check when a list doesn't catch up with a change.
 
@@ -246,7 +248,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/tallica/lazyincus/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/tallica/lazyincus/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/tallica/lazyincus/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/tallica/lazyincus/compare/v0.9.0...v0.9.1
