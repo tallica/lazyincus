@@ -43,6 +43,9 @@ type Server struct {
 	// NetworkACLs by name, NetworkForwards by network.
 	NetworkACLs     map[string]api.NetworkACL
 	NetworkForwards map[string][]api.NetworkForward
+	// InstancesError fails the instance listings alone, as for a client
+	// allowed the images but not the instances.
+	InstancesError error
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -123,6 +126,19 @@ func (s *Server) SetDown(down bool) {
 // errUnreachable is what the client returns for a daemon it never reached.
 var errUnreachable = &url.Error{Op: "Get", URL: "https://incustest/1.0", Err: errors.New("connection refused")}
 
+// reachable is errUnreachable while the daemon is down.
+func (s *Server) reachable() error {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if shared.down {
+		return errUnreachable
+	}
+
+	return nil
+}
+
 func (s *Server) instances() ([]api.InstanceFull, error) {
 	shared := s.shared()
 	shared.mutex.Lock()
@@ -130,6 +146,10 @@ func (s *Server) instances() ([]api.InstanceFull, error) {
 
 	if shared.down {
 		return nil, errUnreachable
+	}
+
+	if s.InstancesError != nil {
+		return nil, s.InstancesError
 	}
 
 	if shared.changed {
@@ -216,26 +236,50 @@ func plain(instances []api.InstanceFull) []api.Instance {
 }
 
 func (s *Server) GetImages() ([]api.Image, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return inProject(s.images(), s.scope(), func(i api.Image) string { return i.Project }), nil
 }
 
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return s.images(), nil
 }
 
 func (s *Server) GetProfiles() ([]api.Profile, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return inProject(s.Profiles, s.scope(), func(p api.Profile) string { return p.Project }), nil
 }
 
 func (s *Server) GetProfilesAllProjects() ([]api.Profile, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return slices.Clone(s.Profiles), nil
 }
 
 func (s *Server) GetNetworks() ([]api.Network, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return inProject(s.Networks, s.scope(), func(n api.Network) string { return n.Project }), nil
 }
 
 func (s *Server) GetNetworksAllProjects() ([]api.Network, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return slices.Clone(s.Networks), nil
 }
 
@@ -275,6 +319,10 @@ func (s *Server) GetNetworkForwards(network string) ([]api.NetworkForward, error
 }
 
 func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	names := make([]string, 0, len(s.Volumes))
 	for pool := range s.Volumes {
 		names = append(names, pool)
