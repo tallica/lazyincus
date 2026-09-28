@@ -13,8 +13,8 @@ the same image alias, profile name or instance name can exist in several,
 and "delete image nginx:alpine?" doesn't say which is about to go. With
 one project the name stands alone. A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
-listing's `used_by`, which events and the polls keep current, and the daemon has
-the last word either way.
+listing's `used_by`, which events and the polls keep current, and the
+daemon has the last word either way.
 
 ## Copying
 
