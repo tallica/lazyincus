@@ -14,6 +14,7 @@ import (
 	"github.com/lxc/incus/v7/shared/util"
 	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/i18n"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // Instance represents an Incus instance (either a container or a VM).
@@ -82,17 +83,39 @@ func (i *Instance) Status() string {
 // called, across refreshes: the daemon shows no status mid-action (see
 // docs/Incus.md, "Status mid-action").
 func (i *Instance) BeginTransition(status string) (end func()) {
-	runtime := i.runtimeOrOwn()
+	return i.runtimeOrOwn().beginTransition(status)
+}
 
-	runtime.mutex.Lock()
-	runtime.transition = status
-	runtime.mutex.Unlock()
-
-	return func() {
-		runtime.mutex.Lock()
-		runtime.transition = ""
-		runtime.mutex.Unlock()
+// MarkInstance is BeginTransition for an instance known only by name, as an
+// event names it. One no listing has seen yet has nothing to mark.
+func (c *IncusCommand) MarkInstance(project, name, status string) (end func()) {
+	runtime := c.runtimes.find(project + "/" + name)
+	if runtime == nil {
+		return func() {}
 	}
+
+	return runtime.beginTransition(status)
+}
+
+// ConfigFingerprint changes with what the Config and Env tabs show of the
+// instance's configuration, ic-healthd's verdicts aside (docs/Panels.md,
+// "Config").
+func (i *Instance) ConfigFingerprint() string {
+	withoutHealth := func(config map[string]string) map[string]string {
+		kept := make(map[string]string, len(config))
+		for key, value := range config {
+			if !strings.HasPrefix(key, "user.healthcheck.") {
+				kept[key] = value
+			}
+		}
+
+		return kept
+	}
+
+	full := i.Instance
+
+	return utils.Fingerprint(withoutHealth(full.Config), withoutHealth(full.ExpandedConfig),
+		full.Devices, full.ExpandedDevices, full.Profiles, full.Description)
 }
 
 // IsVM returns true if the instance is a virtual machine rather than a container.

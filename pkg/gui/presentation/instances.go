@@ -168,7 +168,7 @@ func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 		"Restarting": "S",
 		"Restoring":  "S",
 		"Freezing":   "P",
-		"Thawed":     "T",
+		"Unfreezing": "P",
 	}
 
 	iconStatusMap := map[string]rune{
@@ -180,8 +180,8 @@ func DisplayStatus(guiConfig *config.GuiConfig, status string) string {
 		"Stopping":   '⟳',
 		"Restarting": '⟳',
 		"Restoring":  '⟳',
-		"Freezing":   '◫',
-		"Thawed":     '▶',
+		"Freezing":   '⟳',
+		"Unfreezing": '⟳',
 	}
 
 	display := status
@@ -207,7 +207,7 @@ func StatusColor(status string) color.Attribute {
 		return color.FgGreen
 	case "Stopped", "Error":
 		return color.FgRed
-	case "Frozen", "Starting", "Stopping", "Restarting", "Restoring", "Freezing", "Thawed":
+	case "Frozen", "Starting", "Stopping", "Restarting", "Restoring", "Freezing", "Unfreezing":
 		return color.FgYellow
 	default:
 		return color.FgWhite

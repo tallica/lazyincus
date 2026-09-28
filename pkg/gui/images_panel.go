@@ -30,7 +30,7 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 				}
 			},
 			GetItemContextCacheKey: func(image *commands.Image) string {
-				return "images-" + image.Key()
+				return "images-" + image.Key() + "-" + utils.Fingerprint(image.Image, image.UsedBy)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Image]{

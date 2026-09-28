@@ -63,6 +63,13 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 					key += "-" + row.Instance.Instance.Status
 				}
 
+				// The config of every instance the row stands for - a
+				// service's own row too, whose Config tab shows each - so
+				// the tabs follow a change to one.
+				for _, instance := range row.Instances() {
+					key += "-" + instance.ConfigFingerprint()
+				}
+
 				return key
 			},
 		},
@@ -357,21 +364,6 @@ func (gui *Gui) fetchServices() (func() error, error) {
 
 		return gui.renderSnapshots()
 	}, nil
-}
-
-func (gui *Gui) refreshServices() error {
-	return gui.refresh(nil, gui.fetchServices)
-}
-
-// refreshServicesQuiet is the background poll. A service's instances change
-// under a compose verb, and every one of those calls refreshInstancesAndServices
-// already - so this only has to catch changes made from outside lazyincus.
-func (gui *Gui) refreshServicesQuiet() error {
-	if err := gui.refreshServices(); err != nil {
-		gui.Log.Warn(err)
-	}
-
-	return nil
 }
 
 // localComposeProject finds the compose project, if any, whose compose

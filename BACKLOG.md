@@ -68,43 +68,49 @@ Not planned:
       from its i18n set via `scripts/cheatsheet`. Here the README keybinding
       table is hand-maintained, which is why CLAUDE.md has to carry a
       reminder to keep it current.
-- [ ] **Event stream** — lazydocker consumes Docker's `/events`; lazyincus
-      polls, every 2s for instances and 10s for the rest. Incus has one too
-      (`GetEventsAllProjectsByType`, or `GetEventsByType` per project),
-      and it carries what a poll can't:
-      - An **operation** event names the instance and project the moment
-        the daemon takes an action, whoever asked - the `incus` CLI,
-        another client, ic-healthd restarting a service. Its description
-        ("Starting instance", "Stopping instance", "Restarting instance",
-        "Restoring snapshot", "Freezing instance", "Unfreezing instance")
-        maps onto the row statuses `Instance.BeginTransition` already
-        shows for lazyincus's own actions, so a restart from a shell would
-        read `restarting` too. Its `Success`/`Failure` lands the instant
-        the action is done: refresh then, and end the mark once that
-        listing applies, the way `inTransition` does.
-      - A **lifecycle** event (`instance-created`, `-deleted`, `-renamed`,
-        `instance-snapshot-*`, `image-*`, `storage-volume-*`, `network-*`,
-        `profile-*`) refreshes the panels it touches straight away rather
-        than up to 10s later.
+- [x] **Event stream** — lazyincus listens to Incus's lifecycle and
+      operation events; see [docs/Incus.md](docs/Incus.md).
+- [ ] **More row statuses from operations** — `operationStatuses` covers
+      starting, stopping, restarting, restoring, freezing and unfreezing.
+      "Deleting instance", "Rebuilding instance" and "Migrating instance"
+      can take a while too and could read `deleting`, `rebuilding`,
+      `migrating` the same way, each needing its entries in
+      `DisplayStatus`'s maps and `StatusColor`. A deleted instance's mark
+      has no row left to end on, so check it comes off with the listing
+      that drops the row.
+- [ ] **Events for a restricted certificate** — `ListenForEvents` asks for
+      every project's events whenever the panels list every project. A
+      certificate restricted to some projects may be refused that, and
+      `watchEvents` then retries with backoff for as long as the app runs,
+      logging each refusal; the polls carry on, so nothing breaks, but the
+      stream never opens. Fall back to the client's own project's events,
+      or one listener per allowed project, and stop retrying a refusal
+      that won't change. Untried: the development certificate isn't
+      restricted, so `incustest`'s `Listen` would need to refuse
+      all-projects for a test to see it.
+- [ ] **Poll less now that events carry the changes** — what's polled, and
+      why, is the table in [docs/Panels.md](docs/Panels.md#what-keeps-them-current).
+      The 2s poll is the big one: every instance's config, state and
+      snapshots, in every project, stream or not, the services' listing
+      with it. Most of that the events already bring; what it's there for
+      is CPU, memory, processes, disk and addresses. Ways to shrink it:
+      - Tick the Info tab off the selected instance's own
+        `GetInstanceState`, and slow the full listing right down while
+        the stream is open.
+      - The IPv4 column then needs an address arriving after a start:
+        list a few times after an `instance-started` - at 1s, 3s, 10s -
+        rather than every 2s for good.
+      - Judge the connection with `GET /1.0` rather than a full listing;
+        a dropped stream already hurries it.
+      - Poll the Resources panel's tab on screen, not all four: a volume's
+        usage is the main thing left to poll there.
+      - Refresh the instances when an "Updating snapshot" operation ends:
+        an instance snapshot's edit sends no lifecycle event, so it waits
+        for the poll ([docs/Incus.md](docs/Incus.md), "Events").
+      - Add `instance-ready` to `eventRefreshes`, for the `Ready` status.
 
-      Seen on a 7.4 daemon, a CLI restart:
-      `Restarting instance` Running, `instance-agent-stopped`, then
-      `instance-restarted` and the operation's `Success` together, 1.6s
-      later.
-
-      Things to handle: batch refreshes over ~200ms, since a compose `up`
-      is a burst and ic-healthd's healthcheck writes make an
-      `instance-updated` per instance per tick; reconnect with backoff and
-      poll as now while disconnected, keeping a daemon going away
-      non-fatal; fall back to per-project listeners where a restricted
-      certificate can't have all projects'. Operation descriptions are
-      English strings with no code, matched the way `busyMessage` is; an
-      unknown one just gets no mark. The 2s instance poll stays either
-      way - CPU, memory and a DHCP address arriving have no event - but
-      the 10s ones could slow right down while the stream is up.
-      `incustest` needs an events endpoint for the screen tests to see
-      any of it. `instance-agent-started` could end a `booting` state for
-      VMs, but only opt-in: a VM without the agent would never leave it.
+      Measure first: a listing's cost on a daemon with a few hundred
+      instances is untried, the development daemons having a dozen or so.
 
 Not planned:
 

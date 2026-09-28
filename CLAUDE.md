@@ -103,7 +103,9 @@ wanting one starts it from `WithWaitingStatus` or `refreshInBackground` —
 and `RerenderList` is never called off it. Each kind of fetch carries a
 `refreshSeq`, so an older fetch that finishes late can't undo a newer one.
 A refresh of several kinds applies each that succeeded even when another
-fails.
+fails. Refreshes come from the pollers, from actions, and from the daemon's
+event stream (`pkg/gui/events.go`), which says straight away when something
+changes; see [docs/Incus.md](docs/Incus.md).
 
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width
@@ -137,9 +139,10 @@ order:
 against a live daemon or read out of the Incus source rather than inferred:
 how the client resolves a remote, why a daemon going away mid-session is
 never fatal, per-project clients and why item identity includes the
-project, the console log's drain-on-read behaviour, and why `exec` and
+project, the console log's drain-on-read behaviour, why `exec` and
 `attach` shell out to the `incus` CLI instead of using the client's
-websocket API.
+websocket API, the status the daemon won't give an instance mid-action,
+and the event stream: which events count, and the order they arrive in.
 
 ## Config
 
@@ -226,8 +229,9 @@ cached images deleted first.
 ### Checking for races
 
 Most of the concurrency lives in paths no test reaches: the pollers, the
-main-panel tasks, the loop they hand results to. A change that touches any
-of them gets a race-enabled build driven like the one above:
+event stream against a real daemon, the main-panel tasks, the loop they
+hand results to. A change that touches any of them gets a race-enabled
+build driven like the one above:
 
 ```sh
 go build -race -o /tmp/lazyincus-race .
@@ -239,3 +243,5 @@ Move through the lists, every main-panel tab, a project switch or two
 (`P`), and the services panel if there's a stack in the working directory,
 for a minute or so; then quit. Any `/tmp/lzi-race.*` file is a race.
 Read-only keys are enough - the races are between reading and refreshing.
+For the event stream, change something from a shell meanwhile - create
+and delete a throwaway profile - so events arrive while you move.

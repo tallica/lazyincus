@@ -103,6 +103,7 @@ func (gui *Gui) reloadAfterProjectChange() error {
 
 	// A fetch already in flight was asked about the old scope.
 	gui.refreshes.invalidateAll()
+	gui.rescopeEvents()
 
 	for _, panel := range gui.allSidePanels() {
 		if err := panel.RerenderList(); err != nil {

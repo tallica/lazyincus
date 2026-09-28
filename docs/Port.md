@@ -40,12 +40,13 @@ pkg/utils/                     string/table/color/yaml helpers; every display wi
 pkg/commands/
   incus.go                     IncusCommand: connection, project scoping, list/refresh per resource
   instance.go                  Instance: api.InstanceFull as of one refresh; start/stop/restart/freeze/delete/logs/exec
-  instance_runtime.go          what outlives a refresh: the drained console log, the working ps, Latest()
+  instance_runtime.go          what outlives a refresh: the drained console log, the working ps, Latest(), a transition mark
+  events.go                    the daemon's event stream: one listener, events in the daemon's order
   instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
   snapshot.go                  Snapshot, an instance's or a custom volume's: create, restore, delete
   incus_compose.go             compose projects and services, paired with their instances
   compose_config.go            `incus-compose config`: the local project and each service's definition
-  incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data
+  incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data, and an event stream Emit feeds
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
   used_by.go                   which instances use a network, volume, image or profile
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
@@ -53,6 +54,7 @@ pkg/commands/
 pkg/gui/
   gui.go                       Gui struct, Run() main loop, background polls, config reload
   refresh.go                   fetch off the main loop, apply on it; the sequence guard between fetches
+  events.go                    which events refresh what, batching, operation marks, reconnecting
   tasks_adapter.go             main-panel tasks, and the numbered writes that keep them on the main loop
   side_panels.go               the ordered side panel definitions; number keys, tab and arrow cycling
   window.go                    shared slots: the Resources panel's lists as tabs of one window

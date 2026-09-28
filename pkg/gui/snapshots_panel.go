@@ -28,7 +28,7 @@ func (gui *Gui) getSnapshotsPanel() *panels.SideListPanel[*commands.Snapshot] {
 				}
 			},
 			GetItemContextCacheKey: func(snapshot *commands.Snapshot) string {
-				return "snapshots-" + snapshot.Key()
+				return "snapshots-" + snapshot.Key() + "-" + utils.Fingerprint(snapshot.Details())
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Snapshot]{

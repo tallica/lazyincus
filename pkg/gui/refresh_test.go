@@ -2,12 +2,14 @@ package gui
 
 import (
 	"errors"
+	"maps"
 	"testing"
 	"time"
 
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands"
 )
 
 func TestRefreshSeqTurnsAwayAnOlderFetch(t *testing.T) {
@@ -134,4 +136,46 @@ func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 
 	screen = s.settle(t, "●")
 	assert.NotContains(t, screen, s.gui.Tr.ConnectionLostTitle)
+}
+
+// The stack's instances have rows only in the services panel, so the
+// instances poll keeps it current too - an address arriving, a replica
+// started from a shell.
+func TestTheInstancesPollRefreshesTheServices(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.State.LocalComposeProject = "default"
+		s.gui.State.ComposeServiceDefs = []commands.ComposeService{{Name: "web"}}
+
+		// No stream, so no catch-up refreshing the services instead.
+		t.Cleanup(s.server.HoldListen())
+	})
+	s.ready(t)
+
+	webInstances := func() int {
+		count := -1
+		s.do(t, func() error {
+			for _, row := range s.gui.Panels.Services.List.GetAllItems() {
+				if row.Service.Name == "web" {
+					count = len(row.Service.Instances)
+				}
+			}
+
+			return nil
+		})
+
+		return count
+	}
+	require.Eventually(t, func() bool { return webInstances() == 0 }, 5*time.Second, 20*time.Millisecond)
+
+	instances := fixtureServer().Instances
+	for i := range instances {
+		if instances[i].Name == "web" {
+			instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
+			instances[i].ExpandedConfig["user.label.incus-compose.service"] = "web"
+		}
+	}
+	s.server.SetInstances(instances)
+
+	require.NoError(t, s.gui.refreshInstancesQuiet())
+	require.Eventually(t, func() bool { return webInstances() == 1 }, 3*time.Second, 20*time.Millisecond)
 }

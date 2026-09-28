@@ -232,7 +232,7 @@ func (gui *Gui) handleComposeKill(g *gocui.Gui, v *gocui.View) error {
 // handleComposePause is `p`, the toggle the instances panel's own `p` is -
 // over the whole service, or over the one replica whose row is selected.
 func (gui *Gui) handleComposePause(g *gocui.Gui, v *gocui.View) error {
-	return gui.onServiceRow(gui.instancePauseFreeze, func(service *commands.ComposeService) error {
+	return gui.onServiceRow(gui.instancePauseResume, func(service *commands.ComposeService) error {
 		if len(service.Instances) == 0 {
 			return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
 		}

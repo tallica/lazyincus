@@ -13,8 +13,8 @@ the same image alias, profile name or instance name can exist in several,
 and "delete image nginx:alpine?" doesn't say which is about to go. With
 one project the name stands alone. A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
-listing's `used_by`, which the next poll keeps current, and the daemon has
-the last word either way.
+listing's `used_by`, which events and the polls keep current, and the
+daemon has the last word either way.
 
 ## Copying
 
@@ -24,6 +24,65 @@ the menu says what lands on the clipboard; a value the item lacks - a
 stopped instance's address - is left out rather than offered empty. A
 network's addresses are Incus's `ipv4.address`/`ipv6.address`, the
 gateway with its prefix, and labelled as such rather than as the subnet.
+
+## What keeps them current
+
+Two things keep the screen current: the daemon's event stream, which
+refreshes a list the moment something changes, and polls, for what no
+event reports. Why each event counts, and the daemon's quirks, are in
+[docs/Incus.md](Incus.md), "Events"; `eventRefreshes` in
+`pkg/gui/events.go` is the full list.
+
+The lists. A burst of events is gathered over 200ms into one refresh, and
+an `instance-updated` refreshes at most every 10s.
+
+| List | Refreshed by | Polled |
+|---|---|---|
+| Instances | `instance-created`, `-deleted`, `-renamed`, `-started`, `-stopped`, `-shutdown`, `-restarted`, `-paused`, `-resumed`, `-restored`, `-migrated`, `instance-agent-started`/`-stopped`, `instance-snapshot-created`/`-deleted`/`-renamed`; `instance-updated`; an operation ending | every 2s, stream or not |
+| Services | whatever refreshes the instances | with the instances, every 2s |
+| Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
+| Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
+| Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
+| Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
+| Profiles | `profile-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
+
+An operation event also marks a row the moment the daemon takes the
+action, whoever asked: `starting`, `stopping`, `restarting`, `restoring`,
+`freezing` or `unfreezing`, until a listing taken after it ends lands.
+When the stream opens, every list is fetched again for what changed while
+none was; when it drops, the marks come off, the instances are listed at
+once to see whether the daemon has gone, and the polls return to 10s.
+
+Only a poll catches:
+
+- an instance's CPU, memory, processes and addresses - the 2s poll;
+- an instance snapshot edited, its expiry say, which sends no event -
+  the 2s poll;
+- a volume's usage and an image's last use - once a minute while the
+  stream is open;
+- a network's leases and state - their own tabs' tickers.
+
+The main-panel tabs. A tab that ticks reads again on its own; one drawn
+once is drawn again when a refresh changes the selected item's cache key,
+which carries a fingerprint of what the tab shows - whether or not the
+list has focus, so a tab being read follows too.
+
+| Tab | Drawn | Follows a change through |
+|---|---|---|
+| Instance Info | every 1s | the newest instances listing |
+| Instance, service Logs | every 1s | its own console-log read |
+| Instance Config, Env | once | the instance's config, less ic-healthd's `user.healthcheck.*` verdicts, which change every few seconds |
+| Instance, service Top | every 2s | its own `ps` |
+| Service Info | every 1s | the newest services listing, and each instance's block the newest instances listing |
+| Service Config | once | every one of its instances' config |
+| Snapshot Config | once | the snapshot |
+| Image Config | once | the image and what uses it |
+| Volume Config | once | the volume, less its usage, which changes with every write |
+| Network Leases | every 5s | its own read |
+| Network State | every 2s | its own read |
+| Network ACLs, Forwards | once | a `network-acl-*` or `network-forward-*` event, neither being part of the network |
+| Network Config | once | the network |
+| Profile Devices, Config | once | the profile |
 
 ## Services
 
@@ -231,7 +290,7 @@ new column means one entry in that map plus the default/valid-values list in
 Keybindings live in [README.md](../README.md#usage) — the canonical source,
 keep that table current rather than duplicating it here. Two behaviors it
 doesn't convey: `s`/`d` confirm before acting, and `p` toggles between
-`freeze` and `unfreeze` depending on current status.
+`incus pause` and `incus resume` depending on current status.
 
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
@@ -250,7 +309,8 @@ up:
 - **Logs** — polls `Instance.TailConsoleLog()` and re-renders the
   accumulated buffer. See "Logs" below for why a raw snapshot doesn't work.
 - **Config** — YAML dump of `api.InstanceFull`, nothing above it: identity
-  is the Info tab's.
+  is the Info tab's. Drawn once, and again when the config changes (see
+  [What keeps them current](#what-keeps-them-current)).
 - **Env** — `environment.*` entries from `ExpandedConfig` (expanded, so
   profile-inherited variables show up too).
 - **Top** — process list, polled every two seconds. Incus's API reports a
@@ -390,8 +450,10 @@ volumes' and snapshots' names are too, and the instances' and services'
 `image` column wherever the config puts it. With more than one they give
 way in the order named, each to its own floor: the snapshots panel's
 instance column goes first, repeating down a list grouped by it, before
-the snapshot name you act on. `d` deletes after a confirmation. Polled every 10s rather than the instance list's 2s: images
-only change when someone pulls or deletes one.
+the snapshot name you act on. `d` deletes after a confirmation. Refreshed
+by the image events rather than the instance list's 2s poll: images only
+change when someone pulls or deletes one, and a slower poll backs the
+events up (see [docs/Incus.md](Incus.md), Events).
 
 Each image carries the instances created from it (`Image.UsedBy`), matched
 on `volatile.base_image`, and the count is the column after the label - red
@@ -450,7 +512,8 @@ them takes a request per project using the network (see
 [docs/Incus.md](Incus.md)). State is `incus network info`, with a bridge's
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a
-lease without changing anything the list's own 10s poll would notice.
+lease without changing anything the list would notice, and no event says
+it did.
 
 ACLs is what filters the network's traffic: the ACLs `security.acls`
 applies to the network, what becomes of traffic none of their rules match
@@ -458,14 +521,17 @@ applies to the network, what becomes of traffic none of their rules match
 network carrying ACLs of their own - found the way `u` finds a network's
 users, through each instance's expanded devices - and then every one of
 those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
-change when someone edits one.
+change when someone edits one, and a `network-acl-*` event says so -
+forwards and ACLs being no part of the network, the event bumps
+`gui.networkTabs`, which the cache key carries, and the tab is drawn again.
 
 Forwards is `incus network forward list` a port to a row: the listen
 address, protocol and port, where it goes - the target port defaulting to
 the listen port, as the daemon's does - and the instance holding that
 address, from the instances' own addresses. A forward's `target_address`,
 which takes every port no entry names, gets a row of its own. Load
-balancers aren't shown; they're OVN's alone.
+balancers aren't shown; they're OVN's alone. Redrawn on a
+`network-forward-*` event, the way ACLs is.
 
 ## Profiles
 

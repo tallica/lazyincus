@@ -53,7 +53,7 @@ func TestImagesKnowTheirUsers(t *testing.T) {
 // taken for unused - prune goes by it.
 func TestImagesWithoutTheirUsers(t *testing.T) {
 	server := imagesServer()
-	server.SetDown(true)
+	server.InstancesError = api.StatusErrorf(403, "not authorized")
 
 	images := getImages(t, server)
 

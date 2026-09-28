@@ -25,7 +25,10 @@ inferred.
   arrived, anything else to mean the daemon answered - and `IsConnected` is
   that verdict. The 2s instance poll drives `gui.syncConnection`, which
   raises a modal on the way down and closes it on the way back up; there's
-  nothing to reconnect, since the client dials per request. `esc` dismisses
+  nothing to reconnect, since the client dials per request. The event
+  stream gets there sooner without judging itself - a dropped websocket
+  isn't a `*url.Error` - by asking for an instance listing the moment it
+  drops, and syncing after the listing its reopening brings. `esc` dismisses
   the modal for the rest of the outage; the footer's `●`/`✗` stands either
   way. Failing to connect at startup has no client to carry on with, so
   `NewIncusCommand` returns a `ConnectError` and `App.KnownError` prints it
@@ -36,6 +39,10 @@ inferred.
   that's gone. The startup connect needs its own bound
   (`connectDefaultRemote`, 10s): cliconfig calls `GetServer()` before
   handing back a client, so there's no transport of ours to cap yet.
+  The event stream's websocket dials through the same capped dialers but
+  takes no context, so `ListenForEvents` doesn't wait on a dial it's been
+  cancelled during - `run` waits for the event watcher, and quitting
+  would otherwise sit out the 5s - and closes the stream if it opens late.
 - **Errors from the main loop**: gocui ends it on any error out of a
   keybinding or an `Update` closure, which is no way to end a session, so
   `Run` sets gocui's `ErrorHandler` to `gui.handleError` - error panel for
@@ -62,6 +69,51 @@ inferred.
   config, state and snapshots in one request, cheap enough for the
   2-second poll. The alternative, a plain list plus `GetInstanceFull` per
   instance, is one request per instance per tick.
+- **Events**: `GetEventsAllProjectsByType`, or `GetEventsByType` for one
+  project, is a websocket the daemon sends lifecycle events down as things
+  change, whoever changed them. lazyincus keeps one open for the scope the
+  panels list, reopening it after a project switch and, backing off, after
+  a drop, and refreshes the lists an event touches once a 200ms burst has
+  passed. Only events that change a list count, named one by one: the
+  daemon also sends them for reads, an `instance-exec` for every `ps` the
+  Top tab runs, so matching by prefix would have each refresh set off the
+  next. `instance-updated` - a device attached, a profile added - refreshes
+  the lists counting what uses a volume, network or profile, but at most
+  every 10s: ic-healthd sends one per instance each time it records a
+  healthcheck. `instance-agent-started` refreshes the instances: a VM's
+  state comes from its agent once there is one (`renderState` in the qemu
+  driver), and until then from the host side - on 7.4 a restarted VM's
+  address read `eth0` within 2s, then the guest's own `enp5s0` once the
+  agent was up, 7s later. An instance snapshot's edit sends no
+  `instance-snapshot-updated`, whatever `api` declares: `snapshotPut`
+  calls `Update(args, false)`, and that `false`, `userRequested`, is what
+  the event hangs on; only the "Updating snapshot" operation says so. A
+  volume snapshot's edit does send `storage-volume-snapshot-updated`. The
+  polls stay, for what no event reports - CPU, memory, a DHCP address -
+  and slow down while a stream is open. What each event refreshes, and
+  what's left to the polls, is the table in
+  [docs/Panels.md](Panels.md#what-keeps-them-current).
+  `*incus.EventListener` has unexported fields, so `commands.EventListener`
+  is the interface in front of it that `incustest` implements. An
+  operation event arrives the moment the daemon takes an action, whoever
+  asked for it, naming the instances it acts on, and again when it's done:
+  a CLI restart of a VM on 7.4 read `Restarting instance` Running, then
+  Success with the `instance-restarted` 1.6s later. The description is the
+  operation's only name, so `operationStatuses` matches those strings; one
+  it doesn't know marks nothing. Order takes care on both ends. The client
+  runs each `AddHandler` call on a goroutine of its own, so a handler can
+  see an operation's Running after its Success - seen on 7.4 as Running
+  before Pending - and a mark nothing would end; `ListenForEvents` reads
+  `AddChannel` instead, which keeps the daemon's order. And the daemon's
+  `Start` (`internal/server/operations`) sends Running only after setting
+  the work off, which a quick operation can finish first, so the last
+  hundred operations to end are remembered and a Running for one of them
+  marks nothing. When the stream drops, the marks of
+  operations still under way come off, no event being left to end them.
+  Under `--debug` every event the stream delivers, the ones that change
+  nothing included, goes to `development.log` in the config directory,
+  with a line each time a stream opens naming what it listens to - the
+  place to look when a list doesn't refresh.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an
@@ -101,7 +153,15 @@ inferred.
   same: Incus stops it, rolls it back and starts it again. So an action
   lazyincus starts marks the instance itself (`Instance.BeginTransition`)
   until a listing taken after it lands: the row reads `starting`,
-  `stopping`, `restarting` or `restoring`, and keeps its place.
+  `stopping`, `restarting`, `restoring`, `freezing` or `unfreezing`, and
+  keeps its place. Pausing is freezing: the API says `freeze`, `Frozen`
+  and "Freezing instance", the CLI `incus pause` and `incus resume`.
+  lazyincus splits them the way the CLI does, `incus pause` leaving an
+  instance `FROZEN` - `p` and the status bar say pause and resume, a row
+  freezing, frozen, unfreezing. An action
+  anyone else starts gets the same from its operation event (see Events).
+  The action and its event both mark the instance, and only the later mark
+  can end it, so neither ends the other early.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so

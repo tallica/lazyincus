@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -57,6 +58,16 @@ type Gui struct {
 
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
+
+	events        eventBatch
+	eventsRescope chan struct{}
+	// eventsLive is whether an event stream is open.
+	eventsLive atomic.Bool
+	// watching is watchEvents, which run waits out.
+	watching sync.WaitGroup
+	// networkTabs counts the forward and ACL events, which change what a
+	// network's tabs show without changing the network.
+	networkTabs atomic.Uint64
 }
 
 type Panels struct {
@@ -234,6 +245,8 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 	}
 }
 
+var deadlockOptions sync.Once
+
 // NewGui builds a new gui handler
 func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
 	initialState := guiState{
@@ -261,10 +274,15 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		statusManager: &statusManager{},
 		taskManager:   tasks.NewTaskManager(log, tr),
 		stopped:       make(chan struct{}),
+		eventsRescope: make(chan struct{}, 1),
 	}
 
-	deadlock.Opts.Disable = !gui.Config.Debug
-	deadlock.Opts.DeadlockTimeout = 10 * time.Second
+	// The options are the process's: a later Gui - a test's - rewriting them
+	// would race an earlier one's goroutines still taking locks.
+	deadlockOptions.Do(func() {
+		deadlock.Opts.Disable = !gui.Config.Debug
+		deadlock.Opts.DeadlockTimeout = 10 * time.Second
+	})
 
 	return gui, nil
 }
@@ -296,6 +314,25 @@ func (gui *Gui) goEvery(interval time.Duration, function func() error) {
 	}()
 }
 
+// watchedPollInterval is how often a list the event stream keeps current is
+// polled while the stream is open (docs/Incus.md, "Events").
+const watchedPollInterval = time.Minute
+
+// pollUnlessWatched is goEvery for a list the event stream keeps current.
+func (gui *Gui) pollUnlessWatched(interval time.Duration, function func() error) {
+	var last time.Time
+
+	gui.goEvery(interval, func() error {
+		if gui.eventsLive.Load() && time.Since(last) < watchedPollInterval {
+			return nil
+		}
+
+		last = time.Now()
+
+		return function()
+	})
+}
+
 // Run sets up the gui with keybindings and starts the mainloop
 func (gui *Gui) Run() error {
 	// Before any view exists: whether there's a compose file in the working
@@ -324,6 +361,7 @@ func (gui *Gui) Run() error {
 func (gui *Gui) run(g *gocui.Gui) error {
 	defer gui.taskManager.Close()
 	defer g.Close()
+	defer gui.watching.Wait()
 	defer close(gui.stopped)
 
 	if !gui.Config.UserConfig.Gui.IgnoreMouseEvents {
@@ -376,6 +414,12 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		}
 	}
 
+	gui.watching.Add(1)
+	go func() {
+		defer gui.watching.Done()
+		gui.watchEvents()
+	}()
+
 	go func() {
 		for _, fetch := range gui.allFetches() {
 			if err := gui.refresh(nil, fetch); err != nil {
@@ -385,11 +429,10 @@ func (gui *Gui) run(g *gocui.Gui) error {
 
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
 		gui.goEvery(time.Second*2, gui.configReloader())
-		gui.goEvery(time.Second*10, gui.refreshImagesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshVolumesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshNetworksQuiet)
-		gui.goEvery(time.Second*10, gui.refreshProfilesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshImagesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
 	}()
 
 	err := g.MainLoop()
@@ -438,12 +481,13 @@ func (gui *Gui) setPanels() {
 	}
 }
 
-// refreshInstancesQuiet drives the background poll (Incus has no event
-// stream to subscribe to). It also reports on the connection every tick,
-// whether or not the refresh succeeded - this is what notices a daemon that
-// has gone away, and the footer is otherwise drawn once at startup.
+// refreshInstancesQuiet drives the background poll, which events don't
+// replace (docs/Incus.md, "Events"): the services too, a service being its
+// instances. It also reports on the connection every tick, whether or not
+// the refresh succeeded - this is what notices a daemon that has gone away,
+// and the footer is otherwise drawn once at startup.
 func (gui *Gui) refreshInstancesQuiet() error {
-	if err := gui.refreshInstances(); err != nil {
+	if err := gui.refreshInstancesAndServices(); err != nil {
 		gui.Log.Warn(err)
 	}
 

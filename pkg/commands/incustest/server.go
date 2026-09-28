@@ -43,6 +43,9 @@ type Server struct {
 	// NetworkACLs by name, NetworkForwards by network.
 	NetworkACLs     map[string]api.NetworkACL
 	NetworkForwards map[string][]api.NetworkForward
+	// InstancesError fails the instance listings alone, as for a client
+	// allowed the images but not the instances.
+	InstancesError error
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -57,6 +60,12 @@ type state struct {
 	down      bool
 	instances []api.InstanceFull
 	changed   bool
+	images    []api.Image
+	// imagesSet is changed's counterpart for images.
+	imagesSet bool
+	listeners []*listener
+	// held and heldOpened are HoldListen's.
+	held, heldOpened chan struct{}
 }
 
 // New is a Server answering from fixture.
@@ -80,17 +89,57 @@ func (s *Server) SetInstances(instances []api.InstanceFull) {
 	shared.changed = true
 }
 
-// SetDown makes every listing fail the way an unreachable daemon's does.
+// SetImages replaces the images while the app is running.
+func (s *Server) SetImages(images []api.Image) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.images = images
+	shared.imagesSet = true
+}
+
+func (s *Server) images() []api.Image {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if shared.imagesSet {
+		return slices.Clone(shared.images)
+	}
+
+	return slices.Clone(s.Images)
+}
+
+// SetDown makes every listing fail the way an unreachable daemon's does,
+// and drops the open event streams.
 func (s *Server) SetDown(down bool) {
 	shared := s.shared()
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()
 
 	shared.down = down
+
+	if down {
+		shared.dropListeners()
+	}
 }
 
 // errUnreachable is what the client returns for a daemon it never reached.
 var errUnreachable = &url.Error{Op: "Get", URL: "https://incustest/1.0", Err: errors.New("connection refused")}
+
+// reachable is errUnreachable while the daemon is down.
+func (s *Server) reachable() error {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if shared.down {
+		return errUnreachable
+	}
+
+	return nil
+}
 
 func (s *Server) instances() ([]api.InstanceFull, error) {
 	shared := s.shared()
@@ -99,6 +148,10 @@ func (s *Server) instances() ([]api.InstanceFull, error) {
 
 	if shared.down {
 		return nil, errUnreachable
+	}
+
+	if s.InstancesError != nil {
+		return nil, s.InstancesError
 	}
 
 	if shared.changed {
@@ -131,6 +184,15 @@ func (s *Server) UseProject(name string) incus.InstanceServer {
 
 func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
 	return &incus.ConnectionInfo{Project: s.scope()}, nil
+}
+
+// GetProject answers for any project, with no config of its own.
+func (s *Server) GetProject(name string) (*api.Project, string, error) {
+	if err := s.reachable(); err != nil {
+		return nil, "", err
+	}
+
+	return &api.Project{Name: name}, "", nil
 }
 
 func (s *Server) GetProjectNames() ([]string, error) {
@@ -185,26 +247,50 @@ func plain(instances []api.InstanceFull) []api.Instance {
 }
 
 func (s *Server) GetImages() ([]api.Image, error) {
-	return inProject(s.Images, s.scope(), func(i api.Image) string { return i.Project }), nil
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
+	return inProject(s.images(), s.scope(), func(i api.Image) string { return i.Project }), nil
 }
 
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
-	return slices.Clone(s.Images), nil
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
+	return s.images(), nil
 }
 
 func (s *Server) GetProfiles() ([]api.Profile, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return inProject(s.Profiles, s.scope(), func(p api.Profile) string { return p.Project }), nil
 }
 
 func (s *Server) GetProfilesAllProjects() ([]api.Profile, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return slices.Clone(s.Profiles), nil
 }
 
 func (s *Server) GetNetworks() ([]api.Network, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return inProject(s.Networks, s.scope(), func(n api.Network) string { return n.Project }), nil
 }
 
 func (s *Server) GetNetworksAllProjects() ([]api.Network, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	return slices.Clone(s.Networks), nil
 }
 
@@ -244,6 +330,10 @@ func (s *Server) GetNetworkForwards(network string) ([]api.NetworkForward, error
 }
 
 func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
 	names := make([]string, 0, len(s.Volumes))
 	for pool := range s.Volumes {
 		names = append(names, pool)
