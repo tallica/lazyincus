@@ -186,6 +186,15 @@ func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
 	return &incus.ConnectionInfo{Project: s.scope()}, nil
 }
 
+// GetProject answers for any project, with no config of its own.
+func (s *Server) GetProject(name string) (*api.Project, string, error) {
+	if err := s.reachable(); err != nil {
+		return nil, "", err
+	}
+
+	return &api.Project{Name: name}, "", nil
+}
+
 func (s *Server) GetProjectNames() ([]string, error) {
 	instances, err := s.instances()
 	if err != nil {

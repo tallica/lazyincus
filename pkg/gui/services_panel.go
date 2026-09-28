@@ -366,21 +366,6 @@ func (gui *Gui) fetchServices() (func() error, error) {
 	}, nil
 }
 
-func (gui *Gui) refreshServices() error {
-	return gui.refresh(nil, gui.fetchServices)
-}
-
-// refreshServicesQuiet is the background poll. A service's instances change
-// under a compose verb, and every one of those calls refreshInstancesAndServices
-// already - so this only has to catch changes made from outside lazyincus.
-func (gui *Gui) refreshServicesQuiet() error {
-	if err := gui.refreshServices(); err != nil {
-		gui.Log.Warn(err)
-	}
-
-	return nil
-}
-
 // localComposeProject finds the compose project, if any, whose compose
 // file lives in lazyincus's own working directory - the only one the
 // services panel can act on. Absence of a compose file here (incus-compose

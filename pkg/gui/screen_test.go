@@ -171,6 +171,14 @@ type screen struct {
 func startScreen(t *testing.T, width, height int, configure func(*config.UserConfig)) *screen {
 	t.Helper()
 
+	return startScreenWith(t, width, height, configure, nil)
+}
+
+// startScreenWith is startScreen with prepare run before the app starts,
+// for what Run would set up and run doesn't: a compose stack.
+func startScreenWith(t *testing.T, width, height int, configure func(*config.UserConfig), prepare func(*screen)) *screen {
+	t.Helper()
+
 	userConfig := config.GetDefaultConfig()
 	if configure != nil {
 		configure(&userConfig)
@@ -207,6 +215,10 @@ func startScreen(t *testing.T, width, height int, configure func(*config.UserCon
 	require.NoError(t, err)
 
 	s := &screen{gui: gui, g: g, server: server, done: make(chan error, 1)}
+
+	if prepare != nil {
+		prepare(s)
+	}
 
 	go func() { s.done <- gui.run(g) }()
 

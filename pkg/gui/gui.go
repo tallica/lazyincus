@@ -433,7 +433,6 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
-		gui.goEvery(time.Second*10, gui.refreshServicesQuiet)
 	}()
 
 	err := g.MainLoop()
@@ -483,12 +482,12 @@ func (gui *Gui) setPanels() {
 }
 
 // refreshInstancesQuiet drives the background poll, which events don't
-// replace (docs/Incus.md, "Events"). It also reports on the connection
-// every tick, whether or not the refresh succeeded - this is what notices a
-// daemon that has gone away, and the footer is otherwise drawn once at
-// startup.
+// replace (docs/Incus.md, "Events"): the services too, a service being its
+// instances. It also reports on the connection every tick, whether or not
+// the refresh succeeded - this is what notices a daemon that has gone away,
+// and the footer is otherwise drawn once at startup.
 func (gui *Gui) refreshInstancesQuiet() error {
-	if err := gui.refreshInstances(); err != nil {
+	if err := gui.refreshInstancesAndServices(); err != nil {
 		gui.Log.Warn(err)
 	}
 

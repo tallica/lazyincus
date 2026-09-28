@@ -39,7 +39,7 @@ an `instance-updated` refreshes at most every 10s.
 | List | Refreshed by | Polled |
 |---|---|---|
 | Instances | `instance-created`, `-deleted`, `-renamed`, `-started`, `-stopped`, `-shutdown`, `-restarted`, `-paused`, `-resumed`, `-restored`, `-migrated`, `instance-agent-started`/`-stopped`, `instance-snapshot-created`/`-deleted`/`-renamed`; `instance-updated`; an operation ending | every 2s, stream or not |
-| Services | whatever refreshes the instances | every 10s, stream or not |
+| Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
 | Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
 | Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
