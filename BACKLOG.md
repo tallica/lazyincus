@@ -88,6 +88,29 @@ Not planned:
       that won't change. Untried: the development certificate isn't
       restricted, so `incustest`'s `Listen` would need to refuse
       all-projects for a test to see it.
+- [ ] **Poll less now that events carry the changes** — what's polled, and
+      why, is the table in [docs/Panels.md](docs/Panels.md#what-keeps-them-current).
+      The 2s poll is the big one: every instance's config, state and
+      snapshots, in every project, stream or not, the services' listing
+      with it. Most of that the events already bring; what it's there for
+      is CPU, memory, processes, disk and addresses. Ways to shrink it:
+      - Tick the Info tab off the selected instance's own
+        `GetInstanceState`, and slow the full listing right down while
+        the stream is open.
+      - The IPv4 column then needs an address arriving after a start:
+        list a few times after an `instance-started` - at 1s, 3s, 10s -
+        rather than every 2s for good.
+      - Judge the connection with `GET /1.0` rather than a full listing;
+        a dropped stream already hurries it.
+      - Poll the Resources panel's tab on screen, not all four: a volume's
+        usage is the main thing left to poll there.
+      - Refresh the instances when an "Updating snapshot" operation ends:
+        an instance snapshot's edit sends no lifecycle event, so it waits
+        for the poll ([docs/Incus.md](docs/Incus.md), "Events").
+      - Add `instance-ready` to `eventRefreshes`, for the `Ready` status.
+
+      Measure first: a listing's cost on a daemon with a few hundred
+      instances is untried, the development daemons having a dozen or so.
 
 Not planned:
 
