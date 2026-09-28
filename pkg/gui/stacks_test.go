@@ -259,5 +259,10 @@ func TestTheLocalStackCannotBeRemoved(t *testing.T) {
 		return s.gui.stackRemove(stack)
 	})
 
-	s.settle(t, "It isn't saved")
+	// The message holds a temp dir path, so where it wraps varies by OS.
+	s.settle(t, "─"+s.gui.Tr.ErrorTitle)
+	s.do(t, func() error {
+		assert.Contains(t, s.gui.Views.Confirmation.Buffer(), "It isn't saved")
+		return nil
+	})
 }
