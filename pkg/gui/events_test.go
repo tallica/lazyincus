@@ -561,6 +561,24 @@ func TestAResourcesKeyFollowsItsConfig(t *testing.T) {
 	assert.NotEqual(t, before, profileKey(profile), "profile")
 }
 
+// A snapshot's Config tab follows a change to it - an expiry set from a
+// shell - an instance's snapshot and a volume's alike.
+func TestASnapshotsKeyFollowsItsConfig(t *testing.T) {
+	log := commands.NewDummyLog()
+	gui := &Gui{Log: log, Tr: i18n.NewTranslationSet(log, "en")}
+	key := gui.getSnapshotsPanel().ContextState.GetItemContextCacheKey
+
+	ofInstance := &commands.Snapshot{Project: "default", Owner: "web", Name: "snap0"}
+	before := key(ofInstance)
+	ofInstance.Snapshot.ExpiresAt = time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	assert.NotEqual(t, before, key(ofInstance), "instance's")
+
+	ofVolume := &commands.Snapshot{Owner: "data", Name: "snap0", Volume: &commands.Volume{Pool: "default", Name: "data"}}
+	before = key(ofVolume)
+	ofVolume.VolumeSnapshot.ExpiresAt = new(time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC))
+	assert.NotEqual(t, before, key(ofVolume), "volume's")
+}
+
 // A volume's usage changes with every write to it; a tab redrawn for each
 // would never hold still.
 func TestAVolumesKeyIgnoresItsUsage(t *testing.T) {
