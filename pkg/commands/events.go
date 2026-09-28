@@ -61,9 +61,35 @@ func listen(client incus.InstanceServer, allProjects bool, types []string) (Even
 func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, opened func(), handle func(Event)) error {
 	client, project, allProjects := c.scope()
 
-	listener, err := listen(client, allProjects, types)
-	if err != nil {
-		return err
+	type dial struct {
+		listener EventListener
+		err      error
+	}
+
+	dialed := make(chan dial, 1)
+	go func() {
+		listener, err := listen(client, allProjects, types)
+		dialed <- dial{listener, err}
+	}()
+
+	var listener EventListener
+
+	select {
+	case <-ctx.Done():
+		// The dial takes no context (docs/Incus.md, "Connection timeouts").
+		go func() {
+			if late := <-dialed; late.err == nil {
+				late.listener.Disconnect()
+			}
+		}()
+
+		return nil
+	case opened := <-dialed:
+		if opened.err != nil {
+			return opened.err
+		}
+
+		listener = opened.listener
 	}
 
 	events := listener.AddChannel(types, 0)

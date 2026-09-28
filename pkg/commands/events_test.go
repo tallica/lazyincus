@@ -121,3 +121,29 @@ func TestListenForEventsKeepsTheirOrder(t *testing.T) {
 		assert.Equal(t, action, (<-events).Action)
 	}
 }
+
+// A dial to a daemon that doesn't answer can't be cancelled: ListenForEvents
+// returns without it, and the stream the dial opens late is closed.
+func TestListenForEventsDoesNotWaitOutADial(t *testing.T) {
+	server := incustest.New(incustest.Server{})
+	release := server.HoldListen()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+
+	go func() {
+		result <- newEventsCommand(server).ListenForEvents(ctx, []string{api.EventTypeLifecycle}, func() {}, func(Event) {})
+	}()
+
+	cancel()
+
+	select {
+	case err := <-result:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("ListenForEvents waited out the dial")
+	}
+
+	release()
+	require.Eventually(t, func() bool { return server.Listening() == 0 }, 5*time.Second, 10*time.Millisecond)
+}

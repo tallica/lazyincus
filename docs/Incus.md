@@ -39,6 +39,10 @@ inferred.
   that's gone. The startup connect needs its own bound
   (`connectDefaultRemote`, 10s): cliconfig calls `GetServer()` before
   handing back a client, so there's no transport of ours to cap yet.
+  The event stream's websocket dials through the same capped dialers but
+  takes no context, so `ListenForEvents` doesn't wait on a dial it's been
+  cancelled during - `run` waits for the event watcher, and quitting
+  would otherwise sit out the 5s - and closes the stream if it opens late.
 - **Errors from the main loop**: gocui ends it on any error out of a
   keybinding or an `Update` closure, which is no way to end a session, so
   `Run` sets gocui's `ErrorHandler` to `gui.handleError` - error panel for

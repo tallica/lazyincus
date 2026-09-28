@@ -112,6 +112,17 @@ func (l *listener) send(event api.Event) {
 // GetEventsByType and GetEventsAllProjectsByType.
 func (s *Server) Listen(allProjects bool, _ []string) (eventListener, error) {
 	shared := s.shared()
+
+	shared.mutex.Lock()
+	held, opened := shared.held, shared.heldOpened
+	shared.held, shared.heldOpened = nil, nil
+	shared.mutex.Unlock()
+
+	if held != nil {
+		<-held
+		defer close(opened)
+	}
+
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()
 
@@ -127,6 +138,23 @@ func (s *Server) Listen(allProjects bool, _ []string) (eventListener, error) {
 	shared.listeners = append(shared.listeners, l)
 
 	return l, nil
+}
+
+// HoldListen has the next Listen wait until release, as a dial to a daemon
+// that doesn't answer does. release returns once that Listen has opened
+// its stream.
+func (s *Server) HoldListen() (release func()) {
+	held, opened := make(chan struct{}), make(chan struct{})
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.held, shared.heldOpened = held, opened
+	shared.mutex.Unlock()
+
+	return func() {
+		close(held)
+		<-opened
+	}
 }
 
 // Listening is how many event streams are open.

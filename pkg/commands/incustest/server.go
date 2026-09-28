@@ -64,6 +64,8 @@ type state struct {
 	// imagesSet is changed's counterpart for images.
 	imagesSet bool
 	listeners []*listener
+	// held and heldOpened are HoldListen's.
+	held, heldOpened chan struct{}
 }
 
 // New is a Server answering from fixture.
