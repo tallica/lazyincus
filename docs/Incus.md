@@ -84,11 +84,15 @@ inferred.
   state comes from its agent once there is one (`renderState` in the qemu
   driver), and until then from the host side - on 7.4 a restarted VM's
   address read `eth0` within 2s, then the guest's own `enp5s0` once the
-  agent was up, 7s later. The polls stay: nothing sends an
-  event for CPU, memory or a DHCP address. While a stream is open, the images, volumes, networks and
-  profiles polls drop from 10s to once a minute, left for what has no
-  event - a volume's size, an image's last use - and each time one opens,
-  every list is fetched again for whatever changed while none was.
+  agent was up, 7s later. An instance snapshot's edit sends no
+  `instance-snapshot-updated`, whatever `api` declares: `snapshotPut`
+  calls `Update(args, false)`, and that `false`, `userRequested`, is what
+  the event hangs on; only the "Updating snapshot" operation says so. A
+  volume snapshot's edit does send `storage-volume-snapshot-updated`. The
+  polls stay, for what no event reports - CPU, memory, a DHCP address -
+  and slow down while a stream is open. What each event refreshes, and
+  what's left to the polls, is the table in
+  [docs/Panels.md](Panels.md#what-keeps-them-current).
   `*incus.EventListener` has unexported fields, so `commands.EventListener`
   is the interface in front of it that `incustest` implements. An
   operation event arrives the moment the daemon takes an action, whoever
