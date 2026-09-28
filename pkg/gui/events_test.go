@@ -118,11 +118,33 @@ func TestAnOperationMarksItsInstance(t *testing.T) {
 		5*time.Second, 50*time.Millisecond)
 }
 
-// webRow is the instances panel's line for web.
+// An operation that fails or is cancelled is over too; nothing else would
+// take its mark off.
+func TestAnOperationThatDoesNotSucceedEndsItsMark(t *testing.T) {
+	for _, status := range []api.StatusCode{api.Failure, api.Cancelled} {
+		t.Run(status.String(), func(t *testing.T) {
+			s := startScreen(t, 140, 40, nil)
+			s.ready(t)
+			require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+
+			s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", api.Running, "web"))
+			require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "restarting") },
+				5*time.Second, 50*time.Millisecond)
+
+			s.server.Emit(incustest.Operation("default", "op1", "Restarting instance", status, "web"))
+			require.Eventually(t, func() bool { return strings.Contains(webRow(s.snapshot(t)), "running") },
+				5*time.Second, 50*time.Millisecond)
+		})
+	}
+}
+
+// webRow is the instances panel's line for web, cut at the panel's edge:
+// the main panel beside it shows the selected instance's status too.
 func webRow(screen string) string {
 	for line := range strings.Lines(screen) {
-		if strings.HasPrefix(line, "│web ") {
-			return line
+		if row, ok := strings.CutPrefix(line, "│web "); ok {
+			row, _, _ = strings.Cut(row, "│")
+			return row
 		}
 	}
 
