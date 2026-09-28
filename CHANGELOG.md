@@ -10,19 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.11.0] - 2026-09-28
 
 ### Added
-- `--debug` logs every event lazyincus hears from Incus, and each time it starts listening, to `development.log` in the config directory - the first thing to check when a list doesn't catch up with a change.
+- `--debug` logs every Incus event to `development.log`.
 
 ### Changed
-- Lists update the moment something changes on the daemon, whoever changed it, instead of when their next poll comes round: an image pulled, a profile or volume created, an instance created, started or stopped from a shell or another client shows up within half a second. lazyincus listens to Incus's event stream for it; the Images, Volumes, Networks and Profiles lists used to take up to ten seconds to notice. While the stream is connected those four are polled once a minute instead, for what no event reports, such as a volume's size. Attaching a volume or network to an instance, or changing its profiles, updates what those lists count as using it within ten seconds at most, however busy the daemon is. A VM's Info tab switches to what its Incus agent reports - the guest's own interface names, and interfaces the host can't see - as soon as the agent is up.
-- An instance started, stopped, restarted or restored from anywhere - a shell, another client, incus-compose's healthcheck daemon restarting a service - reads `starting`, `stopping`, `restarting` or `restoring` on its row while it happens, as one lazyincus acts on already did. It used to show `running` until the action was over.
-- The Services panel keeps up with its instances as the Instances panel does, polled with them every two seconds: an address arriving, or anything else no event reports, used to take up to ten seconds to reach a service's row.
-- `p` pauses and resumes, `incus pause` and `incus resume`, and the row reads `freezing` and `unfreezing` on the way, as for a start or stop - a pause started from a shell, or a whole service's `incus-compose pause`, included. The status bar says "resuming" rather than "pausing" when it's resuming, and the key reads "pause/resume", `resume` being the CLI's word for it.
+- Lists follow Incus's event stream: changes made anywhere show within half a second, not on the next poll (up to 10s).
+- Images, Volumes, Networks and Profiles are polled once a minute while the event stream is connected, instead of every 10s.
+- Rows show `starting`, `stopping`, `restarting` or `restoring` for actions started anywhere: a shell, another client, ic-healthd.
+- `p` is pause/resume, and rows show `freezing`/`unfreezing` on the way.
+- The Services panel is polled every 2s with the instances, instead of every 10s.
+- A VM's Info tab switches to the guest agent's view as soon as the agent starts.
 
 ### Fixed
-- An instance's Config and Env tabs, and the Config tab of an image, volume, network, profile or snapshot, show a change made to it while you're looking, where they kept what they showed when you selected it until you moved away and back. A network's Forwards and ACLs tabs follow a forward or ACL being added, changed or removed.
-- The "Connection lost" notice comes up within a moment of the daemon going away, and goes as soon as it's back, where it waited for the next two-second check either way.
-- A VM's Logs tab no longer repeats its log over and over. Incus hands a VM's console log out whole on every read, where a container's comes a new part at a time, and lazyincus added each read to the last; a stopped container's log, likewise whole, showed twice.
-- Restoring a snapshot says so on the instance's row - `restoring` - until it's done, and the instance keeps its place in the list. Incus stops a running instance to roll it back and starts it again, so the row used to read `running` throughout, or drop to the stopped end of the list for a moment and come back.
+- Config, Env, Forwards and ACLs tabs update when their item changes while open.
+- "Connection lost" appears and clears within a moment, not on the next 2s check.
+- A VM's Logs tab no longer repeats its log.
+- Restoring a snapshot shows `restoring` on the row, and the row keeps its place.
 
 ## [0.10.1] - 2026-09-27
 
