@@ -190,19 +190,33 @@ func TestStandaloneInstancesLeaveOutEveryStack(t *testing.T) {
 		))
 	})
 
-	require.Eventually(t, func() bool {
-		names := onLoop(t, s, func() []string {
-			return lo.Map(s.gui.Panels.Instances.List.GetItems(), func(instance *commands.Instance, _ int) string {
-				return instance.Name
+	shows := func(want ...string) func() bool {
+		return func() bool {
+			names := onLoop(t, s, func() []string {
+				return lo.Map(s.gui.Panels.Instances.List.GetItems(), func(instance *commands.Instance, _ int) string {
+					return instance.Name
+				})
 			})
-		})
 
-		slices.Sort(names)
+			slices.Sort(names)
 
-		return slices.Equal(names, []string{"db", "job-1", "worker-1"})
-	}, 5*time.Second, 20*time.Millisecond)
+			return slices.Equal(names, want)
+		}
+	}
+	title := func() string { return onLoop(t, s, func() string { return s.gui.Views.Instances.Title }) }
 
-	assert.Equal(t, s.gui.Tr.StandaloneInstancesTitle, onLoop(t, s, func() string { return s.gui.Views.Instances.Title }))
+	require.Eventually(t, shows("db", "job-1", "worker-1"), 5*time.Second, 20*time.Millisecond)
+	assert.Equal(t, s.gui.Tr.StandaloneInstancesTitle, title())
+
+	// C puts the stacks' own back, and takes them out again.
+	s.press(t, '3')
+	s.press(t, 'C')
+	require.Eventually(t, shows("api-1", "db", "job-1", "web", "worker-1"), 5*time.Second, 20*time.Millisecond)
+	assert.Equal(t, s.gui.Tr.InstancesTitle, title())
+
+	s.press(t, 'C')
+	require.Eventually(t, shows("db", "job-1", "worker-1"), 5*time.Second, 20*time.Millisecond)
+	assert.Equal(t, s.gui.Tr.StandaloneInstancesTitle, title())
 }
 
 func TestAddingAStack(t *testing.T) {

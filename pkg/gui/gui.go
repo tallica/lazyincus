@@ -134,6 +134,10 @@ type guiState struct {
 	// if true, we show instances with a 'Stopped' status in the instances panel
 	ShowStoppedInstances bool
 
+	// ShowStackInstances puts the listed stacks' compose instances back in
+	// the instances panel, alongside the Services panel's rows for them.
+	ShowStackInstances bool
+
 	// ShowUnmanagedNetworks lists the host interfaces Incus merely reports
 	// alongside its own networks.
 	ShowUnmanagedNetworks bool

@@ -222,7 +222,9 @@ declares, whichever stack is selected, and its title becomes "Standalone
 Instances" while any stack is listed. A compose instance no Services row
 claims stays there, having no panel of its own: one of a project no stack
 lists, or of a service its compose file no longer declares, which the
-stack's Drift names.
+stack's Drift names. `C` sets `ShowStackInstances`, which turns the filter
+off and the title back to "Instances" until it's pressed again; it's
+bound only when incus-compose is there to have stacks.
 `SpansProjects.Instances` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
 change which projects they hold. The stacks are fetched first at startup,

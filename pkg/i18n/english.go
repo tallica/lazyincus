@@ -31,6 +31,7 @@ type TranslationSet struct {
 	Cancel                       string
 	Remove                       string
 	HideStopped                  string
+	ToggleStackInstances         string
 	HideUnmanagedNetworks        string
 	PruneImages                  string
 	PruneImagesTitle             string
@@ -279,6 +280,7 @@ func englishSet() TranslationSet {
 		Cancel:                       "cancel",
 		Remove:                       "delete",
 		HideStopped:                  "show/hide stopped instances",
+		ToggleStackInstances:         "show/hide the stacks' instances",
 		HideUnmanagedNetworks:        "show/hide host interfaces",
 		PruneImages:                  "prune unused images",
 		PruneImagesTitle:             "Prune images",

@@ -564,6 +564,16 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 	bindings = append(bindings, gui.stacksKeybindings()...)
 	bindings = append(bindings, gui.servicesKeybindings()...)
 
+	if gui.State.ComposeAvailable {
+		bindings = append(bindings, &Binding{
+			ViewName:    "instances",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleStackInstances,
+			Description: gui.Tr.ToggleStackInstances,
+		})
+	}
+
 	for index, window := range gui.sideWindowNames() {
 		bindings = append(bindings, &Binding{
 			Handler:     gui.handleGoToWindow(window),

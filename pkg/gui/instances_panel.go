@@ -81,7 +81,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 				return false
 			}
 
-			return !gui.isStackInstance(instance)
+			return gui.State.ShowStackInstances || !gui.isStackInstance(instance)
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
 			return presentation.GetInstanceDisplayStrings(
@@ -172,7 +172,7 @@ func (gui *Gui) fetchInstances() (func() error, error) {
 // project even when the server's don't.
 func (gui *Gui) setInstancesSpan(instances []*commands.Instance) {
 	standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
-		return gui.isStackInstance(instance)
+		return !gui.State.ShowStackInstances && gui.isStackInstance(instance)
 	})
 
 	gui.State.SpansProjects.Instances = spansMultipleProjects(
@@ -230,6 +230,14 @@ func (gui *Gui) clearInstanceUsers() error {
 
 func (gui *Gui) handleHideStoppedInstances(g *gocui.Gui, v *gocui.View) error {
 	gui.State.ShowStoppedInstances = !gui.State.ShowStoppedInstances
+
+	return gui.Panels.Instances.RerenderList()
+}
+
+func (gui *Gui) handleToggleStackInstances(g *gocui.Gui, v *gocui.View) error {
+	gui.State.ShowStackInstances = !gui.State.ShowStackInstances
+	gui.Views.Instances.Title = gui.instancesPanelTitle()
+	gui.setInstancesSpan(gui.Panels.Instances.List.GetAllItems())
 
 	return gui.Panels.Instances.RerenderList()
 }

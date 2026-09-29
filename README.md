@@ -162,6 +162,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
+| `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
 | `m` | Jump to Logs tab |
 | `M` | Stacks and Services panels: follow the stack's or service's logs, every instance's interleaved (`incus-compose logs --follow`) |
@@ -235,7 +236,8 @@ service the file declares but nothing is running still gets one, in state
 disagree. Every listed stack's service instances move out of the
 instances panel, which becomes **Standalone Instances** (`3`); a project
 no stack lists keeps its instances there, as does an instance of a service
-the compose file no longer declares.
+the compose file no longer declares. `C` there puts the stacks' instances
+back for a while, in one list with everything else.
 
 A service with replicas
  lists them under it, one indented row each,
