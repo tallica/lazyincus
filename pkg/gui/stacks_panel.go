@@ -7,8 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -29,6 +31,11 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 						Key:    "info",
 						Title:  gui.Tr.InfoTitle,
 						Render: gui.renderStackInfo,
+					},
+					{
+						Key:    "logs",
+						Title:  gui.Tr.LogsTitle,
+						Render: gui.renderStackLogs,
 					},
 					{
 						Key:    "config",
@@ -296,6 +303,51 @@ func stackIdentity(stack *commands.ComposeStack) string {
 	}
 
 	return stack.Dir + "\x00" + stack.Name
+}
+
+// renderStackLogs stacks every service's logs, each instance under a
+// heading of its own, the way a replicated service's Logs tab stacks its
+// replicas'.
+func (gui *Gui) renderStackLogs(stack *commands.ComposeStack) tasks.TaskFunc {
+	return gui.renderLogsToMain(func() string { return gui.stackLogsStr(stack) })
+}
+
+func (gui *Gui) stackLogsStr(stack *commands.ComposeStack) string {
+	if stack.Err != nil {
+		return utils.ColoredString(stack.Err.Error(), color.FgRed)
+	}
+
+	state := gui.composeInstances.Load()
+	if state == nil || state.project != stack.Name {
+		return ""
+	}
+
+	var sections []string
+
+	for _, service := range sortedServices(state.services) {
+		for _, instance := range service.SortedInstances() {
+			heading := service.Name
+			if instance.Name != service.Name {
+				heading += " · " + instance.Name
+			}
+
+			sections = append(sections, gui.sectionHeading(heading)+"\n\n"+gui.instanceLogStr(instance))
+		}
+	}
+
+	if len(sections) == 0 {
+		return gui.Tr.StackNotRunning
+	}
+
+	return strings.Join(sections, "\n\n")
+}
+
+func (gui *Gui) handleStackViewLogs(g *gocui.Gui, v *gocui.View) error {
+	if err := gui.Panels.Stacks.SetMainTab("logs"); err != nil {
+		return err
+	}
+
+	return gui.switchFocus(gui.Views.Main)
 }
 
 func (gui *Gui) renderStackConfig(stack *commands.ComposeStack) tasks.TaskFunc {

@@ -688,6 +688,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
 		binding('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
 		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
+		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('C', gui.onStack(gui.stackMenu), gui.Tr.ComposeProjectActions),
 	}
 }

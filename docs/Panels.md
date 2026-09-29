@@ -71,7 +71,7 @@ list has focus, so a tab being read follows too.
 | Tab | Drawn | Follows a change through |
 |---|---|---|
 | Instance Info | every 1s | the newest instances listing |
-| Instance, service Logs | every 1s | its own console-log read |
+| Instance, service, stack Logs | every 1s | its own console-log read |
 | Instance Config, Env | once | the instance's config, less ic-healthd's `user.healthcheck.*` verdicts, which change every few seconds |
 | Instance, service Top | every 2s | its own `ps` |
 | Stack Info | every 1s | the newest stacks listing |
@@ -174,6 +174,9 @@ Main panel tabs:
   past the services count comes from `gui.composeInstances` and
   `gui.composeProject`, which `fetchServices` fills for the selected
   stack, so the tab ticks until they arrive.
+- **Logs** — every instance's console log, services in name order, each
+  under a heading naming its service, and its instance when that's
+  named differently. `m` jumps here, as it does on the other panels.
 - **Config** — the whole of `incus-compose config`, through JSON to YAML
   for the reason the service's Config tab gives.
 

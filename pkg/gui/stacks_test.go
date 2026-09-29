@@ -320,3 +320,25 @@ func TestStackEndpoints(t *testing.T) {
 			"web-2:        *:8080 → 80\n",
 		stackEndpointsStr(services))
 }
+
+// A stack's Logs tab stacks each instance's console log under its service's
+// name.
+func TestStackLogsStackEachInstance(t *testing.T) {
+	root := t.TempDir()
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, root, "default", "web", "db"))(s)
+		labelled(s, map[string]string{"web": "web"})
+		s.server.ConsoleLogs = map[string]string{"web": "hello from web\n"}
+	})
+
+	s.settle(t, "Services (default)")
+	require.Eventually(t, func() bool {
+		return slices.Contains(serviceNames(t, s), "default/web")
+	}, 5*time.Second, 20*time.Millisecond)
+
+	s.do(t, func() error { return s.gui.Panels.Stacks.SetMainTab("logs") })
+
+	screen := s.settle(t, "hello from web")
+	assert.Contains(t, screen, "── web ──")
+}

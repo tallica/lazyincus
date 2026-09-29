@@ -225,7 +225,8 @@ they agree, `partial` when they don't, `none` when nothing is deployed, and
 keys are the Services panel's compose verbs below, run against the whole
 stack, `C`'s menu included. The Info tab says where the stack can be
 reached, what it's using, and where the daemon has drifted from the
-compose file; the Config tab is the whole of `incus-compose config`.
+compose file; the Logs tab stacks every service's logs, and the Config
+tab is the whole of `incus-compose config`.
 
 The Services rows come from the compose file rather than the daemon, so a
 service the file declares but nothing is running still gets one, in state

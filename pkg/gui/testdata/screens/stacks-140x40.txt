@@ -1,4 +1,4 @@
-╭─[1]─Stacks──────────────────────────────────╮╭─Info - Config─────────────────────────────────────────────────────────────────────────────╮
+╭─[1]─Stacks──────────────────────────────────╮╭─Info - Logs - Config──────────────────────────────────────────────────────────────────────╮
 │default running ~/default                    ││Project:      default                                                                      │
 │shop    none    ~/shop                       ││Directory:    ~/default                                                                    │
 │                                             ││Listed:       at startup (working directory or -P)                                         │
