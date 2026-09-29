@@ -232,9 +232,10 @@ The Services rows come from the compose file rather than the daemon, so a
 service the file declares but nothing is running still gets one, in state
 `none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
-disagree. Every listed stack's instances move out of the instances panel,
-which becomes **Standalone Instances** (`3`); a project no stack lists
-keeps its instances there.
+disagree. Every listed stack's service instances move out of the
+instances panel, which becomes **Standalone Instances** (`3`); a project
+no stack lists keeps its instances there, as does an instance of a service
+the compose file no longer declares.
 
 A service with replicas
  lists them under it, one indented row each,
