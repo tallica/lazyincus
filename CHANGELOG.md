@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `C`, the project menu on the Services panel: select the stack on the Stacks panel and press the verb's own key; `M` follows logs.
 
 ### Fixed
+- An instance whose service the compose file no longer declares shows in Standalone Instances, instead of in no list at all.
 - An instance that has never run no longer shows `Last used: 1970/01/01` on its Info tab.
 - `[` and `]` switch tabs again after `m` on the Services panel has jumped to Logs.
 - Clicking a main-panel tab works while the main panel has focus, as it does after `m` or `enter`.

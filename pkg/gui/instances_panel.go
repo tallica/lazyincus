@@ -121,10 +121,10 @@ func isStopped(instance *commands.Instance) bool {
 
 // isStackInstance reports whether a listed stack has this instance, and so
 // the services panel, which is what makes this panel the standalone one.
-// Compose instances of a project no stack lists have no other panel, so
-// they stay here.
+// A compose instance no Services row claims - of a project no stack lists,
+// or of a service its compose file no longer declares - stays here.
 func (gui *Gui) isStackInstance(instance *commands.Instance) bool {
-	return gui.State.StackProjects[instance.Project] && instance.ComposeService() != ""
+	return gui.State.StackServices[instance.Project][instance.ComposeService()]
 }
 
 func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc {

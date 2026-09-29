@@ -61,7 +61,7 @@ func TestInstancesAreStandaloneOnceAStackHasTheirs(t *testing.T) {
 
 	assert.Equal(t, gui.Tr.InstancesTitle, gui.instancesPanelTitle())
 
-	gui.State.StackProjects = map[string]bool{"shop": true}
+	gui.State.StackServices = map[string]map[string]bool{"shop": {"api": true}}
 
 	assert.Equal(t, gui.Tr.StandaloneInstancesTitle, gui.instancesPanelTitle())
 }

@@ -220,7 +220,7 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 			return err
 		}
 
-		if err := gui.setStackProjects(stacks); err != nil {
+		if err := gui.setStackServices(stacks); err != nil {
 			return err
 		}
 
@@ -231,22 +231,30 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 	}, nil
 }
 
-// setStackProjects hands the stacks' compose instances to the services
+// setStackServices hands the stacks' compose instances to the services
 // panel, re-filtering the instances panel when that changes which.
-func (gui *Gui) setStackProjects(stacks []*commands.ComposeStack) error {
-	projects := map[string]bool{}
+func (gui *Gui) setStackServices(stacks []*commands.ComposeStack) error {
+	services := map[string]map[string]bool{}
 
 	for _, stack := range stacks {
-		if stack.Name != "" {
-			projects[stack.Name] = true
+		if stack.Name == "" {
+			continue
+		}
+
+		if services[stack.Name] == nil {
+			services[stack.Name] = map[string]bool{}
+		}
+
+		for _, service := range stack.Services {
+			services[stack.Name][service.Name] = true
 		}
 	}
 
-	if maps.Equal(projects, gui.State.StackProjects) {
+	if maps.EqualFunc(services, gui.State.StackServices, maps.Equal) {
 		return nil
 	}
 
-	gui.State.StackProjects = projects
+	gui.State.StackServices = services
 	gui.Views.Instances.Title = gui.instancesPanelTitle()
 	gui.setInstancesSpan(gui.Panels.Instances.List.GetAllItems())
 

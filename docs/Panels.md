@@ -217,10 +217,12 @@ service's own: `partial` when replicas disagree, `none` when it has no
 instances. `Health` rolls up ic-healthd's verdict on the running replicas, worst-first.
 
 The instances panel is the other half of the split: its filter
-(`isStackInstance`) drops the compose instances of every listed stack's
-project, whichever stack is selected, and its title becomes "Standalone
-Instances" while it's dropping any. A project no stack lists keeps its
-compose instances there — they have no panel of their own.
+(`isStackInstance`) drops the instances of every service a listed stack
+declares, whichever stack is selected, and its title becomes "Standalone
+Instances" while any stack is listed. A compose instance no Services row
+claims stays there, having no panel of its own: one of a project no stack
+lists, or of a service its compose file no longer declares, which the
+stack's Drift names.
 `SpansProjects.Instances` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
 change which projects they hold. The stacks are fetched first at startup,

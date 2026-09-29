@@ -166,8 +166,9 @@ func TestServicesFollowTheSelectedStack(t *testing.T) {
 	}, 5*time.Second, 20*time.Millisecond)
 }
 
-// Every listed stack's compose instances are the services panel's; a
-// compose instance of a project no stack lists stays standalone.
+// Every listed stack's compose instances are the services panel's; one of
+// a project no stack lists, or of a service its stack no longer declares,
+// stays standalone.
 func TestStandaloneInstancesLeaveOutEveryStack(t *testing.T) {
 	instances := fixtureServer().Instances
 	compose := func(project, name, service string) api.InstanceFull {
@@ -183,6 +184,7 @@ func TestStandaloneInstancesLeaveOutEveryStack(t *testing.T) {
 		s.server.SetInstances(append(instances[:0:0],
 			compose("default", "web", "web"),
 			compose("shop", "api-1", "api"),
+			compose("shop", "worker-1", "worker"),
 			compose("elsewhere", "job-1", "job"),
 			instances[1],
 		))
@@ -195,7 +197,9 @@ func TestStandaloneInstancesLeaveOutEveryStack(t *testing.T) {
 			})
 		})
 
-		return slices.Equal(names, []string{"db", "job-1"}) || slices.Equal(names, []string{"job-1", "db"})
+		slices.Sort(names)
+
+		return slices.Equal(names, []string{"db", "job-1", "worker-1"})
 	}, 5*time.Second, 20*time.Millisecond)
 
 	assert.Equal(t, s.gui.Tr.StandaloneInstancesTitle, onLoop(t, s, func() string { return s.gui.Views.Instances.Title }))

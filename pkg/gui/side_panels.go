@@ -213,7 +213,7 @@ func (gui *Gui) instancesPanelTitle() string {
 		return fmt.Sprintf(gui.Tr.InstancesUsing, users.label)
 	}
 
-	if len(gui.State.StackProjects) == 0 {
+	if len(gui.State.StackServices) == 0 {
 		return gui.Tr.InstancesTitle
 	}
 
