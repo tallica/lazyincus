@@ -99,10 +99,10 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 	return output
 }
 
-// localTime is blank for the zero time an instance that has never run
-// reports as its last use.
+// localTime is blank for a time that was never set: the daemon reports an
+// instance that has never run as last used at the Unix epoch.
 func localTime(t time.Time) string {
-	if t.IsZero() {
+	if t.IsZero() || t.Unix() <= 0 {
 		return ""
 	}
 

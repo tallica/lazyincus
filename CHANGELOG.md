@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Services panel shows the selected stack's services. Stacks and Services are `1` and `2` whenever incus-compose is installed, so other panels move down two.
 - Standalone Instances leaves out every listed stack's compose instances, not just the working directory's.
 
+### Fixed
+- An instance that has never run no longer shows `Last used: 1970/01/01` on its Info tab.
+
 ## [0.11.0] - 2026-09-28
 
 ### Added
