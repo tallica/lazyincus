@@ -345,7 +345,7 @@ func (gui *Gui) fetchServices() (func() error, error) {
 		}, nil
 	}
 
-	services, err := gui.IncusCommand.GetComposeServices(stack)
+	services, orphans, err := gui.IncusCommand.GetComposeServices(stack)
 	if err != nil {
 		return nil, err
 	}
@@ -367,6 +367,8 @@ func (gui *Gui) fetchServices() (func() error, error) {
 		if projectErr == nil {
 			gui.composeProject.Store(project)
 		}
+
+		gui.composeInstances.Store(&stackInstances{project: stack.Name, services: services, orphans: orphans})
 
 		gui.Panels.Services.SetItems(commands.ServiceRows(services))
 

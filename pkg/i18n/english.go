@@ -162,7 +162,9 @@ type TranslationSet struct {
 	CannotRemoveLocalStack        string
 	ConfirmRemoveStack            string
 	StackNotRunning               string
-	StackRunningCount             string
+	EndpointsTitle                string
+	UsageTitle                    string
+	DriftTitle                    string
 	StackListedLocal              string
 	StackListedSaved              string
 	ServicesTitle                 string
@@ -408,7 +410,9 @@ func englishSet() TranslationSet {
 		CannotRemoveLocalStack: "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to remove.",
 		ConfirmRemoveStack:     "Remove stack %s (%s) from the list? Nothing in it is stopped or deleted.",
 		StackNotRunning:        "Nothing is running in this stack - press 'u' to bring it up.",
-		StackRunningCount:      "%d/%d running",
+		EndpointsTitle:         "Endpoints",
+		UsageTitle:             "Usage",
+		DriftTitle:             "Drift",
 		StackListedLocal:       "at startup (working directory or -P)",
 		StackListedSaved:       "saved in state.yml",
 

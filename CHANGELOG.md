@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - A Stacks panel lists compose stacks: the working directory's, plus any added with `a` and removed with `D`, saved in `state.yml`.
-- Stacks run the Services panel's compose verbs against the whole stack, and show its rolled-up status, config and running counts.
+- Stacks run the Services panel's compose verbs against the whole stack.
+- A stack's Info tab shows its endpoints, summed usage, and drift: instances the compose file no longer declares, services never created.
 
 ### Changed
 - The Services panel shows the selected stack's services. Stacks and Services are `1` and `2` whenever incus-compose is installed, so other panels move down two.

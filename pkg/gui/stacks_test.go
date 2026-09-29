@@ -122,7 +122,7 @@ func TestScreenStacks(t *testing.T) {
 	}, 5*time.Second, 20*time.Millisecond)
 
 	// The rule runs to the main panel's edge once a layout has measured it.
-	assertGolden(t, "stacks-140x40", s.settle(t, "── Services "+strings.Repeat("─", 40)))
+	assertGolden(t, "stacks-140x40", s.settle(t, "── Drift "+strings.Repeat("─", 40)))
 }
 
 // Without incus-compose, the screen goldens are the proof: none has either
@@ -265,4 +265,58 @@ func TestTheLocalStackCannotBeRemoved(t *testing.T) {
 		assert.Contains(t, s.gui.Views.Confirmation.Buffer(), "It isn't saved")
 		return nil
 	})
+}
+
+func composeInstance(name, service, status string, devices map[string]map[string]string) *commands.Instance {
+	return &commands.Instance{Name: name, Instance: api.InstanceFull{Instance: api.Instance{
+		Name:            name,
+		Status:          status,
+		ExpandedConfig:  map[string]string{"user.label.incus-compose.service": service},
+		ExpandedDevices: devices,
+	}}}
+}
+
+// Drift is an orphan the file has dropped, and a declared service with
+// nothing behind it; a service that matches has none.
+func TestStackDrift(t *testing.T) {
+	state := &stackInstances{
+		services: []*commands.ComposeService{
+			{Name: "web", Instances: []*commands.Instance{composeInstance("web", "web", "Running", nil)}},
+			{Name: "cache"},
+		},
+		orphans: []*commands.Instance{
+			composeInstance("worker-1", "worker", "Running", nil),
+			composeInstance("worker-2", "worker", "Stopped", nil),
+		},
+	}
+
+	assert.Equal(t,
+		"cache:        declared, not created\n"+
+			"worker:       2 instances, partial, not in the compose file\n",
+		stackDriftStr(state))
+
+	assert.Empty(t, stackDriftStr(&stackInstances{services: state.services[:1]}))
+}
+
+// A replica goes by its own name, a lone instance by its service's, and one
+// with neither an address nor a port is left out.
+func TestStackEndpoints(t *testing.T) {
+	proxy := map[string]map[string]string{
+		"proxy-80": {"type": "proxy", "listen": "tcp:0.0.0.0:8080", "connect": "tcp:127.0.0.1:80"},
+	}
+
+	services := []*commands.ComposeService{
+		{Name: "web", Instances: []*commands.Instance{
+			composeInstance("web-2", "web", "Running", proxy),
+			composeInstance("web-1", "web", "Running", proxy),
+		}},
+		{Name: "db", Instances: []*commands.Instance{composeInstance("db", "db", "Stopped", nil)}},
+		{Name: "api", Instances: []*commands.Instance{composeInstance("api", "api", "Running", proxy)}},
+	}
+
+	assert.Equal(t,
+		"api:          *:8080 → 80\n"+
+			"web-1:        *:8080 → 80\n"+
+			"web-2:        *:8080 → 80\n",
+		stackEndpointsStr(services))
 }

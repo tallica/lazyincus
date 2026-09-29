@@ -163,10 +163,17 @@ takes. Which key runs which verb is README's
 
 Main panel tabs:
 
-- **Info** — the project, directory and status, the project's healthcheck
-  setting and each declared service's running count against its replicas.
-  The healthcheck comes from `gui.composeProject`, which `fetchServices`
-  fills for the selected stack, so the tab ticks until it arrives.
+- **Info** — laid out like an instance's: the project, directory and
+  status, the declared services counted by status, then what's rolled up
+  over its instances - health, dates, snapshots. Under headings of their
+  own: **Endpoints**, each instance's address and the ports its proxy
+  devices publish (incus-compose's `ports:`, listening on the daemon's
+  host); **Usage**, the instance counters summed, a custom volume shared
+  by replicas counted once; and **Drift**, compose instances whose service
+  the file no longer declares and declared services with none. Everything
+  past the services count comes from `gui.composeInstances` and
+  `gui.composeProject`, which `fetchServices` fills for the selected
+  stack, so the tab ticks until they arrive.
 - **Config** — the whole of `incus-compose config`, through JSON to YAML
   for the reason the service's Config tab gives.
 

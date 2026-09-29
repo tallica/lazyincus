@@ -132,13 +132,18 @@ func (s *ComposeService) ResolvedImage() string {
 	return s.Image
 }
 
-// Health rolls up ic-healthd's per-instance verdict, worst first: one
-// unhealthy replica makes the service unhealthy. Empty when no replica has
-// been checked, which is also what an instance with no healthcheck reports.
+// Health rolls up the service's replicas' health; see RollUpHealth.
 func (s *ComposeService) Health() string {
+	return RollUpHealth(s.Instances)
+}
+
+// RollUpHealth rolls up ic-healthd's per-instance verdict, worst first: one
+// unhealthy instance makes the lot unhealthy. Empty when none has been
+// checked, which is also what an instance with no healthcheck reports.
+func RollUpHealth(instances []*Instance) string {
 	worst := ""
 
-	for _, instance := range s.Instances {
+	for _, instance := range instances {
 		switch instance.HealthStatus() {
 		case HealthUnhealthy:
 			return HealthUnhealthy
@@ -195,16 +200,16 @@ func (s *ComposeService) StoppedDependencies(services []*ComposeService) []strin
 
 // GetComposeServices pairs the services the stack's compose file declares
 // with its project's instances, matching on the label incus-compose stamps
-// on each (Instance.ComposeService). Instances whose label names no declared
-// service - a one-off from `incus-compose run`, say - belong to no row and
-// are left out.
-func (c *IncusCommand) GetComposeServices(stack *ComposeStack) ([]*ComposeService, error) {
+// on each (Instance.ComposeService). Orphans are the compose instances whose
+// label names no declared service - one the file has since dropped, or a
+// one-off from `incus-compose run` - which belong to no row.
+func (c *IncusCommand) GetComposeServices(stack *ComposeStack) (services []*ComposeService, orphans []*Instance, err error) {
 	instances, err := c.GetProjectInstances(stack.Name)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	services := make([]*ComposeService, 0, len(stack.Services))
+	services = make([]*ComposeService, 0, len(stack.Services))
 	byName := make(map[string]*ComposeService, len(stack.Services))
 
 	for _, service := range stack.Services {
@@ -217,10 +222,12 @@ func (c *IncusCommand) GetComposeServices(stack *ComposeStack) ([]*ComposeServic
 	for _, instance := range instances {
 		if service, ok := byName[instance.ComposeService()]; ok {
 			service.Instances = append(service.Instances, instance)
+		} else if instance.isCompose() {
+			orphans = append(orphans, instance)
 		}
 	}
 
-	return services, nil
+	return services, orphans, nil
 }
 
 // GetComposeProject fetches a compose-managed project by name, for the

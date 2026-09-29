@@ -1,21 +1,15 @@
 package gui
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
 	"slices"
-	"sort"
-	"strings"
 	"sync"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
-	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
@@ -274,6 +268,7 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 
 	gui.refreshes.services.invalidate()
 	gui.composeProject.Store(nil)
+	gui.composeInstances.Store(nil)
 
 	gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
 	if stack == nil {
@@ -301,74 +296,6 @@ func stackIdentity(stack *commands.ComposeStack) string {
 	}
 
 	return stack.Dir + "\x00" + stack.Name
-}
-
-// renderStackInfo ticks for the healthcheck line, which arrives with the
-// services once the stack is selected.
-func (gui *Gui) renderStackInfo(stack *commands.ComposeStack) tasks.TaskFunc {
-	return gui.NewTickerTask(TickerTaskOpts{
-		Func: func(ctx context.Context, notifyStopped chan struct{}) {
-			gui.reRenderMain(ctx, gui.stackInfoStr(stack))
-		},
-		Duration:   time.Second,
-		Before:     gui.clearMain,
-		Wrap:       gui.Config.UserConfig.Gui.WrapMainPanel,
-		Autoscroll: false,
-	})
-}
-
-func (gui *Gui) stackInfoStr(stack *commands.ComposeStack) string {
-	line := func(label, value string) string {
-		if value == "" {
-			return ""
-		}
-
-		return utils.WithPadding(label+": ", identityPadding) + value + "\n"
-	}
-
-	listed := []string{}
-	if stack.Local {
-		listed = append(listed, gui.Tr.StackListedLocal)
-	}
-
-	if stack.Saved {
-		listed = append(listed, gui.Tr.StackListedSaved)
-	}
-
-	output := line("Project", stack.Name)
-	output += line("Directory", commands.ShortenHome(stack.Dir, gui.home))
-	output += line("Listed", strings.Join(listed, ", "))
-
-	if stack.Err != nil {
-		return output + "\n" + utils.ColoredString(stack.Err.Error(), color.FgRed)
-	}
-
-	output += line("Status", presentation.DisplayRolledUpStatus(&gui.Config.UserConfig.Gui, stack.Status()))
-
-	if project := gui.composeProject.Load(); project != nil && project.Name == stack.Name {
-		output += line("Healthcheck", gui.composeHealthcheckStr(project))
-	}
-
-	services := slices.Clone(stack.Services)
-	sort.Slice(services, func(i, j int) bool { return services[i].Name < services[j].Name })
-
-	width := 0
-	for _, service := range services {
-		width = max(width, utils.DisplayWidth(service.Name))
-	}
-
-	output += "\n" + gui.sectionHeading(gui.Tr.ServicesTitle) + "\n\n"
-
-	for _, service := range services {
-		running := lo.CountBy(stack.Statuses[service.Name], func(status string) bool {
-			return strings.EqualFold(status, "Running")
-		})
-
-		output += utils.WithPadding(service.Name, width+2) +
-			fmt.Sprintf(gui.Tr.StackRunningCount, running, service.Replicas) + "\n"
-	}
-
-	return output
 }
 
 func (gui *Gui) renderStackConfig(stack *commands.ComposeStack) tasks.TaskFunc {

@@ -57,6 +57,10 @@ type Gui struct {
 	// services; atomic, the tabs rendering off the main loop.
 	composeProject atomic.Pointer[commands.ComposeProject]
 
+	// composeInstances is the selected stack's services and orphans as the
+	// last services refresh found them, for the stack's Info tab.
+	composeInstances atomic.Pointer[stackInstances]
+
 	// selectedStack is the stack the services panel follows: the Stacks
 	// panel's selection, set on the main loop and read by fetchServices off
 	// it. See followStack.
