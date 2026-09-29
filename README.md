@@ -164,6 +164,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
 | `m` | Jump to Logs tab |
+| `M` | Stacks and Services panels: follow the stack's or service's logs, every instance's interleaved (`incus-compose logs --follow`) |
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
 | `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
@@ -172,7 +173,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
 | `C` | Stacks and Services panels: menu of the compose verbs run against the whole stack ([Compose stacks](#compose-stacks)) |
-| `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
+| `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
 | `o` | Open the lazyincus config file |
@@ -255,6 +256,9 @@ What the keys run on a service's own row, each of them `incus-compose
 - `d` — `down`, plain or `--volumes`, after a confirmation
 - `p` — `pause`, or `unpause` when the service is already frozen
 - `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
+- `M` — `logs --follow`, every replica's interleaved, until `ctrl+c`. It
+  starts empty: a container's console log is handed out once, and the Logs
+  tabs have read what's there, so it shows what's written from then on
 
 - `C` — the same verbs with the service argument left off, so they act on
   the whole stack, plus `logs --follow`. It needs no selection, which is
@@ -268,7 +272,7 @@ On a **replica's** row, the keys that can mean one instance do: `S`, `s`,
 `r` and `p` start, stop, restart and freeze that replica, `d` deletes it —
 incus-compose creates it again on the next `u`, the compose file still
 asking for it — and `f` force stops it. They're the instances panel's own
-keys, a replica being an instance. `u`, `U`, `b`, `g` and `C` have no
+keys, a replica being an instance. `u`, `U`, `b`, `g`, `M` and `C` have no
 per-replica form and keep acting on the service. `x` says which you'll get:
 it reads the row under the cursor.
 

@@ -325,7 +325,7 @@ Main panel tabs:
   the row names; a service's own row with replicas under it stacks all of
   their logs, each under the Info tab's `instanceHeading`. They stay
   separate streams — the buffers carry nothing to interleave them on — so
-  `C`'s `logs --follow` is still the merged view.
+  `M`, `logs --follow`, is the merged view.
 - **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
   the row's replica answers for it, as does a lone service's only instance,
   and a service's own row with replicas under it says so instead — the same

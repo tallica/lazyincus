@@ -307,7 +307,7 @@ func stackIdentity(stack *commands.ComposeStack) string {
 
 // renderStackLogs stacks every service's logs, each instance under a
 // heading of its own, the way a replicated service's Logs tab stacks its
-// replicas'.
+// replicas'. `M` is the merged, live view.
 func (gui *Gui) renderStackLogs(stack *commands.ComposeStack) tasks.TaskFunc {
 	return gui.renderLogsToMain(func() string { return gui.stackLogsStr(stack) })
 }

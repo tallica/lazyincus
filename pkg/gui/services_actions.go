@@ -313,6 +313,18 @@ func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
 	return gui.composeRun(serviceTarget(service), "pull")
 }
 
+// handleComposeLogs follows the service's logs, every replica's
+// interleaved, which its Logs tab can't do: the console buffers carry no
+// timestamps to merge on.
+func (gui *Gui) handleComposeLogs(g *gocui.Gui, v *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
+	}
+
+	return gui.composeRun(serviceTarget(service), "logs", "--follow")
+}
+
 // handleComposeProjectMenu is `C`: the same verbs the service keys run, with
 // the SERVICE argument left off so they act on the whole stack. It takes no
 // selection - a project whose services have never been deployed is brought
