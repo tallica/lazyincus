@@ -438,3 +438,24 @@ func TestCopyingFromAStack(t *testing.T) {
 	assert.Contains(t, menu, "directory")
 }
 
+// A volume name too long for the usual column moves every value in Usage
+// over with it, so they still line up.
+func TestStackUsageLinesUpItsValues(t *testing.T) {
+	instance := composeInstance("mosquitto", "mosquitto", "Running", map[string]map[string]string{
+		"root":               {"type": "disk", "path": "/", "pool": "default"},
+		"vol-mosquitto-data": {"type": "disk", "path": "/data", "pool": "default", "source": "vol-mosquitto-data"},
+		"eth0":               {"type": "nic", "network": "ic-hnyq46sd3h"},
+	})
+	instance.Instance.State = &api.InstanceState{Processes: 3}
+
+	columns := map[int]bool{}
+
+	for _, line := range strings.Split(strings.TrimSpace(stackUsageStr([]*commands.Instance{instance})), "\n") {
+		if label, _, ok := strings.Cut(line, ": "); ok && !strings.HasSuffix(line, ":") {
+			rest := line[len(label)+2:]
+			columns[len(line)-len(strings.TrimLeft(rest, " "))] = true
+		}
+	}
+
+	assert.Len(t, columns, 1, "every value at the same column")
+}

@@ -309,10 +309,6 @@ func stackUsageStr(instances []*commands.Instance) string {
 		root.Usage += max(state.Disk["root"].Usage, 0)
 	}
 
-	output := utils.WithPadding("CPU: ", identityPadding) + formatCPUUsage(cpu) + "\n"
-	output += utils.WithPadding("Memory: ", identityPadding) + formatMemoryUsage(memory) + "\n"
-	output += utils.WithPadding("Processes: ", identityPadding) + strconv.FormatInt(processes, 10) + "\n"
-
 	rootUsage := formatDiskUsage(root)
 	if root.Usage > 0 && len(instances) > 1 {
 		rootUsage += fmt.Sprintf(" over %d instances", len(instances))
@@ -323,31 +319,37 @@ func stackUsageStr(instances []*commands.Instance) string {
 		disks[volume] = formatDiskUsage(usage)
 	}
 
-	output += "\nDisk:\n" + nestedLines(disks, append([]string{"root"}, slices.Sorted(maps.Keys(volumes))...))
+	counts := map[string]string{}
+	for network, count := range networks {
+		counts[network] = pluralInstances(count)
+	}
 
-	if len(networks) > 0 {
-		counts := map[string]string{}
-		for network, count := range networks {
-			counts[network] = pluralInstances(count)
-		}
+	// One value column for the section: a volume name too long for the
+	// usual one moves the counters' values over with it.
+	column := identityPadding
+	for _, label := range append(slices.Collect(maps.Keys(disks)), slices.Collect(maps.Keys(counts))...) {
+		column = max(column, len("  ")+utils.DisplayWidth(label+": "))
+	}
 
-		output += "\nNetwork:\n" + nestedLines(counts, slices.Sorted(maps.Keys(networks)))
+	output := utils.WithPadding("CPU: ", column) + formatCPUUsage(cpu) + "\n"
+	output += utils.WithPadding("Memory: ", column) + formatMemoryUsage(memory) + "\n"
+	output += utils.WithPadding("Processes: ", column) + strconv.FormatInt(processes, 10) + "\n"
+
+	output += "\nDisk:\n" + nestedLines(disks, append([]string{"root"}, slices.Sorted(maps.Keys(volumes))...), column)
+
+	if len(counts) > 0 {
+		output += "\nNetwork:\n" + nestedLines(counts, slices.Sorted(maps.Keys(counts)), column)
 	}
 
 	return output
 }
 
 // nestedLines is a group's entries, indented a level in, the way an
-// instance's Disk and Network entries are.
-func nestedLines(values map[string]string, order []string) string {
-	padding := 12
-	for _, label := range order {
-		padding = max(padding, utils.DisplayWidth(label)+2)
-	}
-
+// instance's Disk and Network entries are, their values at column.
+func nestedLines(values map[string]string, order []string, column int) string {
 	output := ""
 	for _, label := range order {
-		output += "  " + utils.WithPadding(label+": ", padding) + values[label] + "\n"
+		output += "  " + utils.WithPadding(label+": ", column-len("  ")) + values[label] + "\n"
 	}
 
 	return output
