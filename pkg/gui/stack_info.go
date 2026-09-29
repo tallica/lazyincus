@@ -199,18 +199,15 @@ func stackEndpointsStr(services []*commands.ComposeService, host string) string 
 			instance = instance.Latest()
 
 			address := firstOf(instance.Addresses("inet"), instance.Addresses("inet6"))
-			ports := strings.Join(instance.PublishedPorts(host), "  ")
+			ports := strings.Join(lo.Map(instance.PublishedPorts(host), func(port commands.PublishedPort, _ int) string {
+				return port.Label()
+			}), "  ")
 
 			if address == "" && ports == "" {
 				continue
 			}
 
-			label := service.Name
-			if len(instances) > 1 {
-				label = instance.Name
-			}
-
-			endpoints = append(endpoints, endpoint{label, address, ports})
+			endpoints = append(endpoints, endpoint{endpointName(service, instance), address, ports})
 		}
 	}
 
@@ -236,6 +233,16 @@ func stackEndpointsStr(services []*commands.ComposeService, host string) string 
 	}
 
 	return output
+}
+
+// endpointName is what an instance goes by where a stack lists it: a
+// replica by its own name, a lone instance by its service's.
+func endpointName(service *commands.ComposeService, instance *commands.Instance) string {
+	if len(service.Instances) > 1 {
+		return instance.Name
+	}
+
+	return service.Name
 }
 
 func firstOf(lists ...[]string) string {

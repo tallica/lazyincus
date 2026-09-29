@@ -7,6 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func labels(ports []PublishedPort) []string {
+	labels := make([]string, 0, len(ports))
+	for _, port := range ports {
+		labels = append(labels, port.Label())
+	}
+
+	return labels
+}
+
 func withDevices(devices map[string]map[string]string) *Instance {
 	return &Instance{Instance: api.InstanceFull{Instance: api.Instance{ExpandedDevices: devices}}}
 }
@@ -29,7 +38,7 @@ func TestPublishedPorts(t *testing.T) {
 		"192.0.2.1:53 → 53/udp",
 		"unix:/run/app.sock",
 		"*:443 → 443",
-	}, instance.PublishedPorts(""))
+	}, labels(instance.PublishedPorts("")))
 }
 
 func TestCustomVolumesLeaveOutRootAndBindMounts(t *testing.T) {
@@ -59,6 +68,10 @@ func TestPublishedPortsAtTheRemotesHost(t *testing.T) {
 		"proxy-dns": {"type": "proxy", "listen": "udp:192.0.2.1:53", "connect": "udp:127.0.0.1:53"},
 	})
 
-	assert.Equal(t, []string{"192.0.2.5:8080 → 80", "192.0.2.1:53 → 53/udp"}, instance.PublishedPorts("192.0.2.5"))
-	assert.Equal(t, []string{"[2001:db8::5]:8080 → 80", "192.0.2.1:53 → 53/udp"}, instance.PublishedPorts("2001:db8::5"))
+	assert.Equal(t, []string{"192.0.2.5:8080 → 80", "192.0.2.1:53 → 53/udp"}, labels(instance.PublishedPorts("192.0.2.5")))
+	assert.Equal(t, []string{"[2001:db8::5]:8080 → 80", "192.0.2.1:53 → 53/udp"}, labels(instance.PublishedPorts("2001:db8::5")))
+
+	// Only a port whose host is known has an address to copy.
+	assert.Equal(t, "192.0.2.5:8080", instance.PublishedPorts("192.0.2.5")[0].Address())
+	assert.Empty(t, instance.PublishedPorts("")[0].Address())
 }

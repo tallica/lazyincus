@@ -98,6 +98,8 @@ type TranslationSet struct {
 	CopyFingerprint              string
 	CopyAlias                    string
 	CopyPool                     string
+	CopyProject                  string
+	CopyDirectory                string
 	CopySnapshotRef              string
 	InstanceTitle                string
 	InstancesTitle               string
@@ -333,6 +335,8 @@ func englishSet() TranslationSet {
 		CopyFingerprint:              "fingerprint",
 		CopyAlias:                    "alias",
 		CopyPool:                     "pool",
+		CopyProject:                  "project",
+		CopyDirectory:                "directory",
 		CopySnapshotRef:              "owner/snapshot",
 		FilterList:                   "filter list",
 		SortInstancesByState:         "sort instances by state",

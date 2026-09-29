@@ -396,3 +396,35 @@ func TestTabsSwitchAfterJumpingToLogs(t *testing.T) {
 			"panel %c: %s", panel, tab())
 	}
 }
+
+// y on a stack offers its project, its directory, and each published port
+// at the address it's reached from here.
+func TestCopyingFromAStack(t *testing.T) {
+	stack := testStack(t, t.TempDir(), "default", "web")
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, stack)(s)
+		s.gui.IncusCommand.PublishHost = "192.0.2.5"
+
+		instances := fixtureServer().Instances
+		for i := range instances {
+			if instances[i].Name == "web" {
+				instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
+				instances[i].ExpandedConfig["user.label.incus-compose.service"] = "web"
+				instances[i].ExpandedDevices = map[string]map[string]string{
+					"proxy-80": {"type": "proxy", "listen": "tcp:0.0.0.0:8080", "connect": "tcp:127.0.0.1:80"},
+				}
+			}
+		}
+
+		s.server.SetInstances(instances)
+	})
+
+	s.settle(t, "192.0.2.5:8080 → 80")
+	s.press(t, 'y')
+
+	menu := s.settle(t, "web → 80")
+	assert.Contains(t, menu, "192.0.2.5:8080")
+	assert.Contains(t, menu, "project")
+	assert.Contains(t, menu, "directory")
+}

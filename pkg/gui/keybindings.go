@@ -700,6 +700,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
 		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
+		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
 	}
 }
 

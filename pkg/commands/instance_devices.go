@@ -7,13 +7,59 @@ import (
 	"strings"
 )
 
-// PublishedPorts is each proxy device as `listen → connect port`, in device
-// name order. incus-compose publishes a compose port as one of these,
-// listening on the daemon's host and connecting to the instance's own
-// loopback, so the connect side's address says nothing and is left off. A
-// wildcard listen address is host, or `*` without one.
-func (i *Instance) PublishedPorts(host string) []string {
-	var ports []string
+// PublishedPort is one proxy device: Port on the daemon's host, forwarded
+// to Target inside the instance. Host is where it's reached from here, empty
+// for a wildcard listen address with no host to stand for it. A listen
+// address that isn't a network one - a unix socket - is kept whole in Raw.
+type PublishedPort struct {
+	Host     string
+	Port     string
+	Target   string
+	Protocol string
+	Raw      string
+}
+
+// Label is the port as `host:port → target`, a wildcard with no host
+// reading `*`, the protocol added when it isn't tcp.
+func (p PublishedPort) Label() string {
+	if p.Raw != "" {
+		return p.Raw
+	}
+
+	host := p.Host
+	if host == "" {
+		host = "*"
+	}
+
+	label := net.JoinHostPort(host, p.Port)
+	if p.Target != "" {
+		label += " → " + p.Target
+	}
+
+	if p.Protocol != "tcp" {
+		label += "/" + p.Protocol
+	}
+
+	return label
+}
+
+// Address is where the port is reached from here, or empty when that isn't
+// known.
+func (p PublishedPort) Address() string {
+	if p.Raw != "" || p.Host == "" {
+		return ""
+	}
+
+	return net.JoinHostPort(p.Host, p.Port)
+}
+
+// PublishedPorts is each proxy device, in device name order. incus-compose
+// publishes a compose port as one of these, listening on the daemon's host
+// and connecting to the instance's own loopback, so the connect side's
+// address says nothing and only its port is kept. A wildcard listen address
+// takes host, the remote's own.
+func (i *Instance) PublishedPorts(host string) []PublishedPort {
+	var ports []PublishedPort
 
 	for _, name := range slices.Sorted(maps.Keys(i.Instance.ExpandedDevices)) {
 		device := i.Instance.ExpandedDevices[name]
@@ -23,24 +69,17 @@ func (i *Instance) PublishedPorts(host string) []string {
 
 		protocol, listenHost, listenPort, ok := splitProxyAddress(device["listen"])
 		if !ok {
-			ports = append(ports, device["listen"])
+			ports = append(ports, PublishedPort{Raw: device["listen"]})
 			continue
 		}
 
 		if listenHost == "0.0.0.0" || listenHost == "::" {
-			listenHost = "*"
-			if host != "" {
-				listenHost = host
-			}
+			listenHost = host
 		}
 
-		port := net.JoinHostPort(listenHost, listenPort)
+		port := PublishedPort{Host: listenHost, Port: listenPort, Protocol: protocol}
 		if _, _, connectPort, ok := splitProxyAddress(device["connect"]); ok {
-			port += " → " + connectPort
-		}
-
-		if protocol != "tcp" {
-			port += "/" + protocol
+			port.Target = connectPort
 		}
 
 		ports = append(ports, port)
