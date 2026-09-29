@@ -129,7 +129,8 @@ order:
   renderers; only `partial`, `none` and the replica count are the
   service's own.
 - **Instances** — containers and VMs across every project, minus the
-  listed stacks' when the services panel is holding those.
+  instances of the services the listed stacks declare, until `C` puts
+  them back.
 - **Snapshots** — follows whichever instance the list above it has
   selected, or the custom volume the volumes list has, rather than having
   a selection of its own; or lists every instance's (`e`).

@@ -45,6 +45,8 @@ pkg/commands/
   instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
   snapshot.go                  Snapshot, an instance's or a custom volume's: create, restore, delete
   incus_compose.go             compose projects and services, paired with their instances
+  compose_stack.go             ComposeStack, a compose project directory, and its rolled-up status
+  instance_devices.go          what an instance's devices say: published ports, custom volumes, networks
   compose_config.go            `incus-compose config`: the local project and each service's definition
   incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data, and an event stream Emit feeds
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
@@ -62,9 +64,11 @@ pkg/gui/
   layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  *_panel.go                   one per side panel: services, instances, snapshots, images, volumes, networks, profiles
+  *_panel.go                   one per side panel: stacks, services, instances, snapshots, images, volumes, networks, profiles
+  stacks_actions.go            the Stacks panel's compose verbs, over the whole stack
+  stack_info.go                the stack's Info tab: identity, endpoints, usage, drift
   copy.go                      the `y` menu: what each kind of item offers to copy
-  services_actions.go          the services panel's compose verbs and menus
+  services_actions.go          the services panel's compose verbs
   instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
   projects.go                  project scope menu (all projects, or one)
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
@@ -75,4 +79,5 @@ Everything in `pkg/gui` not listed above (`confirmation_panel.go`,
 `menu_panel.go`, `options_menu_panel.go`, `filtering.go`, `main_panel.go`,
 `app_status_manager.go`, `subprocess.go`, `theme.go`, `gocui.go`,
 `panels.go`) is generic gocui plumbing, ported near-verbatim;
-`connection.go` is the connection-lost modal.
+`connection.go` is the connection-lost modal, and `prompt_panel.go` the
+one-line text prompt Stacks' `a` asks for a directory with.

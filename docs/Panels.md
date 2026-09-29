@@ -74,7 +74,7 @@ list has focus, so a tab being read follows too.
 | Instance, service, stack Logs | every 1s | its own console-log read |
 | Instance Config, Env | once | the instance's config, less ic-healthd's `user.healthcheck.*` verdicts, which change every few seconds |
 | Instance, service Top | every 2s | its own `ps` |
-| Stack Info | every 1s | the newest stacks listing |
+| Stack Info | every 1s | the newest stacks listing, and all but its first lines the newest services listing |
 | Stack Config | once | the stack's directory and project |
 | Service Info | every 1s | the newest services listing, and each instance's block the newest instances listing |
 | Service Config | once | every one of its instances' config |
@@ -227,7 +227,7 @@ off and the title back to "Instances" until it's pressed again; it's
 bound only when incus-compose is there to have stacks.
 `SpansProjects.Instances` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
-change which projects they hold. The stacks are fetched first at startup,
+change which services they declare, or `C` is pressed. The stacks are fetched first at startup,
 so the instances panel doesn't show a stack's rows and then take them away.
 
 Because the stacks have panels of their own, startup doesn't scope the
@@ -267,7 +267,7 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`m`, `n`, `c`, `E`, `y`) reach the row's instance through
+The per-instance keys (`n`, `c`, `E`, `y`) reach the row's instance through
 `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
 behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
