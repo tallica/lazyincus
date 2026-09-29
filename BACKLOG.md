@@ -49,8 +49,11 @@ Instances". See [incus-compose integration](#incus-compose-integration).
       `--type vga` for a graphical console; not offered, since it opens a
       separate viewer rather than using the terminal.
 - [ ] **Open in browser (`w`)** — lazydocker opens the container's first HTTP
-      port. Incus has no port-mapping concept, but "open `http://<ipv4>`" is
-      the obvious translation, and `OSCommand.OpenLink` already exists.
+      port. Incus's port mapping is a proxy device; for an instance without
+      one, "open `http://<ipv4>`" is the obvious translation, and
+      `OSCommand.OpenLink` already exists. The same doubt that kept a
+      stack's ports from being links applies: nothing says a port speaks
+      HTTP. See [Clickable links](#what-gocui-master-makes-possible).
 
 Not planned:
 
@@ -342,6 +345,21 @@ the list:
       `TailConsoleLog` buffer under a heading; what's left is ordering the
       streams against each other in a tab, which those buffers carry
       nothing for.
+
+The stack's Info tab, beyond what shipped:
+
+- [ ] **Declared but not created** — Usage lists the volumes and networks
+      the instances' devices use, so one the compose file declares that the
+      stack doesn't have yet isn't there. Showing it as `(not created)`
+      needs `composeConfigOutput` to read the top-level `volumes:` and
+      `networks:`, matched against the project's.
+- [ ] **Usage on a stopped stack** — with nothing running it's `N/A` and
+      zeros throughout. It could wait until something runs, at the cost of
+      the disks and networks it also lists.
+- [ ] **Instance Info's column** — its `Disk:` and `Network:` entries keep
+      a padding of their own, so a long volume name puts their values out
+      of line with the counters above; the stack's Usage section moves
+      the whole column over instead.
 
 ### 4. Backups
 
