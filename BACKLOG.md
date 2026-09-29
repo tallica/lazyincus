@@ -188,8 +188,10 @@ Deliberately deferred (don't re-pitch unprompted):
 Available since the move off lazydocker's 2024 pin; none of it wired up.
 
 - [ ] **Clickable links** - `View.AutoRenderHyperLinks` on the main view
-      turns URLs into terminal hyperlinks. The Info tab's addresses and a
-      service's published ports are where one would earn its place.
+      turns URLs into terminal hyperlinks. Not for a stack's published
+      ports: a port says nothing of its protocol, so an `http://` link
+      would be a guess for anything that isn't a web server. `y` on the
+      stack copies a port's address instead.
 - [ ] **Double-click** - `ViewMouseBindingOpts.IsDoubleClick`. A double
       click on a row could do what enter does, focusing the main panel.
 - [ ] **Recentre on scroll** - `View.FocusPoint` keeps the selection in the
