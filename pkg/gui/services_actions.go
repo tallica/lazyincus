@@ -371,5 +371,5 @@ func (gui *Gui) handleServiceViewLogs(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	return gui.switchFocus(gui.Views.Main)
+	return gui.handleEnterMain(g, v)
 }

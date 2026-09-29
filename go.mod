@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/OpenPeeDeeP/xdg v1.0.0
 	github.com/fatih/color v1.19.0
+	github.com/gdamore/tcell/v2 v2.13.5
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/integrii/flaggy v1.8.0
@@ -33,7 +34,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/flosch/pongo2/v6 v6.1.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
-	github.com/gdamore/tcell/v2 v2.13.5 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.5 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

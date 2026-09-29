@@ -349,7 +349,7 @@ func (gui *Gui) handleStackViewLogs(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	return gui.switchFocus(gui.Views.Main)
+	return gui.handleEnterMain(g, v)
 }
 
 func (gui *Gui) renderStackConfig(stack *commands.ComposeStack) tasks.TaskFunc {

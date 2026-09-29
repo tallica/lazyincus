@@ -342,3 +342,33 @@ func TestStackLogsStackEachInstance(t *testing.T) {
 	screen := s.settle(t, "hello from web")
 	assert.Contains(t, screen, "── web ──")
 }
+
+// `m` enters the Logs tab with the list as the main panel's parent, so `[`
+// and `]` still switch its tabs from there.
+func TestTabsSwitchAfterJumpingToLogs(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
+		labelled(s, map[string]string{"web": "web"})
+	})
+
+	s.settle(t, "Services (default)")
+	require.Eventually(t, func() bool {
+		return slices.Contains(serviceNames(t, s), "default/web")
+	}, 5*time.Second, 20*time.Millisecond)
+
+	tab := func() string {
+		return onLoop(t, s, func() string {
+			return s.gui.currentViewName() + " " + s.gui.Views.Main.Tabs[s.gui.Views.Main.TabIndex]
+		})
+	}
+
+	for _, panel := range []rune{'1', '2'} {
+		s.press(t, panel)
+		s.press(t, 'm')
+		require.Eventually(t, func() bool { return tab() == "main Logs" }, 5*time.Second, 20*time.Millisecond)
+
+		s.press(t, '[')
+		require.Eventually(t, func() bool { return tab() == "main Info" }, 5*time.Second, 20*time.Millisecond,
+			"panel %c: %s", panel, tab())
+	}
+}
