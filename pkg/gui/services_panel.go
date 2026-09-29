@@ -278,7 +278,7 @@ func (gui *Gui) serviceLogsStr(service *commands.ComposeService, instances []*co
 	sections := make([]string, 0, len(instances))
 
 	for _, instance := range instances {
-		sections = append(sections, gui.instanceHeading(service, instance)+"\n\n"+gui.instanceLogStr(instance))
+		sections = append(sections, gui.instanceHeading(service, instance)+"\n\n"+strings.TrimRight(gui.instanceLogStr(instance), "\n"))
 	}
 
 	return strings.Join(sections, "\n\n")

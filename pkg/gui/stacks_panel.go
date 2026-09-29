@@ -341,7 +341,7 @@ func (gui *Gui) stackLogsStr(stack *commands.ComposeStack) string {
 				heading = instance.Name
 			}
 
-			sections = append(sections, gui.sectionHeading(heading)+"\n\n"+gui.instanceLogStr(instance))
+			sections = append(sections, gui.sectionHeading(heading)+"\n\n"+strings.TrimRight(gui.instanceLogStr(instance), "\n"))
 		}
 	}
 

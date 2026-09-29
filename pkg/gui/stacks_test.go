@@ -72,6 +72,10 @@ func labelled(s *screen, services map[string]string) {
 	for i := range instances {
 		if service, ok := services[instances[i].Name]; ok {
 			instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
+			if instances[i].ExpandedConfig == nil {
+				instances[i].ExpandedConfig = map[string]string{}
+			}
+
 			instances[i].ExpandedConfig["user.label.incus-compose.service"] = service
 		}
 	}
@@ -341,14 +345,14 @@ func TestStackEndpoints(t *testing.T) {
 }
 
 // A stack's Logs tab stacks each instance's console log under its service's
-// name.
+// name, one blank line before the next heading.
 func TestStackLogsStackEachInstance(t *testing.T) {
 	root := t.TempDir()
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, testStack(t, root, "default", "web", "db"))(s)
-		labelled(s, map[string]string{"web": "web"})
-		s.server.ConsoleLogs = map[string]string{"web": "hello from web\n"}
+		labelled(s, map[string]string{"web": "web", "db": "db"})
+		s.server.ConsoleLogs = map[string]string{"web": "hello from web\n", "db": "hello from db\n"}
 	})
 
 	s.settle(t, "Services (default)")
@@ -360,6 +364,11 @@ func TestStackLogsStackEachInstance(t *testing.T) {
 
 	screen := s.settle(t, "hello from web")
 	assert.Contains(t, screen, "── web ──")
+
+	lines := strings.Split(screen, "\n")
+	dbLog := slices.IndexFunc(lines, func(line string) bool { return strings.Contains(line, "hello from db") })
+	webHeading := slices.IndexFunc(lines, func(line string) bool { return strings.Contains(line, "── web ──") })
+	assert.Equal(t, dbLog+2, webHeading, "one blank line between a log and the next heading")
 }
 
 // `m` enters the Logs tab with the list as the main panel's parent, so `[`
@@ -428,3 +437,4 @@ func TestCopyingFromAStack(t *testing.T) {
 	assert.Contains(t, menu, "project")
 	assert.Contains(t, menu, "directory")
 }
+
