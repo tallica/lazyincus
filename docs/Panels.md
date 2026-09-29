@@ -167,7 +167,9 @@ Main panel tabs:
   over its instances - health, dates, snapshots. Under headings of their
   own: **Endpoints**, each instance's address and the ports its proxy
   devices publish (incus-compose's `ports:`, listening on the daemon's
-  host); **Usage**, the instance counters summed, a custom volume shared
+  host, so a wildcard reads as the remote's host - `PublishHost` - or `*`
+  where its URL doesn't give one: a unix socket, or loopback, which an
+  SSH tunnel to the API is); **Usage**, the instance counters summed, a custom volume shared
   by replicas counted once; and **Drift**, compose instances whose service
   the file no longer declares and declared services with none. Everything
   past the services count comes from `gui.composeInstances` and

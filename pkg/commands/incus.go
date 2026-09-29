@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -27,6 +28,10 @@ type IncusCommand struct {
 	// RemoteName is the Incus remote we connected to, taken from the CLI
 	// config's default-remote.
 	RemoteName string
+	// PublishHost is where a port the daemon's host publishes is reached
+	// from here - the remote's own host - or empty when its URL doesn't
+	// say: a unix socket, or loopback, which is a tunnel to the API alone.
+	PublishHost string
 	// ServerVersion and ServerName are fetched once at connect time via
 	// GetServer(); empty if that call failed.
 	ServerVersion string
@@ -96,6 +101,7 @@ func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n
 		Config:      cfg,
 		client:      client,
 		RemoteName:  remote,
+		PublishHost: publishHost(clientURL(client)),
 		projectName: clientProjectName(client),
 		// Every project by default: a server with one project looks the same
 		// either way, and on a server with several, scoping to whichever one
@@ -104,6 +110,29 @@ func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n
 		allProjects: true,
 		connected:   true,
 	}
+}
+
+func clientURL(client incus.InstanceServer) string {
+	info, err := client.GetConnectionInfo()
+	if err != nil {
+		return ""
+	}
+
+	return info.URL
+}
+
+func publishHost(remoteURL string) string {
+	remote, err := url.Parse(remoteURL)
+	if err != nil || remote.Scheme == "unix" {
+		return ""
+	}
+
+	host := remote.Hostname()
+	if ip := net.ParseIP(host); host == "localhost" || (ip != nil && ip.IsLoopback()) {
+		return ""
+	}
+
+	return host
 }
 
 // clientProjectName reports the project a client is scoped to. An empty

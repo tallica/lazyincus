@@ -44,3 +44,21 @@ func TestCapTransportDialLeavesAbsentDialersAlone(t *testing.T) {
 	assert.Nil(t, transport.DialContext)
 	assert.Nil(t, transport.DialTLSContext)
 }
+
+// A published port is reached at the remote's own host, which a unix socket
+// or a loopback tunnel to the API doesn't give.
+func TestPublishHost(t *testing.T) {
+	for remote, want := range map[string]string{
+		"https://192.0.2.5:8443":            "192.0.2.5",
+		"https://incus.example:8443":        "incus.example",
+		"https://[2001:db8::5]:8443":        "2001:db8::5",
+		"https://127.0.0.1:8443":            "",
+		"https://localhost:8443":            "",
+		"https://[::1]:8443":                "",
+		"unix://":                           "",
+		"unix:///var/lib/incus/unix.socket": "",
+		"":                                  "",
+	} {
+		assert.Equal(t, want, publishHost(remote), remote)
+	}
+}

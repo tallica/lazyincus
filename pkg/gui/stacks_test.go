@@ -337,7 +337,7 @@ func TestStackEndpoints(t *testing.T) {
 		"api:          *:8080 → 80\n"+
 			"web-1:        *:8080 → 80\n"+
 			"web-2:        *:8080 → 80\n",
-		stackEndpointsStr(services))
+		stackEndpointsStr(services, ""))
 }
 
 // A stack's Logs tab stacks each instance's console log under its service's

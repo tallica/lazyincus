@@ -79,7 +79,7 @@ func (gui *Gui) stackInfoStr(stack *commands.ComposeStack) string {
 
 	instances := state.all()
 
-	output += section(gui.Tr.EndpointsTitle, stackEndpointsStr(state.services))
+	output += section(gui.Tr.EndpointsTitle, stackEndpointsStr(state.services, gui.IncusCommand.PublishHost))
 	output += section(gui.Tr.UsageTitle, stackUsageStr(instances))
 	output += section(gui.Tr.DriftTitle, stackDriftStr(state))
 
@@ -187,7 +187,7 @@ func stackServicesStr(stack *commands.ComposeStack) string {
 // stackEndpointsStr is one line per instance with an address or a published
 // port: its address, then the ports. A replica goes by its own name, a
 // lone instance by its service's.
-func stackEndpointsStr(services []*commands.ComposeService) string {
+func stackEndpointsStr(services []*commands.ComposeService, host string) string {
 	type endpoint struct{ label, address, ports string }
 
 	var endpoints []endpoint
@@ -199,7 +199,7 @@ func stackEndpointsStr(services []*commands.ComposeService) string {
 			instance = instance.Latest()
 
 			address := firstOf(instance.Addresses("inet"), instance.Addresses("inet6"))
-			ports := strings.Join(instance.PublishedPorts(), "  ")
+			ports := strings.Join(instance.PublishedPorts(host), "  ")
 
 			if address == "" && ports == "" {
 				continue

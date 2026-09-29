@@ -29,7 +29,7 @@ func TestPublishedPorts(t *testing.T) {
 		"192.0.2.1:53 → 53/udp",
 		"unix:/run/app.sock",
 		"*:443 → 443",
-	}, instance.PublishedPorts())
+	}, instance.PublishedPorts(""))
 }
 
 func TestCustomVolumesLeaveOutRootAndBindMounts(t *testing.T) {
@@ -51,4 +51,14 @@ func TestNetworkNames(t *testing.T) {
 	})
 
 	assert.Equal(t, []string{"net-a", "net-b"}, instance.NetworkNames())
+}
+
+func TestPublishedPortsAtTheRemotesHost(t *testing.T) {
+	instance := withDevices(map[string]map[string]string{
+		"proxy-80":  {"type": "proxy", "listen": "tcp:0.0.0.0:8080", "connect": "tcp:127.0.0.1:80"},
+		"proxy-dns": {"type": "proxy", "listen": "udp:192.0.2.1:53", "connect": "udp:127.0.0.1:53"},
+	})
+
+	assert.Equal(t, []string{"192.0.2.5:8080 → 80", "192.0.2.1:53 → 53/udp"}, instance.PublishedPorts("192.0.2.5"))
+	assert.Equal(t, []string{"[2001:db8::5]:8080 → 80", "192.0.2.1:53 → 53/udp"}, instance.PublishedPorts("2001:db8::5"))
 }

@@ -10,9 +10,9 @@ import (
 // PublishedPorts is each proxy device as `listen → connect port`, in device
 // name order. incus-compose publishes a compose port as one of these,
 // listening on the daemon's host and connecting to the instance's own
-// loopback, so the connect side's address says nothing and is left off; a
-// wildcard listen address is `*`.
-func (i *Instance) PublishedPorts() []string {
+// loopback, so the connect side's address says nothing and is left off. A
+// wildcard listen address is host, or `*` without one.
+func (i *Instance) PublishedPorts(host string) []string {
 	var ports []string
 
 	for _, name := range slices.Sorted(maps.Keys(i.Instance.ExpandedDevices)) {
@@ -29,6 +29,9 @@ func (i *Instance) PublishedPorts() []string {
 
 		if listenHost == "0.0.0.0" || listenHost == "::" {
 			listenHost = "*"
+			if host != "" {
+				listenHost = host
+			}
 		}
 
 		port := net.JoinHostPort(listenHost, listenPort)
