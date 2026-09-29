@@ -174,8 +174,8 @@ Main panel tabs:
   `gui.composeProject`, which `fetchServices` fills for the selected
   stack, so the tab ticks until they arrive.
 - **Logs** — every instance's console log, services in name order, each
-  under a heading naming its service, and its instance when that's
-  named differently. `m` jumps here, as it does on the other panels.
+  under a heading naming its replica, or its service when it has only the
+  one instance. `m` jumps here, as it does on the other panels.
 - **Config** — the whole of `incus-compose config`, through JSON to YAML
   for the reason the service's Config tab gives.
 

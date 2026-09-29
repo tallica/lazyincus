@@ -306,8 +306,8 @@ func stackIdentity(stack *commands.ComposeStack) string {
 }
 
 // renderStackLogs stacks every service's logs, each instance under a
-// heading of its own, the way a replicated service's Logs tab stacks its
-// replicas'. `M` is the merged, live view.
+// heading of its own - a replica's name, or a lone instance's service's, as
+// Endpoints labels them. `M` is the merged, live view.
 func (gui *Gui) renderStackLogs(stack *commands.ComposeStack) tasks.TaskFunc {
 	return gui.renderLogsToMain(func() string { return gui.stackLogsStr(stack) })
 }
@@ -325,10 +325,12 @@ func (gui *Gui) stackLogsStr(stack *commands.ComposeStack) string {
 	var sections []string
 
 	for _, service := range sortedServices(state.services) {
-		for _, instance := range service.SortedInstances() {
+		instances := service.SortedInstances()
+
+		for _, instance := range instances {
 			heading := service.Name
-			if instance.Name != service.Name {
-				heading += " · " + instance.Name
+			if len(instances) > 1 {
+				heading = instance.Name
 			}
 
 			sections = append(sections, gui.sectionHeading(heading)+"\n\n"+gui.instanceLogStr(instance))
