@@ -9,8 +9,8 @@
 │                                ││Snapshots:    0                                                 │
 ╰────────────────────────────────╯│                                                                │
 ╭─[2]─Snapshots (a-name-long-eno─╮│                                                                │
-│                                ││CPU:          (no usage reported)                               │
-│                                ││Memory:       (no usage reported)                               │
+│                                ││CPU:          N/A                                               │
+│                                ││Memory:       N/A                                               │
 │                                ││Processes:    12                                                │
 │                                ││                                                                │
 │                                ││Disk:                                                           │

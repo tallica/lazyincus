@@ -182,14 +182,14 @@ func formatNetworkInterface(network api.InstanceStateNetwork, padding int) strin
 // reports total nanoseconds since start, and `incus info` shows the same.
 func formatCPUUsage(cpu api.InstanceStateCPU) string {
 	if cpu.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 	return fmt.Sprintf("%.2fs total", time.Duration(cpu.Usage).Seconds())
 }
 
 func formatMemoryUsage(mem api.InstanceStateMemory) string {
 	if mem.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 
 	str := units.GetByteSizeStringIEC(mem.Usage, 2)
@@ -204,7 +204,7 @@ func formatMemoryUsage(mem api.InstanceStateMemory) string {
 
 func formatDiskUsage(disk api.InstanceStateDisk) string {
 	if disk.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 
 	str := units.GetByteSizeStringIEC(disk.Usage, 2)

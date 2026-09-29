@@ -26,8 +26,8 @@
 │Snapshots:    0                                                                   │
 │                                                                                  │
 │                                                                                  │
-│CPU:          (no usage reported)                                                 │
-│Memory:       (no usage reported)                                                 │
+│CPU:          N/A                                                                 │
+│Memory:       N/A                                                                 │
 │Processes:    12                                                                  │
 │                                                                                  │
 │Disk:                                                                             │
