@@ -186,6 +186,9 @@ inferred.
   buffer rather than adding to it - added, a VM's log repeated itself once
   a second - and a stopped instance's is fetched just once. There's no header-based staleness check available: the client returns
   only `resp.Body` and discards `Last-Modified`.
+  `incus-compose logs` reads the same endpoint, so it and the Logs tabs
+  drain each other: against 7.4 it printed nothing for running containers
+  whose output the tabs had already read. That's why `M` starts empty.
   A VM's console is a serial terminal, and firmware and GRUB write it as
   one: screen clears, cursor moves, `ESC c` resets, and the whole screen
   white-on-black. The tab keeps only the colours (`utils.ConsoleText`),
@@ -211,7 +214,9 @@ inferred.
 - **Volume usage**: the volume listing carries no sizes; the state
   endpoint does, one volume a request. A `dir` pool without project quotas
   answers with a usage of nothing rather than an error (seen against Incus
-  7.4), so a zero is read as unknown, not as empty.
+  7.4), so a zero is read as unknown, not as empty. An instance's state
+  reports each of its disks on such a pool, root and attached volumes
+  alike, with a usage of -1.
 - **Attach**: `a` shells out to `incus console <name>`, the analog of
   lazydocker's `docker attach`. No detach hint from us - the CLI prints its
   own (`ctrl+a q`) on connect. An OCI application container has no console
