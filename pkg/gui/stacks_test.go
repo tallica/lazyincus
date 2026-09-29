@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/samber/lo"
@@ -344,7 +345,7 @@ func TestStackLogsStackEachInstance(t *testing.T) {
 }
 
 // `m` enters the Logs tab with the list as the main panel's parent, so `[`
-// and `]` still switch its tabs from there.
+// and `]` still switch its tabs from there, as does clicking one.
 func TestTabsSwitchAfterJumpingToLogs(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
@@ -369,6 +370,11 @@ func TestTabsSwitchAfterJumpingToLogs(t *testing.T) {
 
 		s.press(t, '[')
 		require.Eventually(t, func() bool { return tab() == "main Info" }, 5*time.Second, 20*time.Millisecond,
+			"panel %c: %s", panel, tab())
+
+		titles := strings.Split(s.snapshot(t), "\n")[0]
+		s.click(t, utf8.RuneCountInString(titles[:strings.Index(titles, "Config")]), 0)
+		require.Eventually(t, func() bool { return tab() == "main Config" }, 5*time.Second, 20*time.Millisecond,
 			"panel %c: %s", panel, tab())
 	}
 }

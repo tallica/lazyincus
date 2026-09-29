@@ -279,18 +279,6 @@ func (gui *Gui) CurrentView() *gocui.View {
 	return gui.g.CurrentView()
 }
 
-func (gui *Gui) currentSidePanel() (panels.ISideListPanel, bool) {
-	viewName := gui.currentViewName()
-
-	for _, sidePanel := range gui.allSidePanels() {
-		if sidePanel.GetView().Name() == viewName {
-			return sidePanel, true
-		}
-	}
-
-	return nil, false
-}
-
 // returns the current list panel. If no list panel is focused, returns false.
 func (gui *Gui) currentListPanel() (panels.ISideListPanel, bool) {
 	viewName := gui.currentViewName()

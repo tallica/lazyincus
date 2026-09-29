@@ -267,6 +267,19 @@ func (s *screen) press(t *testing.T, key rune) {
 	}
 }
 
+// click presses and releases the left button at a cell of the screen.
+func (s *screen) click(t *testing.T, x, y int) {
+	t.Helper()
+
+	for _, buttons := range []tcell.ButtonMask{tcell.Button1, tcell.ButtonNone} {
+		select {
+		case s.g.ReplayedEvents.MouseEvents <- &gocui.TcellMouseEventWrapper{X: x, Y: y, ButtonMask: buttons}:
+		case <-time.After(5 * time.Second):
+			t.Fatalf("the main loop didn't take a click at %d,%d", x, y)
+		}
+	}
+}
+
 // ready waits for startup's fetches to land and the screen to settle. The
 // resources are drawn behind tabs, so it's their panels rather than the
 // screen that say they've arrived.

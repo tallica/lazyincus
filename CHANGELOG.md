@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - An instance that has never run no longer shows `Last used: 1970/01/01` on its Info tab.
 - `[` and `]` switch tabs again after `m` on the Services panel has jumped to Logs.
+- Clicking a main-panel tab works while the main panel has focus, as it does after `m` or `enter`.
 
 ## [0.11.0] - 2026-09-28
 
