@@ -334,13 +334,12 @@ the list:
 - [ ] **Credits tab** — the home the
       [missing credits surface](#side-panels) is waiting for. It lost the
       panel it was going to live on, so it needs somewhere else.
-- [ ] **Aggregate logs tab** — lazydocker tails every container in the
-      project at once, interleaved. `incus-compose logs -f` is the analog
-      and is in the `C` menu of both panels as a subprocess. The Logs tab
-      on a replicated service's own row now stacks each replica's
-      `TailConsoleLog` buffer under a heading, which covers one service;
-      what's left is the whole project in one tab, and ordering the
-      streams against each other, which those buffers carry nothing for.
+- [ ] **Interleaved logs tab** — lazydocker tails every container in the
+      project at once, interleaved. `incus-compose logs -f` is the analog,
+      on `M` as a subprocess. The stack's Logs tab stacks every instance's
+      `TailConsoleLog` buffer under a heading; what's left is ordering the
+      streams against each other in a tab, which those buffers carry
+      nothing for.
 
 ### 4. Backups
 

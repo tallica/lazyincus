@@ -172,7 +172,6 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
-| `C` | Stacks and Services panels: menu of the compose verbs run against the whole stack ([Compose stacks](#compose-stacks)) |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -224,7 +223,7 @@ A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed, and
 `error` when its compose file can't be read — the Info tab says why. Its
 keys are the Services panel's compose verbs below, run against the whole
-stack, `C`'s menu included. The Info tab says where the stack can be
+stack. The Info tab says where the stack can be
 reached, what it's using, and where the daemon has drifted from the
 compose file; the Logs tab stacks every service's logs, and the Config
 tab is the whole of `incus-compose config`.
@@ -260,9 +259,6 @@ What the keys run on a service's own row, each of them `incus-compose
   starts empty: a container's console log is handed out once, and the Logs
   tabs have read what's there, so it shows what's written from then on
 
-- `C` — the same verbs with the service argument left off, so they act on
-  the whole stack, plus `logs --follow`. It needs no selection, which is
-  how a project whose services have never been deployed gets brought up
 - `m`, `n`, `E` and `y` act on the service's instance rather than on
   compose: the selected replica's, or the only one there is, and they ask
   which from a service's own row. There's no `a`: a compose service runs an
@@ -272,7 +268,7 @@ On a **replica's** row, the keys that can mean one instance do: `S`, `s`,
 `r` and `p` start, stop, restart and freeze that replica, `d` deletes it —
 incus-compose creates it again on the next `u`, the compose file still
 asking for it — and `f` force stops it. They're the instances panel's own
-keys, a replica being an instance. `u`, `U`, `b`, `g`, `M` and `C` have no
+keys, a replica being an instance. `u`, `U`, `b`, `g` and `M` have no
 per-replica form and keep acting on the service. `x` says which you'll get:
 it reads the row under the cursor.
 

@@ -690,7 +690,6 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
 		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
-		binding('C', gui.onStack(gui.stackMenu), gui.Tr.ComposeProjectActions),
 	}
 }
 
@@ -814,18 +813,11 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Handler:     gui.handleComposeLogs,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposeLogs),
 		},
-		{
-			ViewName:    "services",
-			Key:         'C',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeProjectMenu,
-			Description: gui.Tr.ComposeProjectActions,
-		},
 	}
 
-	order := []rune{'u', 'd', 'U', 'S', 's', 'r', 'p', 'f', 'b', 'g', 'C', 'm', 'M', 'n', 'E', 'y'}
+	order := []rune{'u', 'd', 'U', 'S', 's', 'r', 'p', 'f', 'b', 'g', 'm', 'M', 'n', 'E', 'y'}
 	if row, ok := gui.selectedServiceRow(); ok && row.Instance != nil {
-		order = []rune{'S', 's', 'r', 'p', 'd', 'f', 'n', 'm', 'M', 'y', 'E', 'u', 'U', 'b', 'g', 'C'}
+		order = []rune{'S', 's', 'r', 'p', 'd', 'f', 'n', 'm', 'M', 'y', 'E', 'u', 'U', 'b', 'g'}
 	}
 
 	return orderByKey(bindings, order)

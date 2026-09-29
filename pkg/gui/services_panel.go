@@ -260,7 +260,7 @@ func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) str
 // drain-on-read console buffer. A replicated service's own row has no
 // single stream to show, so it stacks every replica's under a heading of
 // its own rather than interleaving them - the buffers carry no timestamps
-// to merge on. `C`'s `logs --follow` is still the merged view.
+// to merge on. `M`'s `logs --follow` is the merged view.
 func (gui *Gui) renderServiceLogs(row *commands.ServiceRow) tasks.TaskFunc {
 	if instance, ok := row.SelectedInstance(); ok {
 		return gui.renderInstanceLogsToMain(instance)

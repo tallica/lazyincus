@@ -183,8 +183,6 @@ type TranslationSet struct {
 	ComposeUpPullRecreate         string
 	ComposeDown                   string
 	ComposeKill                   string
-	ComposePause                  string
-	ComposeUnpause                string
 	ComposeBuild                  string
 	ComposePull                   string
 	ComposeLogs                   string
@@ -192,8 +190,6 @@ type TranslationSet struct {
 	ComposeStartOnly              string
 	ComposeDownMenuTitle          string
 	ComposeStartMenuTitle         string
-	ComposeProjectMenuTitle       string
-	ComposeProjectActions         string
 	ComposeServiceScoped          string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
@@ -419,7 +415,7 @@ func englishSet() TranslationSet {
 		ServicesTitle:                 "Services",
 		ServicesTitleProject:          "Services (%s)",
 		NoServices:                    "No services",
-		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up, or 'C' for the whole project.",
+		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
 		ServiceMultipleInstances:      "This service runs more than one replica. Select one in the list to see this tab for it.",
 		ServiceReplicaHeading:         "Replica %d of %d · %s",
@@ -433,8 +429,6 @@ func englishSet() TranslationSet {
 		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeDown:                   "bring down",
 		ComposeKill:                   "kill",
-		ComposePause:                  "pause",
-		ComposeUnpause:                "unpause",
 		ComposeBuild:                  "build",
 		ComposePull:                   "pull",
 		ComposeLogs:                   "logs --follow",
@@ -442,8 +436,6 @@ func englishSet() TranslationSet {
 		ComposeStartOnly:              "start %s only",
 		ComposeDownMenuTitle:          "Down",
 		ComposeStartMenuTitle:         "Start",
-		ComposeProjectMenuTitle:       "Project %s",
-		ComposeProjectActions:         "project actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down %s?",

@@ -27,20 +27,20 @@ func (gui *Gui) onStackTarget(action func(composeTarget) error) func(*gocui.Gui,
 // first, if any.
 func (gui *Gui) composeVerb(confirm string, args ...string) func(composeTarget) error {
 	return func(target composeTarget) error {
-		return gui.composeMenuAction(target, confirm, args)()
+		if confirm != "" {
+			return gui.composeConfirm(confirm, target, args...)
+		}
+
+		return gui.composeRun(target, args...)
 	}
 }
 
 // stackPause is `p` on a stack: frozen throughout thaws, anything else
-// freezes, each service voting as `C`'s pause row has them.
+// freezes, each service voting.
 func (gui *Gui) stackPause(stack *commands.ComposeStack) error {
 	if stack.Status() == commands.ServiceNone {
 		return gui.createErrorPanel(gui.Tr.StackNotRunning)
 	}
 
 	return gui.composeRun(stackTarget(stack), composePauseVerb(stack.ServiceStatuses()...))
-}
-
-func (gui *Gui) stackMenu(stack *commands.ComposeStack) error {
-	return gui.composeStackMenu(stackTarget(stack), stack.ServiceStatuses())
 }

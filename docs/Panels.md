@@ -155,10 +155,9 @@ stack, so a fetch that isn't turned away has the new one.
 Stacks refresh on the 10s cadence of the other lists that events keep
 current (`pollUnlessWatched`), on any event that refreshes the instances,
 and after a compose verb. The keys are the Services panel's compose verbs
-with the `SERVICE` argument left off — `C`'s menu, each on a key of its own
-— through the same code, parameterised by `composeTarget`. `p` pauses unless
-every service with anything running is frozen, the vote `C`'s pause row
-takes. Which key runs which verb is README's
+with the `SERVICE` argument left off, through the same code,
+parameterised by `composeTarget`. `p` pauses unless every service with
+anything running is frozen. Which key runs which verb is README's
 [Compose stacks](../README.md#compose-stacks) section.
 
 Main panel tabs:
@@ -239,10 +238,8 @@ what a user sees. `composeRun` is all of them, run in the service's stack
 directory (`ComposeCmd`), and refreshes the instances, stacks and services
 panels once the subprocess returns rather than waiting for the poll.
 `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
-don't — same rule as the instances panel. `C` is the one key that doesn't
-narrow: it runs the same verbs with the `SERVICE` argument left off, and
-takes no selection, since a stack whose services have never been deployed
-is brought up from there; it's the same menu as the Stacks panel's `C`.
+don't — same rule as the instances panel. The same verbs over the whole
+stack are the Stacks panel's.
 `U` can fail on a non-local daemon for reasons
 that are incus-compose's, not ours — see
 [BACKLOG.md](../BACKLOG.md#caveats).
