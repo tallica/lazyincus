@@ -88,7 +88,11 @@ func (gui *Gui) stackCopy(stack *commands.ComposeStack) error {
 		for _, service := range sortedServices(state.services) {
 			for _, instance := range service.SortedInstances() {
 				for _, port := range instance.Latest().PublishedPorts(gui.IncusCommand.PublishHost) {
-					label := endpointName(service, instance) + " → " + port.Target
+					label := endpointName(service, instance)
+					if port.Target != "" {
+						label += " → " + port.Target
+					}
+
 					if port.Protocol != "tcp" {
 						label += "/" + port.Protocol
 					}
