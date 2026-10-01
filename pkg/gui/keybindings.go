@@ -705,7 +705,6 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 }
 
 // servicesKeybindings is the Services panel's own keys, in the order the
-
 // keybinding menu lists them - which depends on the selected row. A
 // service's own row leads with the compose verbs the panel is there for;
 // a replica's row leads with the instances panel's keys, in the instances
