@@ -243,6 +243,7 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 		}
 
 		gui.State.StacksElsewhere = elsewhere
+		gui.setStackDirs(stacks)
 
 		gui.Panels.Stacks.SetItems(stacks)
 

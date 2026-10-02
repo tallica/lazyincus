@@ -1,30 +1,30 @@
 ╔═[1]═Instances══════════════════╗╔═Info - Logs - Config - Env - Top═══════════════════════════════╗
-║a-name-long-enough-to-be-cut-of…║║Name:         a-name-long-enough-to-be-cut-off                  ║
-║web                            …║║Status:       running                                           ║
-║db                             …║║Type:         container                                         ║
-║                                ║║Project:      default                                           ║
-║                                ║║Image:        Alpine 3.22 amd64                                 ║
-║                                ║║Architecture: x86_64                                            ║
-║                                ║║IPv4:         192.0.2.144                                       ║
-║                                ║║Snapshots:    0                                                 ║
-╚════════════════════════════════╝║                                                                ║
-╔═[2]═Snapshots (a-name-long-eno═╗║                                                                ║
-║                                ║║CPU:          N/A                                               ║
-║                                ║║Memory:       N/A                                               ║
-║                                ║║Processes:    12                                                ║
-║                                ║║                                                                ║
-║                                ║║Disk:                                                           ║
-║                                ║║  (no disk usage reported)                                      ║
-║                                ║║                                                                ║
-║                                ║║Network:                                                        ║
-╚════════════════════════════════╝║  eth0:                                                         ║
-╔═[3]═Img - Vol - Net - Prof═════╗║    Type:                                                       ║
-║Alpine 3.22 amd64 2 0123456789a…║║    State:                                                      ║
-║Debian 13 amd64   0 fedcba98765…║║    Host interface: veth144                                     ║
-║                                ║║    MTU:        0                                               ║
-║                                ║║    Received:   0B (0 packets)                                  ║
-║                                ║║    Sent:       0B (0 packets)                                  ║
+║a-name-long-enough-to-be-cut-of…║║Remote:       fake                                              ▐
+║web                            …║║Project:      default                                           ▐
+║db                             …║║Name:         a-name-long-enough-to-be-cut-off                  ▐
+║                                ║║Status:       running                                           ▐
+║                                ║║Type:         container                                         ▐
+║                                ║║Image:        Alpine 3.22 amd64                                 ▐
+║                                ║║Architecture: x86_64                                            ▐
+║                                ║║IPv4:         192.0.2.144                                       ▐
+╚════════════════════════════════╝║Snapshots:    0                                                 ▐
+╔═[2]═Snapshots (a-name-long-eno═╗║                                                                ▐
+║                                ║║                                                                ▐
+║                                ║║CPU:          N/A                                               ▐
+║                                ║║Memory:       N/A                                               ▐
+║                                ║║Processes:    12                                                ▐
+║                                ║║                                                                ▐
+║                                ║║Disk:                                                           ▐
+║                                ║║  (no disk usage reported)                                      ▐
+║                                ║║                                                                ▐
+╚════════════════════════════════╝║Network:                                                        ▐
+╔═[3]═Img - Vol - Net - Prof═════╗║  eth0:                                                         ▐
+║Alpine 3.22 amd64 2 0123456789a…║║    Type:                                                       ▐
+║Debian 13 amd64   0 fedcba98765…║║    State:                                                      ▐
+║                                ║║    Host interface: veth144                                     ▐
+║                                ║║    MTU:        0                                               ▐
+║                                ║║    Received:   0B (0 packets)                                  ▐
+║                                ║║    Sent:       0B (0 packets)                                  ▐
 ║                                ║║    IP addresses:                                               ║
-║                                ║║      inet:  192.0.2.144/ (global)                              ║
 ╚════════════════════════════════╝╚════════════════════════════════════════════════════════════════╝
 PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate       Incus v7.4 (fake/all projects) ●  test

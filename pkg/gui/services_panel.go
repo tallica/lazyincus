@@ -154,7 +154,13 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 		return utils.WithPadding(label+": ", padding) + value + "\n"
 	}
 
-	output := line("Service", service.Name)
+	remote := service.Remote
+	if remote == "" {
+		remote = gui.IncusCommand.RemoteName()
+	}
+
+	output := gui.locationStr(location{remote: remote, project: service.Project, stack: gui.stackLabel(remote, service.Project)})
+	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
 	output += line("Replicas", presentation.ServiceReplicas(service))
 	output += line("Health", service.Health())
@@ -177,10 +183,10 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 	// Each instance's own Info tab under that - the selected replica's
 	// alone, or every one of them from the service's own row - each under a
 	// heading of its own, and minus the lines the service or that heading
-	// has just said: project and image are the same for every replica, the
-	// name is the heading's, and a lone instance's health is what the
-	// service's rolls up to.
-	omit := []string{"Project", "Image", "Name"}
+	// has just said: where it lives and its image are the same for every
+	// replica, the name and which replica it is are the heading's, and a
+	// lone instance's health is what the service's rolls up to.
+	omit := []string{"Remote", "Project", "Stack", "Service", "Image", "Name"}
 	if len(service.Instances) == 1 {
 		omit = append(omit, "Health")
 	}

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, so one list holds stacks from several servers.
 - `space` on a stack switches to its remote. A remote column marks the active one `*`; titles and confirmations name any other.
 - A stack whose remote is slow or away reads `connecting` or `unreachable`, and the rest of the screen carries on.
+- Info tabs and Config headers start with where the item lives: remote, project, and a compose instance's stack and service.
 
 ### Changed
 - A stack is saved with the remote it was added on. Ones saved earlier are pinned to the remote lazyincus next starts on: start it on your usual remote once, or `e` a stack pinned wrongly.

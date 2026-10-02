@@ -1,32 +1,32 @@
 ╭─[1]─Stacks──────────────────────────────────╮╭─Info - Logs - Config──────────────────────────────────────────────────────────────────────╮
-│default running ~/default                    ││Project:      default                                                                      │
-│shop    none    ~/shop                       ││Directory:    ~/default                                                                    │
+│default running ~/default                    ││Remote:       fake                                                                         │
+│shop    none    ~/shop                       ││Project:      default                                                                      │
+│                                             ││Directory:    ~/default                                                                    │
 │                                             ││Listed:       at startup (working directory or -P)                                         │
 │                                             ││Status:       running                                                                      │
 │                                             ││Services:     1 running, 1 none                                                            │
-│                                             ││Instances:    1                                                                            │
-╰─────────────────────────────────────────────╯│Snapshots:    2                                                                            │
-╭─[2]─Services (default)──────────────────────╮│                                                                                           │
-│db  none    0/1             0                ││── Endpoints ──────────────────────────────────────────────────────────────────────────────│
-│web running      192.0.2.10 2                ││                                                                                           │
+╰─────────────────────────────────────────────╯│Instances:    1                                                                            │
+╭─[2]─Services (default)──────────────────────╮│Snapshots:    2                                                                            │
+│db  none    0/1             0                ││                                                                                           │
+│web running      192.0.2.10 2                ││── Endpoints ──────────────────────────────────────────────────────────────────────────────│
+│                                             ││                                                                                           │
 │                                             ││web:          192.0.2.10                                                                   │
 │                                             ││                                                                                           │
 │                                             ││── Usage ──────────────────────────────────────────────────────────────────────────────────│
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[3]─Standalone Instances────────────────────╮│CPU:          N/A                                                                          │
+│a-name-long-enough-to-be-cut-off running  co…││Memory:       N/A                                                                          │
+│db                               stopped  co…││Processes:    12                                                                           │
 │                                             ││                                                                                           │
-╰─────────────────────────────────────────────╯│CPU:          N/A                                                                          │
-╭─[3]─Standalone Instances────────────────────╮│Memory:       N/A                                                                          │
-│a-name-long-enough-to-be-cut-off running  co…││Processes:    12                                                                           │
-│db                               stopped  co…││                                                                                           │
 │                                             ││Disk:                                                                                      │
 │                                             ││  root:       N/A                                                                          │
 │                                             ││                                                                                           │
-│                                             ││Network:                                                                                   │
-╰─────────────────────────────────────────────╯│  incusbr0:   1 instance                                                                   │
-╭─[4]─Snapshots───────────────────────────────╮│                                                                                           │
+╰─────────────────────────────────────────────╯│Network:                                                                                   │
+╭─[4]─Snapshots───────────────────────────────╮│  incusbr0:   1 instance                                                                   │
+│                                             ││                                                                                           │
 │                                             ││── Drift ──────────────────────────────────────────────────────────────────────────────────│
 │                                             ││                                                                                           │
 │                                             ││db:           declared, not created                                                        │
-│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │

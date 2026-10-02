@@ -1,8 +1,9 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Info - Logs - Config - Env - Top──────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││Name:         a-name-long-enough-to-be-cut-off                                             │
-│web                              running  co…││Status:       running                                                                      │
-│db                               stopped  co…││Type:         container                                                                    │
-│                                             ││Project:      default                                                                      │
+│a-name-long-enough-to-be-cut-off running  co…││Remote:       fake                                                                         │
+│web                              running  co…││Project:      default                                                                      │
+│db                               stopped  co…││Name:         a-name-long-enough-to-be-cut-off                                             │
+│                                             ││Status:       running                                                                      │
+│                                             ││Type:         container                                                                    │
 │                                             ││Image:        Alpine 3.22 amd64                                                            │
 │                                             ││Architecture: x86_64                                                                       │
 │                                             ││IPv4:         192.0.2.144                                                                  │
@@ -26,7 +27,6 @@
 │                                             ││    Sent:       0B (0 packets)                                                             │
 │                                             ││    IP addresses:                                                                          │
 │                                             ││      inet:  192.0.2.144/ (global)                                                         │
-│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

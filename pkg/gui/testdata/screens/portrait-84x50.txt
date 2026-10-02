@@ -16,10 +16,11 @@
 │                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
 ╭─Info - Logs - Config - Env - Top─────────────────────────────────────────────────╮
+│Remote:       fake                                                                │
+│Project:      default                                                             │
 │Name:         a-name-long-enough-to-be-cut-off                                    │
 │Status:       running                                                             │
 │Type:         container                                                           │
-│Project:      default                                                             │
 │Image:        Alpine 3.22 amd64                                                   │
 │Architecture: x86_64                                                              │
 │IPv4:         192.0.2.144                                                         │
@@ -43,7 +44,6 @@
 │    Sent:       0B (0 packets)                                                    │
 │    IP addresses:                                                                 │
 │      inet:  192.0.2.144/ (global)                                                │
-│                                                                                  │
 │                                                                                  │
 │                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────╯

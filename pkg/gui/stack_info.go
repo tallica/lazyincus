@@ -110,7 +110,7 @@ func (gui *Gui) stackIdentityStr(stack *commands.ComposeStack) string {
 		listed = append(listed, gui.Tr.StackListedSaved)
 	}
 
-	output := line("Remote", stack.Remote)
+	output := line("Remote", gui.stackRemote(stack))
 	output += line("Project", stack.Name)
 	output += line("Directory", commands.ShortenHome(stack.Dir, gui.home))
 	output += line("Listed", strings.Join(listed, ", "))

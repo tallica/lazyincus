@@ -82,10 +82,10 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 		return utils.WithPadding(label+": ", padding) + value + "\n"
 	}
 
-	output := line("Name", instance.Name)
+	output := gui.locationStr(gui.instanceLocation(instance), omit...)
+	output += line("Name", instance.Name)
 	output += line("Status", strings.ToLower(instance.Instance.Status))
 	output += line("Type", presentation.InstanceType(instance))
-	output += line("Project", instance.Project)
 	output += line("Image", instance.Image())
 	output += line("Health", instance.HealthStatus())
 	output += line("Architecture", instance.Instance.Architecture)
