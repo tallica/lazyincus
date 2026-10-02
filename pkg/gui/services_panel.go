@@ -89,7 +89,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 				label = row.Instance.Name
 			}
 
-			return gui.refreshSnapshotsFor(label, row.Instances()...)
+			return gui.refreshSnapshotsFor(gui.onRemote(label, row.Service.Remote), row.Instances()...)
 		},
 		Hide: gui.composeUnavailable,
 		// Compose file order is arbitrary (a JSON object), so name is the

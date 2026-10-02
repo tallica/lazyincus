@@ -13,14 +13,33 @@ var stackErrorStyles = map[string]string{"short": "!", "icon": "✗"}
 // stackUnreachableStyles spells a stack whose remote didn't answer.
 var stackUnreachableStyles = map[string]string{"short": "?", "icon": "?"}
 
+// StackRemote is a Stacks row's remote column, for a list with a stack
+// elsewhere: the stack's remote, coloured when it isn't the session's.
+type StackRemote struct {
+	Name      string
+	Elsewhere bool
+}
+
 // GetStackDisplayStrings is a Stacks row: name, status and directory, the
-// directory under home written with `~` and after the stack's remote.
-func GetStackDisplayStrings(guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string) []string {
-	return []string{
+// directory under home written with `~`, after the remote when there's one
+// to show.
+func GetStackDisplayStrings(guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string, remote *StackRemote) []string {
+	cells := []string{
 		stack.Title(),
 		displayStackStatus(guiConfig, stack),
-		StackPath(stack, home),
+		commands.ShortenHome(stack.Dir, home),
 	}
+
+	if remote == nil {
+		return cells
+	}
+
+	name := remote.Name
+	if remote.Elsewhere {
+		name = utils.ColoredString(name, color.FgMagenta)
+	}
+
+	return append([]string{name}, cells...)
 }
 
 // StackPath is the stack's Ref with home written as `~`.

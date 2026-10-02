@@ -96,11 +96,6 @@ func (s *ComposeStack) Title() string {
 	return filepath.Base(s.Dir)
 }
 
-// RemoteTitle is Title prefixed with the remote the stack is pinned to.
-func (s *ComposeStack) RemoteTitle() string {
-	return StackRef(s.Remote, s.Title())
-}
-
 // Status rolls every compose instance in the stack's project up the way a
 // service rolls up its replicas.
 func (s *ComposeStack) Status() string {

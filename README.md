@@ -227,8 +227,10 @@ another you put in front of the directory, the way `incus` names things —
 `pve01:~/deployments/pve01/caddy`. Its row, services, tabs and every verb
 go to that remote whichever one a later session is on, while the other
 panels stay on the session's, so one list can hold the stacks of several
-servers. The compose files stay on this machine, so the "not on the same
-host" gotcha at the end of this section applies.
+servers. When one does, the Stacks panel grows a remote column, other
+remotes in colour, and the Services title and every confirmation for such
+a stack name the remote. The compose files stay on this machine, so the
+"not on the same host" gotcha at the end of this section applies.
 
 A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed, and

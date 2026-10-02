@@ -266,7 +266,7 @@ func TestAddingAStack(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"fake:" + shop.Dir}, state.Stacks)
 
-	s.settle(t, "Services (fake:shop)")
+	s.settle(t, "Services (shop)")
 }
 
 // withRemotes stands each server in for the CLI remote it's keyed by, the
@@ -316,8 +316,8 @@ func TestAStackPinnedToARemote(t *testing.T) {
 		s.server.SetInstances([]api.InstanceFull{composeFixture("shop", "web", "api")})
 	})
 
-	s.settle(t, "Services (pve01:shop)")
-	s.settle(t, "pve01:")
+	s.settle(t, "Services (shop on pve01)")
+	assert.Regexp(t, `│pve01 shop`, s.snapshot(t))
 
 	require.Eventually(t, func() bool {
 		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
@@ -328,6 +328,14 @@ func TestAStackPinnedToARemote(t *testing.T) {
 	})
 	assert.Equal(t, "api-1", instance.Name)
 	assert.Equal(t, "pve01", instance.Remote)
+
+	// What would act on it says where.
+	assert.Equal(t, "api-1 on pve01", onLoop(t, s, func() string { return s.gui.qualifiedInstance(instance) }))
+	s.do(t, func() error {
+		service := s.gui.Panels.Services.List.GetAllItems()[0].Service
+		return s.gui.composeConfirm(s.gui.Tr.ConfirmComposeStop, serviceTarget(service), "stop")
+	})
+	s.settle(t, "stop service api on pve01?")
 
 	require.Eventually(t, func() bool {
 		return onLoop(t, s, func() bool {
@@ -392,7 +400,9 @@ func TestAddingAStackOnARemote(t *testing.T) {
 	assert.Equal(t, []string{"pve01:" + shop.Dir, "fake:" + shop.Dir}, state.Stacks)
 
 	// Removing it removes what was saved.
-	s.settle(t, "fake:")
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() int { return len(s.gui.Panels.Stacks.List.GetAllItems()) }) == 2
+	}, 5*time.Second, 20*time.Millisecond)
 	require.NoError(t, s.gui.Config.RemoveStack(onLoop(t, s, func() string {
 		return s.gui.Panels.Stacks.List.GetAllItems()[0].Ref()
 	})))

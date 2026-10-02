@@ -120,10 +120,10 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 // or the whole project when no service narrows it.
 func (gui *Gui) composeTargetName(target composeTarget) string {
 	if target.service != "" {
-		return fmt.Sprintf(gui.Tr.ComposeTargetService, target.service)
+		return gui.onRemote(fmt.Sprintf(gui.Tr.ComposeTargetService, target.service), target.remote)
 	}
 
-	return fmt.Sprintf(gui.Tr.ComposeTargetProject, target.project)
+	return gui.onRemote(fmt.Sprintf(gui.Tr.ComposeTargetProject, target.project), target.remote)
 }
 
 // composeConfirm wraps a verb in a confirmation naming its target, for the

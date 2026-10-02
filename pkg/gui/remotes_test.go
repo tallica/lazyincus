@@ -52,7 +52,7 @@ func TestSwitchingRemote(t *testing.T) {
 		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
 		labelled(s, map[string]string{"web": "web"})
 	})
-	s.settle(t, "Services (fake:default)")
+	s.settle(t, "Services (default)")
 
 	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
 
@@ -63,6 +63,7 @@ func TestSwitchingRemote(t *testing.T) {
 	assert.Equal(t, "pve01", os.Getenv("INCUS_REMOTE"))
 
 	// fake is a remote like any other now, and still answers for its stack.
+	s.settle(t, "Services (default on fake)")
 	require.Eventually(t, func() bool {
 		return slices.Equal(serviceNames(t, s), []string{"default/web"})
 	}, 5*time.Second, 20*time.Millisecond)

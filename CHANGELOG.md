@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `y` on a stack copies its project, its directory, or a published port's address.
 - `R` switches every panel to another Incus remote for the session; a remote that doesn't answer leaves you where you were.
 - `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, listing stacks from several Incus servers at once. Without one, the stack is saved with the session's remote.
+- A stack on another remote than the session's gets a coloured remote column, and its Services title and confirmations name that remote.
 - `M` on a stack or service follows its logs, every instance's interleaved (`incus-compose logs --follow`). It shows only new output: the Logs tabs have already read the rest.
 
 ### Changed

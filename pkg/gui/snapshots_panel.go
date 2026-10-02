@@ -616,7 +616,12 @@ func (gui *Gui) snapshotOwnerName(snapshot *commands.Snapshot) string {
 		spans = gui.State.SpansProjects.Volumes
 	}
 
-	return gui.qualified(snapshot.Owner, snapshot.Project, spans)
+	owner := gui.qualified(snapshot.Owner, snapshot.Project, spans)
+	if snapshot.Instance != nil {
+		owner = gui.onRemote(owner, snapshot.Instance.Remote)
+	}
+
+	return owner
 }
 
 // refreshSnapshotOwner re-lists what a snapshot was taken of, which is what

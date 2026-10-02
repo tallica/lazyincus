@@ -182,6 +182,7 @@ type TranslationSet struct {
 	StandaloneInstancesTitle      string
 	InfoTitle                     string
 	ComposeTargetService          string
+	OnRemote                      string
 	ComposeTargetProject          string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
@@ -433,6 +434,7 @@ func englishSet() TranslationSet {
 		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
 		ComposeTargetService:          "service %s",
+		OnRemote:                      "%s on %s",
 		ComposeTargetProject:          "project %s",
 		ComposeServiceScoped:          "%s service",
 		ComposeUp:                     "bring up",

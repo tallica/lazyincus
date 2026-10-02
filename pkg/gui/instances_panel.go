@@ -254,7 +254,7 @@ func (gui *Gui) instanceStart(instance *commands.Instance) error {
 }
 
 func (gui *Gui) qualifiedInstance(instance *commands.Instance) string {
-	return gui.qualified(instance.Name, instance.Project, gui.State.SpansProjects.Instances)
+	return gui.onRemote(gui.qualified(instance.Name, instance.Project, gui.State.SpansProjects.Instances), instance.Remote)
 }
 
 func (gui *Gui) instanceStop(instance *commands.Instance) error {

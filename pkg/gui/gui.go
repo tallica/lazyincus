@@ -200,6 +200,10 @@ type guiState struct {
 	// the all-projects view of a server with a single project reads better
 	// without a column repeating that project on every row.
 	SpansProjects spansProjects
+
+	// StacksElsewhere is whether a stack listed is on a remote other than
+	// the session's, which the stacks then need a remote column for.
+	StacksElsewhere bool
 }
 
 type snapshotsSpan struct {

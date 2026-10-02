@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -44,6 +45,17 @@ func (gui *Gui) commandFor(remote string) (*commands.IncusCommand, error) {
 	}
 
 	return gui.remotes.get(remote)
+}
+
+// onRemote is what followed by the remote it's on, when that isn't the
+// session's: confirmations and titles, where the other panels would
+// otherwise vouch for the wrong daemon.
+func (gui *Gui) onRemote(what, remote string) string {
+	if gui.onSessionRemote(remote) {
+		return what
+	}
+
+	return fmt.Sprintf(gui.Tr.OnRemote, what, remote)
 }
 
 // publishHostFor is where the ports of an instance on remote are reached,

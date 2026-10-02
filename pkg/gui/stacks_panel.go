@@ -62,10 +62,19 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
-		// The local stack first, being the one lazyincus was started for.
+		// The local stack first, being the one lazyincus was started for,
+		// then the session's remote's, then each other remote's together.
 		Sort: func(a, b *commands.ComposeStack) bool {
 			if a.Local != b.Local {
 				return a.Local
+			}
+
+			if here := gui.onSessionRemote(a.Remote); here != gui.onSessionRemote(b.Remote) {
+				return here
+			}
+
+			if remoteA, remoteB := gui.stackRemote(a), gui.stackRemote(b); remoteA != remoteB {
+				return remoteA < remoteB
 			}
 
 			if a.Title() != b.Title() {
@@ -79,7 +88,12 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			return a.Ref() == b.Ref()
 		},
 		GetTableCells: func(stack *commands.ComposeStack) []string {
-			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home)
+			var remote *presentation.StackRemote
+			if gui.State.StacksElsewhere {
+				remote = &presentation.StackRemote{Name: gui.stackRemote(stack), Elsewhere: !gui.onSessionRemote(stack.Remote)}
+			}
+
+			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home, remote)
 		},
 	}
 }
@@ -215,6 +229,10 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 		if !gui.refreshes.stacks.admit(ticket) {
 			return nil
 		}
+
+		gui.State.StacksElsewhere = slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
+			return !gui.onSessionRemote(stack.Remote)
+		})
 
 		gui.Panels.Stacks.SetItems(stacks)
 
@@ -491,6 +509,16 @@ func (gui *Gui) addStack(input string) error {
 	gui.stacks.put(stack)
 
 	return gui.refresh(func() error { return gui.selectStack(ref) }, gui.fetchStacks)
+}
+
+// stackRemote is the remote a stack's verbs go to: its own, or the
+// session's for one that follows it.
+func (gui *Gui) stackRemote(stack *commands.ComposeStack) string {
+	if stack.Remote == "" {
+		return gui.IncusCommand.RemoteName()
+	}
+
+	return stack.Remote
 }
 
 // onSessionRemote is whether a stack pinned to remote is on the remote the

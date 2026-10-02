@@ -162,8 +162,14 @@ when they agree, `partial` when they don't, `none` with nothing there, and
 `error` for a stack whose config couldn't be read, `unreachable` for one
 whose remote didn't answer (`StatusErr`), which fails only that remote's
 rows. `GetComposeStatuses` is one all-projects listing a remote, every
-remote asked at once. The path column writes home as
-`~`. The local stack sorts first, the rest by name.
+remote asked at once. The path column writes home as `~`. A remote column
+leads whenever a stack is on a remote other than the session's
+(`State.StacksElsewhere`), those remotes in magenta - the project
+columns' rule, a column only where the rows would otherwise read alike.
+The local stack sorts first, then the session's remote's, then each other
+remote's together, each by name. Wherever the rest of the app would vouch
+for the wrong daemon - the Services and Snapshots titles, the compose and
+instance confirmations - `onRemote` adds "on pve01".
 
 `followStack` is how the services panel follows the selection, the way
 Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
