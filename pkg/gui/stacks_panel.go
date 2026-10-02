@@ -89,7 +89,7 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 		GetTableCells: func(stack *commands.ComposeStack) []string {
 			var remote *presentation.StackRemote
 			if gui.State.StacksElsewhere {
-				remote = &presentation.StackRemote{Name: gui.stackRemote(stack), Elsewhere: !gui.onSessionRemote(stack.Remote)}
+				remote = &presentation.StackRemote{Name: gui.stackRemote(stack), Active: gui.onSessionRemote(stack.Remote)}
 			}
 
 			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home, remote)

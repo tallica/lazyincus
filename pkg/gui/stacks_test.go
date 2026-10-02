@@ -317,7 +317,7 @@ func TestAStackPinnedToARemote(t *testing.T) {
 	})
 
 	s.settle(t, "Services (shop on pve01)")
-	assert.Regexp(t, `│pve01 shop`, s.snapshot(t))
+	assert.Regexp(t, `│  pve01 shop`, s.snapshot(t))
 
 	require.Eventually(t, func() bool {
 		return slices.Equal(serviceNames(t, s), []string{"shop/api"})

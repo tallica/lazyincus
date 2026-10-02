@@ -172,8 +172,8 @@ whose remote didn't answer (`StatusErr`), which fails only that remote's
 rows. `GetComposeStatuses` is one all-projects listing a remote, every
 remote asked at once. The path column writes home as `~`. A remote column
 leads whenever a stack is on a remote other than the session's
-(`State.StacksElsewhere`), those remotes in magenta - the project
-columns' rule, a column only where the rows would otherwise read alike.
+(`State.StacksElsewhere`), the session's marked `*` in green as the `R`
+menu marks it - the project columns' rule, a column only where the rows would otherwise read alike.
 The local stack sorts first, then each saved remote's together, each by
 name - nothing the session decides, since
 the session follows the selection and would reshuffle the list under the

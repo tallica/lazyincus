@@ -14,10 +14,11 @@ var stackErrorStyles = map[string]string{"short": "!", "icon": "✗"}
 var stackUnreachableStyles = map[string]string{"short": "?", "icon": "?"}
 
 // StackRemote is a Stacks row's remote column, for a list with a stack
-// elsewhere: the stack's remote, coloured when it isn't the session's.
+// elsewhere: the stack's remote, marked the way the remotes menu marks it
+// when it's the session's.
 type StackRemote struct {
-	Name      string
-	Elsewhere bool
+	Name   string
+	Active bool
 }
 
 // GetStackDisplayStrings is a Stacks row: name, status and directory, the
@@ -34,9 +35,9 @@ func GetStackDisplayStrings(guiConfig *config.GuiConfig, stack *commands.Compose
 		return cells
 	}
 
-	name := remote.Name
-	if remote.Elsewhere {
-		name = utils.ColoredString(name, color.FgMagenta)
+	name := "  " + remote.Name
+	if remote.Active {
+		name = utils.ColoredString("* "+remote.Name, color.FgGreen)
 	}
 
 	return append([]string{name}, cells...)

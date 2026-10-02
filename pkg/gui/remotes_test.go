@@ -132,6 +132,11 @@ func TestTheScreenFollowsTheSelectedStack(t *testing.T) {
 	s.settle(t, "Services (shop)")
 	assert.Equal(t, []string{"zoo", "default", "shop"}, order())
 
+	// The session's remote is the one marked.
+	screen := s.snapshot(t)
+	assert.Regexp(t, `│\* pve01 +shop`, screen)
+	assert.Regexp(t, `│  fake +default`, screen)
+
 	s.do(t, s.gui.Panels.Stacks.HandlePrevLine)
 	s.settle(t, "(fake/all projects)")
 	s.settle(t, "Services (default)")

@@ -228,7 +228,8 @@ A stack you add belongs to a remote: the one lazyincus is showing, or
 another you put in front of the directory, the way `incus` names things —
 `pve01:~/deployments/pve01/caddy`. Its row, services, tabs and every verb
 go to that remote whichever one a later session is on, so one list can
-hold the stacks of several servers. When one does, the Stacks panel grows a remote column, and
+hold the stacks of several servers. When one does, the Stacks panel grows a remote column, the active
+remote marked `*`, and
 resting the cursor on a stack moves the rest of the screen - instances,
 snapshots, resources, the footer - to that stack's remote, the way `R`
 does, so everything under the Stacks panel is one server's. Until it
