@@ -202,3 +202,4 @@ point assumes the host can reach the guest.
 | `not authorized` on `remote add` | The token was already used or has expired; mint a new one |
 | lazyincus shows a different daemon than `incus` does | `INCUS_REMOTE` and the CLI's default remote disagree |
 | `Can't connect to a local server on a non-Linux system` | The `local` remote is Linux-only; name the daemon's own remote |
+| A stack reads `unreachable`: `no remote "…" in the incus CLI's config` | The remote it was saved for was renamed or removed; `e` on the stack points it at another |

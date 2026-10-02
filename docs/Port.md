@@ -38,16 +38,16 @@ pkg/i18n/                      TranslationSet; English only
 pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
 pkg/utils/                     string/table/color/yaml helpers; every display width goes through DisplayWidth
 pkg/commands/
-  incus.go                     IncusCommand: connection, project scoping, list/refresh per resource
+  incus.go                     IncusCommand: connection, to any remote by name, project scoping, list/refresh per resource
   instance.go                  Instance: api.InstanceFull as of one refresh; start/stop/restart/freeze/delete/logs/exec
   instance_runtime.go          what outlives a refresh: the drained console log, the working ps, Latest(), a transition mark
   events.go                    the daemon's event stream: one listener, events in the daemon's order
   instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
   snapshot.go                  Snapshot, an instance's or a custom volume's: create, restore, delete
   incus_compose.go             compose projects and services, paired with their instances
-  compose_stack.go             ComposeStack, a compose project directory, and its rolled-up status
+  compose_stack.go             ComposeStack, a compose project directory on a remote (remote:dir), and its rolled-up status
   instance_devices.go          what an instance's devices say: published ports, custom volumes, networks
-  compose_config.go            `incus-compose config`: the local project and each service's definition
+  compose_config.go            `incus-compose config`: a stack's project and each service's definition, and ComposeCmd
   incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data, and an event stream Emit feeds
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
   used_by.go                   which instances use a network, volume, image or profile
@@ -70,7 +70,8 @@ pkg/gui/
   copy.go                      the `y` menu: what each kind of item offers to copy
   services_actions.go          the services panel's compose verbs
   instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
-  projects.go                  project scope menu (all projects, or one)
+  projects.go                  project scope menu (all projects, or one), and the reload after any change of scope
+  remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel plus menu rows
 ```
@@ -80,4 +81,4 @@ Everything in `pkg/gui` not listed above (`confirmation_panel.go`,
 `app_status_manager.go`, `subprocess.go`, `theme.go`, `gocui.go`,
 `panels.go`) is generic gocui plumbing, ported near-verbatim;
 `connection.go` is the connection-lost modal, and `prompt_panel.go` the
-one-line text prompt Stacks' `a` asks for a directory with.
+one-line text prompt Stacks' `a` and `e` ask for a directory with.

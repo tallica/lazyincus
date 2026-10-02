@@ -137,9 +137,9 @@ order:
 - **Instances** — containers and VMs across every project, minus the
   instances of the services the listed stacks on the same remote declare,
   until `C` puts them back.
-- **Snapshots** — follows whichever instance the list above it has
-  selected, or the custom volume the volumes list has, rather than having
-  a selection of its own; or lists every instance's (`e`).
+- **Snapshots** — follows whichever instance or service the lists above
+  it have selected, or the custom volume the volumes list has, rather than
+  having a selection of its own; or lists every instance's (`e`).
 - **Resources** — how Images, Volumes, Networks and Profiles share one slot.
 - **Images**, **Volumes**, **Networks** — local images and what uses them;
   every pool's volumes in one list, with sizes; managed networks, the
@@ -150,7 +150,8 @@ order:
 
 [docs/Incus.md](docs/Incus.md) has the non-obvious parts, established
 against a live daemon or read out of the Incus source rather than inferred:
-how the client resolves a remote, why a daemon going away mid-session is
+how the client resolves a remote, and connects to another by name or
+moves onto it in place, why a daemon going away mid-session is
 never fatal, per-project clients and why item identity includes the
 project, the console log's drain-on-read behaviour, why `exec` and
 `attach` shell out to the `incus` CLI instead of using the client's
@@ -159,8 +160,9 @@ and the event stream: which events count, and the order they arrive in.
 
 ## Config
 
-`pkg/config/app_config.go` holds the schema; [docs/Config.md](docs/Config.md)
-documents it and the file's location precedence.
+`pkg/config/app_config.go` holds the schema, and `app_state.go` the app's
+own `state.yml` beside it; [docs/Config.md](docs/Config.md) documents both
+and the files' location precedence.
 
 The config reloads at runtime, from `handleEditConfig` and from a
 modification-time poll (`gui.configReloader`). `gui.reloadConfig` re-applies

@@ -170,16 +170,19 @@ anything running is frozen. Which key runs which verb is README's
 
 Main panel tabs:
 
-- **Info** — laid out like an instance's: the project, directory and
-  status, the declared services counted by status, then what's rolled up
-  over its instances - health, dates, snapshots. Under headings of their
-  own: **Endpoints**, each instance's address and the ports its proxy
-  devices publish (incus-compose's `ports:`, listening on the daemon's
-  host, so a wildcard reads as the remote's host - `PublishHost` - or `*`
-  where its URL doesn't give one: a unix socket, or loopback, which an
-  SSH tunnel to the API is); **Usage**, the instance counters summed, a custom volume shared
-  by replicas counted once; and **Drift**, compose instances whose service
-  the file no longer declares and declared services with none. Everything
+- **Info** — laid out like an instance's: the remote, project and
+  directory, where the stack is listed from (at startup, saved, or both),
+  and its status - or, while its remote is connecting or away, why - then
+  the declared services counted by status and what's rolled up over its
+  instances: health, dates, snapshots. Under headings of their own:
+  **Endpoints**, each instance's address and the ports its proxy devices
+  publish (incus-compose's `ports:`, listening on the daemon's host, so a
+  wildcard reads as the stack's remote's host - `publishHostFor` - or `*`
+  where its URL doesn't give one: a unix socket, or loopback, which an SSH
+  tunnel to the API is); **Usage**, the instance counters summed, a custom
+  volume shared by replicas counted once; and **Drift**, compose instances
+  whose service the file no longer declares and declared services with
+  none. Everything
   past the services count comes from `gui.composeInstances` and
   `gui.composeProject`, which `fetchServices` fills for the selected
   stack, so the tab ticks until they arrive.
@@ -255,12 +258,13 @@ reads `.name` and `.services`, so a service the compose file declares but
 nothing is running still gets a row, in state `none`.
 `GetComposeServices` then pairs each declared service with the project's
 instances, matching on `user.label.incus-compose.service` via
-`Instance.ComposeService()`, and records the stack's directory on each
-service for its Config tab and its verbs. It fetches with
-`GetProjectInstances` rather than reading the instances panel's list, since
-the panels can be scoped anywhere. An instance whose label names no
-declared service — a one-off from `incus-compose run` — matches no row and
-stays in the instances panel.
+`Instance.ComposeService()`, and records the stack's directory and remote
+on each service for its Config tab and its verbs. It fetches with
+`GetProjectInstances`, through the stack's remote's command
+(`commandFor`), rather than reading the instances panel's list, since the
+panels can be scoped anywhere, and on another remote altogether. An
+instance whose label names no declared service — a one-off from
+`incus-compose run` — matches no row and stays in the instances panel.
 
 A service with more than one instance lists its replicas under it, one row
 each: the panel's item is a `commands.ServiceRow`, either a service or one
@@ -282,9 +286,10 @@ service's own: `partial` when replicas disagree, `none` when it has no
 instances. `Health` rolls up ic-healthd's verdict on the running replicas, worst-first.
 
 The instances panel is the other half of the split: its filter
-(`isStackInstance`) drops the instances of every service a listed stack
-declares, whichever stack is selected, and its title becomes "Standalone
-Instances" while any stack is listed. A compose instance no Services row
+(`isStackInstance`) drops the instances of every service a listed stack on
+the session's remote declares, whichever stack is selected, and its title
+becomes "Standalone Instances" while any such stack is listed. A stack on
+another remote has nothing there to drop. A compose instance no Services row
 claims stays there, having no panel of its own: one of a project no stack
 lists, or of a service its compose file no longer declares, which the
 stack's Drift names. `C` sets `ShowStackInstances`, which turns the filter
@@ -304,7 +309,8 @@ argument every incus-compose verb takes; which key runs which verb, and
 which of them a replica's row takes for itself, is README's
 [Compose stacks](../README.md#compose-stacks) section, alongside the rest of
 what a user sees. `composeRun` is all of them, run in the service's stack
-directory (`ComposeCmd`), and refreshes the instances, stacks and services
+directory (`ComposeCmd`) with `INCUS_REMOTE` naming the stack's remote,
+and refreshes the instances, stacks and services
 panels once the subprocess returns rather than waiting for the poll.
 `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
 don't — same rule as the instances panel. The same verbs over the whole
@@ -358,7 +364,8 @@ disagree on how many cells they have. `gui.instanceStatusStyle` covers the
 status column either way; `serviceStatusStyles` supplies the glyphs for
 `partial` and `none`, which no instance state has. There's no project
 column: every row shares the one project, so `servicesPanelTitle` puts it
-in the title instead.
+in the title instead, followed by the stack's remote when that isn't the
+session's.
 
 Main panel tabs:
 
@@ -409,9 +416,10 @@ aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 
 ## Instances
 
-Lists containers and VMs across every project by default, or one project
-when `P` scopes down - minus the local stack's, when there's a services
-panel holding those. Columns mirror `incus list`'s, with health beside
+Lists containers and VMs across every project of the session's remote by
+default, or one project when `P` scopes down - minus the instances of the
+stacks listed for that remote, which the services panel holds (see
+[Services](#services)). Columns mirror `incus list`'s, with health beside
 status.
 
 Rows sort by name, with stopped instances last (`sortInstances`), and the
@@ -472,7 +480,8 @@ Follows whichever list you're in: the instances panel's `OnSelect` hands
 over its instance, the services panel's whatever its row stands for — a
 replica's own, and every replica's from a service's row above them, the
 service's snapshots being all of theirs. The view title names what the rows
-belong to, the instance or the service, since the rows alone don't say; a
+belong to, the instance or the service - and its remote, when that isn't
+the session's - since the rows alone don't say; a
 panel holding more than one instance's snapshots grows a column naming the
 replica each came from, and groups the list by instance before ordering it
 newest-first, replicas being snapshotted alike. Each panel hands its
@@ -487,7 +496,7 @@ result at once. Snapshot names can come back prefixed with the instance
 `snapshotName` strips.
 
 `e` swaps the selection for every instance the instances panel holds, the
-local stack's replicas included (`gui.showAllSnapshots` picks which way a
+stacks' replicas included (`gui.showAllSnapshots` picks which way a
 session starts). The panels go on handing their selection over while it's
 on, so turning it off lands on whatever is selected by then; they just
 don't rerender a list that wouldn't change. Rows group by project before
@@ -517,13 +526,16 @@ also bracketed, which is what identifies the field `← →` would change when
 focus is in the name field and nothing is highlighted. Hints live in the borders the way
 lazygit does it - `Subtitle` on the top, `Footer` on the bottom, the latter
 needing gocui's `ShowListFooter` and skipped entirely on a view with no
-lines, which is why the empty name field carries only a subtitle. Stateful is a toggle there
-rather than another choice beside the expiries: the two are independent, and
-a flat list of both reads as though picking an expiry rules out stateful.
-Toggling reopens the menu, there being no widget with selection state -
-gocui has views and keybindings, and the menu itself is lazydocker's
-`SideListPanel[*types.MenuItem]`. Restore is an instance update carrying `Restore:
-<name>`, not a snapshot operation.
+lines, which is why the empty name field carries only a subtitle. A
+popup with a subtitle widens, still centred, to fit it beside the title
+(`popupFrameWidth`): gocui right-aligns the subtitle on the border the
+title starts, and the middle half of a narrow screen ran the two together.
+Stateful is a toggle there rather than another choice beside the expiries:
+the two are independent, and a flat list of both reads as though picking an
+expiry rules out stateful. Toggling reopens the menu, there being no widget
+with selection state - gocui has views and keybindings, and the menu itself
+is lazydocker's `SideListPanel[*types.MenuItem]`. Restore is an instance
+update carrying `Restore: <name>`, not a snapshot operation.
 
 A custom volume selected in the volumes panel is followed the same way,
 its title naming the volume, and `n` there or here snapshots it. A
@@ -567,7 +579,7 @@ so a switch shows current rows at once.
 `u` on any of the three narrows the instances panel to what uses the item
 and moves there, its title naming it; `esc` there brings the rest back and
 returns to the list `u` was pressed in, cursor where it was.
-While narrowed it shows every user, stopped or the local stack's, the
+While narrowed it shows every user, stopped or a stack's, the
 question being what uses the thing. An image's users are its `UsedBy`.
 A network's or volume's `used_by` names a profile rather than the
 instances that have it, so those match on each instance's expanded
@@ -626,7 +638,8 @@ they're done.
 ## Volumes
 
 Every storage pool's volumes in one list (`GetVolumes` walks
-`GetStoragePoolNames` then `GetStoragePoolVolumes` per pool; a pool that
+`GetStoragePools`, which brings each pool's driver too, then the volumes
+of each - every project's at once while the panels span them; a pool that
 errors is skipped rather than emptying the panel). Identity is
 pool+type+name, since an instance and a custom volume can share a name.
 Only `custom` volumes can be deleted — the rest go away with the instance or

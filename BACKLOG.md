@@ -202,7 +202,8 @@ none of it is needed to make typing a command useful.
 
 - [ ] **Typed incus command (`:`)** — an editable prompt, submitted to
       `incus` as a subprocess. The prompt seeds with the selected row's
-      `--project` (`instanceCLIArgs`), cursor after it, so the common case
+      `--project` (`projectCLIArgs`), cursor after it, and runs on the
+      row's remote the way `instanceCmd` does, so the common case
       is typing the verb alone and the uncommon one is deleting a prefix.
       Reuses `openTextPrompt`, the one Stacks' `a` asks for a directory
       with, and `runSubprocess`, so an interactive command works
@@ -212,7 +213,8 @@ none of it is needed to make typing a command useful.
       unconfirmed prompt that runs what it's given.
 - [ ] **Typed incus-compose command (`;`)** — the same prompt against
       `incus-compose`, on the Stacks and Services panels, run through
-      `ComposeCmd` in the selected stack's directory. Nothing to prefill
+      `ComposeCmd` in the selected stack's directory and on its remote, as
+      `composeRun` does. Nothing to prefill
       beyond the selected service's name as a trailing argument.
 
 Keys aren't settled: `:` and `;` are both free and read as a pair on one
@@ -227,8 +229,8 @@ against Incus, pulling OCI images straight from docker.io/ghcr.io via Incus's
 native OCI support. It started as [bketelsen/incus-compose] and now lives
 under the LXC org; its docs call it stable, and it needs Incus 7.0.1 LTS or
 7.2+ — of the *daemon*, not the client library this port builds against, so
-v7.3.0 on our side says nothing about it and an older server refuses every
-verb. Commands mirror compose: `up`,
+our client's version says nothing about it and an older server refuses
+every verb. Commands mirror compose: `up`,
 `down`, `start`, `stop`, `restart`, `list`/`ps`, `logs`, `exec`, `config`,
 `build`.
 
@@ -307,13 +309,13 @@ lazyincus has in hand, not new API calls.
 
 lazydocker's sixth side panel, shipped as Stacks
 ([docs/Panels.md](docs/Panels.md#stacks)): a list of compose project
-directories, the local one and any added with `a`, whose selection the
-Services panel follows. It lists directories rather than every compose
-project on the server, a project with no compose file in reach being rows
-nothing could act on. lazydocker's local-project gate
-(`CannotManageNonLocalService`) is what that choice replaces. What's left
-is the part of lazydocker's panel that was a main-panel tab rather than
-the list:
+directories, the local one and any added with `a`, each on the Incus
+remote it was added for, whose selection the Services panel follows. It
+lists directories rather than every compose project on the server, a
+project with no compose file in reach being rows nothing could act on.
+lazydocker's local-project gate (`CannotManageNonLocalService`) is what
+that choice replaces. What's left is the part of lazydocker's panel that
+was a main-panel tab rather than the list:
 
 - [x] **The verbs** and **the compose config tab** — shipped on both
       panels: per service on Services, per stack on Stacks.

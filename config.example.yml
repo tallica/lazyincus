@@ -49,7 +49,7 @@ gui:
   # Word-wrap the main panel's content.
   wrapMainPanel: true
 
-  # Fraction of screen width used by the Instances side panel.
+  # Fraction of screen width used by the side panels' column.
   sidePanelWidth: 0.3333
 
   # Show the bottom status/keybinding line.
@@ -60,7 +60,7 @@ gui:
   screenMode: "normal"
 
   # Instance state display: "long" (full words), "short" (one/two
-  # characters), or "icon". Covers the Services panel's status too.
+  # characters), or "icon". Covers the Services and Stacks panels' statuses too.
   instanceStatusStyle: "long"
 
   # Panel border style: "rounded", "single", "double", or "hidden".
