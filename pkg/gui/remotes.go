@@ -230,10 +230,15 @@ func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]m
 			delete(r.readingStatuses, remote)
 
 			// Still connecting says nothing new: the connection's landing
-			// asks again.
-			fresh := !errors.Is(err, errConnecting) &&
-				(!had || !reflect.DeepEqual(previous.byProject, byProject) || fmt.Sprint(previous.err) != fmt.Sprint(err))
-			if fresh {
+			// asks again. Otherwise the answer is kept, but only statuses
+			// that changed, or the remote starting or stopping answering,
+			// refresh now: an error worded differently each time would
+			// otherwise refresh, and so read again, without end. The next
+			// poll shows the new wording.
+			read := !errors.Is(err, errConnecting)
+			changes := read && (!had || !reflect.DeepEqual(previous.byProject, byProject) || (previous.err == nil) != (err == nil))
+
+			if read {
 				if r.statuses == nil {
 					r.statuses = map[string]remoteStatuses{}
 				}
@@ -242,7 +247,7 @@ func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]m
 			}
 			r.mutex.Unlock()
 
-			if fresh {
+			if changes {
 				changed()
 			}
 		}()

@@ -1,9 +1,11 @@
 package gui
 
 import (
+	"fmt"
 	"os"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -286,4 +288,33 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 	})
 	screen := s.settle(t, "'e' points the stack at another")
 	assert.NotContains(t, screen, "Are you sure")
+}
+
+// A remote whose error is worded differently every time - a port number,
+// a timestamp - refreshes the stacks when it starts failing, not on every
+// read: each refresh reads again, so that would never stop.
+func TestAChangingErrorRefreshesOnce(t *testing.T) {
+	var remotes remoteCommands
+
+	var reads, changes atomic.Int32
+
+	read := func() (map[string]map[string][]string, error) {
+		return map[string]map[string][]string{}, fmt.Errorf("refused, attempt %d", reads.Add(1))
+	}
+
+	var changed func()
+
+	changed = func() {
+		changes.Add(1)
+		remotes.cachedStatuses("pve01", read, changed)
+	}
+
+	remotes.cachedStatuses("pve01", read, changed)
+
+	require.Eventually(t, func() bool { return reads.Load() == 2 }, 5*time.Second, 5*time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
+
+	assert.Equal(t, int32(2), reads.Load())
+	assert.Equal(t, int32(1), changes.Load())
+	assert.EqualError(t, remotes.remoteStatusErr("pve01"), "refused, attempt 2")
 }
