@@ -194,6 +194,28 @@ func ResolveStackDir(input, cwd, home string) (string, error) {
 	return filepath.Clean(path), nil
 }
 
+// composeFileNames are compose-go's default compose files, which
+// incus-compose looks for, in its order of preference.
+var composeFileNames = []string{"compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml"}
+
+// ComposeFile is the file incus-compose reads for the stack in dir: the
+// first of composeFileNames there, or in the nearest directory above that
+// has one, as compose-go looks.
+func ComposeFile(dir string) (string, error) {
+	for search := dir; ; search = filepath.Dir(search) {
+		for _, name := range composeFileNames {
+			file := filepath.Join(search, name)
+			if info, err := os.Stat(file); err == nil && !info.IsDir() {
+				return file, nil
+			}
+		}
+
+		if filepath.Dir(search) == search {
+			return "", fmt.Errorf("%s: no compose file", dir)
+		}
+	}
+}
+
 // CheckStackDir refuses a path that isn't an existing directory; whether it
 // holds a compose file is incus-compose's to say.
 func CheckStackDir(dir string) error {

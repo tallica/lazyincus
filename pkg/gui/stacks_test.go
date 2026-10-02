@@ -412,6 +412,48 @@ func TestAddingAStackOnARemote(t *testing.T) {
 	assert.Len(t, state.Stacks, 1)
 }
 
+// `e` starts from the stack's own entry, and what's saved takes its place.
+func TestEditingAStack(t *testing.T) {
+	shop := testStack(t, t.TempDir(), "shop", "api")
+	shop.Remote = "fake"
+	moved := t.TempDir()
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, shop)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+		s.gui.remoteFollow.delay = time.Hour
+		s.gui.loadStack = func(dir string) *commands.ComposeStack {
+			loaded := *shop
+			loaded.Dir = dir
+			return &loaded
+		}
+	})
+	s.settle(t, "Services (shop)")
+
+	s.do(t, func() error {
+		stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+		if err != nil {
+			return err
+		}
+
+		return s.gui.stackEdit(stack)
+	})
+	s.settle(t, s.gui.Tr.EditStackPrompt)
+	assert.Equal(t, "fake:"+shop.Dir, strings.TrimSpace(onLoop(t, s, s.gui.Views.Confirmation.Buffer)))
+	s.do(t, s.gui.closeConfirmationPrompt)
+
+	// Unchanged is no change, and a directory that isn't there is refused.
+	require.NoError(t, s.gui.saveStack("fake:"+shop.Dir, shop.Ref()))
+	assert.ErrorContains(t, s.gui.saveStack("pve01:"+filepath.Join(moved, "missing"), shop.Ref()), "no such file")
+
+	require.NoError(t, s.gui.saveStack("pve01:"+moved, shop.Ref()))
+
+	state, err := s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"pve01:" + moved}, state.Stacks)
+	s.settle(t, "Services (shop on pve01)")
+}
+
 // The local stack isn't saved, so there's nothing for `D` to remove.
 func TestTheLocalStackCannotBeRemoved(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))

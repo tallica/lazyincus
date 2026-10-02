@@ -446,7 +446,7 @@ func (gui *Gui) renderStackConfig(stack *commands.ComposeStack) tasks.TaskFunc {
 // handleStackAdd is `a`: a directory to list, saved in state.yml with the
 // remote it's pinned to.
 func (gui *Gui) handleStackAdd(g *gocui.Gui, v *gocui.View) error {
-	return gui.openTextPrompt(gui.Tr.AddStackPrompt, gui.Tr.AddStackHint, func(input string) error {
+	return gui.openTextPrompt(gui.Tr.AddStackPrompt, gui.Tr.AddStackHint, "", func(input string) error {
 		return gui.WithWaitingStatus(gui.Tr.AddingStackStatus, func() error {
 			return gui.addStack(input)
 		})
@@ -458,6 +458,29 @@ func (gui *Gui) handleStackAdd(g *gocui.Gui, v *gocui.View) error {
 // A remote that doesn't answer is no reason to refuse, being the remote's
 // to fix. Off the main loop.
 func (gui *Gui) addStack(input string) error {
+	return gui.saveStack(input, "")
+}
+
+// stackEdit is `e`: the stack's entry in the add prompt, to move it
+// to another directory or remote. Saved in place, so the list keeps its
+// order in state.yml.
+func (gui *Gui) stackEdit(stack *commands.ComposeStack) error {
+	if !stack.Saved {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotEditLocalStack, presentation.StackPath(stack, gui.home)))
+	}
+
+	initial := commands.StackRef(stack.Remote, commands.ShortenHome(stack.Dir, gui.home))
+
+	return gui.openTextPrompt(gui.Tr.EditStackPrompt, gui.Tr.EditStackHint, initial, func(input string) error {
+		return gui.WithWaitingStatus(gui.Tr.SavingStatus, func() error {
+			return gui.saveStack(input, stack.Ref())
+		})
+	})
+}
+
+// saveStack is addStack, or with replacing the entry what was typed takes
+// the place of.
+func (gui *Gui) saveStack(input, replacing string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -478,6 +501,9 @@ func (gui *Gui) addStack(input string) error {
 	}
 
 	ref := commands.StackRef(remote, dir)
+	if ref == replacing {
+		return nil
+	}
 
 	if err := commands.CheckStackDir(dir); err != nil {
 		return err
@@ -497,7 +523,12 @@ func (gui *Gui) addStack(input string) error {
 		return fmt.Errorf(gui.Tr.StackNotComposeProject, dir, stack.Err)
 	}
 
-	if err := gui.Config.AddStack(ref); err != nil {
+	save := gui.Config.AddStack
+	if replacing != "" {
+		save = func(ref string) error { return gui.Config.ReplaceStack(replacing, ref) }
+	}
+
+	if err := save(ref); err != nil {
 		if errors.Is(err, config.ErrStackListed) {
 			return fmt.Errorf(gui.Tr.StackAlreadyListed, ref)
 		}
@@ -550,6 +581,24 @@ func (gui *Gui) selectStack(ref string) error {
 	}
 
 	return gui.Panels.Stacks.RerenderList()
+}
+
+// stackEditCompose is `c`: the stack's compose file in the user's editor,
+// read again once it closes.
+func (gui *Gui) stackEditCompose(stack *commands.ComposeStack) error {
+	file, err := commands.ComposeFile(stack.Dir)
+	if err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	if err := gui.editFile(file); err != nil {
+		return err
+	}
+
+	gui.stacks.forget(stack.Dir)
+	gui.refreshInBackground(gui.fetchStacks, gui.fetchServices)
+
+	return nil
 }
 
 // stackRemove is `D`: forget a saved stack, after asking. Nothing on the

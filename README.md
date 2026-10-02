@@ -159,12 +159,12 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/resume (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica |
-| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile |
+| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
-| `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
+| `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
 | `M` | Stacks and Services panels: follow the stack's or service's logs, every instance's interleaved (`incus-compose logs --follow`) |
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
@@ -219,8 +219,10 @@ lazyincus --project-directory ~/stacks/zigbee2mqtt
 environment does the same. Any other stack you add with `a` on the Stacks
 panel: type its directory — `~` and relative paths work — and it's listed
 from then on, in every session, saved in `state.yml` beside the config
-file ([docs/Config.md](docs/Config.md#state)). `D` takes a stack you added
-off the list again, after asking; nothing in it is stopped or deleted.
+file ([docs/Config.md](docs/Config.md#state)). `e` changes a stack's
+remote or directory in place, and `D` takes a stack you added off the list
+again, after asking; nothing in it is stopped or deleted. `c` opens its
+compose file in your editor.
 
 A stack you add belongs to a remote: the one lazyincus is showing, or
 another you put in front of the directory, the way `incus` names things —

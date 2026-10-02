@@ -108,6 +108,24 @@ func (c *AppConfig) AddStack(dir string) error {
 	})
 }
 
+// ReplaceStack saves stack in old's place, refusing one already saved; with
+// old gone meanwhile, at the end.
+func (c *AppConfig) ReplaceStack(old, stack string) error {
+	return c.updateAppState(func(state *AppState) error {
+		if slices.Contains(state.Stacks, stack) {
+			return fmt.Errorf("%s: %w", stack, ErrStackListed)
+		}
+
+		if i := slices.Index(state.Stacks, old); i >= 0 {
+			state.Stacks[i] = stack
+		} else {
+			state.Stacks = append(state.Stacks, stack)
+		}
+
+		return nil
+	})
+}
+
 // RemoveStack forgets a saved stack; one not saved is no error.
 func (c *AppConfig) RemoveStack(dir string) error {
 	return c.updateAppState(func(state *AppState) error {

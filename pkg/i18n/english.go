@@ -158,6 +158,12 @@ type TranslationSet struct {
 	NoStackSelected               string
 	AddStack                      string
 	RemoveStack                   string
+	EditStack                     string
+	EditStackPrompt               string
+	EditStackHint                 string
+	SavingStatus                  string
+	CannotEditLocalStack          string
+	EditComposeFile               string
 	AddStackPrompt                string
 	AddStackHint                  string
 	AddingStackStatus             string
@@ -409,6 +415,12 @@ func englishSet() TranslationSet {
 		NoStackSelected:        "No stack selected - add one to the Stacks panel with 'a'.",
 		AddStack:               "add stack",
 		RemoveStack:            "remove stack from the list",
+		EditStack:              "edit stack's remote and directory",
+		EditStackPrompt:        "Edit stack: [remote:]directory",
+		EditStackHint:          "enter to save · esc to cancel",
+		SavingStatus:           "saving",
+		CannotEditLocalStack:   "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to edit: start lazyincus elsewhere, or add the directory with 'a'.",
+		EditComposeFile:        "edit compose file in $EDITOR",
 		AddStackPrompt:         "Add stack: [remote:]directory",
 		AddStackHint:           "enter to add · esc to cancel",
 		AddingStackStatus:      "adding stack",

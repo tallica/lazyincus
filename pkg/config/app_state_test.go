@@ -110,3 +110,19 @@ func TestPinningNothingWritesNothing(t *testing.T) {
 	require.NoError(t, appConfig.PinStacks("lenny"))
 	assert.NoFileExists(t, appConfig.StateFilename())
 }
+
+// An edited stack keeps its place, and can't become one already listed.
+func TestReplacingAStack(t *testing.T) {
+	appConfig := &AppConfig{ConfigDir: t.TempDir()}
+
+	for _, stack := range []string{"lenny:/srv/web", "lenny:/srv/db", "pve01:/srv/cache"} {
+		require.NoError(t, appConfig.AddStack(stack))
+	}
+
+	require.NoError(t, appConfig.ReplaceStack("lenny:/srv/db", "pve01:/srv/db"))
+	require.ErrorIs(t, appConfig.ReplaceStack("lenny:/srv/web", "pve01:/srv/cache"), ErrStackListed)
+
+	state, err := appConfig.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"lenny:/srv/web", "pve01:/srv/db", "pve01:/srv/cache"}, state.Stacks)
+}

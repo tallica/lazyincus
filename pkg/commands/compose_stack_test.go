@@ -151,3 +151,27 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 		"other": {"api": {"Frozen"}},
 	}, statuses)
 }
+
+// The file incus-compose would read: compose-go's preferred name, here or
+// in the nearest directory above with one.
+func TestComposeFile(t *testing.T) {
+	root := t.TempDir()
+	stack := filepath.Join(root, "stack")
+	nested := filepath.Join(stack, "nested")
+	require.NoError(t, os.MkdirAll(nested, 0o755))
+
+	_, err := ComposeFile(stack)
+	assert.ErrorContains(t, err, "no compose file")
+
+	for _, name := range []string{"docker-compose.yml", "compose.yml"} {
+		require.NoError(t, os.WriteFile(filepath.Join(stack, name), nil, 0o600))
+	}
+
+	file, err := ComposeFile(stack)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(stack, "compose.yml"), file)
+
+	file, err = ComposeFile(nested)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(stack, "compose.yml"), file)
+}

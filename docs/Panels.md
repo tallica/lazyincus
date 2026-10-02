@@ -112,8 +112,10 @@ sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, validated there, and
 compose file is no stack at all rather than a row saying so — most people
 start lazyincus from somewhere that isn't one — but a directory named with
 `-P` that has none is a row with the error. The local stack isn't saved, so
-`D` refuses it. The saved ones are `state.yml`'s
-([docs/Config.md](Config.md#state)); `a` adds to it and `D` removes from it,
+`D` and `e` refuse it. The saved ones are `state.yml`'s
+([docs/Config.md](Config.md#state)); `a` adds to it, `e` replaces an entry
+in place (`ReplaceStack`), through `a`'s prompt pre-filled and its
+checks, and `D` removes from it,
 re-reading the file before each write so two sessions don't undo each
 other, and replacing it by rename. `a` takes a path through
 `openTextPrompt`, a one-line prompt in the confirmation view
@@ -151,7 +153,11 @@ directory (`LoadComposeStack`), read in `fetchStacks` rather than before
 the views exist, and cached by directory (`stackCache`): a subprocess per
 stack on every refresh would be most of the cost of one. The cache forgets
 a stack whenever a compose verb runs on it, so a compose file edited and
-then brought up shows its new services. A read that failed is tried again
+then brought up shows its new services - and after `c`, which opens the
+file compose-go would pick (`ComposeFile`): the first of `compose.yaml`,
+`compose.yml`, `docker-compose.yml`, `docker-compose.yaml`, in the
+directory or the nearest one above with one. An override file or `-f` in
+the environment isn't followed. A read that failed is tried again
 on each refresh — the directory may come back — except the working
 directory's. `ComposeCmd` is how every incus-compose subprocess is made: in
 the stack's directory, with `INCUS_COMPOSE_PROJECT_DIRECTORY` set to it as
