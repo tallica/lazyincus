@@ -26,10 +26,11 @@ works on a Linux host running incusd. Anywhere else, name the remote for
 wherever the daemon actually lives.
 
 Once running, `R` switches to another of the CLI's remotes: those with
-instances, so not `images:` or an OCI registry, and not `local` off Linux.
-Every panel moves over, listing all of its projects, and so does
-`INCUS_REMOTE`, so the subprocesses follow. A remote that doesn't answer
-within 10s leaves you where you were. A stack pinned to the remote you
+`incus`-protocol ones `incus remote list` shows, so not `images:` or an
+OCI registry. Every panel moves over, listing all of its projects, and so
+does `INCUS_REMOTE`, so the subprocesses follow. A remote that doesn't
+answer within 10s, or `local` off Linux, as above, leaves you where you
+were, saying why. A stack pinned to the remote you
 left still reads from it, and `space` on a stack switches to that stack's
 remote.
 

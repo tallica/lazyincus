@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -94,7 +93,8 @@ func (c *IncusCommand) IsInstanceRemote(name string) bool {
 }
 
 // InstanceRemoteNames is every remote IsInstanceRemote takes, in name
-// order, less `local` where cliconfig refuses it: anywhere but Linux.
+// order, as `incus remote list` shows them: `local` too where cliconfig
+// refuses it, off Linux, which switching to says.
 func (c *IncusCommand) InstanceRemoteNames() []string {
 	if c.cliCfg == nil {
 		return nil
@@ -103,7 +103,7 @@ func (c *IncusCommand) InstanceRemoteNames() []string {
 	names := []string{}
 
 	for name := range c.cliCfg.Remotes {
-		if c.IsInstanceRemote(name) && (name != "local" || runtime.GOOS == "linux") {
+		if c.IsInstanceRemote(name) {
 			names = append(names, name)
 		}
 	}

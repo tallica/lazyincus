@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lxc/incus/v7/shared/cliconfig"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,4 +62,16 @@ func TestPublishHost(t *testing.T) {
 	} {
 		assert.Equal(t, want, publishHost(remote), remote)
 	}
+}
+
+// Every remote with instances, by name: `local` too, whatever the OS.
+func TestInstanceRemoteNames(t *testing.T) {
+	command := &IncusCommand{cliCfg: &cliconfig.Config{Remotes: map[string]cliconfig.Remote{
+		"local":  {Protocol: "incus"},
+		"lenny":  {Protocol: "incus"},
+		"images": {Protocol: "simplestreams", Public: true},
+		"docker": {Protocol: "oci", Public: true},
+	}}}
+
+	assert.Equal(t, []string{"lenny", "local"}, command.InstanceRemoteNames())
 }
