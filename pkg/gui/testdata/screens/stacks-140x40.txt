@@ -1,0 +1,40 @@
+╭─[1]─Stacks──────────────────────────────────╮╭─Info - Logs - Config──────────────────────────────────────────────────────────────────────╮
+│default running ~/default                    ││Project:      default                                                                      │
+│shop    none    ~/shop                       ││Directory:    ~/default                                                                    │
+│                                             ││Listed:       at startup (working directory or -P)                                         │
+│                                             ││Status:       running                                                                      │
+│                                             ││Services:     1 running, 1 none                                                            │
+│                                             ││Instances:    1                                                                            │
+╰─────────────────────────────────────────────╯│Snapshots:    2                                                                            │
+╭─[2]─Services (default)──────────────────────╮│                                                                                           │
+│db  none    0/1             0                ││── Endpoints ──────────────────────────────────────────────────────────────────────────────│
+│web running      192.0.2.10 2                ││                                                                                           │
+│                                             ││web:          192.0.2.10                                                                   │
+│                                             ││                                                                                           │
+│                                             ││── Usage ──────────────────────────────────────────────────────────────────────────────────│
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│CPU:          N/A                                                                          │
+╭─[3]─Standalone Instances────────────────────╮│Memory:       N/A                                                                          │
+│a-name-long-enough-to-be-cut-off running  co…││Processes:    12                                                                           │
+│db                               stopped  co…││                                                                                           │
+│                                             ││Disk:                                                                                      │
+│                                             ││  root:       N/A                                                                          │
+│                                             ││                                                                                           │
+│                                             ││Network:                                                                                   │
+╰─────────────────────────────────────────────╯│  incusbr0:   1 instance                                                                   │
+╭─[4]─Snapshots───────────────────────────────╮│                                                                                           │
+│                                             ││── Drift ──────────────────────────────────────────────────────────────────────────────────│
+│                                             ││                                                                                           │
+│                                             ││db:           declared, not created                                                        │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[5]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
+│Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││                                                                                           │
+│Debian 13 amd64   0 fedcba987654 90.00MiB ne…││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                               Incus v7.4 (fake/all projects) ●  test

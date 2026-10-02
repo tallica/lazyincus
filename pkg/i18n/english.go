@@ -31,6 +31,7 @@ type TranslationSet struct {
 	Cancel                       string
 	Remove                       string
 	HideStopped                  string
+	ToggleStackInstances         string
 	HideUnmanagedNetworks        string
 	PruneImages                  string
 	PruneImagesTitle             string
@@ -97,6 +98,8 @@ type TranslationSet struct {
 	CopyFingerprint              string
 	CopyAlias                    string
 	CopyPool                     string
+	CopyProject                  string
+	CopyDirectory                string
 	CopySnapshotRef              string
 	InstanceTitle                string
 	InstancesTitle               string
@@ -149,6 +152,24 @@ type TranslationSet struct {
 	DeleteNetwork                string
 
 	ComposeTitle                  string
+	StacksTitle                   string
+	NoStacks                      string
+	NoStackSelected               string
+	AddStack                      string
+	RemoveStack                   string
+	AddStackPrompt                string
+	AddStackHint                  string
+	AddingStackStatus             string
+	StackAlreadyListed            string
+	StackNotComposeProject        string
+	CannotRemoveLocalStack        string
+	ConfirmRemoveStack            string
+	StackNotRunning               string
+	EndpointsTitle                string
+	UsageTitle                    string
+	DriftTitle                    string
+	StackListedLocal              string
+	StackListedSaved              string
 	ServicesTitle                 string
 	ServicesTitleProject          string
 	NoServices                    string
@@ -165,8 +186,6 @@ type TranslationSet struct {
 	ComposeUpPullRecreate         string
 	ComposeDown                   string
 	ComposeKill                   string
-	ComposePause                  string
-	ComposeUnpause                string
 	ComposeBuild                  string
 	ComposePull                   string
 	ComposeLogs                   string
@@ -174,8 +193,6 @@ type TranslationSet struct {
 	ComposeStartOnly              string
 	ComposeDownMenuTitle          string
 	ComposeStartMenuTitle         string
-	ComposeProjectMenuTitle       string
-	ComposeProjectActions         string
 	ComposeServiceScoped          string
 	ComposeDownOption             string
 	ComposeDownWithVolumesOption  string
@@ -265,6 +282,7 @@ func englishSet() TranslationSet {
 		Cancel:                       "cancel",
 		Remove:                       "delete",
 		HideStopped:                  "show/hide stopped instances",
+		ToggleStackInstances:         "show/hide the stacks' instances",
 		HideUnmanagedNetworks:        "show/hide host interfaces",
 		PruneImages:                  "prune unused images",
 		PruneImagesTitle:             "Prune images",
@@ -317,6 +335,8 @@ func englishSet() TranslationSet {
 		CopyFingerprint:              "fingerprint",
 		CopyAlias:                    "alias",
 		CopyPool:                     "pool",
+		CopyProject:                  "project",
+		CopyDirectory:                "directory",
 		CopySnapshotRef:              "owner/snapshot",
 		FilterList:                   "filter list",
 		SortInstancesByState:         "sort instances by state",
@@ -378,11 +398,30 @@ func englishSet() TranslationSet {
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
 
-		ComposeTitle:                  "Compose",
+		ComposeTitle:           "Compose",
+		StacksTitle:            "Stacks",
+		NoStacks:               "No stacks - press 'a' to add a compose project's directory.",
+		NoStackSelected:        "No stack selected - add one to the Stacks panel with 'a'.",
+		AddStack:               "add stack",
+		RemoveStack:            "remove stack from the list",
+		AddStackPrompt:         "Add stack: compose project directory",
+		AddStackHint:           "enter to add · esc to cancel",
+		AddingStackStatus:      "adding stack",
+		StackAlreadyListed:     "%s is already listed.",
+		StackNotComposeProject: "%s isn't a compose project incus-compose can read:\n\n%v",
+		CannotRemoveLocalStack: "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to remove.",
+		ConfirmRemoveStack:     "Remove stack %s (%s) from the list? Nothing in it is stopped or deleted.",
+		StackNotRunning:        "Nothing is running in this stack - press 'u' to bring it up.",
+		EndpointsTitle:         "Endpoints",
+		UsageTitle:             "Usage",
+		DriftTitle:             "Drift",
+		StackListedLocal:       "at startup (working directory or -P)",
+		StackListedSaved:       "saved in state.yml",
+
 		ServicesTitle:                 "Services",
 		ServicesTitleProject:          "Services (%s)",
 		NoServices:                    "No services",
-		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up, or 'C' for the whole project.",
+		ServiceNotRunning:             "Nothing is running for this service - press 'u' to bring it up.",
 		ServiceNotInComposeFile:       "This service is no longer in the compose file.",
 		ServiceMultipleInstances:      "This service runs more than one replica. Select one in the list to see this tab for it.",
 		ServiceReplicaHeading:         "Replica %d of %d · %s",
@@ -396,8 +435,6 @@ func englishSet() TranslationSet {
 		ComposeUpPullRecreate:         "pull & recreate",
 		ComposeDown:                   "bring down",
 		ComposeKill:                   "kill",
-		ComposePause:                  "pause",
-		ComposeUnpause:                "unpause",
 		ComposeBuild:                  "build",
 		ComposePull:                   "pull",
 		ComposeLogs:                   "logs --follow",
@@ -405,8 +442,6 @@ func englishSet() TranslationSet {
 		ComposeStartOnly:              "start %s only",
 		ComposeDownMenuTitle:          "Down",
 		ComposeStartMenuTitle:         "Start",
-		ComposeProjectMenuTitle:       "Project %s",
-		ComposeProjectActions:         "project actions",
 		ComposeDownOption:             "down",
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down %s?",

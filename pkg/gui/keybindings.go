@@ -561,7 +561,18 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		})
 	}
 
+	bindings = append(bindings, gui.stacksKeybindings()...)
 	bindings = append(bindings, gui.servicesKeybindings()...)
+
+	if gui.State.ComposeAvailable {
+		bindings = append(bindings, &Binding{
+			ViewName:    "instances",
+			Key:         'C',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleToggleStackInstances,
+			Description: gui.Tr.ToggleStackInstances,
+		})
+	}
 
 	for index, window := range gui.sideWindowNames() {
 		bindings = append(bindings, &Binding{
@@ -663,6 +674,33 @@ func onSelected[T comparable](panel *panels.SideListPanel[T], action func(T) err
 func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
 	return func(g *gocui.Gui, v *gocui.View) error {
 		return f()
+	}
+}
+
+// stacksKeybindings is the Stacks panel's keys: adding and removing a stack,
+// then the Services panel's compose verbs, in its order, over the whole
+// stack.
+func (gui *Gui) stacksKeybindings() []*Binding {
+	binding := func(key rune, handler func(*gocui.Gui, *gocui.View) error, description string) *Binding {
+		return &Binding{ViewName: "stacks", Key: key, Modifier: gocui.ModNone, Handler: handler, Description: description}
+	}
+
+	return []*Binding{
+		binding('a', gui.handleStackAdd, gui.Tr.AddStack),
+		binding('D', onSelected(gui.Panels.Stacks, gui.stackRemove), gui.Tr.RemoveStack),
+		binding('u', gui.onStackTarget(gui.composeUp), gui.Tr.ComposeUp),
+		binding('d', gui.onStackTarget(gui.composeDownMenu), gui.Tr.ComposeDown),
+		binding('U', gui.onStackTarget(gui.composeUpPullRecreate), gui.Tr.ComposeUpPullRecreate),
+		binding('S', gui.onStackTarget(gui.composeVerb("", "start")), gui.Tr.Start),
+		binding('s', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeStop, "stop")), gui.Tr.Stop),
+		binding('r', gui.onStackTarget(gui.composeVerb("", "restart")), gui.Tr.Restart),
+		binding('p', gui.onStack(gui.stackPause), gui.Tr.Pause),
+		binding('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
+		binding('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
+		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
+		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
+		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
+		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
 	}
 }
 
@@ -780,16 +818,16 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "services",
-			Key:         'C',
+			Key:         'M',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleComposeProjectMenu,
-			Description: gui.Tr.ComposeProjectActions,
+			Handler:     gui.handleComposeLogs,
+			Description: gui.serviceScopedDescription(gui.Tr.ComposeLogs),
 		},
 	}
 
-	order := []rune{'u', 'd', 'U', 'S', 's', 'r', 'p', 'f', 'b', 'g', 'C', 'm', 'n', 'E', 'y'}
+	order := []rune{'u', 'd', 'U', 'S', 's', 'r', 'p', 'f', 'b', 'g', 'm', 'M', 'n', 'E', 'y'}
 	if row, ok := gui.selectedServiceRow(); ok && row.Instance != nil {
-		order = []rune{'S', 's', 'r', 'p', 'd', 'f', 'n', 'm', 'y', 'E', 'u', 'U', 'b', 'g', 'C'}
+		order = []rune{'S', 's', 'r', 'p', 'd', 'f', 'n', 'm', 'M', 'y', 'E', 'u', 'U', 'b', 'g'}
 	}
 
 	return orderByKey(bindings, order)

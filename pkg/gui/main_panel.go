@@ -4,6 +4,8 @@ import (
 	"math"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -78,9 +80,15 @@ func (gui *Gui) jumpToTopMain(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
+// onMainTabClick switches the tabs of the side panel the main panel is
+// showing, which is still the last one focused once the main panel has
+// focus itself.
 func (gui *Gui) onMainTabClick(tabIndex int) error {
-	currentSidePanel, ok := gui.currentSidePanel()
+	sideViewName := gui.currentSideViewName()
 
+	currentSidePanel, ok := lo.Find(gui.allSidePanels(), func(panel panels.ISideListPanel) bool {
+		return panel.GetView().Name() == sideViewName
+	})
 	if !ok {
 		return nil
 	}

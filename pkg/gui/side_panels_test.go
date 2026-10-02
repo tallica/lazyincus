@@ -38,23 +38,32 @@ func TestFocusKeysStartAtOne(t *testing.T) {
 	assert.Equal(t, "[3]", gui.sidePanelTitlePrefix(2))
 }
 
-func TestServicesPanelHiddenWithoutALocalComposeProject(t *testing.T) {
+func TestStacksAndServicesHiddenWithoutIncusCompose(t *testing.T) {
 	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
 
 	names := func() []string {
 		return lo.Map(gui.visibleSidePanelDefs(), func(def sidePanelDef, _ int) string { return def.name })
 	}
 
-	// No compose file in the working directory: the panel isn't there, and
-	// instances is `1` rather than leaving a gap at it.
+	// No incus-compose: neither panel is there, and instances is `1` rather
+	// than leaving a gap at it.
+	assert.NotContains(t, names(), "stacks")
 	assert.NotContains(t, names(), "services")
 	assert.Equal(t, "instances", names()[0])
-	assert.Equal(t, gui.Tr.InstancesTitle, gui.sidePanelDefs()[1].title)
 
-	gui.State.LocalComposeProject = "playground"
+	gui.State.ComposeAvailable = true
 
-	assert.Equal(t, "services", names()[0])
-	assert.Equal(t, gui.Tr.StandaloneInstancesTitle, gui.sidePanelDefs()[1].title)
+	assert.Equal(t, []string{"stacks", "services", "instances"}, names()[:3])
+}
+
+func TestInstancesAreStandaloneOnceAStackHasTheirs(t *testing.T) {
+	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
+
+	assert.Equal(t, gui.Tr.InstancesTitle, gui.instancesPanelTitle())
+
+	gui.State.StackServices = map[string]map[string]bool{"shop": {"api": true}}
+
+	assert.Equal(t, gui.Tr.StandaloneInstancesTitle, gui.instancesPanelTitle())
 }
 
 func TestResourcesShareAWindow(t *testing.T) {

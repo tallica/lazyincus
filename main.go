@@ -30,10 +30,8 @@ var (
 )
 
 // composeProjectDirectory resolves the --project-directory flag to an
-// absolute path, and refuses one that isn't a directory: incus-compose
-// answers a bad path by reporting no compose project at all, which
-// lazyincus reads as "no stack here" and shows as a missing Services panel
-// - a typo would look like the feature not working.
+// absolute path, and refuses one that isn't a directory: a typo is better
+// caught here than shown as a stack row with an error.
 func composeProjectDirectory(dir string) string {
 	absolute, err := filepath.Abs(dir)
 	if err != nil {
@@ -71,7 +69,7 @@ func main() {
 
 	flaggy.Bool(&debuggingFlag, "d", "debug", "Write a development.log to the config directory")
 	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
-	flaggy.String(&projectDirectory, "P", "project-directory", "Directory to look for the compose file in, overriding INCUS_COMPOSE_PROJECT_DIRECTORY")
+	flaggy.String(&projectDirectory, "P", "project-directory", "Compose project directory to list first in Stacks, in place of the working directory; overrides INCUS_COMPOSE_PROJECT_DIRECTORY")
 	flaggy.SetVersion(info)
 
 	flaggy.Parse()
@@ -79,9 +77,11 @@ func main() {
 	// Both flags are applied as the environment variables they name rather
 	// than threaded inward, because the client is only half of the app:
 	// `incus console`, `incus exec` and every incus-compose verb are
-	// subprocesses that resolve the remote and the compose file themselves.
-	// Setting the variables here puts the panels and every shell-out on the
-	// same daemon and the same stack, which passing values inward wouldn't.
+	// subprocesses that resolve the remote themselves. Setting the variable
+	// here puts the panels and every shell-out on the same daemon, which
+	// passing a value inward wouldn't. -P goes the same way, so the local
+	// stack is the one incus-compose would pick by itself; each verb names
+	// its own stack's directory regardless.
 	if remoteFlag != "" {
 		if err := os.Setenv("INCUS_REMOTE", remoteFlag); err != nil {
 			log.Fatal(err.Error())

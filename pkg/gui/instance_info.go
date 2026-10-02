@@ -99,10 +99,10 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 	return output
 }
 
-// localTime is blank for the zero time an instance that has never run
-// reports as its last use.
+// localTime is blank for a time that was never set: the daemon reports an
+// instance that has never run as last used at the Unix epoch.
 func localTime(t time.Time) string {
-	if t.IsZero() {
+	if t.IsZero() || t.Unix() <= 0 {
 		return ""
 	}
 
@@ -182,14 +182,14 @@ func formatNetworkInterface(network api.InstanceStateNetwork, padding int) strin
 // reports total nanoseconds since start, and `incus info` shows the same.
 func formatCPUUsage(cpu api.InstanceStateCPU) string {
 	if cpu.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 	return fmt.Sprintf("%.2fs total", time.Duration(cpu.Usage).Seconds())
 }
 
 func formatMemoryUsage(mem api.InstanceStateMemory) string {
 	if mem.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 
 	str := units.GetByteSizeStringIEC(mem.Usage, 2)
@@ -204,7 +204,7 @@ func formatMemoryUsage(mem api.InstanceStateMemory) string {
 
 func formatDiskUsage(disk api.InstanceStateDisk) string {
 	if disk.Usage <= 0 {
-		return "(no usage reported)"
+		return "N/A"
 	}
 
 	str := units.GetByteSizeStringIEC(disk.Usage, 2)

@@ -39,6 +39,7 @@ an `instance-updated` refreshes at most every 10s.
 | List | Refreshed by | Polled |
 |---|---|---|
 | Instances | `instance-created`, `-deleted`, `-renamed`, `-started`, `-stopped`, `-shutdown`, `-restarted`, `-paused`, `-resumed`, `-restored`, `-migrated`, `instance-agent-started`/`-stopped`, `instance-snapshot-created`/`-deleted`/`-renamed`; `instance-updated`; an operation ending | every 2s, stream or not |
+| Stacks | whatever refreshes the instances; a compose verb | every 10s; once a minute while the stream is open |
 | Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
 | Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
@@ -70,9 +71,11 @@ list has focus, so a tab being read follows too.
 | Tab | Drawn | Follows a change through |
 |---|---|---|
 | Instance Info | every 1s | the newest instances listing |
-| Instance, service Logs | every 1s | its own console-log read |
+| Instance, service, stack Logs | every 1s | its own console-log read |
 | Instance Config, Env | once | the instance's config, less ic-healthd's `user.healthcheck.*` verdicts, which change every few seconds |
 | Instance, service Top | every 2s | its own `ps` |
+| Stack Info | every 1s | the newest stacks listing, and all but its first lines the newest services listing |
+| Stack Config | once | the stack's directory and project |
 | Service Info | every 1s | the newest services listing, and each instance's block the newest instances listing |
 | Service Config | once | every one of its instances' config |
 | Snapshot Config | once | the snapshot |
@@ -84,43 +87,117 @@ list has focus, so a tab being read follows too.
 | Network Config | once | the network |
 | Profile Devices, Config | once | the profile |
 
-## Services
+## Stacks
 
-Only there when there's a compose file in lazyincus's own working directory,
-and then it's the first side panel — the shape lazydocker takes when a
-`compose.yaml` is local. `SideListPanel.Hide` is what removes it (its first
-caller), and the layout already copes: `setViewFromDimensions` marks a view
-with no box invisible.
+One row per compose stack, a stack being a directory with a compose file
+in it: the local one, and every one saved with `a`. Stacks and Services are
+there whenever `incus-compose` is on `PATH` — `Run` asks `exec.LookPath`
+once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus,
+and Services `[2]`. Without it neither panel exists and the layout is what
+it always was. `SideListPanel.Hide` is what removes them, and the layout
+already copes: `setViewFromDimensions` marks a view with no box invisible.
 
 That gate means panel numbering can't index `sidePanelDefs()` — a hidden
 first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
 number keys, the title prefixes, `sideWindowNames` and the startup focus all
 run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
-`setPanels` has built any panel to ask.
+`setPanels` has built any panel to ask; and it's fixed for the session,
+the number keys being bound once.
 
-`--project-directory` reaches this the way `--remote` reaches the daemon:
-`main` sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, and incus-compose resolves
-it. It's validated there, since a bad path comes back as no compose project
-at all and would read as the panel simply not appearing.
+The local stack is the working directory's, or the one `--project-directory`
+names. The flag reaches this the way `--remote` reaches the daemon: `main`
+sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, validated there, and
+`localStackDir` reads the variable back. A working directory with no
+compose file is no stack at all rather than a row saying so — most people
+start lazyincus from somewhere that isn't one — but a directory named with
+`-P` that has none is a row with the error. The local stack isn't saved, so
+`D` refuses it. The saved ones are `state.yml`'s
+([docs/Config.md](Config.md#state)); `a` adds to it and `D` removes from it,
+re-reading the file before each write so two sessions don't undo each
+other, and replacing it by rename. `a` takes a path through
+`openTextPrompt`, a one-line prompt in the confirmation view
+(`pkg/gui/prompt_panel.go`), and keeps it only once `incus-compose config`
+has read a project out of it: `~` and a relative path are resolved, and a
+path that's missing, not a directory, holds no compose project or is
+already listed is refused.
 
-It also means the lookup runs before anything else: `Run` calls
-`localComposeProject` at the top, ahead of `createAllViews`, since it
-decides whether the panel exists at all. One `incus-compose config --format
-json` shell-out, once — the working directory doesn't change mid-session.
-No compose file means the command exits 1 and there's no local project; not
-treated as an error, since most servers with compose stacks aren't
-administered from this directory.
+A stack's config is one `incus-compose config --format json` in its
+directory (`LoadComposeStack`), read in `fetchStacks` rather than before
+the views exist, and cached by directory (`stackCache`): a subprocess per
+stack on every refresh would be most of the cost of one. The cache forgets
+a stack whenever a compose verb runs on it, so a compose file edited and
+then brought up shows its new services. A read that failed is tried again
+on each refresh — the directory may come back — except the working
+directory's. `ComposeCmd` is how every incus-compose subprocess is made: in
+the stack's directory, with `INCUS_COMPOSE_PROJECT_DIRECTORY` set to it as
+well, since `-P` sets that for the whole process and would otherwise point
+every stack at the one it names.
 
-Rows come from that same JSON, not from the daemon: `parseComposeConfig`
+The status column rolls up every compose-labelled instance in the stack's
+project the way a service rolls up its replicas (`RollUpStatus`): theirs
+when they agree, `partial` when they don't, `none` with nothing there, and
+`error` for a stack whose config couldn't be read. `GetComposeStatuses` is
+one all-projects listing for every stack. The path column writes home as
+`~`. The local stack sorts first, the rest by name.
+
+`followStack` is how the services panel follows the selection, the way
+Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
+so does every Stacks refresh, the selection being the first row until
+someone moves it. It keeps the stack in `gui.selectedStack`, an atomic
+pointer, since `fetchServices` reads it off the main loop. A different
+stack — a different directory, or a project the compose file now names
+differently — invalidates the services `refreshSeq`, empties the panel,
+retitles it and fetches for the new one. The stack is swapped before the
+invalidation, and `fetchServices` takes its ticket before reading the
+stack, so a fetch that isn't turned away has the new one.
+
+Stacks refresh on the 10s cadence of the other lists that events keep
+current (`pollUnlessWatched`), on any event that refreshes the instances,
+and after a compose verb. The keys are the Services panel's compose verbs
+with the `SERVICE` argument left off, through the same code,
+parameterised by `composeTarget`. `p` pauses unless every service with
+anything running is frozen. Which key runs which verb is README's
+[Compose stacks](../README.md#compose-stacks) section.
+
+Main panel tabs:
+
+- **Info** — laid out like an instance's: the project, directory and
+  status, the declared services counted by status, then what's rolled up
+  over its instances - health, dates, snapshots. Under headings of their
+  own: **Endpoints**, each instance's address and the ports its proxy
+  devices publish (incus-compose's `ports:`, listening on the daemon's
+  host, so a wildcard reads as the remote's host - `PublishHost` - or `*`
+  where its URL doesn't give one: a unix socket, or loopback, which an
+  SSH tunnel to the API is); **Usage**, the instance counters summed, a custom volume shared
+  by replicas counted once; and **Drift**, compose instances whose service
+  the file no longer declares and declared services with none. Everything
+  past the services count comes from `gui.composeInstances` and
+  `gui.composeProject`, which `fetchServices` fills for the selected
+  stack, so the tab ticks until they arrive.
+- **Logs** — every instance's console log, services in name order, each
+  under a heading naming its replica, or its service when it has only the
+  one instance. `m` jumps here, as it does on the other panels.
+- **Config** — the whole of `incus-compose config`, through JSON to YAML
+  for the reason the service's Config tab gives.
+
+## Services
+
+The services of the stack the Stacks panel has selected — see
+[Stacks](#stacks) for when the panel is there and how it follows the
+selection. With no stack, it says how to add one.
+
+Rows come from the stack's config, not from the daemon: `parseComposeConfig`
 reads `.name` and `.services`, so a service the compose file declares but
 nothing is running still gets a row, in state `none`.
 `GetComposeServices` then pairs each declared service with the project's
 instances, matching on `user.label.incus-compose.service` via
-`Instance.ComposeService()`. It fetches with `GetProjectInstances` rather
-than reading the instances panel's list, since the panels can be scoped
-anywhere. An instance whose label names no declared service — a one-off
-from `incus-compose run` — matches no row and stays in the instances panel.
+`Instance.ComposeService()`, and records the stack's directory on each
+service for its Config tab and its verbs. It fetches with
+`GetProjectInstances` rather than reading the instances panel's list, since
+the panels can be scoped anywhere. An instance whose label names no
+declared service — a one-off from `incus-compose run` — matches no row and
+stays in the instances panel.
 
 A service with more than one instance lists its replicas under it, one row
 each: the panel's item is a `commands.ServiceRow`, either a service or one
@@ -141,30 +218,35 @@ service being the instances underneath it. Only two values are the
 service's own: `partial` when replicas disagree, `none` when it has no
 instances. `Health` rolls up ic-healthd's verdict on the running replicas, worst-first.
 
-The instances panel is the other half of the split: its filter drops the
-local project's compose instances, and its title becomes "Standalone
-Instances". Another project's compose instances stay — they have no panel
-of their own. `isLocalComposeInstance` treats an instance whose details
-haven't loaded yet as the stack's, because `ComposeService()` reads
-`ExpandedConfig` and would otherwise show the stack's rows for a second and
-then take them away. `SpansProjects.Instances` is computed over what's left
-after that filter, not over everything the daemon returned.
+The instances panel is the other half of the split: its filter
+(`isStackInstance`) drops the instances of every service a listed stack
+declares, whichever stack is selected, and its title becomes "Standalone
+Instances" while any stack is listed. A compose instance no Services row
+claims stays there, having no panel of its own: one of a project no stack
+lists, or of a service its compose file no longer declares, which the
+stack's Drift names. `C` sets `ShowStackInstances`, which turns the filter
+off and the title back to "Instances" until it's pressed again; it's
+bound only when incus-compose is there to have stacks.
+`SpansProjects.Instances` is computed over what's left after that filter,
+not over everything the daemon returned, and again whenever the stacks
+change which services they declare, or `C` is pressed. The stacks are fetched first at startup,
+so the instances panel doesn't show a stack's rows and then take them away.
 
-Because the stack has a panel of its own, startup no longer scopes the
-client to it — the instances panel spans projects like every other panel,
+Because the stacks have panels of their own, startup doesn't scope the
+client to one — the instances panel spans projects like every other panel,
 and `P` still narrows.
 
 Keys act on the selected row's service, passing its name as the `SERVICE`
 argument every incus-compose verb takes; which key runs which verb, and
 which of them a replica's row takes for itself, is README's
 [Compose stacks](../README.md#compose-stacks) section, alongside the rest of
-what a user sees. `composeRun` is all of them, and refreshes the
-instances and services panels once the subprocess returns rather than
-waiting for the poll. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
-don't — same rule as the instances panel. `C` is the one key that doesn't
-narrow: it runs the same verbs with the `SERVICE` argument left off, and
-takes no selection, since a stack whose services have never been deployed
-is brought up from there. `U` can fail on a non-local daemon for reasons
+what a user sees. `composeRun` is all of them, run in the service's stack
+directory (`ComposeCmd`), and refreshes the instances, stacks and services
+panels once the subprocess returns rather than waiting for the poll.
+`s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
+don't — same rule as the instances panel. The same verbs over the whole
+stack are the Stacks panel's.
+`U` can fail on a non-local daemon for reasons
 that are incus-compose's, not ours — see
 [BACKLOG.md](../BACKLOG.md#caveats).
 
@@ -187,7 +269,7 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`m`, `n`, `c`, `E`, `y`) reach the row's instance through
+The per-instance keys (`n`, `c`, `E`, `y`) reach the row's instance through
 `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
 behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
@@ -231,9 +313,9 @@ Main panel tabs:
   daemon's begins, which a service with no replicas has too.
   `instanceInfoStr` takes the identity lines to leave out, the service and
   the heading having just said them: project, image and name always, plus
-  health for a lone instance. The compose fields are parsed once at startup by
-  `parseComposeConfig` and stored rendered, only display wanting them; the
-  Healthcheck line is the project's, from `gui.composeProject`
+  health for a lone instance. The compose fields are parsed with the stack's
+  config by `parseComposeConfig` and stored rendered, only display wanting
+  them; the Healthcheck line is the project's, from `gui.composeProject`
   (`GetComposeProject` fetches it in `fetchServices`, so rendering makes no
   API call; the tab renders off the main loop, so it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
   running instance's reference before the compose file's, whose own value
@@ -246,13 +328,14 @@ Main panel tabs:
   the row names; a service's own row with replicas under it stacks all of
   their logs, each under the Info tab's `instanceHeading`. They stay
   separate streams — the buffers carry nothing to interleave them on — so
-  `C`'s `logs --follow` is still the merged view.
+  `M`, `logs --follow`, is the merged view.
 - **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
   the row's replica answers for it, as does a lone service's only instance,
   and a service's own row with replicas under it says so instead — the same
   split the per-instance keys make through `withServiceInstance`.
 - **Config** — both halves: a Compose section, the service's slice of
-  `incus-compose config --format json` handed to `yaml.JSONToYAML`
+  `incus-compose config --format json`, read afresh in its stack's
+  directory, handed to `yaml.JSONToYAML`
   untouched (decoding through `map[string]any` first would turn every count
   into a float64 and render `replicas: 2` as `2.0`), then one
   `instanceConfigStr` dump per instance the row stands for, under the Info

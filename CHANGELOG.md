@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A Stacks panel lists compose stacks: the working directory's, plus any added with `a` and removed with `D`, saved in `state.yml`.
+- Stacks run the Services panel's compose verbs against the whole stack.
+- A stack's Info tab shows its endpoints, summed usage, and drift: instances the compose file no longer declares, services never created.
+- A stack's Logs tab shows every service's logs, one instance under each heading; `m` jumps to it.
+- `C` on Standalone Instances shows or hides the stacks' instances, for one list of everything.
+- `y` on a stack copies its project, its directory, or a published port's address.
+- `M` on a stack or service follows its logs, every instance's interleaved (`incus-compose logs --follow`). It shows only new output: the Logs tabs have already read the rest.
+
+### Changed
+- The Services panel shows the selected stack's services. Stacks and Services are `1` and `2` whenever incus-compose is installed, so other panels move down two.
+- Standalone Instances leaves out every listed stack's compose instances, not just the working directory's.
+- Info tabs show `N/A` for usage the daemon doesn't report, instead of `(no usage reported)`.
+
+### Removed
+- `C`, the project menu on the Services panel: select the stack on the Stacks panel and press the verb's own key; `M` follows logs.
+
+### Fixed
+- A replicated service's Logs tab leaves one blank line between replicas, not two.
+- An instance whose service the compose file no longer declares shows in Standalone Instances, instead of in no list at all.
+- An instance that has never run no longer shows `Last used: 1970/01/01` on its Info tab.
+- `[` and `]` switch tabs again after `m` on the Services panel has jumped to Logs.
+- Clicking a main-panel tab works while the main panel has focus, as it does after `m` or `enter`.
+
 ## [0.11.0] - 2026-09-28
 
 ### Added

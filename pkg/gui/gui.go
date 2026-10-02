@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -51,10 +52,33 @@ type Gui struct {
 
 	mainView mainViewState
 
-	// composeProject is the local project as the daemon holds it, backing
-	// the healthcheck line of the services panel's Info tab. Refreshed with
-	// the services; atomic, the tab rendering off the main loop.
+	// composeProject is the selected stack's project as the daemon holds
+	// it, backing the healthcheck line of the Info tabs. Refreshed with the
+	// services; atomic, the tabs rendering off the main loop.
 	composeProject atomic.Pointer[commands.ComposeProject]
+
+	// composeInstances is the selected stack's services and orphans as the
+	// last services refresh found them, for the stack's Info tab.
+	composeInstances atomic.Pointer[stackInstances]
+
+	// selectedStack is the stack the services panel follows: the Stacks
+	// panel's selection, set on the main loop and read by fetchServices off
+	// it. See followStack.
+	selectedStack atomic.Pointer[commands.ComposeStack]
+
+	// localStackDir is where the local stack comes from: -P's directory, or
+	// else the working directory, where a missing compose file means no
+	// local stack rather than a row showing the error. Set before run.
+	localStackDir      string
+	localStackExplicit bool
+
+	// loadStack reads a stack's compose config; tests stand in for
+	// incus-compose here.
+	loadStack func(dir string) *commands.ComposeStack
+	stacks    stackCache
+
+	// home is what the Stacks panel shortens paths against.
+	home string
 
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
@@ -78,6 +102,7 @@ type Panels struct {
 	Networks  *panels.SideListPanel[*commands.Network]
 	Profiles  *panels.SideListPanel[*commands.Profile]
 	Services  *panels.SideListPanel[*commands.ServiceRow]
+	Stacks    *panels.SideListPanel[*commands.ComposeStack]
 	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 
@@ -109,6 +134,10 @@ type guiState struct {
 	// if true, we show instances with a 'Stopped' status in the instances panel
 	ShowStoppedInstances bool
 
+	// ShowStackInstances puts the listed stacks' compose instances back in
+	// the instances panel, alongside the Services panel's rows for them.
+	ShowStackInstances bool
+
 	// ShowUnmanagedNetworks lists the host interfaces Incus merely reports
 	// alongside its own networks.
 	ShowUnmanagedNetworks bool
@@ -125,16 +154,15 @@ type guiState struct {
 
 	Connection connectionState
 
-	// The compose project whose compose file lives in lazyincus's own
-	// working directory - see (*Gui).localComposeProject. Empty if there
-	// isn't one, which is what hides the services panel; resolved once at
-	// startup, since the working directory doesn't change mid-session.
-	LocalComposeProject string
+	// ComposeAvailable is whether incus-compose is on PATH, which the Stacks
+	// and Services panels need to be there at all. Resolved once at
+	// startup: panel visibility is fixed for the session.
+	ComposeAvailable bool
 
-	// ComposeServiceDefs is what that compose file declares, which is what
-	// lets a service with nothing running still have a row. Resolved with
-	// the project name, from the same output.
-	ComposeServiceDefs []commands.ComposeService
+	// StackServices are the services each listed stack declares, by its
+	// Incus project: their instances are the services panel's rather than
+	// the instances panel's.
+	StackServices map[string]map[string]bool
 
 	// SnapshotsInstances are the instances the snapshots panel is showing
 	// the snapshots of, and SnapshotsLabel what its title calls them:
@@ -264,7 +292,11 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		SnapshotsShowAll:     config.UserConfig.Gui.ShowAllSnapshots,
 	}
 
+	home, _ := os.UserHomeDir()
+
 	gui := &Gui{
+		home:          home,
+		loadStack:     incusCommand.LoadComposeStack,
 		Log:           log,
 		IncusCommand:  incusCommand,
 		OSCommand:     oSCommand,
@@ -335,11 +367,13 @@ func (gui *Gui) pollUnlessWatched(interval time.Duration, function func() error)
 
 // Run sets up the gui with keybindings and starts the mainloop
 func (gui *Gui) Run() error {
-	// Before any view exists: whether there's a compose file in the working
-	// directory decides whether the services panel is there at all, and so
-	// which panels get styled, numbered and focused first. One fast
-	// subprocess, once - the working directory doesn't change mid-session.
-	gui.State.LocalComposeProject, gui.State.ComposeServiceDefs = gui.localComposeProject()
+	// Before any view exists: it decides whether the Stacks and Services
+	// panels are there at all, and so which panels get numbered and focused.
+	if _, err := exec.LookPath("incus-compose"); err == nil {
+		gui.State.ComposeAvailable = true
+	}
+
+	gui.localStackDir, gui.localStackExplicit = localStackDir()
 
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
 		OutputMode:       gocui.OutputTrue,
@@ -433,6 +467,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshStacksQuiet)
 	}()
 
 	err := g.MainLoop()
@@ -465,7 +500,12 @@ func (gui *Gui) handleError(err error) error {
 // allFetches is every panel's fetch, in the order startup and a project
 // switch run them.
 func (gui *Gui) allFetches() []fetch {
-	return []fetch{gui.fetchInstances, gui.fetchImages, gui.fetchVolumes, gui.fetchNetworks, gui.fetchProfiles, gui.fetchServices}
+	// Stacks first: which instances the instances panel leaves out is theirs
+	// to say.
+	return []fetch{
+		gui.fetchStacks, gui.fetchInstances, gui.fetchImages, gui.fetchVolumes,
+		gui.fetchNetworks, gui.fetchProfiles, gui.fetchServices,
+	}
 }
 
 func (gui *Gui) setPanels() {
@@ -477,6 +517,7 @@ func (gui *Gui) setPanels() {
 		Networks:  gui.getNetworksPanel(),
 		Profiles:  gui.getProfilesPanel(),
 		Services:  gui.getServicesPanel(),
+		Stacks:    gui.getStacksPanel(),
 		Menu:      gui.getMenuPanel(),
 	}
 }
@@ -575,7 +616,7 @@ func (gui *Gui) rerenderInstanceLists() error {
 		return err
 	}
 
-	if gui.noLocalComposeProject() {
+	if gui.composeUnavailable() {
 		return nil
 	}
 

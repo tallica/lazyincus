@@ -76,6 +76,36 @@ func (gui *Gui) handleServiceCopy(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.CopyMenuTitle, gui.instanceCopy)
 }
 
+// stackCopy offers each published port at its address, named for the
+// instance and the port inside it; a port whose host isn't known has none.
+func (gui *Gui) stackCopy(stack *commands.ComposeStack) error {
+	values := []copyValue{
+		{gui.Tr.CopyProject, stack.Name},
+		{gui.Tr.CopyDirectory, stack.Dir},
+	}
+
+	if state := gui.composeInstances.Load(); state != nil && state.project == stack.Name {
+		for _, service := range sortedServices(state.services) {
+			for _, instance := range service.SortedInstances() {
+				for _, port := range instance.Latest().PublishedPorts(gui.IncusCommand.PublishHost) {
+					label := endpointName(service, instance)
+					if port.Target != "" {
+						label += " → " + port.Target
+					}
+
+					if port.Protocol != "tcp" {
+						label += "/" + port.Protocol
+					}
+
+					values = append(values, copyValue{label, port.Address()})
+				}
+			}
+		}
+	}
+
+	return gui.copyMenu(values...)
+}
+
 func (gui *Gui) imageCopy(image *commands.Image) error {
 	return gui.copyMenu(
 		copyValue{gui.Tr.CopyFingerprint, image.Fingerprint},

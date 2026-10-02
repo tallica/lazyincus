@@ -77,41 +77,73 @@ func (gui *Gui) onServiceRow(
 	return serviceAction(row.Service)
 }
 
+// composeTarget is what a compose verb acts on: a stack, by its directory,
+// narrowed to one of its services unless service is empty - the verb with
+// no SERVICE argument, which is the whole stack.
+type composeTarget struct {
+	dir     string
+	project string
+	service string
+}
+
+func stackTarget(stack *commands.ComposeStack) composeTarget {
+	return composeTarget{dir: stack.Dir, project: stack.Name}
+}
+
+func serviceTarget(service *commands.ComposeService) composeTarget {
+	return composeTarget{dir: service.Dir, project: service.Project, service: service.Name}
+}
+
 // composeRun is every compose verb: the arguments, then the service to
-// narrow them to. An empty service means the whole project, which is what
-// the verb does with no SERVICE argument.
-func (gui *Gui) composeRun(service string, args ...string) error {
-	if service != "" {
-		args = append(args, service)
+// narrow them to. The stack's config is read again after, in case the verb
+// followed an edit to its compose file.
+func (gui *Gui) composeRun(target composeTarget, args ...string) error {
+	if target.service != "" {
+		args = append(args, target.service)
 	}
 
-	if err := gui.runSubprocess(gui.OSCommand.NewCmd("incus-compose", args...)); err != nil {
+	if err := gui.runSubprocess(gui.IncusCommand.ComposeCmd(target.dir, args...)); err != nil {
 		return err
 	}
 
-	gui.refreshInBackground(gui.fetchInstances, gui.fetchServices)
+	gui.stacks.forget(target.dir)
+	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 
 	return nil
 }
 
-// composeTarget names what a confirmation prompt is about - the service, or
-// the whole project when no service narrows it.
-func (gui *Gui) composeTarget(service string) string {
-	if service != "" {
-		return fmt.Sprintf(gui.Tr.ComposeTargetService, service)
+// composeTargetName names what a confirmation prompt is about - the service,
+// or the whole project when no service narrows it.
+func (gui *Gui) composeTargetName(target composeTarget) string {
+	if target.service != "" {
+		return fmt.Sprintf(gui.Tr.ComposeTargetService, target.service)
 	}
 
-	return fmt.Sprintf(gui.Tr.ComposeTargetProject, gui.State.LocalComposeProject)
+	return fmt.Sprintf(gui.Tr.ComposeTargetProject, target.project)
 }
 
 // composeConfirm wraps a verb in a confirmation naming its target, for the
 // ones that interrupt something running or destroy it.
-func (gui *Gui) composeConfirm(prompt, service string, args ...string) error {
-	message := fmt.Sprintf(prompt, gui.composeTarget(service))
+func (gui *Gui) composeConfirm(prompt string, target composeTarget, args ...string) error {
+	message := fmt.Sprintf(prompt, gui.composeTargetName(target))
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
-		return gui.composeRun(service, args...)
+		return gui.composeRun(target, args...)
 	}, nil)
+}
+
+// composeUp is `up --detach`: without it, `up` stays attached tailing every
+// service's logs, which would leave the keypress looking hung until the
+// user Ctrl-C's it.
+func (gui *Gui) composeUp(target composeTarget) error {
+	return gui.composeRun(target, "up", "--detach")
+}
+
+// composeUpPullRecreate is `U`: `up --pull always --recreate`, replacing an
+// instance already running an older image.
+func (gui *Gui) composeUpPullRecreate(target composeTarget) error {
+	return gui.composeConfirm(gui.Tr.ConfirmComposeUpPullRecreate, target,
+		"up", "--pull", "always", "--recreate", "--detach")
 }
 
 func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
@@ -120,21 +152,16 @@ func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	// --detach: without it, `up` stays attached tailing every service's logs,
-	// which would leave the keypress looking hung until the user Ctrl-C's it.
-	return gui.composeRun(service.Name, "up", "--detach")
+	return gui.composeUp(serviceTarget(service))
 }
 
-// handleComposeUpPullRecreate is `U`: `up --pull always --recreate`,
-// replacing an instance already running an older image.
 func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
 	service, ok := gui.selectedService()
 	if !ok {
 		return nil
 	}
 
-	return gui.composeConfirm(gui.Tr.ConfirmComposeUpPullRecreate, service.Name,
-		"up", "--pull", "always", "--recreate", "--detach")
+	return gui.composeUpPullRecreate(serviceTarget(service))
 }
 
 // handleComposeStart runs `incus-compose start` - already-created instances
@@ -143,9 +170,11 @@ func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
 // a menu asks.
 func (gui *Gui) handleComposeStart(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceStart, func(service *commands.ComposeService) error {
+		target := serviceTarget(service)
+
 		stopped := service.StoppedDependencies(gui.composeServices())
 		if len(stopped) == 0 {
-			return gui.composeRun(service.Name, "start")
+			return gui.composeRun(target, "start")
 		}
 
 		return gui.Menu(CreateMenuOptions{
@@ -154,13 +183,13 @@ func (gui *Gui) handleComposeStart(g *gocui.Gui, v *gocui.View) error {
 				{
 					Label: fmt.Sprintf(gui.Tr.ComposeStartWithDeps, service.Name, strings.Join(stopped, ", ")),
 					OnPress: func() error {
-						return gui.composeRun(service.Name, "start", "--with-deps")
+						return gui.composeRun(target, "start", "--with-deps")
 					},
 				},
 				{
 					Label: fmt.Sprintf(gui.Tr.ComposeStartOnly, service.Name),
 					OnPress: func() error {
-						return gui.composeRun(service.Name, "start")
+						return gui.composeRun(target, "start")
 					},
 				},
 			},
@@ -184,13 +213,13 @@ func (gui *Gui) composeServices() []*commands.ComposeService {
 
 func (gui *Gui) handleComposeStop(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceStop, func(service *commands.ComposeService) error {
-		return gui.composeConfirm(gui.Tr.ConfirmComposeStop, service.Name, "stop")
+		return gui.composeConfirm(gui.Tr.ConfirmComposeStop, serviceTarget(service), "stop")
 	})
 }
 
 func (gui *Gui) handleComposeRestart(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceRestart, func(service *commands.ComposeService) error {
-		return gui.composeRun(service.Name, "restart")
+		return gui.composeRun(serviceTarget(service), "restart")
 	})
 }
 
@@ -199,24 +228,24 @@ func (gui *Gui) handleComposeRestart(g *gocui.Gui, v *gocui.View) error {
 // on the next `up`, the compose file still asking for it.
 func (gui *Gui) handleComposeDown(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceDelete, func(service *commands.ComposeService) error {
-		return gui.composeDownMenu(service.Name)
+		return gui.composeDownMenu(serviceTarget(service))
 	})
 }
 
-func (gui *Gui) composeDownMenu(service string) error {
+func (gui *Gui) composeDownMenu(target composeTarget) error {
 	return gui.Menu(CreateMenuOptions{
 		Title: gui.Tr.ComposeDownMenuTitle,
 		Items: []*types.MenuItem{
 			{
 				Label: gui.Tr.ComposeDownOption,
 				OnPress: func() error {
-					return gui.composeConfirm(gui.Tr.ConfirmComposeDown, service, "down")
+					return gui.composeConfirm(gui.Tr.ConfirmComposeDown, target, "down")
 				},
 			},
 			{
 				Label: gui.Tr.ComposeDownWithVolumesOption,
 				OnPress: func() error {
-					return gui.composeConfirm(gui.Tr.ConfirmComposeDownWithVolumes, service, "down", "--volumes")
+					return gui.composeConfirm(gui.Tr.ConfirmComposeDownWithVolumes, target, "down", "--volumes")
 				},
 			},
 		},
@@ -225,7 +254,7 @@ func (gui *Gui) composeDownMenu(service string) error {
 
 func (gui *Gui) handleComposeKill(g *gocui.Gui, v *gocui.View) error {
 	return gui.onServiceRow(gui.instanceForceStop, func(service *commands.ComposeService) error {
-		return gui.composeConfirm(gui.Tr.ConfirmComposeKill, service.Name, "kill")
+		return gui.composeConfirm(gui.Tr.ConfirmComposeKill, serviceTarget(service), "kill")
 	})
 }
 
@@ -237,7 +266,7 @@ func (gui *Gui) handleComposePause(g *gocui.Gui, v *gocui.View) error {
 			return gui.createErrorPanel(gui.Tr.ServiceNotRunning)
 		}
 
-		return gui.composeRun(service.Name, composePauseVerb(service.Status()))
+		return gui.composeRun(serviceTarget(service), composePauseVerb(service.Status()))
 	})
 }
 
@@ -272,7 +301,7 @@ func (gui *Gui) handleComposeBuild(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	return gui.composeRun(service.Name, "build")
+	return gui.composeRun(serviceTarget(service), "build")
 }
 
 func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
@@ -281,65 +310,19 @@ func (gui *Gui) handleComposePull(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	return gui.composeRun(service.Name, "pull")
+	return gui.composeRun(serviceTarget(service), "pull")
 }
 
-// handleComposeProjectMenu is `C`: the same verbs the service keys run, with
-// the SERVICE argument left off so they act on the whole stack. It takes no
-// selection - a project whose services have never been deployed is brought
-// up from here.
-func (gui *Gui) handleComposeProjectMenu(g *gocui.Gui, v *gocui.View) error {
-	// One pause row rather than two, the way `p` is one key: the verb is the
-	// stack's own status, every service voting.
-	services := gui.composeServices()
-	statuses := make([]string, 0, len(services))
-
-	for _, service := range services {
-		statuses = append(statuses, service.Status())
+// handleComposeLogs follows the service's logs, every replica's
+// interleaved, which its Logs tab can't do: the console buffers carry no
+// timestamps to merge on.
+func (gui *Gui) handleComposeLogs(g *gocui.Gui, v *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
 	}
 
-	pauseVerb := composePauseVerb(statuses...)
-
-	pauseLabel := gui.Tr.ComposePause
-	if pauseVerb == "unpause" {
-		pauseLabel = gui.Tr.ComposeUnpause
-	}
-
-	item := func(label, confirm string, args ...string) *types.MenuItem {
-		return &types.MenuItem{Label: label, OnPress: gui.composeMenuAction("", confirm, args)}
-	}
-
-	items := []*types.MenuItem{
-		item(gui.Tr.ComposeUp, "", "up", "--detach"),
-		// Down is the service key's own submenu, `--volumes` and all, with the
-		// project as its target.
-		{Label: gui.Tr.ComposeDown, OnPress: func() error { return gui.composeDownMenu("") }},
-		item(gui.Tr.ComposeUpPullRecreate, gui.Tr.ConfirmComposeUpPullRecreate,
-			"up", "--pull", "always", "--recreate", "--detach"),
-		item(gui.Tr.Start, "", "start"),
-		item(gui.Tr.Stop, gui.Tr.ConfirmComposeStop, "stop"),
-		item(gui.Tr.Restart, "", "restart"),
-		item(pauseLabel, "", pauseVerb),
-		item(gui.Tr.ComposeKill, gui.Tr.ConfirmComposeKill, "kill"),
-		item(gui.Tr.ComposeBuild, "", "build"),
-		item(gui.Tr.ComposePull, "", "pull"),
-		item(gui.Tr.ComposeLogs, "", "logs", "--follow"),
-	}
-
-	return gui.Menu(CreateMenuOptions{
-		Title: fmt.Sprintf(gui.Tr.ComposeProjectMenuTitle, gui.State.LocalComposeProject),
-		Items: items,
-	})
-}
-
-func (gui *Gui) composeMenuAction(service, confirm string, args []string) func() error {
-	return func() error {
-		if confirm != "" {
-			return gui.composeConfirm(confirm, service, args...)
-		}
-
-		return gui.composeRun(service, args...)
-	}
+	return gui.composeRun(serviceTarget(service), "logs", "--follow")
 }
 
 // withServiceInstance runs a per-instance action against the instance the
@@ -388,5 +371,5 @@ func (gui *Gui) handleServiceViewLogs(g *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	return gui.switchFocus(gui.Views.Main)
+	return gui.handleEnterMain(g, v)
 }
