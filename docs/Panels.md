@@ -143,7 +143,9 @@ first ask starts connecting in the background and answers `errConnecting`
 (the row reads `connecting`), a failed connect isn't tried again for 30s,
 and another remote's statuses are the last ones read, read again off to
 one side (`cachedStatuses`), the Stacks and Services refreshing when a
-connection lands or a read changes something. Services skip a remote
+connection lands or a read changes something. A remote gone from the
+CLI's config - renamed since the stack was saved - isn't tried at all
+(`unknownRemote`), its message pointing at `e`. Services skip a remote
 whose statuses last failed. Statuses, services and the Info tab's
 `PublishHost` go through it;
 the compose verbs and the instances' `incus console`/`exec`/`config edit`

@@ -240,7 +240,8 @@ its remote. The compose files stay on this machine, so the
 A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed, and
 `error` when its compose file can't be read, and `unreachable` when its
-remote doesn't answer — the Info tab says why. Its
+remote doesn't answer or is no longer in the incus CLI's config — the
+Info tab says why, and for a renamed remote `e` fixes the stack. Its
 keys are the Services panel's compose verbs below, run against the whole
 stack. The Info tab says where the stack can be reached, what it's using,
 and where the daemon has drifted from the compose file; the Logs tab

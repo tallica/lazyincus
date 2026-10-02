@@ -130,6 +130,7 @@ type TranslationSet struct {
 	LoadingStatus                string
 	ConnectingStatus             string
 	ConnectingTo                 string
+	UnknownRemote                string
 	VolumesTitle                 string
 	NoVolumes                    string
 	DeleteVolume                 string
@@ -388,6 +389,7 @@ func englishSet() TranslationSet {
 		LoadingStatus:                "loading",
 		ConnectingStatus:             "connecting",
 		ConnectingTo:                 "connecting to %s",
+		UnknownRemote:                "no remote %q in the incus CLI's config - renamed or removed? 'e' points the stack at another",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",

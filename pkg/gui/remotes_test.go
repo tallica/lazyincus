@@ -242,3 +242,34 @@ func TestASlowRemoteHoldsUpNothing(t *testing.T) {
 	close(answer)
 	require.Eventually(t, func() bool { return statusOf("shop") == "Running" }, 5*time.Second, 20*time.Millisecond)
 }
+
+// A stack whose remote has gone from the CLI's config - renamed, say -
+// says so, and how to point it at another, rather than trying to connect.
+func TestAStackOnARemoteThatIsGone(t *testing.T) {
+	t.Setenv("INCUS_REMOTE", "fake")
+
+	gone := testStack(t, t.TempDir(), "shop", "api")
+	gone.Remote = "playground"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, gone)(s)
+		withRemotes(map[string]*incustest.Server{})(s)
+
+		connect := s.gui.remotes.connect
+		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
+			assert.NotEqual(t, "playground", remote)
+			return connect(remote)
+		}
+	})
+
+	s.settle(t, `no remote "playground" in the incus CLI's config`)
+	s.settle(t, "unreachable")
+
+	stack := onLoop(t, s, func() *commands.ComposeStack {
+		stack, _ := s.gui.Panels.Stacks.GetSelectedItem()
+		return stack
+	})
+	s.do(t, func() error { return s.gui.stackSwitchRemote(stack) })
+	s.settle(t, "'e' points the stack at another")
+	assert.Equal(t, "fake", onLoop(t, s, s.gui.IncusCommand.RemoteName))
+}

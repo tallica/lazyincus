@@ -64,7 +64,18 @@ func (gui *Gui) commandFor(remote string) (*commands.IncusCommand, error) {
 		return gui.IncusCommand, nil
 	}
 
+	if !gui.remotes.known(remote) {
+		return nil, gui.unknownRemote(remote)
+	}
+
 	return gui.remotes.get(remote)
+}
+
+// unknownRemote is a stack's remote gone from the CLI's config, renamed or
+// removed since the stack was saved, saying how to point the stack at
+// another.
+func (gui *Gui) unknownRemote(remote string) error {
+	return fmt.Errorf(gui.Tr.UnknownRemote, remote)
 }
 
 // refreshForRemote re-reads the stacks and services once another remote
@@ -300,6 +311,10 @@ func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand) error 
 func (gui *Gui) stackSwitchRemote(stack *commands.ComposeStack) error {
 	if gui.onSessionRemote(stack.Remote) {
 		return nil
+	}
+
+	if !gui.remotes.known(stack.Remote) {
+		return gui.createErrorPanel(gui.unknownRemote(stack.Remote).Error())
 	}
 
 	return gui.switchToRemote(stack.Remote)
