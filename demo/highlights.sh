@@ -22,6 +22,10 @@ CLIPS=(
   "instances using this image|3.8"
   "stop the cache service…|6.9"
   "web: two replicas|6.5"
+  "fold away|7"
+  "add a stack…|13"
+  "stop… the prompt names the remote|2.5"
+  "switch the whole screen|9"
 )
 
 TMP=$(mktemp -d)

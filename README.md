@@ -19,9 +19,9 @@ See [LICENSE](LICENSE) (MIT, same as upstream),
 attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
 how it was renamed.
 
-[![lazyincus — a terminal UI for Incus: moving between a compose stack's services and replicas, the main panel's tabs, stopping an instance, a shell inside one, and pausing a service](docs/highlights.gif)](https://asciinema.org/a/x7AngHEyxBAToCaw)
+[![lazyincus — a terminal UI for Incus: moving between a compose stack's services and replicas, the main panel's tabs, stopping an instance, a shell inside one, pausing a service, and a second remote, its stack panels folded away until a stack is added there](docs/highlights.gif)](https://asciinema.org/a/1267372)
 
-[Watch every key in action](https://asciinema.org/a/x7AngHEyxBAToCaw) — a
+[Watch every key in action](https://asciinema.org/a/1267372) — a
 six-minute walkthrough on asciinema.org.
 
 ## Status

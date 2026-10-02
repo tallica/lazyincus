@@ -1,0 +1,9 @@
+name: lzi-edge
+services:
+  proxy:
+    image: docker.io/library/caddy:alpine
+    depends_on: [api]
+  api:
+    image: docker.io/traefik/whoami:latest
+    deploy:
+      replicas: 2
