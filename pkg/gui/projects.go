@@ -71,7 +71,7 @@ func (gui *Gui) switchToAllProjects() error {
 
 	gui.IncusCommand.UseAllProjects()
 
-	return gui.reloadAfterProjectChange()
+	return gui.reloadAfterScopeChange()
 }
 
 func (gui *Gui) switchToProject(name string) error {
@@ -81,18 +81,22 @@ func (gui *Gui) switchToProject(name string) error {
 
 	gui.IncusCommand.UseProject(name)
 
-	return gui.reloadAfterProjectChange()
+	return gui.reloadAfterScopeChange()
 }
 
-func (gui *Gui) reloadAfterProjectChange() error {
+func (gui *Gui) reloadAfterScopeChange() error {
 	// Everything the panels hold belongs to the scope we just left, but for
-	// the stacks: they're directories, in no project. Dropping it also stops
-	// the next refresh matching new items against stale ones by name.
+	// the stacks: they're directories, which the refresh below re-reads.
+	// Dropping it also stops the next refresh matching new items against
+	// stale ones by name.
 	for _, panel := range gui.allSidePanels() {
 		if panel != panels.ISideListPanel(gui.Panels.Stacks) {
 			panel.ClearItems()
 		}
 	}
+
+	gui.composeInstances.Store(nil)
+	gui.composeProject.Store(nil)
 
 	// Or the next instance refresh redraws the old project's snapshots.
 	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""

@@ -128,6 +128,7 @@ type TranslationSet struct {
 	AllSnapshotsLabel            string
 	RestoringStatus              string
 	LoadingStatus                string
+	ConnectingStatus             string
 	VolumesTitle                 string
 	NoVolumes                    string
 	DeleteVolume                 string
@@ -240,6 +241,8 @@ type TranslationSet struct {
 	FocusPanel    string
 	SwitchProject string
 	ProjectsTitle string
+	SwitchRemote  string
+	RemotesTitle  string
 	AllProjects   string
 }
 
@@ -374,6 +377,7 @@ func englishSet() TranslationSet {
 		SnapshottingStatus:           "snapshotting",
 		RestoringStatus:              "restoring",
 		LoadingStatus:                "loading",
+		ConnectingStatus:             "connecting",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",
@@ -485,6 +489,8 @@ func englishSet() TranslationSet {
 		FocusPanel:    "focus %s panel",
 		SwitchProject: "switch project",
 		ProjectsTitle: "Projects",
+		SwitchRemote:  "switch remote",
+		RemotesTitle:  "Remotes",
 		AllProjects:   "all projects",
 	}
 }

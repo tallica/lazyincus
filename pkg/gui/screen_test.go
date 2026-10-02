@@ -76,6 +76,7 @@ func fixtureServer() *incustest.Server {
 	}}
 
 	return incustest.New(incustest.Server{
+		Version: "7.4",
 		Instances: []api.InstanceFull{
 			web,
 			stopped,
@@ -197,7 +198,6 @@ func startScreenWith(t *testing.T, width, height int, configure func(*config.Use
 	osCommand := commands.NewOSCommand(log, appConfig)
 	server := fixtureServer()
 	incusCommand := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, server, "fake")
-	incusCommand.ServerVersion = "7.4"
 
 	gui, err := NewGui(log, incusCommand, osCommand, tr, appConfig)
 	require.NoError(t, err)

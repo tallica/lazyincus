@@ -183,8 +183,8 @@ func (gui *Gui) getInformationContent() string {
 // instance list is scoped to, and a connection indicator - e.g.
 // "Incus v6.5 (colima/default) ● ". Empty until we have a server version.
 func (gui *Gui) incusStatusContent() string {
-	remote := gui.IncusCommand.RemoteName
-	version := gui.IncusCommand.ServerVersion
+	remote := gui.IncusCommand.RemoteName()
+	version := gui.IncusCommand.ServerVersion()
 	if remote == "" && version == "" {
 		return ""
 	}

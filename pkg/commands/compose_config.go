@@ -23,7 +23,7 @@ func (c *IncusCommand) ComposeCmd(dir string, args ...string) *exec.Cmd {
 	// exec.Cmd keeps the last of a duplicated variable.
 	cmd.Env = append(cmd.Env, composeDirEnv+"="+dir)
 
-	return WithRemote(cmd, c.RemoteName)
+	return WithRemote(cmd, c.RemoteName())
 }
 
 // WithRemote points an `incus` or incus-compose command at remote, which

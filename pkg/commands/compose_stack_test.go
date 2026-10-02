@@ -89,7 +89,7 @@ func TestSplitStackInput(t *testing.T) {
 
 func TestComposeCmdNamesItsRemote(t *testing.T) {
 	command := NewDummyIncusCommand()
-	command.RemoteName = "pve01"
+	command.remoteName = "pve01"
 
 	cmd := command.ComposeCmd("/srv/web", "ps")
 	assert.Equal(t, "INCUS_REMOTE=pve01", cmd.Env[len(cmd.Env)-1])

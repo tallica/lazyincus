@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime"
+	"sort"
 	"sync"
 	"time"
 
@@ -26,23 +28,16 @@ type IncusCommand struct {
 	Tr        *i18n.TranslationSet
 	Config    *config.AppConfig
 
-	// RemoteName is the Incus remote we connected to, taken from the CLI
-	// config's default-remote.
-	RemoteName string
-	// PublishHost is where a port the daemon's host publishes is reached
-	// from here - the remote's own host - or empty when its URL doesn't
-	// say: a unix socket, or loopback, which is a tunnel to the API alone.
-	PublishHost string
-	// ServerVersion and ServerName are fetched once at connect time via
-	// GetServer(); empty if that call failed.
-	ServerVersion string
-	ServerName    string
-
-	// Guarded by clientMutex: both change when the user switches project.
+	// Guarded by clientMutex: they change when the user switches project,
+	// and all of them when the user switches remote.
 	clientMutex deadlock.Mutex
 	client      incus.InstanceServer
 	projectName string
 	allProjects bool
+	// remoteName is the CLI remote client is connected to, serverVersion
+	// what its GetServer() said at connect time, empty if that failed.
+	remoteName    string
+	serverVersion string
 
 	connMutex deadlock.Mutex
 	connected bool
@@ -98,6 +93,26 @@ func (c *IncusCommand) IsInstanceRemote(name string) bool {
 	return ok && !remote.Public && remote.Protocol == "incus"
 }
 
+// InstanceRemoteNames is every remote IsInstanceRemote takes, in name
+// order, less `local` where cliconfig refuses it: anywhere but Linux.
+func (c *IncusCommand) InstanceRemoteNames() []string {
+	if c.cliCfg == nil {
+		return nil
+	}
+
+	names := []string{}
+
+	for name := range c.cliCfg.Remotes {
+		if c.IsInstanceRemote(name) && (name != "local" || runtime.GOOS == "linux") {
+			names = append(names, name)
+		}
+	}
+
+	sort.Strings(names)
+
+	return names
+}
+
 func connectCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
 	client, err := connectRemote(cliCfg, name)
 	if err != nil {
@@ -109,31 +124,29 @@ func connectCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translatio
 	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, name)
 	command.cliCfg = cliCfg
 
-	// Best-effort: a failed GetServer() shouldn't prevent startup, since
-	// the instance list is what actually matters. The footer just shows
-	// no version if this fails.
-	if server, _, err := client.GetServer(); err == nil {
-		command.ServerVersion = server.Environment.ServerVersion
-		command.ServerName = server.Environment.ServerName
-	} else {
-		log.Warn(err)
-	}
-
 	return command, nil
 }
 
 // NewIncusCommandWithClient is an IncusCommand around a client already
 // connected - to a remote, or to incustest's stand-in.
 func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
+	// Best-effort: the footer just shows no version without it.
+	version := ""
+	if server, _, err := client.GetServer(); err == nil {
+		version = server.Environment.ServerVersion
+	} else if log != nil {
+		log.Warn(err)
+	}
+
 	return &IncusCommand{
-		Log:         log,
-		OSCommand:   osCommand,
-		Tr:          tr,
-		Config:      cfg,
-		client:      client,
-		RemoteName:  remote,
-		PublishHost: publishHost(clientURL(client)),
-		projectName: clientProjectName(client),
+		Log:           log,
+		OSCommand:     osCommand,
+		Tr:            tr,
+		Config:        cfg,
+		client:        client,
+		remoteName:    remote,
+		serverVersion: version,
+		projectName:   clientProjectName(client),
 		// Every project by default: a server with one project looks the same
 		// either way, and on a server with several, scoping to whichever one
 		// the user's remote happens to point at hides the rest with no hint
@@ -236,6 +249,46 @@ func withDialTimeout(dial dialFunc) dialFunc {
 
 		return dial(ctx, network, addr)
 	}
+}
+
+// RemoteName is the CLI remote the command is connected to.
+func (c *IncusCommand) RemoteName() string {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	return c.remoteName
+}
+
+// ServerVersion is the daemon's version, empty when it didn't say.
+func (c *IncusCommand) ServerVersion() string {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	return c.serverVersion
+}
+
+// PublishHost is where a port the daemon's host publishes is reached from
+// here - the remote's own host - or empty when its URL doesn't say: a unix
+// socket, or loopback, which is a tunnel to the API alone.
+func (c *IncusCommand) PublishHost() string {
+	return publishHost(clientURL(c.Client()))
+}
+
+// UseRemote moves c onto other's connection, listing every project there:
+// the new server's projects have nothing to do with the old one's. c keeps
+// its identity, so whoever holds it follows.
+func (c *IncusCommand) UseRemote(other *IncusCommand) {
+	client, project, _ := other.scope()
+	remote, version := other.RemoteName(), other.ServerVersion()
+
+	c.clientMutex.Lock()
+	c.client, c.projectName, c.allProjects = client, project, true
+	c.remoteName, c.serverVersion = remote, version
+	c.clientMutex.Unlock()
+
+	c.setConnected(true)
+	// An instance on the new remote can share a name with one on the old.
+	c.runtimes.reset()
 }
 
 // Client returns the current instance server. A method rather than a field
@@ -367,7 +420,7 @@ func (c *IncusCommand) newInstance(full api.InstanceFull, fallbackProject string
 	instance := &Instance{
 		Name:      full.Name,
 		Project:   project,
-		Remote:    c.RemoteName,
+		Remote:    c.RemoteName(),
 		Instance:  full,
 		Client:    client,
 		OSCommand: c.OSCommand,

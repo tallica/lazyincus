@@ -315,6 +315,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		remotes: remoteCommands{
 			connect: incusCommand.ConnectRemote,
 			known:   incusCommand.IsInstanceRemote,
+			names:   incusCommand.InstanceRemoteNames,
 		},
 	}
 

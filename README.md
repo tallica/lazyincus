@@ -127,7 +127,8 @@ Three side panels: **Instances** (`1`), listing both containers and VMs,
 or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**,
 **Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
 as does pressing `3` again or clicking a tab's name. All list every Incus project by
-default; `P` scopes them to a single project instead, and the footer shows
+default; `P` scopes them to a single project instead, `R` moves them to
+another remote ([docs/Remotes.md](docs/Remotes.md)), and the footer shows
 the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
@@ -176,6 +177,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
+| `R` | Switch Incus remote, for this session |
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
 | `+` / `_` | Next / previous screen mode |

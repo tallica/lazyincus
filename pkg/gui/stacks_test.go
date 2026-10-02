@@ -269,18 +269,27 @@ func TestAddingAStack(t *testing.T) {
 	s.settle(t, "Services (fake:shop)")
 }
 
-// withRemote stands server in for the CLI remote name, and any other name
-// for one that's known but doesn't answer.
-func withRemote(name string, server *incustest.Server) func(*screen) {
+// withRemotes stands each server in for the CLI remote it's keyed by, the
+// session's own fixture for "fake", and "down" for a remote that's known
+// but doesn't answer.
+func withRemotes(servers map[string]*incustest.Server) func(*screen) {
 	return func(s *screen) {
-		s.gui.remotes.known = func(remote string) bool { return remote == name || remote == "down" }
+		servers = maps.Clone(servers)
+		servers["fake"] = s.server
+
+		names := append(slices.Sorted(maps.Keys(servers)), "down")
+		slices.Sort(names)
+
+		s.gui.remotes.names = func() []string { return names }
+		s.gui.remotes.known = func(remote string) bool { return slices.Contains(names, remote) }
 		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
-			if remote != name {
+			server, ok := servers[remote]
+			if !ok {
 				return nil, &commands.ConnectError{Remote: remote, Err: errors.New("no answer")}
 			}
 
 			command := s.gui.IncusCommand
-			return commands.NewIncusCommandWithClient(command.Log, command.OSCommand, command.Tr, command.Config, server, name), nil
+			return commands.NewIncusCommandWithClient(command.Log, command.OSCommand, command.Tr, command.Config, server, remote), nil
 		}
 	}
 }
@@ -303,7 +312,7 @@ func TestAStackPinnedToARemote(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, nil, pinned)(s)
-		withRemote("pve01", pve01)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
 		s.server.SetInstances([]api.InstanceFull{composeFixture("shop", "web", "api")})
 	})
 
@@ -336,7 +345,7 @@ func TestAStackOnAnUnreachableRemote(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, testStack(t, t.TempDir(), "default", "web"), unreachable)(s)
-		withRemote("pve01", nil)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": nil})(s)
 	})
 
 	s.settle(t, "unreachable")
@@ -362,7 +371,7 @@ func TestAddingAStackOnARemote(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, nil)(s)
-		withRemote("pve01", incustest.New(incustest.Server{}))(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
 		s.gui.loadStack = func(dir string) *commands.ComposeStack {
 			loaded := *shop
 			loaded.Dir = dir
@@ -538,7 +547,7 @@ func TestCopyingFromAStack(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, stack)(s)
-		s.gui.IncusCommand.PublishHost = "192.0.2.5"
+		s.server.URL = "https://192.0.2.5:8443"
 
 		instances := fixtureServer().Instances
 		for i := range instances {

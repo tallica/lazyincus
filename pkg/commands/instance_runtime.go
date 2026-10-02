@@ -88,6 +88,14 @@ func (r *instanceRuntimes) attach(instance *Instance, listing uint64) {
 	instance.runtime = runtime
 }
 
+// reset forgets every instance, for a listing from another daemon.
+func (r *instanceRuntimes) reset() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.byKey = nil
+}
+
 func (r *instanceRuntimes) find(key string) *instanceRuntime {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

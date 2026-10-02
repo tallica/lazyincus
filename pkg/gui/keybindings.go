@@ -493,6 +493,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "",
+			Key:         'R',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleSwitchRemote,
+			Description: gui.Tr.SwitchRemote,
+		},
+		{
+			ViewName:    "",
 			Key:         '+',
 			Handler:     wrappedHandler(gui.nextScreenMode),
 			Description: gui.Tr.LcNextScreenMode,

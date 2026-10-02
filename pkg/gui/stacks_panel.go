@@ -238,7 +238,7 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 // session's failing fails the refresh, as every other list's does.
 func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
-		if stack.Remote == gui.IncusCommand.RemoteName {
+		if stack.Remote == gui.IncusCommand.RemoteName() {
 			return ""
 		}
 
@@ -447,12 +447,12 @@ func (gui *Gui) addStack(input string) error {
 	}
 
 	remote, path := commands.SplitStackInput(input, func(name string) bool {
-		return name == gui.IncusCommand.RemoteName || gui.remotes.known(name)
+		return name == gui.IncusCommand.RemoteName() || gui.remotes.known(name)
 	})
 	// Pinned to where it was added, so a session on another remote never
 	// runs its verbs there.
 	if remote == "" {
-		remote = gui.IncusCommand.RemoteName
+		remote = gui.IncusCommand.RemoteName()
 	}
 
 	dir, err := commands.ResolveStackDir(path, cwd, gui.home)
@@ -496,7 +496,7 @@ func (gui *Gui) addStack(input string) error {
 // onSessionRemote is whether a stack pinned to remote is on the remote the
 // rest of the panels show.
 func (gui *Gui) onSessionRemote(remote string) bool {
-	return remote == "" || remote == gui.IncusCommand.RemoteName
+	return remote == "" || remote == gui.IncusCommand.RemoteName()
 }
 
 // isLocalStack is whether dir is the local stack's, listed.
