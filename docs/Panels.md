@@ -497,7 +497,8 @@ up:
 Follows whichever list you're in: the instances panel's `OnSelect` hands
 over its instance, the services panel's whatever its row stands for — a
 replica's own, and every replica's from a service's row above them, the
-service's snapshots being all of theirs. The view title names what the rows
+service's snapshots being all of theirs. Stacks hands over nothing, which
+empties it. The view title names what the rows
 belong to, the instance or the service - and its remote, when that isn't
 the session's - since the rows alone don't say; a
 panel holding more than one instance's snapshots grows a column naming the

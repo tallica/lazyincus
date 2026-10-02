@@ -58,7 +58,13 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 		},
 		NoItemsMessage: gui.Tr.NoStacks,
 		Gui:            gui.intoInterface(),
+		// A stack hands the snapshots panel nothing, so it empties rather
+		// than keep the last list's.
 		OnSelect: func(stack *commands.ComposeStack) error {
+			if err := gui.refreshSnapshotsFor("", ""); err != nil {
+				return err
+			}
+
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
