@@ -129,6 +129,7 @@ type TranslationSet struct {
 	RestoringStatus              string
 	LoadingStatus                string
 	ConnectingStatus             string
+	ConnectingTo                 string
 	VolumesTitle                 string
 	NoVolumes                    string
 	DeleteVolume                 string
@@ -386,6 +387,7 @@ func englishSet() TranslationSet {
 		RestoringStatus:              "restoring",
 		LoadingStatus:                "loading",
 		ConnectingStatus:             "connecting",
+		ConnectingTo:                 "connecting to %s",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",

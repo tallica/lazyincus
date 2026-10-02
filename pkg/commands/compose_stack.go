@@ -39,8 +39,10 @@ type ComposeStack struct {
 	// by service.
 	Statuses map[string][]string
 
-	// StatusErr is why the stack's remote gave no statuses.
-	StatusErr error
+	// StatusErr is why the stack's remote gave no statuses, and
+	// StatusPending that it hasn't yet: it's still being connected to.
+	StatusErr     error
+	StatusPending bool
 }
 
 // Ref is how the stack is saved and shown: its directory, prefixed with

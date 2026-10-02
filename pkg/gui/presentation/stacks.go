@@ -10,8 +10,12 @@ import (
 // stackErrorStyles spells a stack whose compose config couldn't be read.
 var stackErrorStyles = map[string]string{"short": "!", "icon": "✗"}
 
-// stackUnreachableStyles spells a stack whose remote didn't answer.
-var stackUnreachableStyles = map[string]string{"short": "?", "icon": "?"}
+// stackUnreachableStyles spells a stack whose remote didn't answer, and
+// stackConnectingStyles one whose remote hasn't yet.
+var (
+	stackUnreachableStyles = map[string]string{"short": "?", "icon": "?"}
+	stackConnectingStyles  = map[string]string{"short": "…", "icon": "…"}
+)
 
 // StackRemote is a Stacks row's remote column, for a list with a stack
 // elsewhere: the stack's remote, marked the way the remotes menu marks it
@@ -51,18 +55,20 @@ func StackPath(stack *commands.ComposeStack, home string) string {
 func displayStackStatus(guiConfig *config.GuiConfig, stack *commands.ComposeStack) string {
 	switch {
 	case stack.Err != nil:
-		return styledStackFailure(guiConfig, "error", stackErrorStyles)
+		return styledStackState(guiConfig, "error", stackErrorStyles, color.FgRed)
 	case stack.StatusErr != nil:
-		return styledStackFailure(guiConfig, "unreachable", stackUnreachableStyles)
+		return styledStackState(guiConfig, "unreachable", stackUnreachableStyles, color.FgRed)
+	case stack.StatusPending:
+		return styledStackState(guiConfig, "connecting", stackConnectingStyles, color.FgYellow)
 	default:
 		return DisplayRolledUpStatus(guiConfig, stack.Status())
 	}
 }
 
-func styledStackFailure(guiConfig *config.GuiConfig, display string, styles map[string]string) string {
+func styledStackState(guiConfig *config.GuiConfig, display string, styles map[string]string, colour color.Attribute) string {
 	if styled, ok := styles[guiConfig.InstanceStatusStyle]; ok {
 		display = styled
 	}
 
-	return utils.ColoredString(display, color.FgRed)
+	return utils.ColoredString(display, colour)
 }

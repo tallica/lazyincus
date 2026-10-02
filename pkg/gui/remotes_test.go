@@ -182,3 +182,63 @@ func TestSwitchingToAnUnreachableStack(t *testing.T) {
 	s.settle(t, "no answer")
 	assert.Equal(t, "fake", onLoop(t, s, s.gui.IncusCommand.RemoteName))
 }
+
+// A remote slow to connect holds up nothing: its stacks read connecting,
+// the others and the instances carry on, and it fills in once it answers.
+func TestASlowRemoteHoldsUpNothing(t *testing.T) {
+	t.Setenv("INCUS_REMOTE", "fake")
+
+	here := testStack(t, t.TempDir(), "default", "web")
+	here.Remote = "fake"
+	slow := testStack(t, t.TempDir(), "shop", "api")
+	slow.Remote = "pve01"
+
+	answer := make(chan struct{})
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, here, slow)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
+		labelled(s, map[string]string{"web": "web"})
+
+		connect := s.gui.remotes.connect
+		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
+			if remote == "pve01" {
+				<-answer
+			}
+
+			return connect(remote)
+		}
+	})
+	t.Cleanup(func() {
+		select {
+		case <-answer:
+		default:
+			close(answer)
+		}
+	})
+
+	statusOf := func(name string) string {
+		return onLoop(t, s, func() string {
+			for _, stack := range s.gui.Panels.Stacks.List.GetAllItems() {
+				if stack.Name == name {
+					if stack.StatusPending {
+						return "connecting"
+					}
+
+					return stack.Status()
+				}
+			}
+
+			return ""
+		})
+	}
+
+	require.Eventually(t, func() bool {
+		return statusOf("default") == "Running" && statusOf("shop") == "connecting"
+	}, 5*time.Second, 20*time.Millisecond)
+	assert.NotEmpty(t, instanceNames(t, s))
+
+	close(answer)
+	require.Eventually(t, func() bool { return statusOf("shop") == "Running" }, 5*time.Second, 20*time.Millisecond)
+}

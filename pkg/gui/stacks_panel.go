@@ -49,7 +49,7 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 				// fmt prints a map's keys sorted, so the same statuses give
 				// the same key.
 				return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses) +
-					"-" + fmt.Sprint(stack.StatusErr) + "-" + fmt.Sprint(stack.Local, stack.Saved)
+					"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.ComposeStack]{
@@ -262,9 +262,11 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 	}, nil
 }
 
-// readStackStatuses gives each stack its instances' statuses, asking each
-// remote at once. A remote that doesn't answer marks its own stacks; the
-// session's failing fails the refresh, as every other list's does.
+// readStackStatuses gives each stack its instances' statuses: the
+// session's remote asked, every other one's as last read, so a server that
+// doesn't answer holds up nothing. A remote that doesn't answer marks its
+// own stacks; the session's failing fails the refresh, as every other
+// list's does.
 func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
 		if stack.Remote == gui.IncusCommand.RemoteName() {
@@ -274,44 +276,49 @@ func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 		return stack.Remote
 	})
 
-	var (
-		wait       sync.WaitGroup
-		mutex      sync.Mutex
-		sessionErr error
-	)
+	var sessionErr error
 
 	for remote, remoteStacks := range byRemote {
-		wait.Go(func() {
-			statuses, err := gui.composeStatuses(remote)
+		var statuses remoteStatuses
 
-			mutex.Lock()
-			defer mutex.Unlock()
+		pending := false
 
-			if err != nil && remote == "" {
-				sessionErr = err
+		if remote == "" {
+			statuses.byProject, statuses.err = gui.IncusCommand.GetComposeStatuses()
+			sessionErr = statuses.err
+		} else {
+			var read bool
+
+			statuses, read = gui.remoteStatuses(remote)
+			pending = !read
+		}
+
+		for _, stack := range remoteStacks {
+			stack.StatusPending = pending
+			stack.StatusErr = statuses.err
+
+			if stack.Name != "" {
+				stack.Statuses = statuses.byProject[stack.Name]
 			}
-
-			for _, stack := range remoteStacks {
-				stack.StatusErr = err
-				if stack.Name != "" {
-					stack.Statuses = statuses[stack.Name]
-				}
-			}
-		})
+		}
 	}
-
-	wait.Wait()
 
 	return sessionErr
 }
 
-func (gui *Gui) composeStatuses(remote string) (map[string]map[string][]string, error) {
-	command, err := gui.commandFor(remote)
-	if err != nil {
-		return nil, err
+// remoteStatuses is another remote's compose statuses as last read, false
+// before any has been, asking again in the background.
+func (gui *Gui) remoteStatuses(remote string) (remoteStatuses, bool) {
+	read := func() (map[string]map[string][]string, error) {
+		command, err := gui.commandFor(remote)
+		if err != nil {
+			return nil, err
+		}
+
+		return command.GetComposeStatuses()
 	}
 
-	return command.GetComposeStatuses()
+	return gui.remotes.cachedStatuses(remote, read, gui.refreshForRemote)
 }
 
 // setStackServices hands the stacks' compose instances to the services

@@ -123,6 +123,10 @@ func (gui *Gui) stackIdentityStr(stack *commands.ComposeStack) string {
 		return output + line("Status", utils.ColoredString(stack.StatusErr.Error(), color.FgRed))
 	}
 
+	if stack.StatusPending {
+		return output + line("Status", utils.ColoredString(fmt.Sprintf(gui.Tr.ConnectingTo, stack.Remote), color.FgYellow))
+	}
+
 	output += line("Status", presentation.DisplayRolledUpStatus(&gui.Config.UserConfig.Gui, stack.Status()))
 	output += line("Services", stackServicesStr(stack))
 

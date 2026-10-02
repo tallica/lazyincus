@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -346,6 +347,9 @@ func (gui *Gui) fetchServices() (func() error, error) {
 	}
 
 	command, err := gui.commandFor(stack.Remote)
+	if err == nil && !gui.onSessionRemote(stack.Remote) {
+		err = gui.remotes.remoteStatusErr(stack.Remote)
+	}
 
 	var (
 		services []*commands.ComposeService
@@ -359,6 +363,10 @@ func (gui *Gui) fetchServices() (func() error, error) {
 	if err != nil {
 		if gui.onSessionRemote(stack.Remote) {
 			return nil, err
+		}
+
+		if errors.Is(err, errConnecting) {
+			err = fmt.Errorf(gui.Tr.ConnectingTo, stack.Remote)
 		}
 
 		// Another remote's silence is its stack's row's to report, not a

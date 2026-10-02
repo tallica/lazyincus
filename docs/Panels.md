@@ -138,9 +138,14 @@ is the session's is asked only where it matters (`onSessionRemote`), so
 starting on another `--remote` never changes what's saved. A remote that's
 known but doesn't answer is still added; it's the remote's to fix.
 `gui.commandFor` gives a stack pinned elsewhere an `IncusCommand` of its own
-(`pkg/gui/remotes.go`), connected the first time it's asked for, a failed
-connect not retried for 30s so the polls don't each wait out the connect
-timeout. Statuses, services and the Info tab's `PublishHost` go through it;
+(`pkg/gui/remotes.go`). Nothing a poll runs waits on another server: the
+first ask starts connecting in the background and answers `errConnecting`
+(the row reads `connecting`), a failed connect isn't tried again for 30s,
+and another remote's statuses are the last ones read, read again off to
+one side (`cachedStatuses`), the Stacks and Services refreshing when a
+connection lands or a read changes something. Services skip a remote
+whose statuses last failed. Statuses, services and the Info tab's
+`PublishHost` go through it;
 the compose verbs and the instances' `incus console`/`exec`/`config edit`
 need no connection, only `INCUS_REMOTE` set to the stack's remote
 (`commands.WithRemote`). Everything else — the instances panel, Resources,

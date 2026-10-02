@@ -330,6 +330,8 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		deadlock.Opts.DeadlockTimeout = 10 * time.Second
 	})
 
+	gui.remotes.connected = gui.refreshForRemote
+
 	return gui, nil
 }
 
