@@ -691,3 +691,28 @@ func TestStackUsageLinesUpItsValues(t *testing.T) {
 
 	assert.Len(t, columns, 1, "every value at the same column")
 }
+
+// A prompt widens for its title and hint to both show whole, where the
+// middle half of a narrow screen would run them together.
+func TestAPromptFitsItsTitleAndHint(t *testing.T) {
+	s := startScreenWith(t, 100, 30, nil, withStacks(t, nil))
+	s.settle(t, s.gui.Tr.NoStacks)
+
+	s.do(t, s.gui.Panels.Stacks.HandleSelect)
+	s.do(t, func() error { return s.gui.handleStackAdd(s.g, s.gui.Views.Stacks) })
+
+	screen := s.settle(t, s.gui.Tr.AddStackPrompt)
+	assert.Contains(t, screen, s.gui.Tr.AddStackHint)
+}
+
+func TestPopupColumns(t *testing.T) {
+	x0, x1 := popupColumns(100, 0)
+	assert.Equal(t, [2]int{25, 75}, [2]int{x0, x1})
+
+	x0, x1 = popupColumns(100, 66)
+	assert.Equal(t, 66, x1-x0)
+	assert.Equal(t, 16, x0)
+
+	x0, x1 = popupColumns(40, 66)
+	assert.Equal(t, [2]int{0, 39}, [2]int{x0, x1})
+}

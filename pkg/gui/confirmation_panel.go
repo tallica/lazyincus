@@ -9,6 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 func (gui *Gui) wrappedConfirmationFunction(function func(*gocui.Gui, *gocui.View) error) func(*gocui.Gui, *gocui.View) error {
@@ -50,9 +51,29 @@ func (gui *Gui) closeConfirmationPrompt() error {
 	return nil
 }
 
-// popupColumns is where a popup sits across the screen: the middle half.
-func popupColumns(screenWidth int) (int, int) {
-	return screenWidth/2 - screenWidth/4, screenWidth/2 + screenWidth/4
+// popupColumns is where a popup sits across the screen: the middle half,
+// or as much more of it, still centred, as minWidth asks for.
+func popupColumns(screenWidth, minWidth int) (int, int) {
+	x0, x1 := screenWidth/2-screenWidth/4, screenWidth/2+screenWidth/4
+	if minWidth <= x1-x0 {
+		return x0, x1
+	}
+
+	width := min(minWidth, screenWidth-1)
+	x0 = (screenWidth - 1 - width) / 2
+
+	return x0, x0 + width
+}
+
+// popupFrameWidth is how wide a popup has to be for its title and the
+// subtitle gocui right-aligns on the same border to both show whole: each
+// plus the corners and the rule that keeps them apart.
+func popupFrameWidth(v *gocui.View) int {
+	if v.Subtitle == "" {
+		return 0
+	}
+
+	return utils.DisplayWidth(v.Title) + utils.DisplayWidth(v.Subtitle) + 8
 }
 
 // popupRows centres rows of content on the screen. A popup taller than the
