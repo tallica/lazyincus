@@ -157,8 +157,30 @@ func (s *Server) HoldListen() (release func()) {
 	}
 }
 
-// Listening is how many event streams are open.
+// Listening is how many event streams are open and being read: an event
+// emitted before the client's AddChannel would be dropped, as a daemon's
+// is, so a test waiting to emit waits for this rather than Open.
 func (s *Server) Listening() int {
+	shared := s.shared()
+	shared.mutex.Lock()
+	open := slices.Clone(shared.listeners)
+	shared.mutex.Unlock()
+
+	reading := 0
+
+	for _, l := range open {
+		l.mutex.Lock()
+		if len(l.channels) > 0 {
+			reading++
+		}
+		l.mutex.Unlock()
+	}
+
+	return reading
+}
+
+// Open is how many event streams are open, read or not.
+func (s *Server) Open() int {
 	shared := s.shared()
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()

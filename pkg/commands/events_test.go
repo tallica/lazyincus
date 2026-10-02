@@ -145,5 +145,5 @@ func TestListenForEventsDoesNotWaitOutADial(t *testing.T) {
 	}
 
 	release()
-	require.Eventually(t, func() bool { return server.Listening() == 0 }, 5*time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return server.Open() == 0 }, 5*time.Second, 10*time.Millisecond)
 }
