@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
 // testStack is a stack in a directory of its own under root, named for its
@@ -51,7 +52,7 @@ func withStacks(t *testing.T, local *commands.ComposeStack, saved ...*commands.C
 		}
 
 		for _, stack := range saved {
-			require.NoError(t, s.gui.Config.AddStack(stack.Dir))
+			require.NoError(t, s.gui.Config.AddStack(stack.Ref()))
 			byDir[stack.Dir] = stack
 		}
 
@@ -263,9 +264,279 @@ func TestAddingAStack(t *testing.T) {
 
 	state, err := s.gui.Config.LoadAppState()
 	require.NoError(t, err)
-	assert.Equal(t, []string{shop.Dir}, state.Stacks)
+	assert.Equal(t, []string{"fake:" + shop.Dir}, state.Stacks)
 
 	s.settle(t, "Services (shop)")
+}
+
+// withRemotes stands each server in for the CLI remote it's keyed by, the
+// session's own fixture for "fake", and "down" for a remote that's known
+// but doesn't answer.
+func withRemotes(servers map[string]*incustest.Server) func(*screen) {
+	return func(s *screen) {
+		servers = maps.Clone(servers)
+		servers["fake"] = s.server
+
+		names := append(slices.Sorted(maps.Keys(servers)), "down")
+		slices.Sort(names)
+
+		s.gui.remotes.names = func() []string { return names }
+		s.gui.remotes.known = func(remote string) bool { return slices.Contains(names, remote) }
+		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
+			server, ok := servers[remote]
+			if !ok {
+				return nil, &commands.ConnectError{Remote: remote, Err: errors.New("no answer")}
+			}
+
+			command := s.gui.IncusCommand
+			return commands.NewIncusCommandWithClient(command.Log, command.OSCommand, command.Tr, command.Config, server, remote), nil
+		}
+	}
+}
+
+func composeFixture(project, name, service string) api.InstanceFull {
+	instance := fixtureServer().Instances[0]
+	instance.Name, instance.Project = name, project
+	instance.ExpandedConfig = map[string]string{"user.label.incus-compose.service": service}
+
+	return instance
+}
+
+// A stack pinned to another remote is that remote's: its statuses, its
+// services and their instances. The session's own instances of a project
+// with the same name stay standalone.
+func TestAStackPinnedToARemote(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+	pinned := testStack(t, t.TempDir(), "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
+		s.server.SetInstances([]api.InstanceFull{composeFixture("shop", "web", "api")})
+	})
+
+	s.settle(t, "Services (shop on pve01)")
+	assert.Regexp(t, `│  pve01 shop`, s.snapshot(t))
+
+	require.Eventually(t, func() bool {
+		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
+	}, 5*time.Second, 20*time.Millisecond)
+
+	instance := onLoop(t, s, func() *commands.Instance {
+		return s.gui.Panels.Services.List.GetAllItems()[0].Service.Instances[0]
+	})
+	assert.Equal(t, "api-1", instance.Name)
+	assert.Equal(t, "pve01", instance.Remote)
+
+	// The snapshots panel, pointed at it the way a new snapshot does,
+	// says where too.
+	s.do(t, func() error { return s.gui.refreshSnapshotsFor(instance.Name, instance.Remote, instance) })
+	s.settle(t, "Snapshots (api-1 on pve01)")
+
+	s.do(t, func() error { return s.gui.snapshotCreatePrompt(instance) })
+	s.settle(t, "New snapshot of api-1 on pve01")
+	s.do(t, s.gui.closeSnapshotPrompt)
+
+	// What would act on it says where.
+	assert.Equal(t, "api-1 on pve01", onLoop(t, s, func() string { return s.gui.qualifiedInstance(instance) }))
+	s.do(t, func() error {
+		service := s.gui.Panels.Services.List.GetAllItems()[0].Service
+		return s.gui.composeConfirm(s.gui.Tr.ConfirmComposeStop, serviceTarget(service), "stop")
+	})
+	s.settle(t, "stop service api on pve01?")
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() bool {
+			return slices.ContainsFunc(s.gui.Panels.Instances.List.GetItems(), func(instance *commands.Instance) bool {
+				return instance.Name == "web"
+			})
+		})
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
+// A remote that doesn't answer marks its own stacks, and only those.
+func TestAStackOnAnUnreachableRemote(t *testing.T) {
+	unreachable := testStack(t, t.TempDir(), "shop", "api")
+	unreachable.Remote = "down"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"), unreachable)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": nil})(s)
+	})
+
+	s.settle(t, "unreachable")
+
+	// Selected, it says why on its Info tab rather than in a popup, and
+	// the services list says where to look.
+	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
+	s.settle(t, "no answer")
+	require.Eventually(t, func() bool {
+		return strings.Contains(onLoop(t, s, s.gui.Views.Services.Buffer), "can't reach down")
+	}, 5*time.Second, 20*time.Millisecond)
+	assert.False(t, onLoop(t, s, func() bool { return s.gui.Views.Confirmation.Visible }))
+
+	// `p` has no statuses to vote on, and says why rather than that
+	// nothing's running.
+	s.do(t, func() error { return s.gui.onStack(s.gui.stackPause)(s.g, s.gui.Views.Stacks) })
+	screen := s.settle(t, "─"+s.gui.Tr.ErrorTitle)
+	assert.NotContains(t, screen, s.gui.Tr.StackNotRunning)
+	assert.Contains(t, onLoop(t, s, s.gui.Views.Confirmation.Buffer), "no answer")
+	assert.Equal(t, []string{"none", "unreachable"}, onLoop(t, s, func() []string {
+		return lo.Map(s.gui.Panels.Stacks.List.GetAllItems(), func(stack *commands.ComposeStack, _ int) string {
+			if stack.StatusErr != nil {
+				return "unreachable"
+			}
+
+			return stack.Status()
+		})
+	}))
+}
+
+// `a` takes a remote ahead of the directory, and only a remote it knows.
+func TestAddingAStackOnARemote(t *testing.T) {
+	shop := testStack(t, t.TempDir(), "shop", "api")
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+		s.gui.loadStack = func(dir string) *commands.ComposeStack {
+			loaded := *shop
+			loaded.Dir = dir
+			return &loaded
+		}
+	})
+	s.settle(t, s.gui.Tr.NoStacks)
+
+	assert.ErrorContains(t, s.gui.addStack("nope:"+shop.Dir), "no such file or directory")
+	require.NoError(t, s.gui.addStack("pve01:"+shop.Dir))
+	assert.ErrorContains(t, s.gui.addStack("pve01:"+shop.Dir), "already listed")
+	// With no remote, it's pinned to the session's.
+	require.NoError(t, s.gui.addStack(shop.Dir))
+	assert.ErrorContains(t, s.gui.addStack("fake:"+shop.Dir), "already listed")
+
+	state, err := s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"pve01:" + shop.Dir, "fake:" + shop.Dir}, state.Stacks)
+
+	// Removing it removes what was saved.
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() int { return len(s.gui.Panels.Stacks.List.GetAllItems()) }) == 2
+	}, 5*time.Second, 20*time.Millisecond)
+	require.NoError(t, s.gui.Config.RemoveStack(onLoop(t, s, func() string {
+		return s.gui.Panels.Stacks.List.GetAllItems()[0].Ref()
+	})))
+
+	state, err = s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Len(t, state.Stacks, 1)
+}
+
+// `e` starts from the stack's own entry, and what's saved takes its place.
+func TestEditingAStack(t *testing.T) {
+	shop := testStack(t, t.TempDir(), "shop", "api")
+	shop.Remote = "fake"
+	moved := t.TempDir()
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, shop)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+		s.gui.loadStack = func(dir string) *commands.ComposeStack {
+			loaded := *shop
+			loaded.Dir = dir
+			return &loaded
+		}
+	})
+	s.settle(t, "Services (shop)")
+
+	s.do(t, func() error {
+		stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+		if err != nil {
+			return err
+		}
+
+		return s.gui.stackEdit(stack)
+	})
+	s.settle(t, s.gui.Tr.EditStackPrompt)
+	assert.Equal(t, "fake:"+shop.Dir, strings.TrimSpace(onLoop(t, s, s.gui.Views.Confirmation.Buffer)))
+	s.do(t, s.gui.closeConfirmationPrompt)
+
+	// Unchanged is no change, and a directory that isn't there is refused.
+	require.NoError(t, s.gui.saveStack("fake:"+shop.Dir, shop.Ref()))
+	assert.ErrorContains(t, s.gui.saveStack("pve01:"+filepath.Join(moved, "missing"), shop.Ref()), "no such file")
+
+	require.NoError(t, s.gui.saveStack("pve01:"+moved, shop.Ref()))
+
+	state, err := s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"pve01:" + moved}, state.Stacks)
+	s.settle(t, "Services (shop on pve01)")
+}
+
+// The local stack and the same directory saved for the session's remote
+// are one row, both listed, which D takes off the list as saved; saved for
+// another remote, it's a row of its own.
+func TestTheLocalStackSavedIsOneRow(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	saved, elsewhere := *local, *local
+	saved.Remote, elsewhere.Remote = "fake", "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, local, &saved, &elsewhere)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+	})
+	s.settle(t, "Services (default)")
+
+	stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
+	require.Len(t, stacks, 2)
+	assert.True(t, stacks[0].Local && stacks[0].Saved)
+	assert.Equal(t, "fake:"+local.Dir, stacks[0].Ref())
+	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
+
+	// On pve01 it's the other entry that's the local stack, and the rows
+	// stay where they were.
+	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
+	s.settle(t, "(pve01/all projects)")
+	require.Eventually(t, func() bool {
+		stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
+		return len(stacks) == 2 && stacks[1].Local
+	}, 5*time.Second, 20*time.Millisecond)
+
+	stacks = onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
+	assert.Equal(t, "fake:"+local.Dir, stacks[0].Ref())
+	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
+}
+
+// D on the local stack that's also saved forgets the entry and says the
+// row stays, which it does.
+func TestRemovingTheSavedEntryOfTheLocalStack(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	saved := *local
+	saved.Remote = "fake"
+
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, local, &saved))
+	s.settle(t, "Services (default)")
+
+	s.do(t, func() error {
+		stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+		if err != nil {
+			return err
+		}
+
+		return s.gui.stackRemove(stack)
+	})
+	s.settle(t, "It stays listed")
+	s.press(t, 'y')
+
+	require.Eventually(t, func() bool {
+		state, err := s.gui.Config.LoadAppState()
+		return err == nil && len(state.Stacks) == 0
+	}, 5*time.Second, 20*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetAllItems)
+		return len(stacks) == 1 && stacks[0].Local && !stacks[0].Saved
+	}, 5*time.Second, 20*time.Millisecond)
 }
 
 // The local stack isn't saved, so there's nothing for `D` to remove.
@@ -413,7 +684,7 @@ func TestCopyingFromAStack(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, stack)(s)
-		s.gui.IncusCommand.PublishHost = "192.0.2.5"
+		s.server.URL = "https://192.0.2.5:8443"
 
 		instances := fixtureServer().Instances
 		for i := range instances {
@@ -458,4 +729,29 @@ func TestStackUsageLinesUpItsValues(t *testing.T) {
 	}
 
 	assert.Len(t, columns, 1, "every value at the same column")
+}
+
+// A prompt widens for its title and hint to both show whole, where the
+// middle half of a narrow screen would run them together.
+func TestAPromptFitsItsTitleAndHint(t *testing.T) {
+	s := startScreenWith(t, 100, 30, nil, withStacks(t, nil))
+	s.settle(t, s.gui.Tr.NoStacks)
+
+	s.do(t, s.gui.Panels.Stacks.HandleSelect)
+	s.do(t, func() error { return s.gui.handleStackAdd(s.g, s.gui.Views.Stacks) })
+
+	screen := s.settle(t, s.gui.Tr.AddStackPrompt)
+	assert.Contains(t, screen, s.gui.Tr.AddStackHint)
+}
+
+func TestPopupColumns(t *testing.T) {
+	x0, x1 := popupColumns(100, 0)
+	assert.Equal(t, [2]int{25, 75}, [2]int{x0, x1})
+
+	x0, x1 = popupColumns(100, 66)
+	assert.Equal(t, 66, x1-x0)
+	assert.Equal(t, 16, x0)
+
+	x0, x1 = popupColumns(40, 66)
+	assert.Equal(t, [2]int{0, 39}, [2]int{x0, x1})
 }

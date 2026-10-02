@@ -46,6 +46,10 @@ type Server struct {
 	// InstancesError fails the instance listings alone, as for a client
 	// allowed the images but not the instances.
 	InstancesError error
+	// Version is what GetServer reports, URL where GetConnectionInfo says
+	// the daemon is.
+	Version string
+	URL     string
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -183,7 +187,19 @@ func (s *Server) UseProject(name string) incus.InstanceServer {
 }
 
 func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
-	return &incus.ConnectionInfo{Project: s.scope()}, nil
+	return &incus.ConnectionInfo{Project: s.scope(), URL: s.URL}, nil
+}
+
+// GetServer reports Version.
+func (s *Server) GetServer() (*api.Server, string, error) {
+	if err := s.reachable(); err != nil {
+		return nil, "", err
+	}
+
+	server := &api.Server{}
+	server.Environment.ServerVersion = s.Version
+
+	return server, "", nil
 }
 
 // GetProject answers for any project, with no config of its own.

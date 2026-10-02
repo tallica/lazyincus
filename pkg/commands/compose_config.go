@@ -13,15 +13,25 @@ import (
 // composeDirEnv is incus-compose's own variable for --project-directory.
 const composeDirEnv = "INCUS_COMPOSE_PROJECT_DIRECTORY"
 
-// ComposeCmd is an incus-compose command against the stack in dir. The
-// directory goes in the environment as well as being the working directory:
-// `-P` sets composeDirEnv for the whole process, which would otherwise
-// point every stack at the one it names.
+// ComposeCmd is an incus-compose command against the stack in dir, on c's
+// remote. The directory goes in the environment as well as being the
+// working directory: `-P` sets composeDirEnv for the whole process, which
+// would otherwise point every stack at the one it names.
 func (c *IncusCommand) ComposeCmd(dir string, args ...string) *exec.Cmd {
 	cmd := c.OSCommand.NewCmd("incus-compose", args...)
 	cmd.Dir = dir
 	// exec.Cmd keeps the last of a duplicated variable.
 	cmd.Env = append(cmd.Env, composeDirEnv+"="+dir)
+
+	return WithRemote(cmd, c.RemoteName())
+}
+
+// WithRemote points an `incus` or incus-compose command at remote, which
+// both read from INCUS_REMOTE.
+func WithRemote(cmd *exec.Cmd, remote string) *exec.Cmd {
+	if remote != "" {
+		cmd.Env = append(cmd.Env, "INCUS_REMOTE="+remote)
+	}
 
 	return cmd
 }

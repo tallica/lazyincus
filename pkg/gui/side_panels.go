@@ -202,7 +202,7 @@ func (gui *Gui) servicesPanelTitle() string {
 		return gui.Tr.ServicesTitle
 	}
 
-	return fmt.Sprintf(gui.Tr.ServicesTitleProject, stack.Name)
+	return fmt.Sprintf(gui.Tr.ServicesTitleProject, gui.onRemote(stack.Name, stack.Remote))
 }
 
 // instancesPanelTitle marks the panel as holding what's left once the

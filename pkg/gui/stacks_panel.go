@@ -12,6 +12,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
+	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
@@ -47,7 +48,8 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			GetItemContextCacheKey: func(stack *commands.ComposeStack) string {
 				// fmt prints a map's keys sorted, so the same statuses give
 				// the same key.
-				return "stacks-" + stack.Dir + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses)
+				return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses) +
+					"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.ComposeStack]{
@@ -60,24 +62,37 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
-		// The local stack first, being the one lazyincus was started for.
+		// The local stack first when it's saved nowhere, being the one
+		// lazyincus was started for, then each saved remote's together - by
+		// what's saved alone, since switching remote changes which saved
+		// entry the local stack is, and would reshuffle the list under the
+		// cursor.
 		Sort: func(a, b *commands.ComposeStack) bool {
-			if a.Local != b.Local {
-				return a.Local
+			if a.Saved != b.Saved {
+				return !a.Saved
+			}
+
+			if a.Remote != b.Remote {
+				return a.Remote < b.Remote
 			}
 
 			if a.Title() != b.Title() {
 				return a.Title() < b.Title()
 			}
 
-			return a.Dir < b.Dir
+			return a.Ref() < b.Ref()
 		},
 		// Rows are rebuilt on every refresh.
 		SameItem: func(a, b *commands.ComposeStack) bool {
-			return a.Dir == b.Dir
+			return a.Ref() == b.Ref()
 		},
 		GetTableCells: func(stack *commands.ComposeStack) []string {
-			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home)
+			var remote *presentation.StackRemote
+			if gui.State.StacksElsewhere {
+				remote = &presentation.StackRemote{Name: gui.stackRemote(stack), Active: gui.onSessionRemote(stack.Remote)}
+			}
+
+			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home, remote)
 		},
 	}
 }
@@ -150,12 +165,25 @@ func (c *stackCache) forget(dir string) {
 // from somewhere that isn't one.
 func (gui *Gui) listStacks(saved []string) []*commands.ComposeStack {
 	stacks := []*commands.ComposeStack{}
-	byDir := map[string]*commands.ComposeStack{}
+	byRef := map[string]*commands.ComposeStack{}
 
-	add := func(dir string, local bool) {
-		if existing, ok := byDir[dir]; ok {
+	// Keyed by the remote each is on now, so the local stack and the same
+	// directory saved for the session's remote are one row, which the
+	// saved entry's remote then names.
+	add := func(remote, dir string, local bool) {
+		on := remote
+		if on == "" {
+			on = gui.IncusCommand.RemoteName()
+		}
+
+		ref := commands.StackRef(on, dir)
+		if existing, ok := byRef[ref]; ok {
 			existing.Local = existing.Local || local
 			existing.Saved = existing.Saved || !local
+
+			if !local {
+				existing.Remote = remote
+			}
 
 			return
 		}
@@ -166,24 +194,26 @@ func (gui *Gui) listStacks(saved []string) []*commands.ComposeStack {
 		}
 
 		stack := *cached
+		stack.Remote = remote
 		stack.Local, stack.Saved = local, !local
-		byDir[dir] = &stack
+		byRef[ref] = &stack
 		stacks = append(stacks, &stack)
 	}
 
 	if gui.localStackDir != "" {
-		add(gui.localStackDir, true)
+		add("", gui.localStackDir, true)
 	}
 
-	for _, dir := range saved {
-		add(dir, false)
+	for _, ref := range saved {
+		remote, dir := commands.ParseStackRef(ref)
+		add(remote, dir, false)
 	}
 
 	return stacks
 }
 
 // fetchStacks reads the stacks' configs, cached, and every compose
-// instance's status: one listing, whatever the number of stacks.
+// instance's status: one listing a remote, whatever the number of stacks.
 func (gui *Gui) fetchStacks() (func() error, error) {
 	if gui.composeUnavailable() {
 		return func() error { return nil }, nil
@@ -198,21 +228,21 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 
 	stacks := gui.listStacks(state.Stacks)
 
-	statuses, err := gui.IncusCommand.GetComposeStatuses()
-	if err != nil {
-		return nil, err
-	}
+	elsewhere := slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
+		return !gui.onSessionRemote(stack.Remote)
+	})
+	gui.stacksElsewhere.Store(elsewhere)
 
-	for _, stack := range stacks {
-		if stack.Name != "" {
-			stack.Statuses = statuses[stack.Name]
-		}
+	if err := gui.readStackStatuses(stacks); err != nil {
+		return nil, err
 	}
 
 	return func() error {
 		if !gui.refreshes.stacks.admit(ticket) {
 			return nil
 		}
+
+		gui.State.StacksElsewhere = elsewhere
 
 		gui.Panels.Stacks.SetItems(stacks)
 
@@ -231,13 +261,73 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 	}, nil
 }
 
+// readStackStatuses gives each stack its instances' statuses: the
+// session's remote asked, every other one's as last read, so a server that
+// doesn't answer holds up nothing. A remote that doesn't answer marks its
+// own stacks; the session's failing fails the refresh, as every other
+// list's does.
+func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
+	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
+		if stack.Remote == gui.IncusCommand.RemoteName() {
+			return ""
+		}
+
+		return stack.Remote
+	})
+
+	var sessionErr error
+
+	for remote, remoteStacks := range byRemote {
+		var statuses remoteStatuses
+
+		pending := false
+
+		if remote == "" {
+			statuses.byProject, statuses.err = gui.IncusCommand.GetComposeStatuses()
+			sessionErr = statuses.err
+		} else {
+			var read bool
+
+			statuses, read = gui.remoteStatuses(remote)
+			pending = !read
+		}
+
+		for _, stack := range remoteStacks {
+			stack.StatusPending = pending
+			stack.StatusErr = statuses.err
+
+			if stack.Name != "" {
+				stack.Statuses = statuses.byProject[stack.Name]
+			}
+		}
+	}
+
+	return sessionErr
+}
+
+// remoteStatuses is another remote's compose statuses as last read, false
+// before any has been, asking again in the background.
+func (gui *Gui) remoteStatuses(remote string) (remoteStatuses, bool) {
+	read := func() (map[string]map[string][]string, error) {
+		command, err := gui.commandFor(remote)
+		if err != nil {
+			return nil, err
+		}
+
+		return command.GetComposeStatuses()
+	}
+
+	return gui.remotes.cachedStatuses(remote, read, gui.refreshForRemote)
+}
+
 // setStackServices hands the stacks' compose instances to the services
 // panel, re-filtering the instances panel when that changes which.
 func (gui *Gui) setStackServices(stacks []*commands.ComposeStack) error {
 	services := map[string]map[string]bool{}
 
 	for _, stack := range stacks {
-		if stack.Name == "" {
+		// Another remote's instances were never in the instances panel.
+		if stack.Name == "" || !gui.onSessionRemote(stack.Remote) {
 			continue
 		}
 
@@ -286,6 +376,7 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 	gui.composeInstances.Store(nil)
 
 	gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
+	gui.State.ServicesNote = ""
 	if stack == nil {
 		gui.Panels.Services.NoItemsMessage = gui.Tr.NoStackSelected
 	}
@@ -304,13 +395,13 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 }
 
 // stackIdentity is what the services panel's contents depend on: which
-// directory, and the project its compose file names.
+// directory on which remote, and the project its compose file names.
 func stackIdentity(stack *commands.ComposeStack) string {
 	if stack == nil {
 		return ""
 	}
 
-	return stack.Dir + "\x00" + stack.Name
+	return stack.Ref() + "\x00" + stack.Name
 }
 
 // renderStackLogs stacks every service's logs, each instance under a
@@ -326,7 +417,7 @@ func (gui *Gui) stackLogsStr(stack *commands.ComposeStack) string {
 	}
 
 	state := gui.composeInstances.Load()
-	if state == nil || state.project != stack.Name {
+	if !state.isOf(stack) {
 		return ""
 	}
 
@@ -371,9 +462,10 @@ func (gui *Gui) renderStackConfig(stack *commands.ComposeStack) tasks.TaskFunc {
 	})
 }
 
-// handleStackAdd is `a`: a directory to list, saved in state.yml.
+// handleStackAdd is `a`: a directory to list, saved in state.yml with the
+// remote it's pinned to.
 func (gui *Gui) handleStackAdd(g *gocui.Gui, v *gocui.View) error {
-	return gui.openTextPrompt(gui.Tr.AddStackPrompt, gui.Tr.AddStackHint, func(input string) error {
+	return gui.openTextPrompt(gui.Tr.AddStackPrompt, gui.Tr.AddStackHint, "", func(input string) error {
 		return gui.WithWaitingStatus(gui.Tr.AddingStackStatus, func() error {
 			return gui.addStack(input)
 		})
@@ -382,16 +474,54 @@ func (gui *Gui) handleStackAdd(g *gocui.Gui, v *gocui.View) error {
 
 // addStack takes a directory only once incus-compose has read a compose
 // project from it: a stack that's never going to work is a row of noise.
-// Off the main loop.
+// A remote that doesn't answer is no reason to refuse, being the remote's
+// to fix. Off the main loop.
 func (gui *Gui) addStack(input string) error {
+	return gui.saveStack(input, "")
+}
+
+// stackEdit is `e`: the stack's entry in the add prompt, to move it
+// to another directory or remote. Saved in place, so the list keeps its
+// order in state.yml.
+func (gui *Gui) stackEdit(stack *commands.ComposeStack) error {
+	if !stack.Saved {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotEditLocalStack, presentation.StackPath(stack, gui.home)))
+	}
+
+	initial := commands.StackRef(stack.Remote, commands.ShortenHome(stack.Dir, gui.home))
+
+	return gui.openTextPrompt(gui.Tr.EditStackPrompt, gui.Tr.EditStackHint, initial, func(input string) error {
+		return gui.WithWaitingStatus(gui.Tr.SavingStatus, func() error {
+			return gui.saveStack(input, stack.Ref())
+		})
+	})
+}
+
+// saveStack is addStack, or with replacing the entry what was typed takes
+// the place of.
+func (gui *Gui) saveStack(input, replacing string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	dir, err := commands.ResolveStackDir(input, cwd, gui.home)
+	remote, path := commands.SplitStackInput(input, func(name string) bool {
+		return name == gui.IncusCommand.RemoteName() || gui.remotes.known(name)
+	})
+	// Pinned to where it was added, so a session on another remote never
+	// runs its verbs there.
+	if remote == "" {
+		remote = gui.IncusCommand.RemoteName()
+	}
+
+	dir, err := commands.ResolveStackDir(path, cwd, gui.home)
 	if err != nil {
 		return err
+	}
+
+	ref := commands.StackRef(remote, dir)
+	if ref == replacing {
+		return nil
 	}
 
 	if err := commands.CheckStackDir(dir); err != nil {
@@ -403,8 +533,8 @@ func (gui *Gui) addStack(input string) error {
 		return err
 	}
 
-	if slices.Contains(state.Stacks, dir) || gui.isLocalStack(dir) {
-		return fmt.Errorf(gui.Tr.StackAlreadyListed, dir)
+	if slices.Contains(state.Stacks, ref) || (gui.onSessionRemote(remote) && gui.isLocalStack(dir)) {
+		return fmt.Errorf(gui.Tr.StackAlreadyListed, ref)
 	}
 
 	stack := gui.loadStack(dir)
@@ -412,9 +542,14 @@ func (gui *Gui) addStack(input string) error {
 		return fmt.Errorf(gui.Tr.StackNotComposeProject, dir, stack.Err)
 	}
 
-	if err := gui.Config.AddStack(dir); err != nil {
+	save := gui.Config.AddStack
+	if replacing != "" {
+		save = func(ref string) error { return gui.Config.ReplaceStack(replacing, ref) }
+	}
+
+	if err := save(ref); err != nil {
 		if errors.Is(err, config.ErrStackListed) {
-			return fmt.Errorf(gui.Tr.StackAlreadyListed, dir)
+			return fmt.Errorf(gui.Tr.StackAlreadyListed, ref)
 		}
 
 		return err
@@ -422,7 +557,23 @@ func (gui *Gui) addStack(input string) error {
 
 	gui.stacks.put(stack)
 
-	return gui.refresh(func() error { return gui.selectStack(dir) }, gui.fetchStacks)
+	return gui.refresh(func() error { return gui.selectStack(ref) }, gui.fetchStacks)
+}
+
+// stackRemote is the remote a stack's verbs go to: its own, or the
+// session's for one that follows it.
+func (gui *Gui) stackRemote(stack *commands.ComposeStack) string {
+	if stack.Remote == "" {
+		return gui.IncusCommand.RemoteName()
+	}
+
+	return stack.Remote
+}
+
+// onSessionRemote is whether a stack pinned to remote is on the remote the
+// rest of the panels show.
+func (gui *Gui) onSessionRemote(remote string) bool {
+	return remote == "" || remote == gui.IncusCommand.RemoteName()
 }
 
 // isLocalStack is whether dir is the local stack's, listed.
@@ -434,10 +585,10 @@ func (gui *Gui) isLocalStack(dir string) bool {
 	return gui.localStackExplicit || gui.stacks.get(dir, false, gui.loadStack).Err == nil
 }
 
-// selectStack moves the Stacks panel's cursor to dir's row, and the focus
+// selectStack moves the Stacks panel's cursor to ref's row, and the focus
 // to the panel.
-func (gui *Gui) selectStack(dir string) error {
-	index := gui.Panels.Stacks.List.GetIndexBy(func(stack *commands.ComposeStack) bool { return stack.Dir == dir })
+func (gui *Gui) selectStack(ref string) error {
+	index := gui.Panels.Stacks.List.GetIndexBy(func(stack *commands.ComposeStack) bool { return stack.Ref() == ref })
 	if index < 0 {
 		return nil
 	}
@@ -451,20 +602,44 @@ func (gui *Gui) selectStack(dir string) error {
 	return gui.Panels.Stacks.RerenderList()
 }
 
+// stackEditCompose is `c`: the stack's compose file in the user's editor,
+// read again once it closes.
+func (gui *Gui) stackEditCompose(stack *commands.ComposeStack) error {
+	file, err := commands.ComposeFile(stack.Dir)
+	if err != nil {
+		return gui.createErrorPanel(err.Error())
+	}
+
+	if err := gui.editFile(file); err != nil {
+		return err
+	}
+
+	gui.stacks.forget(stack.Dir)
+	gui.refreshInBackground(gui.fetchStacks, gui.fetchServices)
+
+	return nil
+}
+
 // stackRemove is `D`: forget a saved stack, after asking. Nothing on the
 // daemon changes, and the local stack isn't saved to be removed.
 func (gui *Gui) stackRemove(stack *commands.ComposeStack) error {
-	path := commands.ShortenHome(stack.Dir, gui.home)
+	path := presentation.StackPath(stack, gui.home)
 
 	if !stack.Saved {
 		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotRemoveLocalStack, path))
 	}
 
-	message := fmt.Sprintf(gui.Tr.ConfirmRemoveStack, stack.Title(), path)
+	// Also the local stack, it keeps its row: only the saved entry goes.
+	prompt := gui.Tr.ConfirmRemoveStack
+	if stack.Local {
+		prompt = gui.Tr.ConfirmRemoveSavedLocalStack
+	}
+
+	message := fmt.Sprintf(prompt, stack.Title(), path)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
-			if err := gui.Config.RemoveStack(stack.Dir); err != nil {
+			if err := gui.Config.RemoveStack(stack.Ref()); err != nil {
 				return err
 			}
 

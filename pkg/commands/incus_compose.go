@@ -92,6 +92,8 @@ type ComposeService struct {
 	// Dir the stack's directory, which every verb on the service runs in.
 	Project string
 	Dir     string
+	// Remote is the stack's, empty for the session's.
+	Remote string
 
 	Instances []*Instance
 }
@@ -215,6 +217,7 @@ func (c *IncusCommand) GetComposeServices(stack *ComposeStack) (services []*Comp
 	for _, service := range stack.Services {
 		service.Project = stack.Name
 		service.Dir = stack.Dir
+		service.Remote = stack.Remote
 		services = append(services, &service)
 		byName[service.Name] = services[len(services)-1]
 	}

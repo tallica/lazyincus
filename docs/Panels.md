@@ -39,7 +39,7 @@ an `instance-updated` refreshes at most every 10s.
 | List | Refreshed by | Polled |
 |---|---|---|
 | Instances | `instance-created`, `-deleted`, `-renamed`, `-started`, `-stopped`, `-shutdown`, `-restarted`, `-paused`, `-resumed`, `-restored`, `-migrated`, `instance-agent-started`/`-stopped`, `instance-snapshot-created`/`-deleted`/`-renamed`; `instance-updated`; an operation ending | every 2s, stream or not |
-| Stacks | whatever refreshes the instances; a compose verb | every 10s; once a minute while the stream is open |
+| Stacks | whatever refreshes the instances; a compose verb; another remote connecting, or answering differently | every 10s; once a minute while the stream is open, unless a stack is on another remote |
 | Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
 | Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
@@ -112,8 +112,10 @@ sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, validated there, and
 compose file is no stack at all rather than a row saying so — most people
 start lazyincus from somewhere that isn't one — but a directory named with
 `-P` that has none is a row with the error. The local stack isn't saved, so
-`D` refuses it. The saved ones are `state.yml`'s
-([docs/Config.md](Config.md#state)); `a` adds to it and `D` removes from it,
+`D` and `e` refuse it. The saved ones are `state.yml`'s
+([docs/Config.md](Config.md#state)); `a` adds to it, `e` replaces an entry
+in place (`ReplaceStack`), through `a`'s prompt pre-filled and its
+checks, and `D` removes from it,
 re-reading the file before each write so two sessions don't undo each
 other, and replacing it by rename. `a` takes a path through
 `openTextPrompt`, a one-line prompt in the confirmation view
@@ -127,7 +129,11 @@ directory (`LoadComposeStack`), read in `fetchStacks` rather than before
 the views exist, and cached by directory (`stackCache`): a subprocess per
 stack on every refresh would be most of the cost of one. The cache forgets
 a stack whenever a compose verb runs on it, so a compose file edited and
-then brought up shows its new services. A read that failed is tried again
+then brought up shows its new services - and after `c`, which opens the
+file compose-go would pick (`ComposeFile`): the first of `compose.yaml`,
+`compose.yml`, `docker-compose.yml`, `docker-compose.yaml`, in the
+directory or the nearest one above with one. An override file or `-f` in
+the environment isn't followed. A read that failed is tried again
 on each refresh — the directory may come back — except the working
 directory's. `ComposeCmd` is how every incus-compose subprocess is made: in
 the stack's directory, with `INCUS_COMPOSE_PROJECT_DIRECTORY` set to it as
@@ -136,25 +142,27 @@ every stack at the one it names.
 
 The status column rolls up every compose-labelled instance in the stack's
 project the way a service rolls up its replicas (`RollUpStatus`): theirs
-when they agree, `partial` when they don't, `none` with nothing there, and
-`error` for a stack whose config couldn't be read. `GetComposeStatuses` is
-one all-projects listing for every stack. The path column writes home as
-`~`. The local stack sorts first, the rest by name.
+when they agree, `partial` when they don't, `none` with nothing there,
+`error` for a stack whose config couldn't be read, and - for a stack on
+another remote, below - `connecting` or `unreachable`. The path column
+writes home as `~`.
 
 `followStack` is how the services panel follows the selection, the way
 Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
 so does every Stacks refresh, the selection being the first row until
 someone moves it. It keeps the stack in `gui.selectedStack`, an atomic
 pointer, since `fetchServices` reads it off the main loop. A different
-stack — a different directory, or a project the compose file now names
-differently — invalidates the services `refreshSeq`, empties the panel,
+stack — a different directory or remote, or a project the compose file
+now names differently — invalidates the services `refreshSeq`, empties the panel,
 retitles it and fetches for the new one. The stack is swapped before the
 invalidation, and `fetchServices` takes its ticket before reading the
 stack, so a fetch that isn't turned away has the new one.
 
 Stacks refresh on the 10s cadence of the other lists that events keep
 current (`pollUnlessWatched`), on any event that refreshes the instances,
-and after a compose verb. The keys are the Services panel's compose verbs
+and after a compose verb. While a stack pinned to another remote is listed
+they stay at 10s with the stream open: that remote's events never reach
+this session. The keys are the Services panel's compose verbs
 with the `SERVICE` argument left off, through the same code,
 parameterised by `composeTarget`. `p` pauses unless every service with
 anything running is frozen. Which key runs which verb is README's
@@ -180,6 +188,61 @@ Main panel tabs:
   one instance. `m` jumps here, as it does on the other panels.
 - **Config** — the whole of `incus-compose config`, through JSON to YAML
   for the reason the service's Config tab gives.
+
+### Stacks on other remotes
+
+A `remote:` ahead of the path pins a stack to that remote
+(`SplitStackInput`), but only when the prefix is one of the CLI's instance
+remotes, so a path with a colon in it still reads as a path. With none,
+it's pinned to the session's, so a session on another remote later can't
+run its verbs on the wrong daemon. It's saved as `remote:/dir`
+(`ComposeStack.Ref`), its identity everywhere a directory alone was: the
+same directory can be listed once per remote. `Run` pins an entry saved
+before stacks had remotes to the remote it starts on (`PinStacks`), the one
+each was shown against until then, which leaves the local stack, never
+saved, the only one that follows the session. `listStacks` keys every
+stack by the remote it's on now, so the local stack and the same directory
+saved for the session's remote are one row, named by the saved entry so
+`D` and `e` act on it - `D` forgetting the entry, the row staying as the
+local stack, which its confirmation says. Whether a remote is the session's is asked only
+where it matters (`onSessionRemote`), so starting on another `--remote`
+never changes what's saved, and a remote that's known but doesn't answer
+is still added: it's the remote's to fix.
+
+`gui.commandFor` gives a stack on another remote an `IncusCommand` of its
+own (`pkg/gui/remotes.go`), through which its statuses, its services and
+the Info tab's `PublishHost` go. Nothing a poll runs waits on another
+server: the first ask starts connecting in the background and answers
+`errConnecting`, the row reading `connecting`; a failed connect isn't
+tried again for 30s; and that remote's statuses are the last ones read,
+read again off to one side (`cachedStatuses`), the Stacks and Services
+refreshing when a connection lands or a read changes something. The
+session's own are read in the refresh, as every other list is. Services
+skip a remote whose statuses last failed, the list saying so in place of
+rows (`EmptyNote`), and a remote gone from the CLI's
+config - renamed since the stack was saved - isn't tried at all
+(`unknownRemote`), its message pointing at `e`. The compose verbs and the
+instances' `incus console`/`exec`/`config edit` need no connection, only
+`INCUS_REMOTE` set to the stack's remote (`commands.WithRemote`).
+
+Everything else - Standalone Instances, Snapshots, Resources, the event
+stream, the connection-lost modal - is the session's remote. So a stack
+pinned elsewhere has instances that were never in Standalone Instances to
+be filtered out, and wherever the rest of the app would vouch for the
+wrong daemon - the Services and Snapshots titles, the new-snapshot prompt,
+the compose and instance confirmations - `onRemote` adds "on pve01".
+`space` (`stackSwitchRemote`) is `R`'s switch to the stack's remote, on a
+connection its status has usually opened already: a key rather than the
+selection, since a switch reloads every panel.
+
+A remote column leads the Stacks rows whenever one is on a remote other
+than the session's (`State.StacksElsewhere`), the session's marked `*` in
+green as the `R` menu marks it - the project columns' rule, a column only
+where the rows would otherwise read alike. The local stack sorts first
+when it's saved nowhere, then each saved remote's stacks together, each by
+name: by what's saved alone, the local stack that is also a saved entry
+included, since which entry that is depends on the session's remote and
+switching would reshuffle the list under the cursor.
 
 ## Services
 

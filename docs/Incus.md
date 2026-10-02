@@ -17,8 +17,11 @@ inferred.
   `--remote` is that variable: `main` sets it before anything loads, since
   the client is only half of it — `incus console`, `incus exec` and the
   incus-compose verbs are subprocesses reading the environment on their
-  own, and `NewCmd` hands them `os.Environ()`. See
-  [docs/Remotes.md](Remotes.md).
+  own, and `NewCmd` hands them `os.Environ()`. `R` and stacks pinned to a
+  remote connect the same way by name (`ConnectRemote`); a switch then sets
+  the variable too, and `UseRemote` moves the session's command onto the
+  new client in place, under the mutex every reader of it already takes.
+  See [docs/Remotes.md](Remotes.md).
 - **Connection loss**: a daemon going away mid-session is routine, so
   nothing treats it as fatal. `NoteError` classifies every error -
   `IsConnectionError` takes a `*url.Error` to mean the request never
@@ -36,8 +39,8 @@ inferred.
 - **Connection timeouts**: `capDialTimeout` caps both of the transport's
   dialers at 5s (a unix socket gets `DialContext`, a TLS remote
   `DialTLSContext`), the OS otherwise taking a minute or more on a host
-  that's gone. The startup connect needs its own bound
-  (`connectDefaultRemote`, 10s): cliconfig calls `GetServer()` before
+  that's gone. Connecting needs its own bound
+  (`connectRemote`, 10s): cliconfig calls `GetServer()` before
   handing back a client, so there's no transport of ours to cap yet.
   The event stream's websocket dials through the same capped dialers but
   takes no context, so `ListenForEvents` doesn't wait on a dial it's been

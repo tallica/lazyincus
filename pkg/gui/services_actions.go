@@ -81,17 +81,18 @@ func (gui *Gui) onServiceRow(
 // narrowed to one of its services unless service is empty - the verb with
 // no SERVICE argument, which is the whole stack.
 type composeTarget struct {
+	remote  string
 	dir     string
 	project string
 	service string
 }
 
 func stackTarget(stack *commands.ComposeStack) composeTarget {
-	return composeTarget{dir: stack.Dir, project: stack.Name}
+	return composeTarget{remote: stack.Remote, dir: stack.Dir, project: stack.Name}
 }
 
 func serviceTarget(service *commands.ComposeService) composeTarget {
-	return composeTarget{dir: service.Dir, project: service.Project, service: service.Name}
+	return composeTarget{remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name}
 }
 
 // composeRun is every compose verb: the arguments, then the service to
@@ -102,7 +103,10 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 		args = append(args, target.service)
 	}
 
-	if err := gui.runSubprocess(gui.IncusCommand.ComposeCmd(target.dir, args...)); err != nil {
+	// The remote by name alone: the verb connects for itself.
+	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
+
+	if err := gui.runSubprocess(cmd); err != nil {
 		return err
 	}
 
@@ -116,10 +120,10 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 // or the whole project when no service narrows it.
 func (gui *Gui) composeTargetName(target composeTarget) string {
 	if target.service != "" {
-		return fmt.Sprintf(gui.Tr.ComposeTargetService, target.service)
+		return gui.onRemote(fmt.Sprintf(gui.Tr.ComposeTargetService, target.service), target.remote)
 	}
 
-	return fmt.Sprintf(gui.Tr.ComposeTargetProject, target.project)
+	return gui.onRemote(fmt.Sprintf(gui.Tr.ComposeTargetProject, target.project), target.remote)
 }
 
 // composeConfirm wraps a verb in a confirmation naming its target, for the

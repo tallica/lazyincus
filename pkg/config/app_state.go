@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -15,7 +16,8 @@ import (
 // user's own.
 type AppState struct {
 	// Stacks are the compose project directories added with `a` on the
-	// Stacks panel, absolute and cleaned.
+	// Stacks panel, absolute and cleaned, each after `remote:` for the
+	// remote it's pinned to.
 	Stacks []string `yaml:"stacks,omitempty"`
 }
 
@@ -93,7 +95,7 @@ func writeFileAtomically(path string, content []byte) error {
 	return os.Rename(file.Name(), path)
 }
 
-// AddStack saves a stack's directory, refusing one already saved.
+// AddStack saves a stack, refusing one already saved.
 func (c *AppConfig) AddStack(dir string) error {
 	return c.updateAppState(func(state *AppState) error {
 		if slices.Contains(state.Stacks, dir) {
@@ -106,11 +108,64 @@ func (c *AppConfig) AddStack(dir string) error {
 	})
 }
 
-// RemoveStack forgets a saved stack's directory; one not saved is no error.
+// ReplaceStack saves stack in old's place, refusing one already saved; with
+// old gone meanwhile, at the end.
+func (c *AppConfig) ReplaceStack(old, stack string) error {
+	return c.updateAppState(func(state *AppState) error {
+		if slices.Contains(state.Stacks, stack) {
+			return fmt.Errorf("%s: %w", stack, ErrStackListed)
+		}
+
+		if i := slices.Index(state.Stacks, old); i >= 0 {
+			state.Stacks[i] = stack
+		} else {
+			state.Stacks = append(state.Stacks, stack)
+		}
+
+		return nil
+	})
+}
+
+// RemoveStack forgets a saved stack; one not saved is no error.
 func (c *AppConfig) RemoveStack(dir string) error {
 	return c.updateAppState(func(state *AppState) error {
 		state.Stacks = slices.DeleteFunc(state.Stacks, func(saved string) bool { return saved == dir })
 
 		return nil
 	})
+}
+
+// PinStacks saves every stack saved with no remote - from before stacks
+// had one - with remote: the one each has been shown against so far. A
+// stack already saved with remote too just loses its plain entry. Nothing
+// is written when there's nothing to pin.
+func (c *AppConfig) PinStacks(remote string) error {
+	state, err := c.LoadAppState()
+	if err != nil || remote == "" || !slices.ContainsFunc(state.Stacks, isPlainStack) {
+		return err
+	}
+
+	return c.updateAppState(func(state *AppState) error {
+		pinned := make([]string, 0, len(state.Stacks))
+
+		for _, stack := range state.Stacks {
+			if isPlainStack(stack) {
+				stack = remote + ":" + stack
+			}
+
+			if !slices.Contains(pinned, stack) {
+				pinned = append(pinned, stack)
+			}
+		}
+
+		state.Stacks = pinned
+
+		return nil
+	})
+}
+
+// isPlainStack is a saved stack with no remote: its directory is
+// absolute, so nothing comes before its leading separator.
+func isPlainStack(stack string) bool {
+	return strings.HasPrefix(stack, string(filepath.Separator))
 }

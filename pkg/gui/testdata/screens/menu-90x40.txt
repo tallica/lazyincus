@@ -1,8 +1,7 @@
 ╭─[1]─Instances──────────────╮╭─Info - Logs - Config - Env - Top─────────────────────────╮
 │a-name-long-enough-to-be-cu…││Name:         a-name-long-enough-to-be-cut-off            │
-│web                        …││Status:       running                                     │
-│db                    ╭─Menu──────────────────────────────────────╮                     │
-│                      │S         start                            │                     │
+│web                   ╭─Menu──────────────────────────────────────╮                     │
+│db                    │S         start                            │                     │
 │                      │s         stop                             │                     │
 │                      │r         restart                          │                     │
 │                      │p         pause/resume                     │                     │
@@ -10,9 +9,9 @@
 │                      │e         show/hide stopped instances      │                     │
 │                      │n         new snapshot                     │                     │
 │                      │m         view logs                        │                     │
-╰──────────────────────│y         copy name, address…              │                     │
-╭─[2]─Snapshots (a-name│a         attach to console                │                     │
-│                      │c         edit config in $EDITOR           │                     │
+│                      │y         copy name, address…              │                     │
+╰──────────────────────│a         attach to console                │                     │
+╭─[2]─Snapshots (a-name│c         edit config in $EDITOR           │                     │
 │                      │E         exec shell                       │                     │
 │                      │enter     focus main panel                 │                     │
 │                      │[         previous tab                     │                     │
@@ -22,6 +21,7 @@
 │                      │o         open lazyincus config            │                     │
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
+│                      │R         switch remote                    │                     │
 │                      │+         next screen mode (normal/half/fu…│                     │
 ╰──────────────────────│_         prev screen mode                 │                     │
 ╭─[3]─Img - Vol - Net -│=         expand/collapse the focused side…│                     │

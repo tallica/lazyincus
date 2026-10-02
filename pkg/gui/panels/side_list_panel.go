@@ -39,6 +39,10 @@ type SideListPanel[T comparable] struct {
 	// and it has focus. Leave empty if you don't want to render anything
 	NoItemsMessage string
 
+	// EmptyNote is a line the list itself shows while it has no rows, for
+	// an empty that's worth noticing without focusing the panel.
+	EmptyNote func() string
+
 	// a representation of the gui
 	Gui IGui
 
@@ -358,6 +362,10 @@ func (self *SideListPanel[T]) writeRows() error {
 	table, err := utils.RenderTableToWidth(self.rows, self.clipWidth, flex)
 	if err != nil {
 		return err
+	}
+
+	if len(self.rows) == 0 && self.EmptyNote != nil {
+		table = self.EmptyNote()
 	}
 
 	rows := strings.Split(table, "\n")

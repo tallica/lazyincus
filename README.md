@@ -115,7 +115,9 @@ lazyincus --remote myserver
 
 `INCUS_REMOTE=myserver lazyincus` does the same thing — the flag just sets
 that variable, so the `incus` and `incus-compose` subprocesses follow the
-panels onto the same daemon. The footer shows the remote you are on. [docs/Remotes.md](docs/Remotes.md)
+panels onto the same daemon. The footer shows the remote you are on, and
+`R` switches to another while running. A compose stack can live on a
+remote of its own - see [Compose stacks](#compose-stacks). [docs/Remotes.md](docs/Remotes.md)
 covers adding a remote and its token, reaching a daemon over SSH, and the
 gotchas behind running incusd in a local VM — macOS Local Network Privacy and
 guest clock skew both fail in ways that point at the wrong component.
@@ -127,7 +129,8 @@ Three side panels: **Instances** (`1`), listing both containers and VMs,
 or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**,
 **Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
 as does pressing `3` again or clicking a tab's name. All list every Incus project by
-default; `P` scopes them to a single project instead, and the footer shows
+default; `P` scopes them to a single project instead, `R` moves them to
+another remote ([docs/Remotes.md](docs/Remotes.md)), and the footer shows
 the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
 item came from.
@@ -153,17 +156,18 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L` | Scroll the main panel (and `h`/`l`, `←`/`→` sideways while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
+| `space` | Stacks panel: switch to the stack's remote |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, start the service, or the selected replica |
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/resume (toggle) |
 | `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica |
-| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile |
+| `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
-| `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's |
+| `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
 | `M` | Stacks and Services panels: follow the stack's or service's logs, every instance's interleaved (`incus-compose logs --follow`) |
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
@@ -176,6 +180,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
+| `R` | Switch Incus remote, for this session |
 | `o` | Open the lazyincus config file |
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
 | `+` / `_` | Next / previous screen mode |
@@ -217,12 +222,29 @@ lazyincus --project-directory ~/stacks/zigbee2mqtt
 environment does the same. Any other stack you add with `a` on the Stacks
 panel: type its directory — `~` and relative paths work — and it's listed
 from then on, in every session, saved in `state.yml` beside the config
-file ([docs/Config.md](docs/Config.md#state)). `D` takes a stack you added
-off the list again, after asking; nothing in it is stopped or deleted.
+file ([docs/Config.md](docs/Config.md#state)). `e` changes a stack's
+remote or directory in place, and `D` takes a stack you added off the list
+again, after asking; nothing in it is stopped or deleted. `c` opens its
+compose file in your editor.
+
+A stack you add belongs to a remote: the one lazyincus is showing, or
+another you put in front of the directory, the way `incus` names things —
+`pve01:~/deployments/pve01/caddy`. Its row, services, tabs and every verb
+go to that remote whichever one a later session is on, so one list can
+hold the stacks of several servers. When one does, the Stacks panel grows
+a remote column with the active remote marked `*`, and `space` on a stack
+moves the rest of the screen - instances, snapshots, resources, the
+footer - to that stack's remote, the way `R` does. While a stack isn't on
+the active remote, its Services title and every confirmation for it name
+its remote. The compose files stay on this machine, so the
+"not on the same host" gotcha at the end of this section applies.
 
 A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed, and
-`error` when its compose file can't be read — the Info tab says why. Its
+`error` when its compose file can't be read, `connecting` while its remote
+is first reached, and `unreachable` when that remote doesn't answer or is
+no longer in the incus CLI's config — the Info tab says why, and for a
+renamed remote `e` fixes the stack. Its
 keys are the Services panel's compose verbs below, run against the whole
 stack. The Info tab says where the stack can be reached, what it's using,
 and where the daemon has drifted from the compose file; the Logs tab

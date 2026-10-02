@@ -84,10 +84,10 @@ func (gui *Gui) stackCopy(stack *commands.ComposeStack) error {
 		{gui.Tr.CopyDirectory, stack.Dir},
 	}
 
-	if state := gui.composeInstances.Load(); state != nil && state.project == stack.Name {
+	if state := gui.composeInstances.Load(); state.isOf(stack) {
 		for _, service := range sortedServices(state.services) {
 			for _, instance := range service.SortedInstances() {
-				for _, port := range instance.Latest().PublishedPorts(gui.IncusCommand.PublishHost) {
+				for _, port := range instance.Latest().PublishedPorts(gui.publishHostFor(stack.Remote)) {
 					label := endpointName(service, instance)
 					if port.Target != "" {
 						label += " → " + port.Target

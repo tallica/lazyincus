@@ -8,8 +8,9 @@ import (
 
 // openTextPrompt asks for one line of text in the confirmation popup, made
 // editable the way the snapshot prompt's name field is. enter takes the
-// prompt down and hands submit what was typed; esc drops it.
-func (gui *Gui) openTextPrompt(title, hint string, submit func(string) error) error {
+// prompt down and hands submit what was typed, initial to start from; esc
+// drops it.
+func (gui *Gui) openTextPrompt(title, hint, initial string, submit func(string) error) error {
 	gui.onNewPopupPanel()
 
 	if err := gui.prepareConfirmationPanel(title, ""); err != nil {
@@ -19,6 +20,8 @@ func (gui *Gui) openTextPrompt(title, hint string, submit func(string) error) er
 	view := gui.Views.Confirmation
 	view.Editable = true
 	view.ClearTextArea()
+	view.TextArea.TypeString(initial)
+	view.RenderTextArea()
 	// A subtitle rather than a footer: gocui skips the footer of a view with
 	// no lines, which is how this one starts.
 	view.Subtitle = hint

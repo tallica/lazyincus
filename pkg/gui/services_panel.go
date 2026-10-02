@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -78,6 +79,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 			View: gui.Views.Services,
 		},
 		NoItemsMessage: gui.Tr.NoStackSelected,
+		EmptyNote:      func() string { return gui.State.ServicesNote },
 		Gui:            gui.intoInterface(),
 		// The snapshots panel shows the selected row's instances while this
 		// panel has focus, the way it follows the instances panel. A
@@ -89,7 +91,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 				label = row.Instance.Name
 			}
 
-			return gui.refreshSnapshotsFor(label, row.Instances()...)
+			return gui.refreshSnapshotsFor(label, row.Service.Remote, row.Instances()...)
 		},
 		Hide: gui.composeUnavailable,
 		// Compose file order is arbitrary (a JSON object), so name is the
@@ -345,14 +347,39 @@ func (gui *Gui) fetchServices() (func() error, error) {
 		}, nil
 	}
 
-	services, orphans, err := gui.IncusCommand.GetComposeServices(stack)
+	command, err := gui.commandFor(stack.Remote)
+	if err == nil && !gui.onSessionRemote(stack.Remote) {
+		err = gui.remotes.remoteStatusErr(stack.Remote)
+	}
+
+	var (
+		services []*commands.ComposeService
+		orphans  []*commands.Instance
+	)
+
+	if err == nil {
+		services, orphans, err = command.GetComposeServices(stack)
+	}
+
 	if err != nil {
-		return nil, err
+		if gui.onSessionRemote(stack.Remote) {
+			return nil, err
+		}
+
+		note := fmt.Sprintf(gui.Tr.CannotReachRemote, stack.Remote)
+		if errors.Is(err, errConnecting) {
+			err = fmt.Errorf(gui.Tr.ConnectingTo, stack.Remote)
+			note = err.Error()
+		}
+
+		// Another remote's silence is its stack's row's to report, not a
+		// popup on every poll.
+		return gui.showServicesUnreachable(ticket, err, note), nil
 	}
 
 	// The project's own config backs the Info tabs' healthcheck line;
 	// fetched here so rendering stays free of API calls.
-	project, projectErr := gui.IncusCommand.GetComposeProject(stack.Name)
+	project, projectErr := command.GetComposeProject(stack.Name)
 	if projectErr != nil {
 		gui.Log.Warn(projectErr)
 	}
@@ -368,8 +395,10 @@ func (gui *Gui) fetchServices() (func() error, error) {
 			gui.composeProject.Store(project)
 		}
 
-		gui.composeInstances.Store(&stackInstances{project: stack.Name, services: services, orphans: orphans})
+		gui.composeInstances.Store(&stackInstances{remote: stack.Remote, project: stack.Name, services: services, orphans: orphans})
 
+		gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
+		gui.State.ServicesNote = ""
 		gui.Panels.Services.SetItems(commands.ServiceRows(services))
 
 		if err := gui.Panels.Services.RerenderList(); err != nil {
@@ -378,4 +407,22 @@ func (gui *Gui) fetchServices() (func() error, error) {
 
 		return gui.renderSnapshots()
 	}, nil
+}
+
+// showServicesUnreachable empties the services panel for a stack whose
+// remote didn't answer, a note saying so in the list and why for when the
+// panel has focus.
+func (gui *Gui) showServicesUnreachable(ticket uint64, err error, note string) func() error {
+	return func() error {
+		if !gui.refreshes.services.admit(ticket) {
+			return nil
+		}
+
+		gui.composeInstances.Store(nil)
+		gui.State.ServicesNote = note
+		gui.Panels.Services.NoItemsMessage = err.Error()
+		gui.Panels.Services.SetItems(nil)
+
+		return gui.Panels.Services.RerenderList()
+	}
 }

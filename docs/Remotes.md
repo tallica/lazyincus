@@ -25,9 +25,21 @@ The built-in `local` remote is the daemon's own unix socket, so it only
 works on a Linux host running incusd. Anywhere else, name the remote for
 wherever the daemon actually lives.
 
+Once running, `R` switches to another of the CLI's remotes - the
+`incus`-protocol ones `incus remote list` shows, so not `images:` or an
+OCI registry. Every panel moves over, listing all of its projects, and so
+does `INCUS_REMOTE`, so the subprocesses follow. A remote that doesn't
+answer within 10s, or `local` off Linux, as above, leaves you where you
+were, saying why.
+
 `incus remote switch myserver` works too, and persists — it changes the
-CLI's default for everything, lazyincus included. The flag and the variable
-are the per-session alternatives, and neither writes to the CLI's config.
+CLI's default for everything, lazyincus included. The flag, the variable
+and `R` are the per-session alternatives, and none writes to the CLI's
+config.
+
+Each compose stack belongs to a remote of its own, whichever one the
+session is on, and `space` on a stack switches to it - see README's
+[Compose stacks](../README.md#compose-stacks).
 
 ## Adding a remote over TLS
 

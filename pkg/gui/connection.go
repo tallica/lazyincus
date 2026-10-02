@@ -43,7 +43,7 @@ func (gui *Gui) syncConnection() {
 }
 
 func (gui *Gui) createConnectionLostPanel() error {
-	prompt := fmt.Sprintf(gui.Tr.ConnectionLost, gui.IncusCommand.RemoteName)
+	prompt := fmt.Sprintf(gui.Tr.ConnectionLost, gui.IncusCommand.RemoteName())
 
 	return gui.createConfirmationPanel(gui.Tr.ConnectionLostTitle, prompt, nil, nil)
 }

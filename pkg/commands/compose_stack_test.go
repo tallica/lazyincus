@@ -52,6 +52,50 @@ func TestShortenHome(t *testing.T) {
 	assert.Equal(t, "/srv/web", ShortenHome("/srv/web", ""))
 }
 
+func TestStackRef(t *testing.T) {
+	assert.Equal(t, "/srv/web", StackRef("", "/srv/web"))
+	assert.Equal(t, "pve01:/srv/web", StackRef("pve01", "/srv/web"))
+
+	for ref, want := range map[string][2]string{
+		"/srv/web":         {"", "/srv/web"},
+		"pve01:/srv/web":   {"pve01", "/srv/web"},
+		"/srv/a:b":         {"", "/srv/a:b"},
+		"pve01:/srv/a:b":   {"pve01", "/srv/a:b"},
+		"no-separator-dir": {"", "no-separator-dir"},
+	} {
+		remote, dir := ParseStackRef(ref)
+		assert.Equal(t, want, [2]string{remote, dir}, ref)
+	}
+}
+
+// A prefix is a remote only when it names one: anything else is part of
+// the path.
+func TestSplitStackInput(t *testing.T) {
+	known := func(name string) bool { return name == "pve01" }
+
+	for input, want := range map[string][2]string{
+		" pve01:~/caddy ":  {"pve01", "~/caddy"},
+		"pve01:":           {"pve01", ""},
+		"~/caddy":          {"", "~/caddy"},
+		"other:~/caddy":    {"", "other:~/caddy"},
+		"./pve01:x":        {"", "./pve01:x"},
+		"stacks/pve01:x":   {"", "stacks/pve01:x"},
+		"/srv/pve01:caddy": {"", "/srv/pve01:caddy"},
+	} {
+		remote, path := SplitStackInput(input, known)
+		assert.Equal(t, want, [2]string{remote, path}, input)
+	}
+}
+
+func TestComposeCmdNamesItsRemote(t *testing.T) {
+	command := NewDummyIncusCommand()
+	command.remoteName = "pve01"
+
+	cmd := command.ComposeCmd("/srv/web", "ps")
+	assert.Equal(t, "INCUS_REMOTE=pve01", cmd.Env[len(cmd.Env)-1])
+	assert.Contains(t, cmd.Env, "INCUS_COMPOSE_PROJECT_DIRECTORY=/srv/web")
+}
+
 func TestStackStatusRollsUpItsInstances(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -106,4 +150,28 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 		"web":   {"web": {"Running", "Stopped"}, "db": {"Running"}},
 		"other": {"api": {"Frozen"}},
 	}, statuses)
+}
+
+// The file incus-compose would read: compose-go's preferred name, here or
+// in the nearest directory above with one.
+func TestComposeFile(t *testing.T) {
+	root := t.TempDir()
+	stack := filepath.Join(root, "stack")
+	nested := filepath.Join(stack, "nested")
+	require.NoError(t, os.MkdirAll(nested, 0o755))
+
+	_, err := ComposeFile(stack)
+	assert.ErrorContains(t, err, "no compose file")
+
+	for _, name := range []string{"docker-compose.yml", "compose.yml"} {
+		require.NoError(t, os.WriteFile(filepath.Join(stack, name), nil, 0o600))
+	}
+
+	file, err := ComposeFile(stack)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(stack, "compose.yml"), file)
+
+	file, err = ComposeFile(nested)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(stack, "compose.yml"), file)
 }

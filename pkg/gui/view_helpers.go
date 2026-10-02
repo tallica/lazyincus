@@ -152,7 +152,7 @@ func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 // break. Setting the width first is what makes the count right.
 func (gui *Gui) resizePopupPanel(v *gocui.View) error {
 	width, height := gui.g.Size()
-	x0, x1 := popupColumns(width)
+	x0, x1 := popupColumns(width, popupFrameWidth(v))
 	_, vy0, _, vy1 := v.Dimensions()
 
 	if _, err := gui.g.SetView(v.Name(), x0, vy0, x1, vy1, 0); err != nil {

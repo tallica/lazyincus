@@ -14,9 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A stack's Logs tab shows every service's logs, one instance under each heading; `m` jumps to it.
 - `C` on Standalone Instances shows or hides the stacks' instances, for one list of everything.
 - `y` on a stack copies its project, its directory, or a published port's address.
+- `R` switches every panel to another Incus remote for the session.
+- `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, so one list holds stacks from several servers.
+- `space` on a stack switches to its remote; a remote column marks the active one `*`, and prompts name any other.
+- `e` on Stacks edits a stack's remote and directory; `c` opens its compose file in `$EDITOR`.
 - `M` on a stack or service follows its logs, every instance's interleaved (`incus-compose logs --follow`). It shows only new output: the Logs tabs have already read the rest.
 
 ### Changed
+- A stack is saved with the remote it was added on. Ones saved earlier are pinned to the remote lazyincus next starts on: start it on your usual remote once, or `e` a stack pinned wrongly.
 - The Services panel shows the selected stack's services. Stacks and Services are `1` and `2` whenever incus-compose is installed, so other panels move down two.
 - Standalone Instances leaves out every listed stack's compose instances, not just the working directory's.
 - Info tabs show `N/A` for usage the daemon doesn't report, instead of `(no usage reported)`.
@@ -25,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `C`, the project menu on the Services panel: select the stack on the Stacks panel and press the verb's own key; `M` follows logs.
 
 ### Fixed
+- A prompt's title and its hint no longer run together on a narrow terminal: the prompt widens to fit both.
 - A replicated service's Logs tab leaves one blank line between replicas, not two.
 - An instance whose service the compose file no longer declares shows in Standalone Instances, instead of in no list at all.
 - An instance that has never run no longer shows `Last used: 1970/01/01` on its Info tab.

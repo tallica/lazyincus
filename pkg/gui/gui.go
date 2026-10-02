@@ -77,6 +77,12 @@ type Gui struct {
 	loadStack func(dir string) *commands.ComposeStack
 	stacks    stackCache
 
+	// remotes are the commands for stacks on other remotes than the
+	// session's, and stacksElsewhere whether any is listed: the stacks
+	// poller's copy of State.StacksElsewhere.
+	remotes         remoteCommands
+	stacksElsewhere atomic.Bool
+
 	// home is what the Stacks panel shortens paths against.
 	home string
 
@@ -195,6 +201,14 @@ type guiState struct {
 	// the all-projects view of a server with a single project reads better
 	// without a column repeating that project on every row.
 	SpansProjects spansProjects
+
+	// ServicesNote is what the services list says while it's empty for want
+	// of the stack's remote answering. Main loop only.
+	ServicesNote string
+
+	// StacksElsewhere is whether a stack listed is on a remote other than
+	// the session's, which the stacks then need a remote column for.
+	StacksElsewhere bool
 }
 
 type snapshotsSpan struct {
@@ -307,6 +321,11 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		taskManager:   tasks.NewTaskManager(log, tr),
 		stopped:       make(chan struct{}),
 		eventsRescope: make(chan struct{}, 1),
+		remotes: remoteCommands{
+			connect: incusCommand.ConnectRemote,
+			known:   incusCommand.IsInstanceRemote,
+			names:   incusCommand.InstanceRemoteNames,
+		},
 	}
 
 	// The options are the process's: a later Gui - a test's - rewriting them
@@ -315,6 +334,8 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		deadlock.Opts.Disable = !gui.Config.Debug
 		deadlock.Opts.DeadlockTimeout = 10 * time.Second
 	})
+
+	gui.remotes.connected = gui.refreshForRemote
 
 	return gui, nil
 }
@@ -352,10 +373,16 @@ const watchedPollInterval = time.Minute
 
 // pollUnlessWatched is goEvery for a list the event stream keeps current.
 func (gui *Gui) pollUnlessWatched(interval time.Duration, function func() error) {
+	gui.pollWhileUnwatched(interval, function, func() bool { return false })
+}
+
+// pollWhileUnwatched is pollUnlessWatched for a list the stream keeps
+// current only while unwatched says nothing in it is beyond the stream.
+func (gui *Gui) pollWhileUnwatched(interval time.Duration, function func() error, unwatched func() bool) {
 	var last time.Time
 
 	gui.goEvery(interval, func() error {
-		if gui.eventsLive.Load() && time.Since(last) < watchedPollInterval {
+		if gui.eventsLive.Load() && !unwatched() && time.Since(last) < watchedPollInterval {
 			return nil
 		}
 
@@ -374,6 +401,10 @@ func (gui *Gui) Run() error {
 	}
 
 	gui.localStackDir, gui.localStackExplicit = localStackDir()
+
+	if err := gui.Config.PinStacks(gui.IncusCommand.RemoteName()); err != nil {
+		gui.Log.Warn(err)
+	}
 
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
 		OutputMode:       gocui.OutputTrue,
@@ -467,7 +498,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
-		gui.pollUnlessWatched(time.Second*10, gui.refreshStacksQuiet)
+		// The session's stream says nothing of another remote's stacks.
+		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
 	}()
 
 	err := g.MainLoop()

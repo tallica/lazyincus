@@ -16,6 +16,11 @@ import (
 type ComposeStack struct {
 	Dir string
 
+	// Remote is the CLI remote the stack is pinned to, or empty for one
+	// that follows the session's: the local stack, or one saved before
+	// stacks had remotes.
+	Remote string
+
 	// Name is the compose project name, which is also the Incus project
 	// incus-compose puts the stack in.
 	Name     string
@@ -33,6 +38,55 @@ type ComposeStack struct {
 	// Statuses are the daemon's statuses of the stack's compose instances,
 	// by service.
 	Statuses map[string][]string
+
+	// StatusErr is why the stack's remote gave no statuses, and
+	// StatusPending that it hasn't yet: it's still being connected to.
+	StatusErr     error
+	StatusPending bool
+}
+
+// Ref is how the stack is saved and shown: its directory, prefixed with
+// the remote it's pinned to, the way the incus CLI writes `remote:name`.
+func (s *ComposeStack) Ref() string {
+	return StackRef(s.Remote, s.Dir)
+}
+
+// StackRef is remote and dir as one string, dir alone for no remote.
+func StackRef(remote, dir string) string {
+	if remote == "" {
+		return dir
+	}
+
+	return remote + ":" + dir
+}
+
+// ParseStackRef splits a saved stack: its directory is absolute, so
+// anything before a path's leading separator is the remote.
+func ParseStackRef(ref string) (remote, dir string) {
+	if strings.HasPrefix(ref, string(filepath.Separator)) {
+		return "", ref
+	}
+
+	remote, dir, ok := strings.Cut(ref, ":")
+	if !ok {
+		return "", ref
+	}
+
+	return remote, dir
+}
+
+// SplitStackInput splits what was typed for a stack into a remote and a
+// path. A prefix counts as a remote only when isRemote says it names one,
+// so a directory with a colon in it still reads as a path.
+func SplitStackInput(input string, isRemote func(string) bool) (remote, path string) {
+	input = strings.TrimSpace(input)
+
+	prefix, rest, ok := strings.Cut(input, ":")
+	if !ok || strings.ContainsRune(prefix, filepath.Separator) || !isRemote(prefix) {
+		return "", input
+	}
+
+	return prefix, rest
 }
 
 // Title is the stack's name, or its directory's while it has none.
@@ -140,6 +194,28 @@ func ResolveStackDir(input, cwd, home string) (string, error) {
 	}
 
 	return filepath.Clean(path), nil
+}
+
+// composeFileNames are compose-go's default compose files, which
+// incus-compose looks for, in its order of preference.
+var composeFileNames = []string{"compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml"}
+
+// ComposeFile is the file incus-compose reads for the stack in dir: the
+// first of composeFileNames there, or in the nearest directory above that
+// has one, as compose-go looks.
+func ComposeFile(dir string) (string, error) {
+	for search := dir; ; search = filepath.Dir(search) {
+		for _, name := range composeFileNames {
+			file := filepath.Join(search, name)
+			if info, err := os.Stat(file); err == nil && !info.IsDir() {
+				return file, nil
+			}
+		}
+
+		if filepath.Dir(search) == search {
+			return "", fmt.Errorf("%s: no compose file", dir)
+		}
+	}
 }
 
 // CheckStackDir refuses a path that isn't an existing directory; whether it

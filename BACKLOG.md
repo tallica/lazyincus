@@ -143,29 +143,10 @@ own merits.
       rows at the view's width, clipping each through a colour-aware
       `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
-- [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
-      mirroring `P` for projects. `pkg/gui/remotes.go` alongside
-      `projects.go`: the menu lists `cliconfig.Config.Remotes`, marked with
-      `marker()`, and the reload afterwards is exactly
-      `reloadAfterProjectChange` (which wants a scope-neutral name), since
-      clearing every panel is also what drops the per-item clients pointing
-      at the previous daemon. `NewIncusCommand` has to keep `cliCfg` rather
-      than dropping it after connecting, and a `UseRemote` swaps `client` and
-      `RemoteName`, re-runs `GetServer()` for the footer, and resets to
-      all-projects — the new server's project list has nothing to do with the
-      old one's. Three parts that aren't just copying the project switcher:
-      the list needs filtering, since `GetInstanceServer` rejects anything
-      with `Public` set or `Protocol != "incus"` (`cliconfig/remote.go`), so
-      `images:` and OCI remotes would be entries that only ever error;
-      connecting can hang or fail where switching project can't, so it wants
-      `WithWaitingStatus` off the main goroutine and must keep the existing
-      client on failure rather than leaving the app with none; and it should
-      stay session-only, leaving `incus remote switch` as the persistent
-      path. The shell-outs are already handled: `--remote` set `INCUS_REMOTE`
-      for the process, so a switcher only has to keep that variable current
-      as it swaps the client. Verifying the failure paths needs a second
-      reachable daemon, so the unreachable-remote case is the part likeliest
-      to ship untested.
+- [x] **Remote switcher** — `R`, a menu of the CLI's instance remotes;
+      the session's command adopts the new connection in place
+      (`UseRemote`), so whatever holds it follows. Session-only, leaving
+      `incus remote switch` as the persistent path.
 - [x] **Profiles** — the Resources panel's fourth tab, with the other
       resources' `u`, `c` and `d`. (Projects have a switcher — see
       [incus-compose integration](#incus-compose-integration); remotes are

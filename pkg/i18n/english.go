@@ -128,6 +128,10 @@ type TranslationSet struct {
 	AllSnapshotsLabel            string
 	RestoringStatus              string
 	LoadingStatus                string
+	ConnectingStatus             string
+	ConnectingTo                 string
+	CannotReachRemote            string
+	UnknownRemote                string
 	VolumesTitle                 string
 	NoVolumes                    string
 	DeleteVolume                 string
@@ -157,6 +161,13 @@ type TranslationSet struct {
 	NoStackSelected               string
 	AddStack                      string
 	RemoveStack                   string
+	EditStack                     string
+	EditStackPrompt               string
+	EditStackHint                 string
+	SavingStatus                  string
+	CannotEditLocalStack          string
+	EditComposeFile               string
+	SwitchToStackRemote           string
 	AddStackPrompt                string
 	AddStackHint                  string
 	AddingStackStatus             string
@@ -164,6 +175,7 @@ type TranslationSet struct {
 	StackNotComposeProject        string
 	CannotRemoveLocalStack        string
 	ConfirmRemoveStack            string
+	ConfirmRemoveSavedLocalStack  string
 	StackNotRunning               string
 	EndpointsTitle                string
 	UsageTitle                    string
@@ -181,6 +193,7 @@ type TranslationSet struct {
 	StandaloneInstancesTitle      string
 	InfoTitle                     string
 	ComposeTargetService          string
+	OnRemote                      string
 	ComposeTargetProject          string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
@@ -240,6 +253,8 @@ type TranslationSet struct {
 	FocusPanel    string
 	SwitchProject string
 	ProjectsTitle string
+	SwitchRemote  string
+	RemotesTitle  string
 	AllProjects   string
 }
 
@@ -374,6 +389,10 @@ func englishSet() TranslationSet {
 		SnapshottingStatus:           "snapshotting",
 		RestoringStatus:              "restoring",
 		LoadingStatus:                "loading",
+		ConnectingStatus:             "connecting",
+		ConnectingTo:                 "connecting to %s",
+		CannotReachRemote:            "can't reach %s - the stack's Info says why",
+		UnknownRemote:                "no remote %q in the incus CLI's config - renamed or removed? 'e' points the stack at another",
 		VolumesTitle:                 "Volumes",
 		NoVolumes:                    "No volumes",
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",
@@ -398,25 +417,33 @@ func englishSet() TranslationSet {
 		CannotDeleteManagedVolume:    "Only custom volumes can be deleted. This one belongs to an instance or image, and goes away with it.",
 		CannotDeleteUnmanagedNetwork: "Only managed networks can be deleted. This one is a host interface Incus doesn't control.",
 
-		ComposeTitle:           "Compose",
-		StacksTitle:            "Stacks",
-		NoStacks:               "No stacks - press 'a' to add a compose project's directory.",
-		NoStackSelected:        "No stack selected - add one to the Stacks panel with 'a'.",
-		AddStack:               "add stack",
-		RemoveStack:            "remove stack from the list",
-		AddStackPrompt:         "Add stack: compose project directory",
-		AddStackHint:           "enter to add · esc to cancel",
-		AddingStackStatus:      "adding stack",
-		StackAlreadyListed:     "%s is already listed.",
-		StackNotComposeProject: "%s isn't a compose project incus-compose can read:\n\n%v",
-		CannotRemoveLocalStack: "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to remove.",
-		ConfirmRemoveStack:     "Remove stack %s (%s) from the list? Nothing in it is stopped or deleted.",
-		StackNotRunning:        "Nothing is running in this stack - press 'u' to bring it up.",
-		EndpointsTitle:         "Endpoints",
-		UsageTitle:             "Usage",
-		DriftTitle:             "Drift",
-		StackListedLocal:       "at startup (working directory or -P)",
-		StackListedSaved:       "saved in state.yml",
+		ComposeTitle:                 "Compose",
+		StacksTitle:                  "Stacks",
+		NoStacks:                     "No stacks - press 'a' to add a compose project's directory.",
+		NoStackSelected:              "No stack selected - add one to the Stacks panel with 'a'.",
+		AddStack:                     "add stack",
+		RemoveStack:                  "remove stack from the list",
+		EditStack:                    "edit stack's remote and directory",
+		EditStackPrompt:              "Edit stack: [remote:]directory",
+		EditStackHint:                "enter to save · esc to cancel",
+		SavingStatus:                 "saving",
+		CannotEditLocalStack:         "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to edit: start lazyincus elsewhere, or add the directory with 'a'.",
+		EditComposeFile:              "edit compose file in $EDITOR",
+		SwitchToStackRemote:          "switch to the stack's remote",
+		AddStackPrompt:               "Add stack: [remote:]directory",
+		AddStackHint:                 "enter to add · esc to cancel",
+		AddingStackStatus:            "adding stack",
+		StackAlreadyListed:           "%s is already listed.",
+		StackNotComposeProject:       "%s isn't a compose project incus-compose can read:\n\n%v",
+		CannotRemoveLocalStack:       "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to remove.",
+		ConfirmRemoveStack:           "Remove stack %s (%s) from the list? Nothing in it is stopped or deleted.",
+		ConfirmRemoveSavedLocalStack: "Forget the saved entry for stack %s (%s)? It stays listed while lazyincus starts in its directory or with -P. Nothing in it is stopped or deleted.",
+		StackNotRunning:              "Nothing is running in this stack - press 'u' to bring it up.",
+		EndpointsTitle:               "Endpoints",
+		UsageTitle:                   "Usage",
+		DriftTitle:                   "Drift",
+		StackListedLocal:             "at startup (working directory or -P)",
+		StackListedSaved:             "saved in state.yml",
 
 		ServicesTitle:                 "Services",
 		ServicesTitleProject:          "Services (%s)",
@@ -429,6 +456,7 @@ func englishSet() TranslationSet {
 		StandaloneInstancesTitle:      "Standalone Instances",
 		InfoTitle:                     "Info",
 		ComposeTargetService:          "service %s",
+		OnRemote:                      "%s on %s",
 		ComposeTargetProject:          "project %s",
 		ComposeServiceScoped:          "%s service",
 		ComposeUp:                     "bring up",
@@ -485,6 +513,8 @@ func englishSet() TranslationSet {
 		FocusPanel:    "focus %s panel",
 		SwitchProject: "switch project",
 		ProjectsTitle: "Projects",
+		SwitchRemote:  "switch remote",
+		RemotesTitle:  "Remotes",
 		AllProjects:   "all projects",
 	}
 }
