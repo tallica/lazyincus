@@ -49,7 +49,7 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 				// fmt prints a map's keys sorted, so the same statuses give
 				// the same key.
 				return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses) +
-					"-" + fmt.Sprint(stack.StatusErr)
+					"-" + fmt.Sprint(stack.StatusErr) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.ComposeStack]{
@@ -62,12 +62,14 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
-		// The local stack first, being the one lazyincus was started for,
-		// then each saved remote's together, by nothing the session decides:
-		// switching remote would reshuffle the list under the cursor.
+		// The local stack first when it's saved nowhere, being the one
+		// lazyincus was started for, then each saved remote's together - by
+		// what's saved alone, since switching remote changes which saved
+		// entry the local stack is, and would reshuffle the list under the
+		// cursor.
 		Sort: func(a, b *commands.ComposeStack) bool {
-			if a.Local != b.Local {
-				return a.Local
+			if a.Saved != b.Saved {
+				return !a.Saved
 			}
 
 			if a.Remote != b.Remote {

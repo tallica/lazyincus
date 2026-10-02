@@ -467,9 +467,22 @@ func TestTheLocalStackSavedIsOneRow(t *testing.T) {
 	})
 	s.settle(t, "Services (default)")
 
-	stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetAllItems)
+	stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
 	require.Len(t, stacks, 2)
 	assert.True(t, stacks[0].Local && stacks[0].Saved)
+	assert.Equal(t, "fake:"+local.Dir, stacks[0].Ref())
+	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
+
+	// On pve01 it's the other entry that's the local stack, and the rows
+	// stay where they were.
+	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
+	s.settle(t, "(pve01/all projects)")
+	require.Eventually(t, func() bool {
+		stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
+		return len(stacks) == 2 && stacks[1].Local
+	}, 5*time.Second, 20*time.Millisecond)
+
+	stacks = onLoop(t, s, s.gui.Panels.Stacks.List.GetItems)
 	assert.Equal(t, "fake:"+local.Dir, stacks[0].Ref())
 	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
 }

@@ -174,9 +174,11 @@ remote asked at once. The path column writes home as `~`. A remote column
 leads whenever a stack is on a remote other than the session's
 (`State.StacksElsewhere`), the session's marked `*` in green as the `R`
 menu marks it - the project columns' rule, a column only where the rows would otherwise read alike.
-The local stack sorts first, then each saved remote's together, each by
-name - nothing the session decides, since switching remote would
-reshuffle the list under the cursor. `space` (`stackSwitchRemote`) is
+The local stack sorts first when it's saved nowhere, then each saved
+remote's stacks together, each by name - by what's saved alone, the local
+stack that is also a saved entry included, since which entry that is
+depends on the session's remote, and switching would reshuffle the list
+under the cursor. `space` (`stackSwitchRemote`) is
 `R`'s switch to the stack's remote, on a connection its status has
 usually opened already; a key rather than the selection, since a switch
 reloads every panel. Wherever the rest of the app would vouch
