@@ -228,9 +228,10 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 
 	stacks := gui.listStacks(state.Stacks)
 
-	gui.pinnedStacks.Store(slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
+	elsewhere := slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
 		return !gui.onSessionRemote(stack.Remote)
-	}))
+	})
+	gui.stacksElsewhere.Store(elsewhere)
 
 	if err := gui.readStackStatuses(stacks); err != nil {
 		return nil, err
@@ -241,9 +242,7 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 			return nil
 		}
 
-		gui.State.StacksElsewhere = slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
-			return !gui.onSessionRemote(stack.Remote)
-		})
+		gui.State.StacksElsewhere = elsewhere
 
 		gui.Panels.Stacks.SetItems(stacks)
 

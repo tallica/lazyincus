@@ -77,10 +77,11 @@ type Gui struct {
 	loadStack func(dir string) *commands.ComposeStack
 	stacks    stackCache
 
-	// remotes are the commands for stacks pinned to other remotes, and
-	// pinnedStacks whether any is listed.
-	remotes      remoteCommands
-	pinnedStacks atomic.Bool
+	// remotes are the commands for stacks on other remotes than the
+	// session's, and stacksElsewhere whether any is listed: the stacks
+	// poller's copy of State.StacksElsewhere.
+	remotes         remoteCommands
+	stacksElsewhere atomic.Bool
 
 	// home is what the Stacks panel shortens paths against.
 	home string
@@ -498,7 +499,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
 		// The session's stream says nothing of another remote's stacks.
-		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.pinnedStacks.Load)
+		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
 	}()
 
 	err := g.MainLoop()
