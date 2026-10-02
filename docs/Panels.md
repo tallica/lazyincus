@@ -217,7 +217,8 @@ tried again for 30s; and that remote's statuses are the last ones read,
 read again off to one side (`cachedStatuses`), the Stacks and Services
 refreshing when a connection lands or a read changes something. The
 session's own are read in the refresh, as every other list is. Services
-skip a remote whose statuses last failed, and a remote gone from the CLI's
+skip a remote whose statuses last failed, the list saying so in place of
+rows (`EmptyNote`), and a remote gone from the CLI's
 config - renamed since the stack was saved - isn't tried at all
 (`unknownRemote`), its message pointing at `e`. The compose verbs and the
 instances' `incus console`/`exec`/`config edit` need no connection, only

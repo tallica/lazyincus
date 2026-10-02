@@ -201,6 +201,10 @@ type guiState struct {
 	// without a column repeating that project on every row.
 	SpansProjects spansProjects
 
+	// ServicesNote is what the services list says while it's empty for want
+	// of the stack's remote answering. Main loop only.
+	ServicesNote string
+
 	// StacksElsewhere is whether a stack listed is on a remote other than
 	// the session's, which the stacks then need a remote column for.
 	StacksElsewhere bool

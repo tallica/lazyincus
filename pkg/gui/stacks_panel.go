@@ -377,6 +377,7 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 	gui.composeInstances.Store(nil)
 
 	gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
+	gui.State.ServicesNote = ""
 	if stack == nil {
 		gui.Panels.Services.NoItemsMessage = gui.Tr.NoStackSelected
 	}

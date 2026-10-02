@@ -3,6 +3,7 @@ package gui
 import (
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -238,6 +239,11 @@ func TestASlowRemoteHoldsUpNothing(t *testing.T) {
 		return statusOf("default") == "Running" && statusOf("shop") == "connecting"
 	}, 5*time.Second, 20*time.Millisecond)
 	assert.NotEmpty(t, instanceNames(t, s))
+
+	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
+	require.Eventually(t, func() bool {
+		return strings.Contains(onLoop(t, s, s.gui.Views.Services.Buffer), "connecting to pve01")
+	}, 5*time.Second, 20*time.Millisecond)
 
 	close(answer)
 	require.Eventually(t, func() bool { return statusOf("shop") == "Running" }, 5*time.Second, 20*time.Millisecond)

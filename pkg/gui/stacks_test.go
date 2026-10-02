@@ -367,9 +367,13 @@ func TestAStackOnAnUnreachableRemote(t *testing.T) {
 
 	s.settle(t, "unreachable")
 
-	// Selected, it says why on its Info tab rather than in a popup.
+	// Selected, it says why on its Info tab rather than in a popup, and
+	// the services list says where to look.
 	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
 	s.settle(t, "no answer")
+	require.Eventually(t, func() bool {
+		return strings.Contains(onLoop(t, s, s.gui.Views.Services.Buffer), "can't reach down")
+	}, 5*time.Second, 20*time.Millisecond)
 	assert.False(t, onLoop(t, s, func() bool { return s.gui.Views.Confirmation.Visible }))
 	assert.Equal(t, []string{"none", "unreachable"}, onLoop(t, s, func() []string {
 		return lo.Map(s.gui.Panels.Stacks.List.GetAllItems(), func(stack *commands.ComposeStack, _ int) string {

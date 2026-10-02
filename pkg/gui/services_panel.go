@@ -79,6 +79,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 			View: gui.Views.Services,
 		},
 		NoItemsMessage: gui.Tr.NoStackSelected,
+		EmptyNote:      func() string { return gui.State.ServicesNote },
 		Gui:            gui.intoInterface(),
 		// The snapshots panel shows the selected row's instances while this
 		// panel has focus, the way it follows the instances panel. A
@@ -365,13 +366,15 @@ func (gui *Gui) fetchServices() (func() error, error) {
 			return nil, err
 		}
 
+		note := fmt.Sprintf(gui.Tr.CannotReachRemote, stack.Remote)
 		if errors.Is(err, errConnecting) {
 			err = fmt.Errorf(gui.Tr.ConnectingTo, stack.Remote)
+			note = err.Error()
 		}
 
 		// Another remote's silence is its stack's row's to report, not a
 		// popup on every poll.
-		return gui.showServicesUnreachable(ticket, err), nil
+		return gui.showServicesUnreachable(ticket, err, note), nil
 	}
 
 	// The project's own config backs the Info tabs' healthcheck line;
@@ -395,6 +398,7 @@ func (gui *Gui) fetchServices() (func() error, error) {
 		gui.composeInstances.Store(&stackInstances{remote: stack.Remote, project: stack.Name, services: services, orphans: orphans})
 
 		gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
+		gui.State.ServicesNote = ""
 		gui.Panels.Services.SetItems(commands.ServiceRows(services))
 
 		if err := gui.Panels.Services.RerenderList(); err != nil {
@@ -406,14 +410,16 @@ func (gui *Gui) fetchServices() (func() error, error) {
 }
 
 // showServicesUnreachable empties the services panel for a stack whose
-// remote didn't answer, with why for when the panel has focus.
-func (gui *Gui) showServicesUnreachable(ticket uint64, err error) func() error {
+// remote didn't answer, a note saying so in the list and why for when the
+// panel has focus.
+func (gui *Gui) showServicesUnreachable(ticket uint64, err error, note string) func() error {
 	return func() error {
 		if !gui.refreshes.services.admit(ticket) {
 			return nil
 		}
 
 		gui.composeInstances.Store(nil)
+		gui.State.ServicesNote = note
 		gui.Panels.Services.NoItemsMessage = err.Error()
 		gui.Panels.Services.SetItems(nil)
 
