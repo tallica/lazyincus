@@ -182,7 +182,7 @@ under the cursor. `space` (`stackSwitchRemote`) is
 `R`'s switch to the stack's remote, on a connection its status has
 usually opened already; a key rather than the selection, since a switch
 reloads every panel. Wherever the rest of the app would vouch
-for the wrong daemon - the Services and Snapshots titles, the compose and
+for the wrong daemon - the Services and Snapshots titles, the new-snapshot prompt, the compose and
 instance confirmations - `onRemote` adds "on pve01".
 
 `followStack` is how the services panel follows the selection, the way

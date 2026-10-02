@@ -329,6 +329,15 @@ func TestAStackPinnedToARemote(t *testing.T) {
 	assert.Equal(t, "api-1", instance.Name)
 	assert.Equal(t, "pve01", instance.Remote)
 
+	// The snapshots panel, pointed at it the way a new snapshot does,
+	// says where too.
+	s.do(t, func() error { return s.gui.refreshSnapshotsFor(instance.Name, instance.Remote, instance) })
+	s.settle(t, "Snapshots (api-1 on pve01)")
+
+	s.do(t, func() error { return s.gui.snapshotCreatePrompt(instance) })
+	s.settle(t, "New snapshot of api-1 on pve01")
+	s.do(t, s.gui.closeSnapshotPrompt)
+
 	// What would act on it says where.
 	assert.Equal(t, "api-1 on pve01", onLoop(t, s, func() string { return s.gui.qualifiedInstance(instance) }))
 	s.do(t, func() error {

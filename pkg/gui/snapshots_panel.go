@@ -139,8 +139,8 @@ func (gui *Gui) renderSnapshots() error {
 // the snapshots panel reaching for the focused view - reading that takes
 // ViewStackMutex, which switchFocus is holding when it runs a panel's
 // OnSelect.
-func (gui *Gui) refreshSnapshotsFor(label string, instances ...*commands.Instance) error {
-	gui.State.SnapshotsLabel = label
+func (gui *Gui) refreshSnapshotsFor(label, remote string, instances ...*commands.Instance) error {
+	gui.State.SnapshotsLabel = gui.onRemote(label, remote)
 	gui.State.SnapshotsInstances = instances
 	gui.State.SnapshotsVolume = ""
 
@@ -303,7 +303,7 @@ func (p *snapshotPrompt) options() commands.SnapshotOptions {
 
 func (gui *Gui) snapshotCreatePrompt(instance *commands.Instance) error {
 	return gui.openSnapshotPrompt(&snapshotPrompt{
-		label:         instance.Name,
+		label:         gui.onRemote(instance.Name, instance.Remote),
 		statefulField: true,
 		create: func(name string, opts commands.SnapshotOptions) error {
 			return gui.createSnapshot(instance, name, opts)
@@ -531,7 +531,7 @@ func (gui *Gui) createSnapshot(instance *commands.Instance, name string, opts co
 			// Points the panel at this instance alone: taken from a
 			// replicated service, the one just picked is one of several it
 			// was showing. A no-op while the panel lists every instance's.
-			if err := gui.refreshSnapshotsFor(instance.Name, instance); err != nil {
+			if err := gui.refreshSnapshotsFor(instance.Name, instance.Remote, instance); err != nil {
 				return err
 			}
 
