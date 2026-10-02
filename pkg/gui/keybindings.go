@@ -684,9 +684,9 @@ func wrappedHandler(f func() error) func(*gocui.Gui, *gocui.View) error {
 	}
 }
 
-// stacksKeybindings is the Stacks panel's keys: adding and removing a stack,
-// then the Services panel's compose verbs, in its order, over the whole
-// stack.
+// stacksKeybindings is the Stacks panel's keys: adding, removing and
+// editing a stack, its compose file and switching to its remote, then the
+// Services panel's compose verbs, in its order, over the whole stack.
 func (gui *Gui) stacksKeybindings() []*Binding {
 	binding := func(key rune, handler func(*gocui.Gui, *gocui.View) error, description string) *Binding {
 		return &Binding{ViewName: "stacks", Key: key, Modifier: gocui.ModNone, Handler: handler, Description: description}

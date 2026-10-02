@@ -17,8 +17,8 @@ type ComposeStack struct {
 	Dir string
 
 	// Remote is the CLI remote the stack is pinned to, or empty for one
-	// that follows the session's: the local stack, or one saved before
-	// stacks had remotes.
+	// that follows the session's: the local stack, or a saved entry with
+	// none, which the next start pins.
 	Remote string
 
 	// Name is the compose project name, which is also the Incus project
@@ -151,7 +151,8 @@ func RollUpStatus(statuses []string) string {
 }
 
 // GetComposeStatuses is the status of every compose-labelled instance on the
-// server, by project and then service: one listing for every stack.
+// server, by project and then service: one listing for every stack on c's
+// remote.
 func (c *IncusCommand) GetComposeStatuses() (map[string]map[string][]string, error) {
 	instances, err := c.Client().GetInstancesAllProjects(api.InstanceTypeAny)
 	if err != nil {

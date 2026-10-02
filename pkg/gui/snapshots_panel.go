@@ -178,7 +178,7 @@ func (gui *Gui) snapshotsVolume() (*commands.Volume, bool) {
 }
 
 // snapshotsSource is what the panel lists and what its title calls it:
-// every instance's snapshots, the local stack's included, or the selection's.
+// every instance's snapshots, the stacks' included, or the selection's.
 func (gui *Gui) snapshotsSource() (string, []*commands.Instance) {
 	if gui.State.SnapshotsShowAll {
 		return gui.Tr.AllSnapshotsLabel, gui.Panels.Instances.List.GetAllItems()

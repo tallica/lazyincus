@@ -120,10 +120,11 @@ func isStopped(instance *commands.Instance) bool {
 	return strings.EqualFold(instance.Status(), "Stopped")
 }
 
-// isStackInstance reports whether a listed stack has this instance, and so
-// the services panel, which is what makes this panel the standalone one.
-// A compose instance no Services row claims - of a project no stack lists,
-// or of a service its compose file no longer declares - stays here.
+// isStackInstance reports whether a stack listed for this remote has this
+// instance, and so the services panel, which is what makes this panel the
+// standalone one. A compose instance no Services row claims - of a project no
+// stack lists, or of a service its compose file no longer declares - stays
+// here.
 func (gui *Gui) isStackInstance(instance *commands.Instance) bool {
 	return gui.State.StackServices[instance.Project][instance.ComposeService()]
 }
