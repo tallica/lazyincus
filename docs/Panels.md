@@ -11,7 +11,9 @@ A prompt that stops, deletes or restores something names the item's
 project whenever its list holds more than one project's (`qualified`):
 the same image alias, profile name or instance name can exist in several,
 and "delete image nginx:alpine?" doesn't say which is about to go. With
-one project the name stands alone. A delete the daemon would refuse (see
+one project the name stands alone. One for a stack on another remote than
+the session's names that remote too - see
+[Stacks on other remotes](#stacks-on-other-remotes). A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
 listing's `used_by`, which events and the polls keep current, and the
 daemon has the last word either way.
@@ -530,12 +532,11 @@ lines, which is why the empty name field carries only a subtitle. A
 popup with a subtitle widens, still centred, to fit it beside the title
 (`popupFrameWidth`): gocui right-aligns the subtitle on the border the
 title starts, and the middle half of a narrow screen ran the two together.
-Stateful is a toggle there rather than another choice beside the expiries:
-the two are independent, and a flat list of both reads as though picking an
-expiry rules out stateful. Toggling reopens the menu, there being no widget
-with selection state - gocui has views and keybindings, and the menu itself
-is lazydocker's `SideListPanel[*types.MenuItem]`. Restore is an instance
-update carrying `Restore: <name>`, not a snapshot operation.
+Stateful is a field of its own, flipped by `← →` like the rest, rather
+than another choice beside the expiries: the two are independent, and a
+flat list of both reads as though picking an expiry rules out stateful.
+Restore is an instance update carrying `Restore: <name>`, not a snapshot
+operation.
 
 A custom volume selected in the volumes panel is followed the same way,
 its title naming the volume, and `n` there or here snapshots it. A
