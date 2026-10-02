@@ -97,9 +97,6 @@ func (gui *Gui) reloadAfterScopeChange() error {
 
 	gui.composeInstances.Store(nil)
 	gui.composeProject.Store(nil)
-	// Whether the stack's remote is the session's may have changed.
-	gui.Views.Services.Title = gui.servicesPanelTitle()
-
 	// Or the next instance refresh redraws the old project's snapshots.
 	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
 	gui.setSnapshotsTitle("")

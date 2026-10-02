@@ -303,6 +303,17 @@ func (gui *Gui) switchToRemote(name string) error {
 func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand) error {
 	gui.IncusCommand.UseRemote(command)
 
+	// From the stacks already listed, rather than once every panel has been
+	// read again from the new remote; the stacks read then confirms it.
+	if !gui.composeUnavailable() {
+		gui.State.StacksHere = gui.stacksHere(gui.Panels.Stacks.List.GetAllItems())
+		if err := gui.landOffStacks(); err != nil {
+			return err
+		}
+	}
+
+	gui.State.Landing = true
+
 	// The shell-outs read it, as they did --remote's.
 	if err := os.Setenv("INCUS_REMOTE", name); err != nil {
 		return err

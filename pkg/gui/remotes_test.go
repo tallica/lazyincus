@@ -56,6 +56,7 @@ func TestSwitchingRemote(t *testing.T) {
 		labelled(s, map[string]string{"web": "web"})
 	})
 	s.settle(t, "Services (default)")
+	assert.Equal(t, "stacks", onLoop(t, s, s.gui.currentViewName))
 
 	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
 
@@ -65,7 +66,13 @@ func TestSwitchingRemote(t *testing.T) {
 	}, 5*time.Second, 20*time.Millisecond)
 	assert.Equal(t, "pve01", os.Getenv("INCUS_REMOTE"))
 
+	// No stack is on pve01, so the focus leaves Stacks for Instances.
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, s.gui.currentViewName) == "instances"
+	}, 5*time.Second, 20*time.Millisecond)
+
 	// fake is a remote like any other now, and still answers for its stack.
+	landed(t, s, "stacks")
 	s.settle(t, "Services (default on fake)")
 	require.Eventually(t, func() bool {
 		return slices.Equal(serviceNames(t, s), []string{"default/web"})
@@ -172,6 +179,7 @@ func TestSwitchingToAnUnreachableStack(t *testing.T) {
 		withStacks(t, nil, down)(s)
 		withRemotes(map[string]*incustest.Server{})(s)
 	})
+	landed(t, s, "stacks")
 	s.settle(t, "Services (shop on down)")
 
 	s.do(t, func() error {
@@ -270,6 +278,7 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 		}
 	})
 
+	landed(t, s, "services")
 	s.settle(t, `no remote "old-vm" in the incus CLI's config`)
 	s.settle(t, "unreachable")
 

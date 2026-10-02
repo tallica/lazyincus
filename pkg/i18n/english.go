@@ -157,6 +157,7 @@ type TranslationSet struct {
 
 	ComposeTitle                  string
 	StacksTitle                   string
+	StacksTitleCount              string
 	NoStacks                      string
 	NoStackSelected               string
 	AddStack                      string
@@ -420,6 +421,7 @@ func englishSet() TranslationSet {
 
 		ComposeTitle:                 "Compose",
 		StacksTitle:                  "Stacks",
+		StacksTitleCount:             "Stacks (%d)",
 		NoStacks:                     "No stacks - press 'a' to add a compose project's directory.",
 		NoStackSelected:              "No stack selected - add one to the Stacks panel with 'a'.",
 		AddStack:                     "add stack",

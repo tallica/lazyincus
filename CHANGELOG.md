@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- On a remote with no stacks, Stacks and Services collapse to their titles and the focus starts on Instances; focusing either swaps them with Instances.
 - Focusing Stacks empties the Snapshots panel instead of leaving the last instance's.
 
 ## [0.12.0] - 2026-10-02

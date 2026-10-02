@@ -109,10 +109,11 @@ list has focus, so a tab being read follows too.
 One row per compose stack, a stack being a directory with a compose file
 in it: the local one, and every one saved with `a`. Stacks and Services are
 there whenever `incus-compose` is on `PATH` — `Run` asks `exec.LookPath`
-once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus,
-and Services `[2]`. Without it neither panel exists and the layout is what
-it always was. `SideListPanel.Hide` is what removes them, and the layout
-already copes: `setViewFromDimensions` marks a view with no box invisible.
+once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus
+when a stack is on the session's remote, and Services `[2]`. Without it
+neither panel exists and the layout is what it always was.
+`SideListPanel.Hide` is what removes them, and the layout already copes:
+`setViewFromDimensions` marks a view with no box invisible.
 
 That gate means panel numbering can't index `sidePanelDefs()` — a hidden
 first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
@@ -121,6 +122,17 @@ run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask; and it's fixed for the session,
 the number keys being bound once.
+
+A remote with no stack listed on it - every stack pinned elsewhere, or none
+at all - keeps both panels but collapses them to their titles
+(`State.StacksHere`, set by each Stacks refresh), Stacks counting what it
+lists and Services leaving out the stack (`titleStacks`). Focusing either
+expands both and collapses Instances instead (`stacksCollapsed`), and
+focus crossing that swap lands on the panel's first main-panel tab
+(`stacksSwap`). Their numbers don't move: a hidden panel would renumber
+everything by remote. The Stacks refresh after startup or a remote switch
+(`State.Landing`) also moves the focus from either one to Instances;
+adding or removing a stack changes only the layout.
 
 The local stack is the working directory's, or the one `--project-directory`
 names. The flag reaches this the way `--remote` reaches the daemon: `main`

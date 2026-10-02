@@ -213,6 +213,14 @@ type guiState struct {
 	// StacksElsewhere is whether a stack listed is on a remote other than
 	// the session's, which the stacks then need a remote column for.
 	StacksElsewhere bool
+
+	// StacksHere is whether a stack listed is on the session's remote;
+	// without one, Stacks and Services collapse while unfocused.
+	StacksHere bool
+
+	// Landing is set from startup or a remote switch until the stacks are
+	// next read, which then decides whether the focus leaves them.
+	Landing bool
 }
 
 type snapshotsSpan struct {
@@ -308,6 +316,8 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		ScreenMode:           getScreenMode(config),
 		ExpandSidePanel:      config.UserConfig.Gui.ExpandFocusedSidePanel,
 		SnapshotsShowAll:     config.UserConfig.Gui.ShowAllSnapshots,
+		StacksHere:           true,
+		Landing:              true,
 	}
 
 	home, _ := os.UserHomeDir()

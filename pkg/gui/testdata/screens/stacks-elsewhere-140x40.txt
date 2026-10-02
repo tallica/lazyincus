@@ -1,0 +1,40 @@
+╭─[1]─Stacks (1)──────────────────────────────╮╭─Info - Logs - Config - Env - Top──────────────────────────────────────────────────────────╮
+╰─────────────────────────────────────────────╯│Remote:       fake                                                                         │
+╭─[2]─Services────────────────────────────────╮│Project:      default                                                                      │
+╰─────────────────────────────────────────────╯│Name:         a-name-long-enough-to-be-cut-off                                             │
+╭─[3]─Instances───────────────────────────────╮│Status:       running                                                                      │
+│a-name-long-enough-to-be-cut-off running  co…││Type:         container                                                                    │
+│web                              running  co…││Image:        Alpine 3.22 amd64                                                            │
+│db                               stopped  co…││Architecture: x86_64                                                                       │
+│                                             ││IPv4:         192.0.2.144                                                                  │
+│                                             ││Snapshots:    0                                                                            │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││CPU:          N/A                                                                          │
+│                                             ││Memory:       N/A                                                                          │
+│                                             ││Processes:    12                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[4]─Snapshots (a-name-long-enough-to-be-cut─╮│Disk:                                                                                      │
+│                                             ││  (no disk usage reported)                                                                 │
+│                                             ││                                                                                           │
+│                                             ││Network:                                                                                   │
+│                                             ││  eth0:                                                                                    │
+│                                             ││    Type:                                                                                  │
+│                                             ││    State:                                                                                 │
+│                                             ││    Host interface: veth144                                                                │
+│                                             ││    MTU:        0                                                                          │
+│                                             ││    Received:   0B (0 packets)                                                             │
+│                                             ││    Sent:       0B (0 packets)                                                             │
+╰─────────────────────────────────────────────╯│    IP addresses:                                                                          │
+╭─[5]─Images - Volumes - Networks - Profiles──╮│      inet:  192.0.2.144/ (global)                                                         │
+│Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││                                                                                           │
+│Debian 13 amd64   0 fedcba987654 90.00MiB ne…││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                               Incus v7.4 (fake/all projects) ●  test

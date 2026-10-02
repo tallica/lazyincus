@@ -37,6 +37,12 @@ func (gui *Gui) switchFocus(newView *gocui.View) error {
 }
 
 func (gui *Gui) switchFocusAux(newView *gocui.View) error {
+	if gui.stacksSwap(gui.lastSideViewName(), newView.Name()) {
+		if panel, ok := gui.sidePanelNamed(newView.Name()); ok {
+			panel.SetMainTabIndex(0)
+		}
+	}
+
 	gui.pushView(newView.Name())
 	gui.noteActiveView(newView.Name())
 	gui.Log.Info("setting highlight to true for view " + newView.Name())
@@ -137,6 +143,12 @@ func (gui *Gui) currentSideViewName() string {
 	gui.ViewStackMutex.Lock()
 	defer gui.ViewStackMutex.Unlock()
 
+	return gui.lastSideViewName()
+}
+
+// lastSideViewName is currentSideViewName for a caller holding
+// ViewStackMutex.
+func (gui *Gui) lastSideViewName() string {
 	for idx := range gui.State.ViewStack {
 		reversedIdx := len(gui.State.ViewStack) - 1 - idx
 		viewName := gui.State.ViewStack[reversedIdx]
@@ -146,4 +158,17 @@ func (gui *Gui) currentSideViewName() string {
 	}
 
 	return gui.initiallyFocusedViewName()
+}
+
+// stacksSwap is whether focus moving between these side views swaps Stacks
+// and Services with Instances, on a remote with no stack: the panel landed
+// on starts at its first main-panel tab.
+func (gui *Gui) stacksSwap(from, to string) bool {
+	if gui.State.StacksHere {
+		return false
+	}
+
+	stacks := func(name string) bool { return name == "stacks" || name == "services" }
+
+	return (stacks(from) && to == "instances") || (from == "instances" && stacks(to))
 }
