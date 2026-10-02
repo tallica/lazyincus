@@ -203,7 +203,8 @@ each was shown against until then, which leaves the local stack, never
 saved, the only one that follows the session. `listStacks` keys every
 stack by the remote it's on now, so the local stack and the same directory
 saved for the session's remote are one row, named by the saved entry so
-`D` and `e` act on it. Whether a remote is the session's is asked only
+`D` and `e` act on it - `D` forgetting the entry, the row staying as the
+local stack, which its confirmation says. Whether a remote is the session's is asked only
 where it matters (`onSessionRemote`), so starting on another `--remote`
 never changes what's saved, and a remote that's known but doesn't answer
 is still added: it's the remote's to fix.

@@ -507,6 +507,38 @@ func TestTheLocalStackSavedIsOneRow(t *testing.T) {
 	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
 }
 
+// D on the local stack that's also saved forgets the entry and says the
+// row stays, which it does.
+func TestRemovingTheSavedEntryOfTheLocalStack(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	saved := *local
+	saved.Remote = "fake"
+
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, local, &saved))
+	s.settle(t, "Services (default)")
+
+	s.do(t, func() error {
+		stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+		if err != nil {
+			return err
+		}
+
+		return s.gui.stackRemove(stack)
+	})
+	s.settle(t, "It stays listed")
+	s.press(t, 'y')
+
+	require.Eventually(t, func() bool {
+		state, err := s.gui.Config.LoadAppState()
+		return err == nil && len(state.Stacks) == 0
+	}, 5*time.Second, 20*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetAllItems)
+		return len(stacks) == 1 && stacks[0].Local && !stacks[0].Saved
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
 // The local stack isn't saved, so there's nothing for `D` to remove.
 func TestTheLocalStackCannotBeRemoved(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))

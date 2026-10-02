@@ -629,7 +629,13 @@ func (gui *Gui) stackRemove(stack *commands.ComposeStack) error {
 		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotRemoveLocalStack, path))
 	}
 
-	message := fmt.Sprintf(gui.Tr.ConfirmRemoveStack, stack.Title(), path)
+	// Also the local stack, it keeps its row: only the saved entry goes.
+	prompt := gui.Tr.ConfirmRemoveStack
+	if stack.Local {
+		prompt = gui.Tr.ConfirmRemoveSavedLocalStack
+	}
+
+	message := fmt.Sprintf(prompt, stack.Title(), path)
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
