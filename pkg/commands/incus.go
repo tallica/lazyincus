@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -47,6 +48,10 @@ type IncusCommand struct {
 	connected bool
 
 	runtimes instanceRuntimes
+
+	// cliCfg is the CLI config the client came from, which connects to the
+	// other remotes a stack can be pinned to. Nil for incustest's.
+	cliCfg *cliconfig.Config
 }
 
 // dialTimeout bounds the connection attempt, which the client otherwise
@@ -69,14 +74,40 @@ func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translati
 		return nil, &ConnectError{Err: err}
 	}
 
-	client, err := connectDefaultRemote(cliCfg)
+	return connectCommand(log, osCommand, tr, cfg, cliCfg, cliCfg.DefaultRemote)
+}
+
+// ConnectRemote is a command like c on another of the CLI's remotes.
+func (c *IncusCommand) ConnectRemote(name string) (*IncusCommand, error) {
+	if c.cliCfg == nil {
+		return nil, &ConnectError{Remote: name, Err: errors.New("no CLI config")}
+	}
+
+	return connectCommand(c.Log, c.OSCommand, c.Tr, c.Config, c.cliCfg, name)
+}
+
+// IsInstanceRemote is whether name is one of the CLI's remotes that has
+// instances: `images:` and OCI registries are remotes too.
+func (c *IncusCommand) IsInstanceRemote(name string) bool {
+	if c.cliCfg == nil {
+		return false
+	}
+
+	remote, ok := c.cliCfg.Remotes[name]
+
+	return ok && !remote.Public && remote.Protocol == "incus"
+}
+
+func connectCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
+	client, err := connectRemote(cliCfg, name)
 	if err != nil {
-		return nil, &ConnectError{Remote: cliCfg.DefaultRemote, Err: err}
+		return nil, &ConnectError{Remote: name, Err: err}
 	}
 
 	capDialTimeout(client)
 
-	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, cliCfg.DefaultRemote)
+	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, name)
+	command.cliCfg = cliCfg
 
 	// Best-effort: a failed GetServer() shouldn't prevent startup, since
 	// the instance list is what actually matters. The footer just shows
@@ -146,10 +177,9 @@ func clientProjectName(client incus.InstanceServer) string {
 	return info.Project
 }
 
-// connectDefaultRemote is GetInstanceServer under connectTimeout. The
-// goroutine outlives a timeout, which only happens on a startup we abandon
-// anyway.
-func connectDefaultRemote(cliCfg *cliconfig.Config) (incus.InstanceServer, error) {
+// connectRemote is GetInstanceServer under connectTimeout. The goroutine
+// outlives a timeout, left to finish or fail on its own.
+func connectRemote(cliCfg *cliconfig.Config, name string) (incus.InstanceServer, error) {
 	type result struct {
 		client incus.InstanceServer
 		err    error
@@ -158,7 +188,7 @@ func connectDefaultRemote(cliCfg *cliconfig.Config) (incus.InstanceServer, error
 	done := make(chan result, 1)
 
 	go func() {
-		client, err := cliCfg.GetInstanceServer(cliCfg.DefaultRemote)
+		client, err := cliCfg.GetInstanceServer(name)
 		done <- result{client: client, err: err}
 	}()
 
@@ -337,6 +367,7 @@ func (c *IncusCommand) newInstance(full api.InstanceFull, fallbackProject string
 	instance := &Instance{
 		Name:      full.Name,
 		Project:   project,
+		Remote:    c.RemoteName,
 		Instance:  full,
 		Client:    client,
 		OSCommand: c.OSCommand,

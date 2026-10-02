@@ -122,6 +122,28 @@ has read a project out of it: `~` and a relative path are resolved, and a
 path that's missing, not a directory, holds no compose project or is
 already listed is refused.
 
+A `remote:` ahead of the path pins the stack to that remote
+(`SplitStackInput`), but only when the prefix is one of the CLI's instance
+remotes, so a path with a colon in it still reads as a path; with none,
+it's pinned to the session's, so a session on another remote later can't
+run its verbs on the wrong daemon. Only the local stack, never saved, and
+an entry saved before remotes follow the session. A pinned stack is saved
+as `remote:/dir` (`ComposeStack.Ref`), and that is its identity everywhere
+a directory alone was: the same directory can be listed once per remote. Whether the remote
+is the session's is asked only where it matters (`onSessionRemote`), so
+starting on another `--remote` never changes what's saved. A remote that's
+known but doesn't answer is still added; it's the remote's to fix.
+`gui.commandFor` gives a stack pinned elsewhere an `IncusCommand` of its own
+(`pkg/gui/remotes.go`), connected the first time it's asked for, a failed
+connect not retried for 30s so the polls don't each wait out the connect
+timeout. Statuses, services and the Info tab's `PublishHost` go through it;
+the compose verbs and the instances' `incus console`/`exec`/`config edit`
+need no connection, only `INCUS_REMOTE` set to the stack's remote
+(`commands.WithRemote`). Everything else — the instances panel, Resources,
+the event stream, the connection-lost modal — stays on the session's
+remote, so the instances of a stack pinned to another remote are never
+filtered out of Standalone Instances: they were never in it.
+
 A stack's config is one `incus-compose config --format json` in its
 directory (`LoadComposeStack`), read in `fetchStacks` rather than before
 the views exist, and cached by directory (`stackCache`): a subprocess per
@@ -137,8 +159,10 @@ every stack at the one it names.
 The status column rolls up every compose-labelled instance in the stack's
 project the way a service rolls up its replicas (`RollUpStatus`): theirs
 when they agree, `partial` when they don't, `none` with nothing there, and
-`error` for a stack whose config couldn't be read. `GetComposeStatuses` is
-one all-projects listing for every stack. The path column writes home as
+`error` for a stack whose config couldn't be read, `unreachable` for one
+whose remote didn't answer (`StatusErr`), which fails only that remote's
+rows. `GetComposeStatuses` is one all-projects listing a remote, every
+remote asked at once. The path column writes home as
 `~`. The local stack sorts first, the rest by name.
 
 `followStack` is how the services panel follows the selection, the way
@@ -146,15 +170,17 @@ Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
 so does every Stacks refresh, the selection being the first row until
 someone moves it. It keeps the stack in `gui.selectedStack`, an atomic
 pointer, since `fetchServices` reads it off the main loop. A different
-stack — a different directory, or a project the compose file now names
-differently — invalidates the services `refreshSeq`, empties the panel,
+stack — a different directory or remote, or a project the compose file
+now names differently — invalidates the services `refreshSeq`, empties the panel,
 retitles it and fetches for the new one. The stack is swapped before the
 invalidation, and `fetchServices` takes its ticket before reading the
 stack, so a fetch that isn't turned away has the new one.
 
 Stacks refresh on the 10s cadence of the other lists that events keep
 current (`pollUnlessWatched`), on any event that refreshes the instances,
-and after a compose verb. The keys are the Services panel's compose verbs
+and after a compose verb. While a stack pinned to another remote is listed
+they stay at 10s with the stream open: that remote's events never reach
+this session. The keys are the Services panel's compose verbs
 with the `SERVICE` argument left off, through the same code,
 parameterised by `composeTarget`. `p` pauses unless every service with
 anything running is frozen. Which key runs which verb is README's

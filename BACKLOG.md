@@ -144,18 +144,19 @@ own merits.
       `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
       was no upstream behaviour to match.
 - [ ] **Remote switcher** — an `R` menu picking the remote the panels talk to,
-      mirroring `P` for projects. `pkg/gui/remotes.go` alongside
-      `projects.go`: the menu lists `cliconfig.Config.Remotes`, marked with
-      `marker()`, and the reload afterwards is exactly
-      `reloadAfterProjectChange` (which wants a scope-neutral name), since
-      clearing every panel is also what drops the per-item clients pointing
-      at the previous daemon. `NewIncusCommand` has to keep `cliCfg` rather
-      than dropping it after connecting, and a `UseRemote` swaps `client` and
-      `RemoteName`, re-runs `GetServer()` for the footer, and resets to
-      all-projects — the new server's project list has nothing to do with the
-      old one's. Three parts that aren't just copying the project switcher:
-      the list needs filtering, since `GetInstanceServer` rejects anything
-      with `Public` set or `Protocol != "incus"` (`cliconfig/remote.go`), so
+      mirroring `P` for projects. In `pkg/gui/remotes.go`, beside the
+      commands stacks pinned to a remote use: the menu lists
+      `cliconfig.Config.Remotes`, marked with `marker()`, and the reload
+      afterwards is exactly `reloadAfterProjectChange` (which wants a
+      scope-neutral name), since clearing every panel is also what drops the
+      per-item clients pointing at the previous daemon. `ConnectRemote`
+      already makes a whole command for another remote, footer version
+      included, to swap in for `gui.IncusCommand`, in all-projects - the
+      new server's project list has nothing to do with the old one's.
+      Pinned stacks compare their remote with the session's
+      (`onSessionRemote`), so one pinned to the remote switched to becomes
+      the session's, and the instances it filters change with it. Three parts that aren't just copying the project switcher:
+      the list needs filtering, which `IsInstanceRemote` does, since
       `images:` and OCI remotes would be entries that only ever error;
       connecting can hang or fail where switching project can't, so it wants
       `WithWaitingStatus` off the main goroutine and must keep the existing

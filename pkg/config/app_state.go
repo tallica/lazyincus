@@ -15,7 +15,8 @@ import (
 // user's own.
 type AppState struct {
 	// Stacks are the compose project directories added with `a` on the
-	// Stacks panel, absolute and cleaned.
+	// Stacks panel, absolute and cleaned, each after `remote:` for the
+	// remote it's pinned to.
 	Stacks []string `yaml:"stacks,omitempty"`
 }
 
@@ -93,7 +94,7 @@ func writeFileAtomically(path string, content []byte) error {
 	return os.Rename(file.Name(), path)
 }
 
-// AddStack saves a stack's directory, refusing one already saved.
+// AddStack saves a stack, refusing one already saved.
 func (c *AppConfig) AddStack(dir string) error {
 	return c.updateAppState(func(state *AppState) error {
 		if slices.Contains(state.Stacks, dir) {
@@ -106,7 +107,7 @@ func (c *AppConfig) AddStack(dir string) error {
 	})
 }
 
-// RemoveStack forgets a saved stack's directory; one not saved is no error.
+// RemoveStack forgets a saved stack; one not saved is no error.
 func (c *AppConfig) RemoveStack(dir string) error {
 	return c.updateAppState(func(state *AppState) error {
 		state.Stacks = slices.DeleteFunc(state.Stacks, func(saved string) bool { return saved == dir })

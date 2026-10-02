@@ -26,6 +26,9 @@ type Instance struct {
 	// address the right instance.
 	Project string
 
+	// Remote is the CLI remote the instance is on, for the same shell-outs.
+	Remote string
+
 	// Instance is the daemon's whole view of the instance as of the refresh
 	// that built this value: config, state and snapshots. Never updated in
 	// place - the next refresh builds a new Instance; see Latest.

@@ -29,6 +29,10 @@ wherever the daemon actually lives.
 CLI's default for everything, lazyincus included. The flag and the variable
 are the per-session alternatives, and neither writes to the CLI's config.
 
+A compose stack can be pinned to a remote of its own, whichever one the
+session is on — see README's
+[Compose stacks](../README.md#compose-stacks).
+
 ## Adding a remote over TLS
 
 On the server, publish the API and mint a one-time join token:

@@ -16,6 +16,11 @@ import (
 type ComposeStack struct {
 	Dir string
 
+	// Remote is the CLI remote the stack is pinned to, or empty for one
+	// that follows the session's: the local stack, or one saved before
+	// stacks had remotes.
+	Remote string
+
 	// Name is the compose project name, which is also the Incus project
 	// incus-compose puts the stack in.
 	Name     string
@@ -33,6 +38,53 @@ type ComposeStack struct {
 	// Statuses are the daemon's statuses of the stack's compose instances,
 	// by service.
 	Statuses map[string][]string
+
+	// StatusErr is why the stack's remote gave no statuses.
+	StatusErr error
+}
+
+// Ref is how the stack is saved and shown: its directory, prefixed with
+// the remote it's pinned to, the way the incus CLI writes `remote:name`.
+func (s *ComposeStack) Ref() string {
+	return StackRef(s.Remote, s.Dir)
+}
+
+// StackRef is remote and dir as one string, dir alone for no remote.
+func StackRef(remote, dir string) string {
+	if remote == "" {
+		return dir
+	}
+
+	return remote + ":" + dir
+}
+
+// ParseStackRef splits a saved stack: its directory is absolute, so
+// anything before a path's leading separator is the remote.
+func ParseStackRef(ref string) (remote, dir string) {
+	if strings.HasPrefix(ref, string(filepath.Separator)) {
+		return "", ref
+	}
+
+	remote, dir, ok := strings.Cut(ref, ":")
+	if !ok {
+		return "", ref
+	}
+
+	return remote, dir
+}
+
+// SplitStackInput splits what was typed for a stack into a remote and a
+// path. A prefix counts as a remote only when isRemote says it names one,
+// so a directory with a colon in it still reads as a path.
+func SplitStackInput(input string, isRemote func(string) bool) (remote, path string) {
+	input = strings.TrimSpace(input)
+
+	prefix, rest, ok := strings.Cut(input, ":")
+	if !ok || strings.ContainsRune(prefix, filepath.Separator) || !isRemote(prefix) {
+		return "", input
+	}
+
+	return prefix, rest
 }
 
 // Title is the stack's name, or its directory's while it has none.
@@ -42,6 +94,11 @@ func (s *ComposeStack) Title() string {
 	}
 
 	return filepath.Base(s.Dir)
+}
+
+// RemoteTitle is Title prefixed with the remote the stack is pinned to.
+func (s *ComposeStack) RemoteTitle() string {
+	return StackRef(s.Remote, s.Title())
 }
 
 // Status rolls every compose instance in the stack's project up the way a

@@ -404,7 +404,7 @@ func englishSet() TranslationSet {
 		NoStackSelected:        "No stack selected - add one to the Stacks panel with 'a'.",
 		AddStack:               "add stack",
 		RemoveStack:            "remove stack from the list",
-		AddStackPrompt:         "Add stack: compose project directory",
+		AddStackPrompt:         "Add stack: [remote:]directory",
 		AddStackHint:           "enter to add · esc to cancel",
 		AddingStackStatus:      "adding stack",
 		StackAlreadyListed:     "%s is already listed.",

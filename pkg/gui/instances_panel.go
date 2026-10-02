@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/samber/lo"
@@ -363,11 +364,13 @@ func (gui *Gui) handleInstanceViewLogs(g *gocui.Gui, v *gocui.View) error {
 	return gui.handleEnterMain(g, v)
 }
 
-// instanceCLIArgs carries the instance's project through to the `incus` CLI,
-// which otherwise uses whatever project the user's own remote is set to -
-// not necessarily the one the selected instance lives in.
-func instanceCLIArgs(instance *commands.Instance) []string {
-	return projectCLIArgs(instance.Project)
+// instanceCmd is an `incus` command on the instance's remote and project,
+// which the CLI would otherwise take from the user's own - an instance of
+// a stack pinned to another remote included.
+func (gui *Gui) instanceCmd(instance *commands.Instance, args ...string) *exec.Cmd {
+	cmd := gui.OSCommand.NewCmd("incus", append(projectCLIArgs(instance.Project), args...)...)
+
+	return commands.WithRemote(cmd, instance.Remote)
 }
 
 func projectCLIArgs(project string) []string {
@@ -382,8 +385,10 @@ func projectCLIArgs(project string) []string {
 // item's YAML in the user's editor and re-opens it on a validation error,
 // then re-lists what it changed.
 func (gui *Gui) editInIncus(project string, refresh []fetch, args ...string) error {
-	cmd := gui.OSCommand.NewCmd("incus", append(projectCLIArgs(project), args...)...)
+	return gui.runIncusEdit(gui.OSCommand.NewCmd("incus", append(projectCLIArgs(project), args...)...), refresh)
+}
 
+func (gui *Gui) runIncusEdit(cmd *exec.Cmd, refresh []fetch) error {
 	if err := gui.runSubprocess(cmd); err != nil {
 		return err
 	}
@@ -396,8 +401,8 @@ func (gui *Gui) editInIncus(project string, refresh []fetch, args ...string) err
 // instanceEdit is `incus config edit`. Incus applies what it can to a
 // running instance and says so when a change waits for a restart.
 func (gui *Gui) instanceEdit(instance *commands.Instance) error {
-	return gui.editInIncus(instance.Project, []fetch{gui.fetchInstances, gui.fetchServices},
-		"config", "edit", instance.Name)
+	return gui.runIncusEdit(gui.instanceCmd(instance, "config", "edit", instance.Name),
+		[]fetch{gui.fetchInstances, gui.fetchServices})
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of
@@ -414,7 +419,7 @@ func (gui *Gui) instanceAttachConsole(instance *commands.Instance) error {
 		return gui.createErrorPanel(gui.Tr.CannotAttachAppContainerError)
 	}
 
-	cmd := gui.OSCommand.NewCmd("incus", append(instanceCLIArgs(instance), "console", instance.Name)...)
+	cmd := gui.instanceCmd(instance, "console", instance.Name)
 
 	// No detach hint from us: `incus console` prints its own on connect.
 	return gui.runSubprocess(cmd)
@@ -428,10 +433,8 @@ func (gui *Gui) instanceExecShell(instance *commands.Instance) error {
 		return gui.createErrorPanel(gui.Tr.CannotExecStoppedInstanceError)
 	}
 
-	args := append(instanceCLIArgs(instance), "exec", instance.Name, "--", "sh", "-c",
+	cmd := gui.instanceCmd(instance, "exec", instance.Name, "--", "sh", "-c",
 		"exec $(command -v bash || command -v ash || command -v sh)")
-
-	cmd := gui.OSCommand.NewCmd("incus", args...)
 
 	return gui.runSubprocessWithMessage(cmd, gui.Tr.ExitShellToReturn)
 }

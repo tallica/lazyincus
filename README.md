@@ -220,9 +220,18 @@ from then on, in every session, saved in `state.yml` beside the config
 file ([docs/Config.md](docs/Config.md#state)). `D` takes a stack you added
 off the list again, after asking; nothing in it is stopped or deleted.
 
+A stack you add belongs to a remote: the one lazyincus is showing, or
+another you put in front of the directory, the way `incus` names things —
+`pve01:~/deployments/pve01/caddy`. Its row, services, tabs and every verb
+go to that remote whichever one a later session is on, while the other
+panels stay on the session's, so one list can hold the stacks of several
+servers. The compose files stay on this machine, so the "not on the same
+host" gotcha at the end of this section applies.
+
 A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed, and
-`error` when its compose file can't be read — the Info tab says why. Its
+`error` when its compose file can't be read, and `unreachable` when its
+remote doesn't answer — the Info tab says why. Its
 keys are the Services panel's compose verbs below, run against the whole
 stack. The Info tab says where the stack can be reached, what it's using,
 and where the daemon has drifted from the compose file; the Logs tab

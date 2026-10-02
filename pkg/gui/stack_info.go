@@ -21,9 +21,15 @@ import (
 // stackInstances is one services refresh's view of a stack's project: the
 // declared services with their instances, and the orphans no service claims.
 type stackInstances struct {
+	remote   string
 	project  string
 	services []*commands.ComposeService
 	orphans  []*commands.Instance
+}
+
+// isOf is whether s is stack's, nil being nobody's.
+func (s *stackInstances) isOf(stack *commands.ComposeStack) bool {
+	return s != nil && s.remote == stack.Remote && s.project == stack.Name
 }
 
 // all is every compose instance in the stack, as the newest listing has it.
@@ -65,7 +71,7 @@ func (gui *Gui) stackInfoStr(stack *commands.ComposeStack) string {
 	}
 
 	state := gui.composeInstances.Load()
-	if state == nil || state.project != stack.Name {
+	if !state.isOf(stack) {
 		return output
 	}
 
@@ -79,7 +85,7 @@ func (gui *Gui) stackInfoStr(stack *commands.ComposeStack) string {
 
 	instances := state.all()
 
-	output += section(gui.Tr.EndpointsTitle, stackEndpointsStr(state.services, gui.IncusCommand.PublishHost))
+	output += section(gui.Tr.EndpointsTitle, stackEndpointsStr(state.services, gui.publishHostFor(stack.Remote)))
 	output += section(gui.Tr.UsageTitle, stackUsageStr(instances))
 	output += section(gui.Tr.DriftTitle, stackDriftStr(state))
 
@@ -104,12 +110,17 @@ func (gui *Gui) stackIdentityStr(stack *commands.ComposeStack) string {
 		listed = append(listed, gui.Tr.StackListedSaved)
 	}
 
-	output := line("Project", stack.Name)
+	output := line("Remote", stack.Remote)
+	output += line("Project", stack.Name)
 	output += line("Directory", commands.ShortenHome(stack.Dir, gui.home))
 	output += line("Listed", strings.Join(listed, ", "))
 
 	if stack.Err != nil {
 		return output
+	}
+
+	if stack.StatusErr != nil {
+		return output + line("Status", utils.ColoredString(stack.StatusErr.Error(), color.FgRed))
 	}
 
 	output += line("Status", presentation.DisplayRolledUpStatus(&gui.Config.UserConfig.Gui, stack.Status()))
@@ -122,7 +133,7 @@ func (gui *Gui) stackIdentityStr(stack *commands.ComposeStack) string {
 	}
 
 	state := gui.composeInstances.Load()
-	if state == nil || state.project != stack.Name {
+	if !state.isOf(stack) {
 		return output
 	}
 

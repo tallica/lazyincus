@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
 // testStack is a stack in a directory of its own under root, named for its
@@ -51,7 +52,7 @@ func withStacks(t *testing.T, local *commands.ComposeStack, saved ...*commands.C
 		}
 
 		for _, stack := range saved {
-			require.NoError(t, s.gui.Config.AddStack(stack.Dir))
+			require.NoError(t, s.gui.Config.AddStack(stack.Ref()))
 			byDir[stack.Dir] = stack
 		}
 
@@ -263,9 +264,133 @@ func TestAddingAStack(t *testing.T) {
 
 	state, err := s.gui.Config.LoadAppState()
 	require.NoError(t, err)
-	assert.Equal(t, []string{shop.Dir}, state.Stacks)
+	assert.Equal(t, []string{"fake:" + shop.Dir}, state.Stacks)
 
-	s.settle(t, "Services (shop)")
+	s.settle(t, "Services (fake:shop)")
+}
+
+// withRemote stands server in for the CLI remote name, and any other name
+// for one that's known but doesn't answer.
+func withRemote(name string, server *incustest.Server) func(*screen) {
+	return func(s *screen) {
+		s.gui.remotes.known = func(remote string) bool { return remote == name || remote == "down" }
+		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
+			if remote != name {
+				return nil, &commands.ConnectError{Remote: remote, Err: errors.New("no answer")}
+			}
+
+			command := s.gui.IncusCommand
+			return commands.NewIncusCommandWithClient(command.Log, command.OSCommand, command.Tr, command.Config, server, name), nil
+		}
+	}
+}
+
+func composeFixture(project, name, service string) api.InstanceFull {
+	instance := fixtureServer().Instances[0]
+	instance.Name, instance.Project = name, project
+	instance.ExpandedConfig = map[string]string{"user.label.incus-compose.service": service}
+
+	return instance
+}
+
+// A stack pinned to another remote is that remote's: its statuses, its
+// services and their instances. The session's own instances of a project
+// with the same name stay standalone.
+func TestAStackPinnedToARemote(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+	pinned := testStack(t, t.TempDir(), "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemote("pve01", pve01)(s)
+		s.server.SetInstances([]api.InstanceFull{composeFixture("shop", "web", "api")})
+	})
+
+	s.settle(t, "Services (pve01:shop)")
+	s.settle(t, "pve01:")
+
+	require.Eventually(t, func() bool {
+		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
+	}, 5*time.Second, 20*time.Millisecond)
+
+	instance := onLoop(t, s, func() *commands.Instance {
+		return s.gui.Panels.Services.List.GetAllItems()[0].Service.Instances[0]
+	})
+	assert.Equal(t, "api-1", instance.Name)
+	assert.Equal(t, "pve01", instance.Remote)
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() bool {
+			return slices.ContainsFunc(s.gui.Panels.Instances.List.GetItems(), func(instance *commands.Instance) bool {
+				return instance.Name == "web"
+			})
+		})
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
+// A remote that doesn't answer marks its own stacks, and only those.
+func TestAStackOnAnUnreachableRemote(t *testing.T) {
+	unreachable := testStack(t, t.TempDir(), "shop", "api")
+	unreachable.Remote = "down"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"), unreachable)(s)
+		withRemote("pve01", nil)(s)
+	})
+
+	s.settle(t, "unreachable")
+
+	// Selected, it says why on its Info tab rather than in a popup.
+	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
+	s.settle(t, "no answer")
+	assert.False(t, onLoop(t, s, func() bool { return s.gui.Views.Confirmation.Visible }))
+	assert.Equal(t, []string{"none", "unreachable"}, onLoop(t, s, func() []string {
+		return lo.Map(s.gui.Panels.Stacks.List.GetAllItems(), func(stack *commands.ComposeStack, _ int) string {
+			if stack.StatusErr != nil {
+				return "unreachable"
+			}
+
+			return stack.Status()
+		})
+	}))
+}
+
+// `a` takes a remote ahead of the directory, and only a remote it knows.
+func TestAddingAStackOnARemote(t *testing.T) {
+	shop := testStack(t, t.TempDir(), "shop", "api")
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil)(s)
+		withRemote("pve01", incustest.New(incustest.Server{}))(s)
+		s.gui.loadStack = func(dir string) *commands.ComposeStack {
+			loaded := *shop
+			loaded.Dir = dir
+			return &loaded
+		}
+	})
+	s.settle(t, s.gui.Tr.NoStacks)
+
+	assert.ErrorContains(t, s.gui.addStack("nope:"+shop.Dir), "no such file or directory")
+	require.NoError(t, s.gui.addStack("pve01:"+shop.Dir))
+	assert.ErrorContains(t, s.gui.addStack("pve01:"+shop.Dir), "already listed")
+	// With no remote, it's pinned to the session's.
+	require.NoError(t, s.gui.addStack(shop.Dir))
+	assert.ErrorContains(t, s.gui.addStack("fake:"+shop.Dir), "already listed")
+
+	state, err := s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"pve01:" + shop.Dir, "fake:" + shop.Dir}, state.Stacks)
+
+	// Removing it removes what was saved.
+	s.settle(t, "fake:")
+	require.NoError(t, s.gui.Config.RemoveStack(onLoop(t, s, func() string {
+		return s.gui.Panels.Stacks.List.GetAllItems()[0].Ref()
+	})))
+
+	state, err = s.gui.Config.LoadAppState()
+	require.NoError(t, err)
+	assert.Len(t, state.Stacks, 1)
 }
 
 // The local stack isn't saved, so there's nothing for `D` to remove.

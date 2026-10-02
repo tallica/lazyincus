@@ -77,6 +77,11 @@ type Gui struct {
 	loadStack func(dir string) *commands.ComposeStack
 	stacks    stackCache
 
+	// remotes are the commands for stacks pinned to other remotes, and
+	// pinnedStacks whether any is listed.
+	remotes      remoteCommands
+	pinnedStacks atomic.Bool
+
 	// home is what the Stacks panel shortens paths against.
 	home string
 
@@ -307,6 +312,10 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		taskManager:   tasks.NewTaskManager(log, tr),
 		stopped:       make(chan struct{}),
 		eventsRescope: make(chan struct{}, 1),
+		remotes: remoteCommands{
+			connect: incusCommand.ConnectRemote,
+			known:   incusCommand.IsInstanceRemote,
+		},
 	}
 
 	// The options are the process's: a later Gui - a test's - rewriting them
@@ -352,10 +361,16 @@ const watchedPollInterval = time.Minute
 
 // pollUnlessWatched is goEvery for a list the event stream keeps current.
 func (gui *Gui) pollUnlessWatched(interval time.Duration, function func() error) {
+	gui.pollWhileUnwatched(interval, function, func() bool { return false })
+}
+
+// pollWhileUnwatched is pollUnlessWatched for a list the stream keeps
+// current only while unwatched says nothing in it is beyond the stream.
+func (gui *Gui) pollWhileUnwatched(interval time.Duration, function func() error, unwatched func() bool) {
 	var last time.Time
 
 	gui.goEvery(interval, func() error {
-		if gui.eventsLive.Load() && time.Since(last) < watchedPollInterval {
+		if gui.eventsLive.Load() && !unwatched() && time.Since(last) < watchedPollInterval {
 			return nil
 		}
 
@@ -467,7 +482,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
-		gui.pollUnlessWatched(time.Second*10, gui.refreshStacksQuiet)
+		// The session's stream says nothing of another remote's stacks.
+		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.pinnedStacks.Load)
 	}()
 
 	err := g.MainLoop()

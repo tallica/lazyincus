@@ -52,6 +52,50 @@ func TestShortenHome(t *testing.T) {
 	assert.Equal(t, "/srv/web", ShortenHome("/srv/web", ""))
 }
 
+func TestStackRef(t *testing.T) {
+	assert.Equal(t, "/srv/web", StackRef("", "/srv/web"))
+	assert.Equal(t, "pve01:/srv/web", StackRef("pve01", "/srv/web"))
+
+	for ref, want := range map[string][2]string{
+		"/srv/web":         {"", "/srv/web"},
+		"pve01:/srv/web":   {"pve01", "/srv/web"},
+		"/srv/a:b":         {"", "/srv/a:b"},
+		"pve01:/srv/a:b":   {"pve01", "/srv/a:b"},
+		"no-separator-dir": {"", "no-separator-dir"},
+	} {
+		remote, dir := ParseStackRef(ref)
+		assert.Equal(t, want, [2]string{remote, dir}, ref)
+	}
+}
+
+// A prefix is a remote only when it names one: anything else is part of
+// the path.
+func TestSplitStackInput(t *testing.T) {
+	known := func(name string) bool { return name == "pve01" }
+
+	for input, want := range map[string][2]string{
+		" pve01:~/caddy ":  {"pve01", "~/caddy"},
+		"pve01:":           {"pve01", ""},
+		"~/caddy":          {"", "~/caddy"},
+		"other:~/caddy":    {"", "other:~/caddy"},
+		"./pve01:x":        {"", "./pve01:x"},
+		"stacks/pve01:x":   {"", "stacks/pve01:x"},
+		"/srv/pve01:caddy": {"", "/srv/pve01:caddy"},
+	} {
+		remote, path := SplitStackInput(input, known)
+		assert.Equal(t, want, [2]string{remote, path}, input)
+	}
+}
+
+func TestComposeCmdNamesItsRemote(t *testing.T) {
+	command := NewDummyIncusCommand()
+	command.RemoteName = "pve01"
+
+	cmd := command.ComposeCmd("/srv/web", "ps")
+	assert.Equal(t, "INCUS_REMOTE=pve01", cmd.Env[len(cmd.Env)-1])
+	assert.Contains(t, cmd.Env, "INCUS_COMPOSE_PROJECT_DIRECTORY=/srv/web")
+}
+
 func TestStackStatusRollsUpItsInstances(t *testing.T) {
 	tests := []struct {
 		name     string
