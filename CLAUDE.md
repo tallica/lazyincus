@@ -108,7 +108,10 @@ and `RerenderList` is never called off it. Each kind of fetch carries a
 A refresh of several kinds applies each that succeeded even when another
 fails. Refreshes come from the pollers, from actions, and from the daemon's
 event stream (`pkg/gui/events.go`), which says straight away when something
-changes; see [docs/Incus.md](docs/Incus.md).
+changes; see [docs/Incus.md](docs/Incus.md). A stack on another remote is
+the one exception to asking inside the fetch: that remote is connected to
+and read in the background (`pkg/gui/remotes.go`), the fetch taking the
+last answer, so a server that's away holds up no poll.
 
 A main-panel tab's content is a string built off the main loop — on a
 ticker, or in a task goroutine — so anything that needs the panel's width
@@ -121,16 +124,19 @@ tabs, what its keys do — is in [docs/Panels.md](docs/Panels.md), in this
 order:
 
 - **Stacks** — compose project directories: the working directory's, or
-  `-P`'s, and every one added with `a`, saved in `state.yml`. Present only
-  when `incus-compose` is on `PATH`, and then it's `[1]`.
+  `-P`'s, and every one added with `a`, saved in `state.yml`, each pinned
+  to the Incus remote it was added for. Present only when `incus-compose`
+  is on `PATH`, and then it's `[1]`. The only list that spans remotes:
+  everything else is the session's, which `R` or `space` on a stack
+  switches.
 - **Services** — the selected stack's services, one row each, with a
   replicated service's instances under it; there whenever Stacks is. A
   service is its instances, so the two panels share statuses, columns and
   renderers; only `partial`, `none` and the replica count are the
   service's own.
 - **Instances** — containers and VMs across every project, minus the
-  instances of the services the listed stacks declare, until `C` puts
-  them back.
+  instances of the services the listed stacks on the same remote declare,
+  until `C` puts them back.
 - **Snapshots** — follows whichever instance the list above it has
   selected, or the custom volume the volumes list has, rather than having
   a selection of its own; or lists every instance's (`e`).
@@ -248,7 +254,9 @@ tmux new-session -d -s lzr -x 140 -y 40 \
 
 Move through the lists, every main-panel tab, a project switch or two
 (`P`), and the stacks and services panels if incus-compose is installed,
-for a minute or so; then quit. Any `/tmp/lzi-race.*` file is a race.
+for a minute or so; then quit. With a second remote to hand, list a stack
+on it and switch to it and back (`R`, `space`): connecting and reading it
+are goroutines of their own. Any `/tmp/lzi-race.*` file is a race.
 Read-only keys are enough - the races are between reading and refreshing.
 For the event stream, change something from a shell meanwhile - create
 and delete a throwaway profile - so events arrive while you move.
