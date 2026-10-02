@@ -123,3 +123,49 @@ func TestASnapshotSaysWhereItsInstanceLives(t *testing.T) {
 		"Remote: pve01", "Project: shop", "Stack: " + shop.Dir, "Service: api",
 	}, identityLines(s.gui.snapshotConfigStr(snapshot), locationLabels...))
 }
+
+// Every Config tab's header says where its resource lives: the session's
+// remote, the only one the resource panels list, and its project. A volume
+// snapshot's says its volume's.
+func TestEveryConfigHeaderSaysWhereItsResourceLives(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	header := func(config string) []string { return identityLines(config, locationLabels...) }
+	want := []string{"Remote: fake", "Project: default"}
+
+	image := onLoop(t, s, func() *commands.Image { return s.gui.Panels.Images.List.GetAllItems()[0] })
+	assert.Equal(t, want, header(s.gui.imageConfigStr(image)))
+
+	volume := onLoop(t, s, func() *commands.Volume { return s.gui.Panels.Volumes.List.GetAllItems()[0] })
+	assert.Equal(t, want, header(s.gui.volumeConfigStr(volume)))
+
+	network := onLoop(t, s, func() *commands.Network { return s.gui.Panels.Networks.List.GetAllItems()[0] })
+	assert.Equal(t, want, header(s.gui.networkConfigStr(network)))
+
+	profile := onLoop(t, s, func() *commands.Profile { return s.gui.Panels.Profiles.List.GetAllItems()[0] })
+	assert.Equal(t, want, header(s.gui.profileConfigStr(profile)))
+	assert.Len(t, identityLines(s.gui.profileConfigStr(profile), "Project"), 1, "the block's Project, not a second")
+
+	snapshot := &commands.Snapshot{Project: volume.Volume.Project, Owner: volume.Name, Name: "nightly", Volume: volume}
+	assert.Equal(t, want, header(s.gui.snapshotConfigStr(snapshot)))
+}
+
+// An instance that doesn't say which remote it came from is the session's,
+// and a project two listed stacks share is the one saved first.
+func TestLocationFallbacks(t *testing.T) {
+	first := testStack(t, t.TempDir(), "shop", "api")
+	second := testStack(t, t.TempDir(), "shop", "api")
+	first.Remote, second.Remote = "fake", "fake"
+
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, nil, first, second))
+	s.ready(t)
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() int { return len(s.gui.Panels.Stacks.List.GetAllItems()) }) == 2
+	}, 5*time.Second, 20*time.Millisecond)
+
+	instance := &commands.Instance{Name: "api-1", Project: "shop", Instance: composeFixture("shop", "api-1", "api")}
+	assert.Equal(t, location{remote: "fake", project: "shop", stack: first.Dir, service: "api"},
+		s.gui.instanceLocation(instance))
+}
