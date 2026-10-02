@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -114,4 +115,39 @@ func (c *AppConfig) RemoveStack(dir string) error {
 
 		return nil
 	})
+}
+
+// PinStacks saves every stack saved with no remote - from before stacks
+// had one - with remote: the one each has been shown against so far. A
+// stack already saved with remote too just loses its plain entry. Nothing
+// is written when there's nothing to pin.
+func (c *AppConfig) PinStacks(remote string) error {
+	state, err := c.LoadAppState()
+	if err != nil || remote == "" || !slices.ContainsFunc(state.Stacks, isPlainStack) {
+		return err
+	}
+
+	return c.updateAppState(func(state *AppState) error {
+		pinned := make([]string, 0, len(state.Stacks))
+
+		for _, stack := range state.Stacks {
+			if isPlainStack(stack) {
+				stack = remote + ":" + stack
+			}
+
+			if !slices.Contains(pinned, stack) {
+				pinned = append(pinned, stack)
+			}
+		}
+
+		state.Stacks = pinned
+
+		return nil
+	})
+}
+
+// isPlainStack is a saved stack with no remote: its directory is
+// absolute, so nothing comes before its leading separator.
+func isPlainStack(stack string) bool {
+	return strings.HasPrefix(stack, string(filepath.Separator))
 }

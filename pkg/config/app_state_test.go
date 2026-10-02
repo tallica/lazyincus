@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,4 +74,39 @@ func TestUnreadableStateIsAnError(t *testing.T) {
 
 	// And an add doesn't paper over it by writing a fresh file.
 	require.Error(t, appConfig.AddStack("/srv/web"))
+}
+
+// Stacks saved before they had a remote are pinned to the one given, once:
+// a second run finds nothing to write.
+func TestPinningPlainStacks(t *testing.T) {
+	dir := t.TempDir()
+	appConfig := &AppConfig{ConfigDir: dir}
+
+	require.NoError(t, appConfig.AddStack("/srv/web"))
+	require.NoError(t, appConfig.AddStack("pve01:/srv/db"))
+	require.NoError(t, appConfig.AddStack("lenny:/srv/web"))
+	require.NoError(t, appConfig.AddStack("/srv/db"))
+
+	require.NoError(t, appConfig.PinStacks("lenny"))
+
+	state, err := appConfig.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"lenny:/srv/web", "pve01:/srv/db", "lenny:/srv/db"}, state.Stacks)
+
+	info, err := os.Stat(appConfig.StateFilename())
+	require.NoError(t, err)
+	require.NoError(t, os.Chtimes(appConfig.StateFilename(), info.ModTime(), info.ModTime().Add(-time.Hour)))
+
+	require.NoError(t, appConfig.PinStacks("lenny"))
+
+	again, err := os.Stat(appConfig.StateFilename())
+	require.NoError(t, err)
+	assert.Equal(t, info.ModTime().Add(-time.Hour), again.ModTime())
+}
+
+func TestPinningNothingWritesNothing(t *testing.T) {
+	appConfig := &AppConfig{ConfigDir: t.TempDir()}
+
+	require.NoError(t, appConfig.PinStacks("lenny"))
+	assert.NoFileExists(t, appConfig.StateFilename())
 }

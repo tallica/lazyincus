@@ -225,11 +225,13 @@ off the list again, after asking; nothing in it is stopped or deleted.
 A stack you add belongs to a remote: the one lazyincus is showing, or
 another you put in front of the directory, the way `incus` names things —
 `pve01:~/deployments/pve01/caddy`. Its row, services, tabs and every verb
-go to that remote whichever one a later session is on, while the other
-panels stay on the session's, so one list can hold the stacks of several
-servers. When one does, the Stacks panel grows a remote column, other
-remotes in colour, and the Services title and every confirmation for such
-a stack name the remote. The compose files stay on this machine, so the
+go to that remote whichever one a later session is on, so one list can
+hold the stacks of several servers. When one does, the Stacks panel grows a remote column, and
+resting the cursor on a stack moves the rest of the screen - instances,
+snapshots, resources, the footer - to that stack's remote, the way `R`
+does, so everything under the Stacks panel is one server's. Until it
+has, the Services title and every confirmation for the stack name its
+remote. The compose files stay on this machine, so the
 "not on the same host" gotcha at the end of this section applies.
 
 A stack's row says how its instances are doing, as one status: theirs when

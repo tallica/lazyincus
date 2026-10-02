@@ -81,6 +81,7 @@ type Gui struct {
 	// pinnedStacks whether any is listed.
 	remotes      remoteCommands
 	pinnedStacks atomic.Bool
+	remoteFollow remoteFollow
 
 	// home is what the Stacks panel shortens paths against.
 	home string
@@ -316,6 +317,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		taskManager:   tasks.NewTaskManager(log, tr),
 		stopped:       make(chan struct{}),
 		eventsRescope: make(chan struct{}, 1),
+		remoteFollow:  remoteFollow{delay: stackFollowDelay},
 		remotes: remoteCommands{
 			connect: incusCommand.ConnectRemote,
 			known:   incusCommand.IsInstanceRemote,
@@ -394,6 +396,10 @@ func (gui *Gui) Run() error {
 	}
 
 	gui.localStackDir, gui.localStackExplicit = localStackDir()
+
+	if err := gui.Config.PinStacks(gui.IncusCommand.RemoteName()); err != nil {
+		gui.Log.Warn(err)
+	}
 
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
 		OutputMode:       gocui.OutputTrue,

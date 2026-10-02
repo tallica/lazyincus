@@ -151,16 +151,82 @@ func (gui *Gui) switchToRemote(name string) error {
 		}
 
 		gui.g.Update(func(*gocui.Gui) error {
-			gui.IncusCommand.UseRemote(command)
-
-			// The shell-outs read it, as they did --remote's.
-			if err := os.Setenv("INCUS_REMOTE", name); err != nil {
-				return err
-			}
-
-			return gui.reloadAfterScopeChange()
+			return gui.moveToRemote(name, command)
 		})
 
 		return nil
+	})
+}
+
+// moveToRemote puts every panel on command's remote. Main loop only.
+func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand) error {
+	gui.IncusCommand.UseRemote(command)
+
+	// The shell-outs read it, as they did --remote's.
+	if err := os.Setenv("INCUS_REMOTE", name); err != nil {
+		return err
+	}
+
+	return gui.reloadAfterScopeChange()
+}
+
+// stackFollowDelay is how long the Stacks cursor rests on a stack before
+// the rest of the screen moves to its remote, so running down the list
+// doesn't reload every panel at every row.
+const stackFollowDelay = 300 * time.Millisecond
+
+// remoteFollow is the screen following the Stacks selection to its
+// remote. Main loop only, but for what the timer hands back to it.
+type remoteFollow struct {
+	// stack is the identity of the stack last selected; seeded tells the
+	// first selection, startup's, which keeps --remote, from the user's.
+	stack  string
+	seeded bool
+	timer  *time.Timer
+	delay  time.Duration
+}
+
+// followStackRemote moves the screen to the remote of a newly selected
+// stack, once the cursor has rested on it. A refresh reselecting the same
+// stack moves nothing, which is what leaves an `R` in place until the
+// selection changes. A stack that follows the session has no remote to go
+// to, and one whose remote doesn't answer stays put: its row says why.
+func (gui *Gui) followStackRemote(stack *commands.ComposeStack) {
+	follow := &gui.remoteFollow
+
+	identity := stackIdentity(stack)
+	if identity == follow.stack {
+		return
+	}
+
+	follow.stack = identity
+
+	if follow.timer != nil {
+		follow.timer.Stop()
+	}
+
+	if !follow.seeded {
+		follow.seeded = true
+		return
+	}
+
+	if stack.Remote == "" || gui.onSessionRemote(stack.Remote) {
+		return
+	}
+
+	follow.timer = time.AfterFunc(follow.delay, func() {
+		command, err := gui.remotes.get(stack.Remote)
+		if err != nil {
+			gui.Log.Warn(err)
+			return
+		}
+
+		gui.g.Update(func(*gocui.Gui) error {
+			if stackIdentity(gui.selectedStack.Load()) != identity || gui.onSessionRemote(stack.Remote) {
+				return nil
+			}
+
+			return gui.moveToRemote(stack.Remote, command)
+		})
 	})
 }

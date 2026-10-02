@@ -126,8 +126,10 @@ A `remote:` ahead of the path pins the stack to that remote
 (`SplitStackInput`), but only when the prefix is one of the CLI's instance
 remotes, so a path with a colon in it still reads as a path; with none,
 it's pinned to the session's, so a session on another remote later can't
-run its verbs on the wrong daemon. Only the local stack, never saved, and
-an entry saved before remotes follow the session. A pinned stack is saved
+run its verbs on the wrong daemon. Only the local stack, never saved,
+follows the session: `Run` pins any saved entry with no remote, from
+before stacks had one, to the remote it starts on (`PinStacks`), that
+being the one each has been shown against so far. A pinned stack is saved
 as `remote:/dir` (`ComposeStack.Ref`), and that is its identity everywhere
 a directory alone was: the same directory can be listed once per remote. Whether the remote
 is the session's is asked only where it matters (`onSessionRemote`), so
@@ -166,8 +168,16 @@ remote asked at once. The path column writes home as `~`. A remote column
 leads whenever a stack is on a remote other than the session's
 (`State.StacksElsewhere`), those remotes in magenta - the project
 columns' rule, a column only where the rows would otherwise read alike.
-The local stack sorts first, then the session's remote's, then each other
-remote's together, each by name. Wherever the rest of the app would vouch
+The local stack sorts first, then each saved remote's together, each by
+name - nothing the session decides, since
+the session follows the selection and would reshuffle the list under the
+cursor. Following is
+`followStackRemote`: Stacks' `OnSelect` fires on every refresh too, so it
+acts only on a change of stack, after the cursor has rested 300ms, and
+not on the first, which is startup's and leaves `--remote` alone. A stack
+that follows the session, or whose remote doesn't answer, moves nothing.
+The move itself is `R`'s (`moveToRemote`), on a connection the stack's
+status already opened. Wherever the rest of the app would vouch
 for the wrong daemon - the Services and Snapshots titles, the compose and
 instance confirmations - `onRemote` adds "on pve01".
 
