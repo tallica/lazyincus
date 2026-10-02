@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-02
+
 ### Added
 - A Stacks panel lists compose stacks: the working directory's, plus any added with `a` and removed with `D`, saved in `state.yml`.
 - Stacks run the Services panel's compose verbs against the whole stack.
@@ -282,7 +284,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/tallica/lazyincus/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/tallica/lazyincus/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/tallica/lazyincus/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/tallica/lazyincus/compare/v0.9.1...v0.10.0
