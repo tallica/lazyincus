@@ -1,17 +1,24 @@
 package gui
 
 import (
+	"fmt"
+
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
 // onStack binds a key to a compose verb on the Stacks panel's selection:
 // the Services panel's verbs with the SERVICE argument left off. A stack
-// whose config couldn't be read says why instead.
+// whose config couldn't be read, or whose remote is gone from the CLI's
+// config, says why instead, before any confirmation asks.
 func (gui *Gui) onStack(action func(*commands.ComposeStack) error) func(*gocui.Gui, *gocui.View) error {
 	return onSelected(gui.Panels.Stacks, func(stack *commands.ComposeStack) error {
 		if stack.Err != nil {
 			return gui.createErrorPanel(stack.Err.Error())
+		}
+
+		if !gui.onSessionRemote(stack.Remote) && !gui.remotes.known(stack.Remote) {
+			return gui.createErrorPanel(gui.unknownRemote(stack.Remote).Error())
 		}
 
 		return action(stack)
@@ -36,8 +43,17 @@ func (gui *Gui) composeVerb(confirm string, args ...string) func(composeTarget) 
 }
 
 // stackPause is `p` on a stack: frozen throughout thaws, anything else
-// freezes, each service voting.
+// freezes, each service voting - which a remote that hasn't answered gives
+// it nothing to go on for.
 func (gui *Gui) stackPause(stack *commands.ComposeStack) error {
+	if stack.StatusErr != nil {
+		return gui.createErrorPanel(stack.StatusErr.Error())
+	}
+
+	if stack.StatusPending {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.ConnectingTo, stack.Remote))
+	}
+
 	if stack.Status() == commands.ServiceNone {
 		return gui.createErrorPanel(gui.Tr.StackNotRunning)
 	}

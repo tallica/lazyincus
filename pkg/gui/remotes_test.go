@@ -278,4 +278,12 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 	s.do(t, func() error { return s.gui.stackSwitchRemote(stack) })
 	s.settle(t, "'e' points the stack at another")
 	assert.Equal(t, "fake", onLoop(t, s, s.gui.IncusCommand.RemoteName))
+	s.do(t, s.gui.closeConfirmationPrompt)
+
+	// Its verbs say the same, rather than asking to stop it first.
+	s.do(t, func() error {
+		return s.gui.onStackTarget(s.gui.composeVerb(s.gui.Tr.ConfirmComposeStop, "stop"))(s.g, s.gui.Views.Stacks)
+	})
+	screen := s.settle(t, "'e' points the stack at another")
+	assert.NotContains(t, screen, "Are you sure")
 }

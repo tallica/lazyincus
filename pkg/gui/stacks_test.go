@@ -375,6 +375,13 @@ func TestAStackOnAnUnreachableRemote(t *testing.T) {
 		return strings.Contains(onLoop(t, s, s.gui.Views.Services.Buffer), "can't reach down")
 	}, 5*time.Second, 20*time.Millisecond)
 	assert.False(t, onLoop(t, s, func() bool { return s.gui.Views.Confirmation.Visible }))
+
+	// `p` has no statuses to vote on, and says why rather than that
+	// nothing's running.
+	s.do(t, func() error { return s.gui.onStack(s.gui.stackPause)(s.g, s.gui.Views.Stacks) })
+	screen := s.settle(t, "─"+s.gui.Tr.ErrorTitle)
+	assert.NotContains(t, screen, s.gui.Tr.StackNotRunning)
+	assert.Contains(t, onLoop(t, s, s.gui.Views.Confirmation.Buffer), "no answer")
 	assert.Equal(t, []string{"none", "unreachable"}, onLoop(t, s, func() []string {
 		return lo.Map(s.gui.Panels.Stacks.List.GetAllItems(), func(stack *commands.ComposeStack, _ int) string {
 			if stack.StatusErr != nil {
