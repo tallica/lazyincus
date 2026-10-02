@@ -25,9 +25,8 @@ type StackRemote struct {
 	Active bool
 }
 
-// GetStackDisplayStrings is a Stacks row: name, status and directory, the
-// directory under home written with `~`, after the remote when there's one
-// to show.
+// GetStackDisplayStrings is a Stacks row: its remote when there's one to
+// show, then name, status and directory, home written as `~`.
 func GetStackDisplayStrings(guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string, remote *StackRemote) []string {
 	cells := []string{
 		stack.Title(),

@@ -35,7 +35,10 @@ inferred.
   the modal for the rest of the outage; the footer's `●`/`✗` stands either
   way. Failing to connect at startup has no client to carry on with, so
   `NewIncusCommand` returns a `ConnectError` and `App.KnownError` prints it
-  rather than a stack trace.
+  rather than a stack trace. All of this is the session's remote: another
+  remote a stack is on going away is that stack's row's to say,
+  `unreachable`, the rest of the screen carrying on (see
+  [docs/Panels.md](Panels.md#stacks-on-other-remotes)).
 - **Connection timeouts**: `capDialTimeout` caps both of the transport's
   dialers at 5s (a unix socket gets `DialContext`, a TLS remote
   `DialTLSContext`), the OS otherwise taking a minute or more on a host

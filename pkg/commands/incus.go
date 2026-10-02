@@ -20,7 +20,8 @@ import (
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
-// IncusCommand is our main interface into the Incus API
+// IncusCommand is the app's way into one Incus remote: the session's, or
+// another a stack is on.
 type IncusCommand struct {
 	Log       *logrus.Entry
 	OSCommand *OSCommand
@@ -52,7 +53,8 @@ type IncusCommand struct {
 // leaves to the OS - a minute or more on a remote that has gone away.
 const dialTimeout = 5 * time.Second
 
-// connectTimeout is the same bound for the startup connect. cliconfig calls
+// connectTimeout is the same bound for connecting at all - at startup, on
+// `R`, or to a stack's remote. cliconfig calls
 // GetServer() before handing back a client, so that first request is made
 // on a transport we don't have yet, and the call is the only thing left to
 // bound.

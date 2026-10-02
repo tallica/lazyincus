@@ -37,8 +37,7 @@ func WithRemote(cmd *exec.Cmd, remote string) *exec.Cmd {
 }
 
 // composeConfig runs `incus-compose config --format json` for the stack in
-// dir. It resolves the remote first, so it's a real, if fast, subprocess
-// call.
+// dir: a real, if fast, subprocess, though one that never asks the daemon.
 func (c *IncusCommand) composeConfig(dir string) (string, error) {
 	return c.OSCommand.RunExecutableWithOutput(c.ComposeCmd(dir, "config", "--format", "json"))
 }

@@ -165,9 +165,9 @@ type guiState struct {
 	// startup: panel visibility is fixed for the session.
 	ComposeAvailable bool
 
-	// StackServices are the services each listed stack declares, by its
-	// Incus project: their instances are the services panel's rather than
-	// the instances panel's.
+	// StackServices are the services each listed stack on the session's
+	// remote declares, by its Incus project: their instances are the services
+	// panel's rather than the instances panel's.
 	StackServices map[string]map[string]bool
 
 	// SnapshotsInstances are the instances the snapshots panel is showing

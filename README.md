@@ -45,8 +45,8 @@ isn't there; see "What's not here yet" below, and
   (see [docs/Remotes.md](docs/Remotes.md)).
 - Your user in the `incus`/`incus-admin` group (or root) for local socket
   access.
-- The `incus` CLI on `PATH` — used for attaching to a console and for
-  exec-into-instance.
+- The `incus` CLI on `PATH` — used for attaching to a console, a shell in
+  an instance, and editing an item's config in your editor.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in
@@ -117,10 +117,11 @@ lazyincus --remote myserver
 that variable, so the `incus` and `incus-compose` subprocesses follow the
 panels onto the same daemon. The footer shows the remote you are on, and
 `R` switches to another while running. A compose stack can live on a
-remote of its own - see [Compose stacks](#compose-stacks). [docs/Remotes.md](docs/Remotes.md)
-covers adding a remote and its token, reaching a daemon over SSH, and the
-gotchas behind running incusd in a local VM — macOS Local Network Privacy and
-guest clock skew both fail in ways that point at the wrong component.
+remote of its own — see [Compose stacks](#compose-stacks).
+[docs/Remotes.md](docs/Remotes.md) covers adding a remote and its token,
+reaching a daemon over SSH, and the gotchas behind running incusd in a
+local VM — macOS Local Network Privacy and guest clock skew both fail in
+ways that point at the wrong component.
 
 ## Usage
 
@@ -189,8 +190,9 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `x` / `?` | Keybinding menu |
 | `q`, `ctrl+c` | Quit |
 
-Config file: `~/.config/lazyincus/config.yml`. See [docs/Config.md](docs/Config.md)
-for the full list of options and defaults.
+Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
+`~/Library/Application Support/lazyincus` unless the former exists). See
+[docs/Config.md](docs/Config.md) for the full list of options and defaults.
 
 ## Compose stacks
 
@@ -233,36 +235,36 @@ another you put in front of the directory, the way `incus` names things —
 go to that remote whichever one a later session is on, so one list can
 hold the stacks of several servers. When one does, the Stacks panel grows
 a remote column with the active remote marked `*`, and `space` on a stack
-moves the rest of the screen - instances, snapshots, resources, the
-footer - to that stack's remote, the way `R` does. While a stack isn't on
-the active remote, its Services title and every confirmation for it name
-its remote. The compose files stay on this machine, so the
-"not on the same host" gotcha at the end of this section applies.
+moves the rest of the screen — instances, snapshots, resources, the
+footer — to that stack's remote, the way `R` does. While a stack isn't on
+the active remote, its Services and Snapshots titles and every
+confirmation for it name its remote. The compose files stay on this
+machine, so the "not on the same host" gotcha at the end of this section
+applies.
 
 A stack's row says how its instances are doing, as one status: theirs when
-they agree, `partial` when they don't, `none` when nothing is deployed, and
+they agree, `partial` when they don't, `none` when nothing is deployed,
 `error` when its compose file can't be read, `connecting` while its remote
 is first reached, and `unreachable` when that remote doesn't answer or is
-no longer in the incus CLI's config — the Info tab says why, and for a
-renamed remote `e` fixes the stack. Its
-keys are the Services panel's compose verbs below, run against the whole
-stack. The Info tab says where the stack can be reached, what it's using,
-and where the daemon has drifted from the compose file; the Logs tab
-stacks every service's logs, and the Config tab is the whole of
-`incus-compose config`.
+no longer in the incus CLI's config. The Info tab says why, and for a
+renamed remote `e` fixes the stack. Its keys are the Services panel's
+compose verbs below, run against the whole stack. The Info tab says where
+the stack can be reached, what it's using, and where the daemon has drifted
+from the compose file; the Logs tab stacks every service's logs, and the
+Config tab is the whole of `incus-compose config`.
 
 The Services rows come from the compose file rather than the daemon, so a
 service the file declares but nothing is running still gets one, in state
 `none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
-disagree. Every listed stack's service instances move out of the
-instances panel, which becomes **Standalone Instances** (`3`); a project
-no stack lists keeps its instances there, as does an instance of a service
-the compose file no longer declares. `C` there puts the stacks' instances
-back for a while, in one list with everything else.
+disagree. The service instances of every listed stack on the active
+remote move out of the instances panel, which becomes **Standalone
+Instances** (`3`); a project no stack lists keeps its instances there, as
+does an instance of a service the compose file no longer declares. `C`
+there puts the stacks' instances back for a while, in one list with
+everything else.
 
-A service with replicas
- lists them under it, one indented row each,
+A service with replicas lists them under it, one indented row each,
 rendered in the same columns as the service. Selecting a replica points
 everything that needs a single instance at it. The service's own row above
 them means all of its replicas, which is what selecting the service has

@@ -79,9 +79,9 @@ func main() {
 	// `incus console`, `incus exec` and every incus-compose verb are
 	// subprocesses that resolve the remote themselves. Setting the variable
 	// here puts the panels and every shell-out on the same daemon, which
-	// passing a value inward wouldn't. -P goes the same way, so the local
-	// stack is the one incus-compose would pick by itself; each verb names
-	// its own stack's directory regardless.
+	// passing a value inward wouldn't; `R` keeps it current after. -P goes
+	// the same way, so the local stack is the one incus-compose would pick by
+	// itself; each verb names its own stack's directory regardless.
 	if remoteFlag != "" {
 		if err := os.Setenv("INCUS_REMOTE", remoteFlag); err != nil {
 			log.Fatal(err.Error())

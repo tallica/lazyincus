@@ -14,11 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A stack's Logs tab shows every service's logs, one instance under each heading; `m` jumps to it.
 - `C` on Standalone Instances shows or hides the stacks' instances, for one list of everything.
 - `y` on a stack copies its project, its directory, or a published port's address.
-- `R` switches every panel to another Incus remote for the session.
-- `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, so one list holds stacks from several servers.
-- `space` on a stack switches to its remote; a remote column marks the active one `*`, and prompts name any other.
-- `e` on Stacks edits a stack's remote and directory; `c` opens its compose file in `$EDITOR`.
 - `M` on a stack or service follows its logs, every instance's interleaved (`incus-compose logs --follow`). It shows only new output: the Logs tabs have already read the rest.
+- `e` on Stacks edits a stack's remote and directory; `c` opens its compose file in `$EDITOR`.
+- `R` switches every panel to another of the incus CLI's remotes, for the session.
+- `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, so one list holds stacks from several servers.
+- `space` on a stack switches to its remote. A remote column marks the active one `*`; titles and confirmations name any other.
+- A stack whose remote is slow or away reads `connecting` or `unreachable`, and the rest of the screen carries on.
 
 ### Changed
 - A stack is saved with the remote it was added on. Ones saved earlier are pinned to the remote lazyincus next starts on: start it on your usual remote once, or `e` a stack pinned wrongly.

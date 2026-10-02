@@ -77,9 +77,9 @@ func (gui *Gui) onServiceRow(
 	return serviceAction(row.Service)
 }
 
-// composeTarget is what a compose verb acts on: a stack, by its directory,
-// narrowed to one of its services unless service is empty - the verb with
-// no SERVICE argument, which is the whole stack.
+// composeTarget is what a compose verb acts on: a stack, by its directory and
+// remote, narrowed to one of its services unless service is empty - the verb
+// with no SERVICE argument, which is the whole stack.
 type composeTarget struct {
 	remote  string
 	dir     string
