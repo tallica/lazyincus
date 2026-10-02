@@ -255,7 +255,7 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 	t.Setenv("INCUS_REMOTE", "fake")
 
 	gone := testStack(t, t.TempDir(), "shop", "api")
-	gone.Remote = "playground"
+	gone.Remote = "old-vm"
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, nil, gone)(s)
@@ -263,12 +263,12 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 
 		connect := s.gui.remotes.connect
 		s.gui.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
-			assert.NotEqual(t, "playground", remote)
+			assert.NotEqual(t, "old-vm", remote)
 			return connect(remote)
 		}
 	})
 
-	s.settle(t, `no remote "playground" in the incus CLI's config`)
+	s.settle(t, `no remote "old-vm" in the incus CLI's config`)
 	s.settle(t, "unreachable")
 
 	stack := onLoop(t, s, func() *commands.ComposeStack {

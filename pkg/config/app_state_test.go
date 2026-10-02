@@ -84,20 +84,20 @@ func TestPinningPlainStacks(t *testing.T) {
 
 	require.NoError(t, appConfig.AddStack("/srv/web"))
 	require.NoError(t, appConfig.AddStack("pve01:/srv/db"))
-	require.NoError(t, appConfig.AddStack("lenny:/srv/web"))
+	require.NoError(t, appConfig.AddStack("web01:/srv/web"))
 	require.NoError(t, appConfig.AddStack("/srv/db"))
 
-	require.NoError(t, appConfig.PinStacks("lenny"))
+	require.NoError(t, appConfig.PinStacks("web01"))
 
 	state, err := appConfig.LoadAppState()
 	require.NoError(t, err)
-	assert.Equal(t, []string{"lenny:/srv/web", "pve01:/srv/db", "lenny:/srv/db"}, state.Stacks)
+	assert.Equal(t, []string{"web01:/srv/web", "pve01:/srv/db", "web01:/srv/db"}, state.Stacks)
 
 	info, err := os.Stat(appConfig.StateFilename())
 	require.NoError(t, err)
 	require.NoError(t, os.Chtimes(appConfig.StateFilename(), info.ModTime(), info.ModTime().Add(-time.Hour)))
 
-	require.NoError(t, appConfig.PinStacks("lenny"))
+	require.NoError(t, appConfig.PinStacks("web01"))
 
 	again, err := os.Stat(appConfig.StateFilename())
 	require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestPinningPlainStacks(t *testing.T) {
 func TestPinningNothingWritesNothing(t *testing.T) {
 	appConfig := &AppConfig{ConfigDir: t.TempDir()}
 
-	require.NoError(t, appConfig.PinStacks("lenny"))
+	require.NoError(t, appConfig.PinStacks("web01"))
 	assert.NoFileExists(t, appConfig.StateFilename())
 }
 
@@ -115,14 +115,14 @@ func TestPinningNothingWritesNothing(t *testing.T) {
 func TestReplacingAStack(t *testing.T) {
 	appConfig := &AppConfig{ConfigDir: t.TempDir()}
 
-	for _, stack := range []string{"lenny:/srv/web", "lenny:/srv/db", "pve01:/srv/cache"} {
+	for _, stack := range []string{"web01:/srv/web", "web01:/srv/db", "pve01:/srv/cache"} {
 		require.NoError(t, appConfig.AddStack(stack))
 	}
 
-	require.NoError(t, appConfig.ReplaceStack("lenny:/srv/db", "pve01:/srv/db"))
-	require.ErrorIs(t, appConfig.ReplaceStack("lenny:/srv/web", "pve01:/srv/cache"), ErrStackListed)
+	require.NoError(t, appConfig.ReplaceStack("web01:/srv/db", "pve01:/srv/db"))
+	require.ErrorIs(t, appConfig.ReplaceStack("web01:/srv/web", "pve01:/srv/cache"), ErrStackListed)
 
 	state, err := appConfig.LoadAppState()
 	require.NoError(t, err)
-	assert.Equal(t, []string{"lenny:/srv/web", "pve01:/srv/db", "pve01:/srv/cache"}, state.Stacks)
+	assert.Equal(t, []string{"web01:/srv/web", "pve01:/srv/db", "pve01:/srv/cache"}, state.Stacks)
 }

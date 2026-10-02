@@ -68,10 +68,10 @@ func TestPublishHost(t *testing.T) {
 func TestInstanceRemoteNames(t *testing.T) {
 	command := &IncusCommand{cliCfg: &cliconfig.Config{Remotes: map[string]cliconfig.Remote{
 		"local":  {Protocol: "incus"},
-		"lenny":  {Protocol: "incus"},
+		"web01":  {Protocol: "incus"},
 		"images": {Protocol: "simplestreams", Public: true},
 		"docker": {Protocol: "oci", Public: true},
 	}}}
 
-	assert.Equal(t, []string{"lenny", "local"}, command.InstanceRemoteNames())
+	assert.Equal(t, []string{"local", "web01"}, command.InstanceRemoteNames())
 }
