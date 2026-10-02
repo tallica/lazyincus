@@ -165,11 +165,23 @@ func (gui *Gui) listStacks(saved []string) []*commands.ComposeStack {
 	stacks := []*commands.ComposeStack{}
 	byRef := map[string]*commands.ComposeStack{}
 
+	// Keyed by the remote each is on now, so the local stack and the same
+	// directory saved for the session's remote are one row, which the
+	// saved entry's remote then names.
 	add := func(remote, dir string, local bool) {
-		ref := commands.StackRef(remote, dir)
+		on := remote
+		if on == "" {
+			on = gui.IncusCommand.RemoteName()
+		}
+
+		ref := commands.StackRef(on, dir)
 		if existing, ok := byRef[ref]; ok {
 			existing.Local = existing.Local || local
 			existing.Saved = existing.Saved || !local
+
+			if !local {
+				existing.Remote = remote
+			}
 
 			return
 		}

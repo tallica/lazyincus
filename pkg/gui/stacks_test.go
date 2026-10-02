@@ -453,6 +453,27 @@ func TestEditingAStack(t *testing.T) {
 	s.settle(t, "Services (shop on pve01)")
 }
 
+// The local stack and the same directory saved for the session's remote
+// are one row, both listed, which D takes off the list as saved; saved for
+// another remote, it's a row of its own.
+func TestTheLocalStackSavedIsOneRow(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	saved, elsewhere := *local, *local
+	saved.Remote, elsewhere.Remote = "fake", "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, local, &saved, &elsewhere)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+	})
+	s.settle(t, "Services (default)")
+
+	stacks := onLoop(t, s, s.gui.Panels.Stacks.List.GetAllItems)
+	require.Len(t, stacks, 2)
+	assert.True(t, stacks[0].Local && stacks[0].Saved)
+	assert.Equal(t, "fake:"+local.Dir, stacks[0].Ref())
+	assert.Equal(t, "pve01:"+local.Dir, stacks[1].Ref())
+}
+
 // The local stack isn't saved, so there's nothing for `D` to remove.
 func TestTheLocalStackCannotBeRemoved(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))
