@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `a` on Stacks takes a remote before the directory, `pve01:~/caddy`, listing stacks from several Incus servers at once. Without one, the stack is saved with the session's remote.
 - Stacks on more than one remote get a remote column, the active one marked `*`; a stack's Services title and confirmations name its remote when it isn't the active one.
 - `e` on Stacks edits a stack's remote and directory; `c` opens its compose file in `$EDITOR`.
-- Resting on a stack moves the rest of the screen to its remote, so the panels under Stacks always show one server.
+- `space` on a stack switches the rest of the screen to its remote.
 - Stacks saved before this release are pinned to the remote lazyincus next starts on. Start it on your usual remote once; `D` and `a` move a stack pinned wrongly.
 - `M` on a stack or service follows its logs, every instance's interleaved (`incus-compose logs --follow`). It shows only new output: the Logs tabs have already read the rest.
 

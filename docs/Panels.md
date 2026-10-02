@@ -175,15 +175,11 @@ leads whenever a stack is on a remote other than the session's
 (`State.StacksElsewhere`), the session's marked `*` in green as the `R`
 menu marks it - the project columns' rule, a column only where the rows would otherwise read alike.
 The local stack sorts first, then each saved remote's together, each by
-name - nothing the session decides, since
-the session follows the selection and would reshuffle the list under the
-cursor. Following is
-`followStackRemote`: Stacks' `OnSelect` fires on every refresh too, so it
-acts only on a change of stack, after the cursor has rested 300ms, and
-not on the first, which is startup's and leaves `--remote` alone. A stack
-that follows the session, or whose remote doesn't answer, moves nothing.
-The move itself is `R`'s (`moveToRemote`), on a connection the stack's
-status already opened. Wherever the rest of the app would vouch
+name - nothing the session decides, since switching remote would
+reshuffle the list under the cursor. `space` (`stackSwitchRemote`) is
+`R`'s switch to the stack's remote, on a connection its status has
+usually opened already; a key rather than the selection, since a switch
+reloads every panel. Wherever the rest of the app would vouch
 for the wrong daemon - the Services and Snapshots titles, the compose and
 instance confirmations - `onRemote` adds "on pve01".
 

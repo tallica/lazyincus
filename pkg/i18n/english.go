@@ -164,6 +164,7 @@ type TranslationSet struct {
 	SavingStatus                  string
 	CannotEditLocalStack          string
 	EditComposeFile               string
+	SwitchToStackRemote           string
 	AddStackPrompt                string
 	AddStackHint                  string
 	AddingStackStatus             string
@@ -421,6 +422,7 @@ func englishSet() TranslationSet {
 		SavingStatus:           "saving",
 		CannotEditLocalStack:   "%s is the stack lazyincus started with, from the working directory or -P. It isn't saved, so there's nothing to edit: start lazyincus elsewhere, or add the directory with 'a'.",
 		EditComposeFile:        "edit compose file in $EDITOR",
+		SwitchToStackRemote:    "switch to the stack's remote",
 		AddStackPrompt:         "Add stack: [remote:]directory",
 		AddStackHint:           "enter to add · esc to cancel",
 		AddingStackStatus:      "adding stack",

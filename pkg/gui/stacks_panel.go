@@ -59,14 +59,12 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 		NoItemsMessage: gui.Tr.NoStacks,
 		Gui:            gui.intoInterface(),
 		OnSelect: func(stack *commands.ComposeStack) error {
-			gui.followStackRemote(stack)
-
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
 		// The local stack first, being the one lazyincus was started for,
 		// then each saved remote's together, by nothing the session decides:
-		// it follows the selection, and would reshuffle the list under it.
+		// switching remote would reshuffle the list under the cursor.
 		Sort: func(a, b *commands.ComposeStack) bool {
 			if a.Local != b.Local {
 				return a.Local

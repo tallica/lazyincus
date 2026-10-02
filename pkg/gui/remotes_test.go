@@ -89,9 +89,9 @@ func TestSwitchingToAnUnreachableRemote(t *testing.T) {
 	assert.Equal(t, names, instanceNames(t, s))
 }
 
-// Resting on a stack moves the rest of the screen to its remote; the
-// first stack, selected at startup, leaves --remote's.
-func TestTheScreenFollowsTheSelectedStack(t *testing.T) {
+// Moving through the stacks moves nothing else; space on one moves the
+// rest of the screen to its remote, and the list stays as it was.
+func TestSpaceSwitchesToTheStacksRemote(t *testing.T) {
 	t.Setenv("INCUS_REMOTE", "fake")
 
 	pve01 := incustest.New(incustest.Server{
@@ -107,8 +107,8 @@ func TestTheScreenFollowsTheSelectedStack(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, nil, here, there, plain)(s)
 		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
-		s.gui.remoteFollow.delay = 0
 	})
+
 	order := func() []string {
 		return onLoop(t, s, func() []string {
 			return lo.Map(s.gui.Panels.Stacks.List.GetItems(), func(stack *commands.ComposeStack, _ int) string {
@@ -116,15 +116,25 @@ func TestTheScreenFollowsTheSelectedStack(t *testing.T) {
 			})
 		})
 	}
+	selected := func() *commands.ComposeStack {
+		return onLoop(t, s, func() *commands.ComposeStack {
+			stack, _ := s.gui.Panels.Stacks.GetSelectedItem()
+			return stack
+		})
+	}
 
 	// zoo was saved with no remote, so it sorts first.
 	s.settle(t, "Services (zoo)")
 	assert.Equal(t, []string{"zoo", "default", "shop"}, order())
-	assert.Equal(t, "fake", s.gui.IncusCommand.RemoteName())
 
 	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
-	s.settle(t, "Services (default)")
 	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
+	s.settle(t, "Services (shop on pve01)")
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, "fake", onLoop(t, s, s.gui.IncusCommand.RemoteName))
+
+	stack := selected()
+	s.do(t, func() error { return s.gui.stackSwitchRemote(stack) })
 	s.settle(t, "(pve01/all projects)")
 	require.Eventually(t, func() bool {
 		return slices.Equal(instanceNames(t, s), []string{"pve01:api-1"})
@@ -137,56 +147,38 @@ func TestTheScreenFollowsTheSelectedStack(t *testing.T) {
 	assert.Regexp(t, `│\* pve01 +shop`, screen)
 	assert.Regexp(t, `│  fake +default`, screen)
 
+	// Space on a stack already on the session's remote moves nothing.
 	s.do(t, s.gui.Panels.Stacks.HandlePrevLine)
-	s.settle(t, "(fake/all projects)")
-	s.settle(t, "Services (default)")
-}
-
-// An R stands until the selection moves: a refresh reselecting the same
-// stack doesn't take the screen back to it.
-func TestARemoteSwitchStandsUntilTheSelectionMoves(t *testing.T) {
-	t.Setenv("INCUS_REMOTE", "fake")
-
-	here := testStack(t, t.TempDir(), "default", "web")
-	here.Remote = "fake"
-
-	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
-		withStacks(t, nil, here)(s)
-		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
-		s.gui.remoteFollow.delay = 0
-	})
-	s.settle(t, "Services (default)")
-
-	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
 	s.settle(t, "Services (default on fake)")
-
-	require.NoError(t, s.gui.refresh(nil, s.gui.fetchStacks))
-	s.do(t, s.gui.Panels.Stacks.RerenderList)
+	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
+	stack = selected()
+	s.do(t, func() error { return s.gui.stackSwitchRemote(stack) })
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, "pve01", onLoop(t, s, s.gui.IncusCommand.RemoteName))
 }
 
-// A stack whose remote doesn't answer leaves the screen where it was.
-func TestFollowingAnUnreachableStack(t *testing.T) {
+// Space on a stack whose remote doesn't answer leaves the screen where it
+// was.
+func TestSwitchingToAnUnreachableStack(t *testing.T) {
 	t.Setenv("INCUS_REMOTE", "fake")
 
-	here := testStack(t, t.TempDir(), "default", "web")
-	here.Remote = "fake"
 	down := testStack(t, t.TempDir(), "shop", "api")
 	down.Remote = "down"
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
-		withStacks(t, nil, here, down)(s)
+		withStacks(t, nil, down)(s)
 		withRemotes(map[string]*incustest.Server{})(s)
-		s.gui.remoteFollow.delay = 0
 	})
-	// down sorts first, so startup selects it, and keeps --remote's.
 	s.settle(t, "Services (shop on down)")
 
-	s.do(t, s.gui.Panels.Stacks.HandleNextLine)
-	s.settle(t, "Services (default)")
-	s.do(t, s.gui.Panels.Stacks.HandlePrevLine)
-	s.settle(t, "Services (shop on down)")
-	time.Sleep(100 * time.Millisecond)
+	s.do(t, func() error {
+		stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+		if err != nil {
+			return err
+		}
+
+		return s.gui.stackSwitchRemote(stack)
+	})
+	s.settle(t, "no answer")
 	assert.Equal(t, "fake", onLoop(t, s, s.gui.IncusCommand.RemoteName))
 }

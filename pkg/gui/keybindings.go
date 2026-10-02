@@ -697,6 +697,10 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('D', onSelected(gui.Panels.Stacks, gui.stackRemove), gui.Tr.RemoveStack),
 		binding('e', onSelected(gui.Panels.Stacks, gui.stackEdit), gui.Tr.EditStack),
 		binding('c', onSelected(gui.Panels.Stacks, gui.stackEditCompose), gui.Tr.EditComposeFile),
+		{
+			ViewName: "stacks", Key: gocui.KeySpace, Modifier: gocui.ModNone,
+			Handler: onSelected(gui.Panels.Stacks, gui.stackSwitchRemote), Description: gui.Tr.SwitchToStackRemote,
+		},
 		binding('u', gui.onStackTarget(gui.composeUp), gui.Tr.ComposeUp),
 		binding('d', gui.onStackTarget(gui.composeDownMenu), gui.Tr.ComposeDown),
 		binding('U', gui.onStackTarget(gui.composeUpPullRecreate), gui.Tr.ComposeUpPullRecreate),

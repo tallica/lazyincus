@@ -421,7 +421,6 @@ func TestEditingAStack(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, nil, shop)(s)
 		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
-		s.gui.remoteFollow.delay = time.Hour
 		s.gui.loadStack = func(dir string) *commands.ComposeStack {
 			loaded := *shop
 			loaded.Dir = dir

@@ -30,8 +30,8 @@ instances, so not `images:` or an OCI registry, and not `local` off Linux.
 Every panel moves over, listing all of its projects, and so does
 `INCUS_REMOTE`, so the subprocesses follow. A remote that doesn't answer
 within 10s leaves you where you were. A stack pinned to the remote you
-left still reads from it, and selecting another stack moves the screen to
-that stack's remote, which is where an `R` lasts until.
+left still reads from it, and `space` on a stack switches to that stack's
+remote.
 
 `incus remote switch myserver` works too, and persists — it changes the
 CLI's default for everything, lazyincus included. The flag, the variable
