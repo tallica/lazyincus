@@ -1,7 +1,7 @@
 ╭─[1]─Instances──────────────╮╭─Info - Logs - Config - Env - Top─────────────────────────╮
-│a-name-long-enough-to-be-cu…││Name:         a-name-long-enough-to-be-cut-off            │
+│a-name-long-enough-to-be-cu…││Remote:       fake                                        │
 │web                   ╭─Menu──────────────────────────────────────╮                     │
-│db                    │S         start                            │                     │
+│db                    │S         start                            │e-cut-off            │
 │                      │s         stop                             │                     │
 │                      │r         restart                          │                     │
 │                      │p         pause/resume                     │                     │

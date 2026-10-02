@@ -68,6 +68,7 @@ pkg/gui/
   stacks_actions.go            the Stacks panel's compose verbs, over the whole stack
   stack_info.go                the stack's Info tab: identity, endpoints, usage, drift
   copy.go                      the `y` menu: what each kind of item offers to copy
+  location.go                  where an item lives - remote, project, stack, service - heading its Info and Config tabs
   services_actions.go          the services panel's compose verbs
   instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
   projects.go                  project scope menu (all projects, or one), and the reload after any change of scope

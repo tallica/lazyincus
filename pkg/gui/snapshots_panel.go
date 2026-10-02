@@ -76,11 +76,16 @@ func (gui *Gui) renderSnapshotConfig(snapshot *commands.Snapshot) tasks.TaskFunc
 }
 
 func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
-	padding := 12
+	padding := identityPadding
 	output := ""
 	if snapshot.Volume != nil {
+		output += gui.locationStr(gui.sessionLocation(snapshot.Project))
 		output += utils.WithPadding("Volume: ", padding) + snapshot.Owner + " (" + snapshot.Volume.Pool + ")\n"
 	} else {
+		if snapshot.Instance != nil {
+			output += gui.locationStr(gui.instanceLocation(snapshot.Instance))
+		}
+
 		output += utils.WithPadding("Instance: ", padding) + snapshot.Owner + "\n"
 	}
 

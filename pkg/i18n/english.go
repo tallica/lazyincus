@@ -181,6 +181,7 @@ type TranslationSet struct {
 	UsageTitle                    string
 	DriftTitle                    string
 	StackListedLocal              string
+	StackNotListed                string
 	StackListedSaved              string
 	ServicesTitle                 string
 	ServicesTitleProject          string
@@ -443,6 +444,7 @@ func englishSet() TranslationSet {
 		UsageTitle:                   "Usage",
 		DriftTitle:                   "Drift",
 		StackListedLocal:             "at startup (working directory or -P)",
+		StackNotListed:               "not listed",
 		StackListedSaved:             "saved in state.yml",
 
 		ServicesTitle:                 "Services",

@@ -85,10 +85,9 @@ func (gui *Gui) renderProfileConfig(profile *commands.Profile) tasks.TaskFunc {
 }
 
 func (gui *Gui) profileConfigStr(profile *commands.Profile) string {
-	padding := 14
-	output := ""
+	padding := identityPadding
+	output := gui.locationStr(gui.sessionLocation(profile.Profile.Project))
 	output += utils.WithPadding("Name: ", padding) + profile.Name + "\n"
-	output += utils.WithPadding("Project: ", padding) + profile.Profile.Project + "\n"
 	output += utils.WithPadding("Used by: ", padding) + fmt.Sprint(profile.UsedByCount()) + "\n"
 
 	data, err := utils.MarshalIntoYaml(profile.Profile)

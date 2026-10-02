@@ -18,6 +18,21 @@ the session's names that remote too - see
 listing's `used_by`, which events and the polls keep current, and the
 daemon has the last word either way.
 
+## Where an item lives
+
+Every Info tab, and the header of every Config tab that has one, starts
+with where the item lives, broadest first (`locationStr`): its remote -
+always, the footer's being the session's and not necessarily the
+item's - then its project, and for an instance incus-compose made, its
+stack and service. incus-compose names the project for the stack, so the
+Stack line doesn't repeat the name: it's the directory the stack is
+listed from (`stackDirs`, which each Stacks refresh publishes for the
+tabs, rendering off the main loop as they do), or "not listed". Which
+replica an instance is stays its name's to say, and the replica headings'
+on Service Info. A resource is the session's remote, the only one those
+panels list. Lines the tab's heading has already said are left out: a
+service's instance blocks repeat none of it.
+
 ## Copying
 
 `y` on any list opens a menu of what the item has to copy, built by
@@ -384,8 +399,8 @@ Main panel tabs:
   either way: the rule is where the compose file's half ends and the
   daemon's begins, which a service with no replicas has too.
   `instanceInfoStr` takes the identity lines to leave out, the service and
-  the heading having just said them: project, image and name always, plus
-  health for a lone instance. The compose fields are parsed with the stack's
+  the heading having just said them: where it lives, image and name
+  always, plus health for a lone instance. The compose fields are parsed with the stack's
   config by `parseComposeConfig` and stored rendered, only display wanting
   them; the Healthcheck line is the project's, from `gui.composeProject`
   (`GetComposeProject` fetches it in `fetchServices`, so rendering makes no
@@ -451,8 +466,9 @@ doesn't convey: `s`/`d` confirm before acting, and `p` toggles between
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
 
-- **Info** — what the instance is (name, status, type, project, image,
-  health where it has one, architecture, dates, addresses, snapshot count),
+- **Info** — where the instance lives ([above](#where-an-item-lives)),
+  then what it is (name, status, type, image, health where it has one,
+  architecture, dates, addresses, snapshot count),
   then the counters from `InstanceFull.State`: CPU, memory, process count,
   disk, network. A gap sets those off rather than a heading — CPU and
   memory say what they are, and a ruled heading would weigh the same as the

@@ -134,7 +134,9 @@ default; `P` scopes them to a single project instead, `R` moves them to
 another remote ([docs/Remotes.md](docs/Remotes.md)), and the footer shows
 the current remote and scope. A project column appears on any panel whose
 contents actually span projects, and actions run against the project the
-item came from.
+item came from. Every Info tab, and the top of every Config tab, says
+where the item lives: its remote, its project, and for a compose instance
+its stack and service.
 
 With [incus-compose](#compose-stacks) installed, two more panels come
 first: **Stacks** (`1`) and the selected stack's **Services** (`2`), the

@@ -61,6 +61,10 @@ type Gui struct {
 	// last services refresh found them, for the stack's Info tab.
 	composeInstances atomic.Pointer[stackInstances]
 
+	// stackDirs is each listed stack's directory by its remote and project,
+	// for the tabs naming a compose instance's stack. See setStackDirs.
+	stackDirs atomic.Pointer[map[string]string]
+
 	// selectedStack is the stack the services panel follows: the Stacks
 	// panel's selection, set on the main loop and read by fetchServices off
 	// it. See followStack.

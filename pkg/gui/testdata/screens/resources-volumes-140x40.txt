@@ -1,25 +1,25 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││Name:         data                                                                         │
-│web                              running  co…││Pool:         default (dir)                                                                │
-│db                               stopped  co…││Pool space:   5.00GiB of 50.00GiB used (10%)                                               │
+│a-name-long-enough-to-be-cut-off running  co…││Remote:       fake                                                                         │
+│web                              running  co…││Project:      default                                                                      │
+│db                               stopped  co…││Name:         data                                                                         │
+│                                             ││Pool:         default (dir)                                                                │
+│                                             ││Pool space:   5.00GiB of 50.00GiB used (10%)                                               │
 │                                             ││Type:         custom                                                                       │
 │                                             ││Content type:                                                                              │
 │                                             ││Size:         512.00MiB                                                                    │
 │                                             ││Used by:      nothing                                                                      │
 │                                             ││                                                                                           │
 │                                             ││Full details:                                                                              │
-│                                             ││                                                                                           │
-│                                             ││config: null                                                                               │
-╰─────────────────────────────────────────────╯│description: ""                                                                            │
-╭─[2]─Snapshots (data)────────────────────────╮│name: data                                                                                 │
-│before-migration 2026/09/22 06:00 UTC        ││type: custom                                                                               │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[2]─Snapshots (data)────────────────────────╮│config: null                                                                               │
+│before-migration 2026/09/22 06:00 UTC        ││description: ""                                                                            │
+│                                             ││name: data                                                                                 │
+│                                             ││type: custom                                                                               │
 │                                             ││used_by: null                                                                              │
 │                                             ││location: ""                                                                               │
 │                                             ││content_type: ""                                                                           │
 │                                             ││project: default                                                                           │
 │                                             ││created_at: "0001-01-01T00:00:00Z"                                                         │
-│                                             ││                                                                                           │
-│                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

@@ -375,8 +375,8 @@ func (gui *Gui) renderNetworkConfig(network *commands.Network) tasks.TaskFunc {
 }
 
 func (gui *Gui) networkConfigStr(network *commands.Network) string {
-	padding := 12
-	output := ""
+	padding := identityPadding
+	output := gui.locationStr(gui.sessionLocation(network.Network.Project))
 	output += utils.WithPadding("Name: ", padding) + network.Name + "\n"
 	output += utils.WithPadding("Type: ", padding) + network.Network.Type + "\n"
 	output += utils.WithPadding("Managed: ", padding) + fmt.Sprint(network.IsManaged()) + "\n"
