@@ -124,37 +124,6 @@ has read a project out of it: `~` and a relative path are resolved, and a
 path that's missing, not a directory, holds no compose project or is
 already listed is refused.
 
-A `remote:` ahead of the path pins the stack to that remote
-(`SplitStackInput`), but only when the prefix is one of the CLI's instance
-remotes, so a path with a colon in it still reads as a path; with none,
-it's pinned to the session's, so a session on another remote later can't
-run its verbs on the wrong daemon. Only the local stack, never saved,
-follows the session: `Run` pins any saved entry with no remote, from
-before stacks had one, to the remote it starts on (`PinStacks`), that
-being the one each has been shown against so far. A pinned stack is saved
-as `remote:/dir` (`ComposeStack.Ref`), and that is its identity everywhere
-a directory alone was: the same directory can be listed once per remote. Whether the remote
-is the session's is asked only where it matters (`onSessionRemote`), so
-starting on another `--remote` never changes what's saved. A remote that's
-known but doesn't answer is still added; it's the remote's to fix.
-`gui.commandFor` gives a stack pinned elsewhere an `IncusCommand` of its own
-(`pkg/gui/remotes.go`). Nothing a poll runs waits on another server: the
-first ask starts connecting in the background and answers `errConnecting`
-(the row reads `connecting`), a failed connect isn't tried again for 30s,
-and another remote's statuses are the last ones read, read again off to
-one side (`cachedStatuses`), the Stacks and Services refreshing when a
-connection lands or a read changes something. A remote gone from the
-CLI's config - renamed since the stack was saved - isn't tried at all
-(`unknownRemote`), its message pointing at `e`. Services skip a remote
-whose statuses last failed. Statuses, services and the Info tab's
-`PublishHost` go through it;
-the compose verbs and the instances' `incus console`/`exec`/`config edit`
-need no connection, only `INCUS_REMOTE` set to the stack's remote
-(`commands.WithRemote`). Everything else — the instances panel, Resources,
-the event stream, the connection-lost modal — stays on the session's
-remote, so the instances of a stack pinned to another remote are never
-filtered out of Standalone Instances: they were never in it.
-
 A stack's config is one `incus-compose config --format json` in its
 directory (`LoadComposeStack`), read in `fetchStacks` rather than before
 the views exist, and cached by directory (`stackCache`): a subprocess per
@@ -173,24 +142,10 @@ every stack at the one it names.
 
 The status column rolls up every compose-labelled instance in the stack's
 project the way a service rolls up its replicas (`RollUpStatus`): theirs
-when they agree, `partial` when they don't, `none` with nothing there, and
-`error` for a stack whose config couldn't be read, `unreachable` for one
-whose remote didn't answer (`StatusErr`), which fails only that remote's
-rows. `GetComposeStatuses` is one all-projects listing a remote, every
-remote asked at once. The path column writes home as `~`. A remote column
-leads whenever a stack is on a remote other than the session's
-(`State.StacksElsewhere`), the session's marked `*` in green as the `R`
-menu marks it - the project columns' rule, a column only where the rows would otherwise read alike.
-The local stack sorts first when it's saved nowhere, then each saved
-remote's stacks together, each by name - by what's saved alone, the local
-stack that is also a saved entry included, since which entry that is
-depends on the session's remote, and switching would reshuffle the list
-under the cursor. `space` (`stackSwitchRemote`) is
-`R`'s switch to the stack's remote, on a connection its status has
-usually opened already; a key rather than the selection, since a switch
-reloads every panel. Wherever the rest of the app would vouch
-for the wrong daemon - the Services and Snapshots titles, the new-snapshot prompt, the compose and
-instance confirmations - `onRemote` adds "on pve01".
+when they agree, `partial` when they don't, `none` with nothing there,
+`error` for a stack whose config couldn't be read, and - for a stack on
+another remote, below - `connecting` or `unreachable`. The path column
+writes home as `~`.
 
 `followStack` is how the services panel follows the selection, the way
 Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
@@ -233,6 +188,59 @@ Main panel tabs:
   one instance. `m` jumps here, as it does on the other panels.
 - **Config** — the whole of `incus-compose config`, through JSON to YAML
   for the reason the service's Config tab gives.
+
+### Stacks on other remotes
+
+A `remote:` ahead of the path pins a stack to that remote
+(`SplitStackInput`), but only when the prefix is one of the CLI's instance
+remotes, so a path with a colon in it still reads as a path. With none,
+it's pinned to the session's, so a session on another remote later can't
+run its verbs on the wrong daemon. It's saved as `remote:/dir`
+(`ComposeStack.Ref`), its identity everywhere a directory alone was: the
+same directory can be listed once per remote. `Run` pins an entry saved
+before stacks had remotes to the remote it starts on (`PinStacks`), the one
+each was shown against until then, which leaves the local stack, never
+saved, the only one that follows the session. `listStacks` keys every
+stack by the remote it's on now, so the local stack and the same directory
+saved for the session's remote are one row, named by the saved entry so
+`D` and `e` act on it. Whether a remote is the session's is asked only
+where it matters (`onSessionRemote`), so starting on another `--remote`
+never changes what's saved, and a remote that's known but doesn't answer
+is still added: it's the remote's to fix.
+
+`gui.commandFor` gives a stack on another remote an `IncusCommand` of its
+own (`pkg/gui/remotes.go`), through which its statuses, its services and
+the Info tab's `PublishHost` go. Nothing a poll runs waits on another
+server: the first ask starts connecting in the background and answers
+`errConnecting`, the row reading `connecting`; a failed connect isn't
+tried again for 30s; and that remote's statuses are the last ones read,
+read again off to one side (`cachedStatuses`), the Stacks and Services
+refreshing when a connection lands or a read changes something. The
+session's own are read in the refresh, as every other list is. Services
+skip a remote whose statuses last failed, and a remote gone from the CLI's
+config - renamed since the stack was saved - isn't tried at all
+(`unknownRemote`), its message pointing at `e`. The compose verbs and the
+instances' `incus console`/`exec`/`config edit` need no connection, only
+`INCUS_REMOTE` set to the stack's remote (`commands.WithRemote`).
+
+Everything else - Standalone Instances, Snapshots, Resources, the event
+stream, the connection-lost modal - is the session's remote. So a stack
+pinned elsewhere has instances that were never in Standalone Instances to
+be filtered out, and wherever the rest of the app would vouch for the
+wrong daemon - the Services and Snapshots titles, the new-snapshot prompt,
+the compose and instance confirmations - `onRemote` adds "on pve01".
+`space` (`stackSwitchRemote`) is `R`'s switch to the stack's remote, on a
+connection its status has usually opened already: a key rather than the
+selection, since a switch reloads every panel.
+
+A remote column leads the Stacks rows whenever one is on a remote other
+than the session's (`State.StacksElsewhere`), the session's marked `*` in
+green as the `R` menu marks it - the project columns' rule, a column only
+where the rows would otherwise read alike. The local stack sorts first
+when it's saved nowhere, then each saved remote's stacks together, each by
+name: by what's saved alone, the local stack that is also a saved entry
+included, since which entry that is depends on the session's remote and
+switching would reshuffle the list under the cursor.
 
 ## Services
 
