@@ -132,8 +132,7 @@ type panelStates struct {
 }
 
 type guiState struct {
-	// the names of views in the current focus stack (last item is the current
-	// view)
+	// the names of views in the current focus stack (last item is the current view)
 	ViewStack []string
 	Platform  commands.Platform
 	Panels    *panelStates
