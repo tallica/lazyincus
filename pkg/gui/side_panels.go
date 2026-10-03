@@ -193,9 +193,6 @@ func (gui *Gui) cycleSideView(offset int) func() error {
 	}
 }
 
-// servicesPanelTitle names the compose project the panel acts on. It's the
-// same one on every row, so it belongs in the title rather than in a column
-// - the reasoning the instances panel's project column already follows.
 // titleStacks names Stacks, Services and Instances for the space they have:
 // collapsed to its title, Stacks or Instances counts what it lists and
 // Services leaves out the stack. Every layout pass, since focus alone
@@ -225,6 +222,9 @@ func (gui *Gui) titleStacks() {
 	gui.Views.Services.Title = gui.servicesPanelTitle()
 }
 
+// servicesPanelTitle names the compose project the panel acts on. It's the
+// same one on every row, so it belongs in the title rather than in a column
+// - the reasoning the instances panel's project column already follows.
 func (gui *Gui) servicesPanelTitle() string {
 	stack := gui.selectedStack.Load()
 	if stack == nil || stack.Name == "" {
