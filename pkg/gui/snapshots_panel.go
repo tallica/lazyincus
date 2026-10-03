@@ -11,6 +11,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/gui/types"
 	"github.com/tallica/lazyincus/pkg/tasks"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -212,25 +213,37 @@ func (gui *Gui) snapshotOwner(snapshot *commands.Snapshot) string {
 	}
 }
 
-// handleSnapshotCreate snapshots the instance the selected row belongs to
-// while the panel lists every instance's, the volume it follows, or the
-// instances panel's selection.
+// handleSnapshotCreate snapshots what the panel follows: the volume, the
+// instance, or one of a service's replicas, asked for. Listing every
+// instance's, it's the selected row's instance, or the instances panel's
+// selection with no row to go by.
 func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
 	if volume, ok := gui.snapshotsVolume(); ok {
 		return gui.volumeSnapshotCreatePrompt(volume)
 	}
 
 	if gui.State.SnapshotsShowAll {
-		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil {
-			if instance, ok := lo.Find(gui.Panels.Instances.List.GetAllItems(), func(instance *commands.Instance) bool {
-				return instance.Project == snapshot.Project && instance.Name == snapshot.Owner
-			}); ok {
-				return gui.snapshotCreatePrompt(instance)
-			}
+		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil && snapshot.Instance != nil {
+			return gui.snapshotCreatePrompt(snapshot.Instance)
 		}
+
+		return onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt)(g, v)
 	}
 
-	return onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt)(g, v)
+	instances := gui.State.SnapshotsInstances
+	switch len(instances) {
+	case 0:
+		return nil
+	case 1:
+		return gui.snapshotCreatePrompt(instances[0])
+	}
+
+	return gui.Menu(CreateMenuOptions{
+		Title: gui.Tr.NewSnapshot,
+		Items: lo.Map(instances, func(instance *commands.Instance, _ int) *types.MenuItem {
+			return &types.MenuItem{Label: instance.Name, OnPress: func() error { return gui.snapshotCreatePrompt(instance) }}
+		}),
+	})
 }
 
 // setSnapshotsTitle names what the panel is showing, since the list alone

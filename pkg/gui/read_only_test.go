@@ -72,9 +72,7 @@ func TestReadOnlyFollowsTheSnapshotsRemote(t *testing.T) {
 	s.ready(t)
 
 	remote := onLoop(t, s, func() string {
-		s.gui.Panels.Snapshots.SetItems([]*commands.Snapshot{
-			{Owner: "api-1", Name: "snap0", Instance: &commands.Instance{Name: "api-1", Remote: "pve01"}},
-		})
+		s.gui.State.SnapshotsInstances = []*commands.Instance{{Name: "api-1", Remote: "pve01"}}
 
 		return s.gui.actionRemote("snapshots")
 	})

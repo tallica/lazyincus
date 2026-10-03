@@ -24,8 +24,9 @@ func (gui *Gui) guardReadOnly(binding *Binding) {
 }
 
 // actionRemote is the remote a key on view acts on: the selected stack's on
-// Stacks and Services, the selected snapshot's instance's on Snapshots -
-// either can be another remote's - and otherwise the session's.
+// Stacks and Services, and on Snapshots the remote of the instances it
+// follows - either can be another remote's - and otherwise the session's.
+// Listing every instance's, Snapshots lists the session's alone.
 func (gui *Gui) actionRemote(view string) string {
 	switch view {
 	case "stacks", "services":
@@ -33,8 +34,8 @@ func (gui *Gui) actionRemote(view string) string {
 			return stack.Remote
 		}
 	case "snapshots":
-		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil && snapshot.Instance != nil && snapshot.Instance.Remote != "" {
-			return snapshot.Instance.Remote
+		if instances := gui.State.SnapshotsInstances; !gui.State.SnapshotsShowAll && len(instances) > 0 && instances[0].Remote != "" {
+			return instances[0].Remote
 		}
 	}
 

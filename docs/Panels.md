@@ -542,9 +542,9 @@ the new snapshot is found by project, instance and name, since every
 replica of a service can carry one of the same name.
 
 `n` works from the instances panel as well as
-this one - it acts on the selected instance either way - and moves to the
-new snapshot once it exists, so taking one from the instances panel shows
-you the result. It opens a two-view popup: the editable
+this one - it acts on what this panel follows either way, asking which
+replica when that's a whole service - and moves to the new snapshot once
+it exists, so taking one from the instances panel shows you the result. It opens a two-view popup: the editable
 confirmation view as a name field, and a `snapshotOptions` view parked under
 it, with `tab` moving focus between them. Its own view rather than the menu,
 so the menu panel's keybindings don't fight the navigation - which means

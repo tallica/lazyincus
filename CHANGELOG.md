@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.
 
+### Fixed
+- `n` on the Snapshots panel snapshots what the panel follows, asking which replica for a service, instead of the Instances panel's selection.
+
 ## [0.13.1] - 2026-10-03
 
 ### Fixed
