@@ -58,7 +58,13 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 		},
 		NoItemsMessage: gui.Tr.NoStacks,
 		Gui:            gui.intoInterface(),
+		// A stack hands the snapshots panel nothing, so it empties rather
+		// than keep the last list's.
 		OnSelect: func(stack *commands.ComposeStack) error {
+			if err := gui.refreshSnapshotsFor("", ""); err != nil {
+				return err
+			}
+
 			return gui.followStack(stack)
 		},
 		Hide: gui.composeUnavailable,
@@ -233,6 +239,8 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 	})
 	gui.stacksElsewhere.Store(elsewhere)
 
+	here := gui.stacksHere(stacks)
+
 	if err := gui.readStackStatuses(stacks); err != nil {
 		return nil, err
 	}
@@ -243,6 +251,7 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 		}
 
 		gui.State.StacksElsewhere = elsewhere
+		gui.State.StacksHere = here
 		gui.setStackDirs(stacks)
 
 		gui.Panels.Stacks.SetItems(stacks)
@@ -258,8 +267,38 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 		// nil when there are none.
 		selected, _ := gui.Panels.Stacks.GetSelectedItem()
 
-		return gui.followStack(selected)
+		if err := gui.followStack(selected); err != nil {
+			return err
+		}
+
+		if !gui.State.Landing {
+			return nil
+		}
+
+		gui.State.Landing = false
+
+		return gui.landOffStacks()
 	}, nil
+}
+
+func (gui *Gui) stacksHere(stacks []*commands.ComposeStack) bool {
+	return slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
+		return gui.onSessionRemote(stack.Remote)
+	})
+}
+
+// landOffStacks moves the focus from Stacks or Services to Instances when
+// no stack is on the session's remote.
+func (gui *Gui) landOffStacks() error {
+	if !gui.stacksAway() {
+		return nil
+	}
+
+	if name := gui.currentViewName(); name != "stacks" && name != "services" {
+		return nil
+	}
+
+	return gui.switchFocus(gui.Views.Instances)
 }
 
 // readStackStatuses gives each stack its instances' statuses: the
@@ -384,8 +423,6 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 
 	gui.Panels.Services.SetItems(nil)
 	gui.Panels.Services.SetSelectedLineIdx(0)
-	gui.Views.Services.Title = gui.servicesPanelTitle()
-
 	if err := gui.Panels.Services.RerenderList(); err != nil {
 		return err
 	}

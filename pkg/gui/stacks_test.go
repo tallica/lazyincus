@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 // testStack is a stack in a directory of its own under root, named for its
@@ -97,6 +98,26 @@ func onLoop[T any](t *testing.T, s *screen, read func() T) T {
 	return value
 }
 
+// landed waits for the stacks read after startup or a remote switch, then
+// focuses view: that read takes the focus off Stacks and Services when none
+// is on the session's remote.
+func landed(t *testing.T, s *screen, view string) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		return !onLoop(t, s, func() bool { return s.gui.State.Landing })
+	}, 5*time.Second, 20*time.Millisecond)
+
+	s.do(t, func() error {
+		v, err := s.g.View(view)
+		if err != nil {
+			return err
+		}
+
+		return s.gui.switchFocus(v)
+	})
+}
+
 func serviceNames(t *testing.T, s *screen) []string {
 	t.Helper()
 
@@ -138,6 +159,83 @@ func TestStacksAreFocusedFirst(t *testing.T) {
 
 	s.settle(t, "Services (default)")
 	assert.Equal(t, "stacks", onLoop(t, s, func() string { return s.gui.currentViewName() }))
+}
+
+// With no stack on the session's remote, Stacks and Services collapse and
+// the focus starts on Instances; either one focused expands both, and
+// collapses Instances instead.
+func TestNoStackHereCollapsesStacks(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+	root := t.TempDir()
+	pinned := testStack(t, root, "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
+		s.gui.home = root
+	})
+
+	height := func(view string) int {
+		return onLoop(t, s, func() int {
+			v, _ := s.g.View(view)
+			return v.Height()
+		})
+	}
+
+	landed(t, s, "instances")
+	require.Eventually(t, func() bool {
+		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
+	}, 5*time.Second, 20*time.Millisecond)
+	assertGolden(t, "stacks-elsewhere-140x40", s.settle(t, "[1]─Stacks (1)"))
+	assert.Equal(t, titleOnlyHeight, height("stacks"))
+	assert.Equal(t, titleOnlyHeight, height("services"))
+
+	// Instances leaves Logs for the stacks, and comes back to Info.
+	s.do(t, func() error { return s.gui.Panels.Instances.SetMainTab("logs") })
+	s.press(t, '1')
+	require.Eventually(t, func() bool { return height("stacks") > titleOnlyHeight }, 5*time.Second, 20*time.Millisecond)
+	assert.Greater(t, height("services"), titleOnlyHeight)
+	assert.Equal(t, titleOnlyHeight, height("instances"))
+	assertGolden(t, "stacks-elsewhere-focused-140x40", s.settle(t, "Directory:"))
+
+	s.press(t, '3')
+	s.settle(t, "Architecture:")
+	assert.Equal(t, 0, onLoop(t, s, func() int { return s.gui.Views.Main.TabIndex }))
+
+	// Coming from any other panel swaps them too, so Stacks leaves Config.
+	s.press(t, '1')
+	s.settle(t, "Directory:")
+	s.do(t, func() error { return s.gui.Panels.Stacks.SetMainTab("config") })
+	s.press(t, '5')
+	require.Eventually(t, func() bool { return height("stacks") == titleOnlyHeight }, 5*time.Second, 20*time.Millisecond)
+	s.press(t, '1')
+	s.settle(t, "Directory:")
+	assert.Equal(t, 0, onLoop(t, s, func() int { return s.gui.Views.Main.TabIndex }))
+}
+
+// With collapseStacksElsewhere off, a remote with no stack keeps the even
+// split and the focus on Stacks.
+func TestNoStackHereWithoutCollapse(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+	root := t.TempDir()
+	pinned := testStack(t, root, "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, func(userConfig *config.UserConfig) {
+		userConfig.Gui.CollapseStacksElsewhere = false
+	}, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
+		s.gui.home = root
+	})
+
+	require.Eventually(t, func() bool {
+		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
+	}, 5*time.Second, 20*time.Millisecond)
+	s.settle(t, "[1]─Stacks─")
+	assert.Equal(t, "stacks", onLoop(t, s, s.gui.currentViewName))
+	assert.Greater(t, onLoop(t, s, func() int { return s.gui.Views.Stacks.Height() }), titleOnlyHeight)
 }
 
 // The services panel follows the Stacks panel's selection, and a fetch
@@ -243,6 +341,7 @@ func TestAddingAStack(t *testing.T) {
 			return load(dir)
 		}
 	})
+	landed(t, s, "stacks")
 	s.settle(t, s.gui.Tr.NoStacks)
 
 	for input, want := range map[string]string{
@@ -316,6 +415,7 @@ func TestAStackPinnedToARemote(t *testing.T) {
 		s.server.SetInstances([]api.InstanceFull{composeFixture("shop", "web", "api")})
 	})
 
+	landed(t, s, "stacks")
 	s.settle(t, "Services (shop on pve01)")
 	assert.Regexp(t, `│  pve01 shop`, s.snapshot(t))
 
@@ -406,6 +506,7 @@ func TestAddingAStackOnARemote(t *testing.T) {
 			return &loaded
 		}
 	})
+	landed(t, s, "stacks")
 	s.settle(t, s.gui.Tr.NoStacks)
 
 	assert.ErrorContains(t, s.gui.addStack("nope:"+shop.Dir), "no such file or directory")
@@ -735,6 +836,7 @@ func TestStackUsageLinesUpItsValues(t *testing.T) {
 // middle half of a narrow screen would run them together.
 func TestAPromptFitsItsTitleAndHint(t *testing.T) {
 	s := startScreenWith(t, 100, 30, nil, withStacks(t, nil))
+	landed(t, s, "stacks")
 	s.settle(t, s.gui.Tr.NoStacks)
 
 	s.do(t, s.gui.Panels.Stacks.HandleSelect)

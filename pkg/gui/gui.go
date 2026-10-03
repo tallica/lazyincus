@@ -213,6 +213,14 @@ type guiState struct {
 	// StacksElsewhere is whether a stack listed is on a remote other than
 	// the session's, which the stacks then need a remote column for.
 	StacksElsewhere bool
+
+	// StacksHere is whether a stack listed is on the session's remote;
+	// without one, Stacks and Services collapse while unfocused.
+	StacksHere bool
+
+	// Landing is set from startup or a remote switch until the stacks are
+	// next read, which then decides whether the focus leaves them.
+	Landing bool
 }
 
 type snapshotsSpan struct {
@@ -308,6 +316,8 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 		ScreenMode:           getScreenMode(config),
 		ExpandSidePanel:      config.UserConfig.Gui.ExpandFocusedSidePanel,
 		SnapshotsShowAll:     config.UserConfig.Gui.ShowAllSnapshots,
+		StacksHere:           true,
+		Landing:              true,
 	}
 
 	home, _ := os.UserHomeDir()
@@ -467,6 +477,10 @@ func (gui *Gui) run(g *gocui.Gui) error {
 
 	gui.setPanels()
 
+	for _, panel := range gui.allSidePanels() {
+		panel.Await(gui.Tr.Loading)
+	}
+
 	if err := gui.keybindings(g); err != nil {
 		return err
 	}
@@ -490,10 +504,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 	}()
 
 	go func() {
-		for _, fetch := range gui.allFetches() {
-			if err := gui.refresh(nil, fetch); err != nil {
-				gui.Log.Error(err)
-			}
+		for _, err := range gui.refreshAll() {
+			gui.Log.Error(err)
 		}
 
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
@@ -533,14 +545,16 @@ func (gui *Gui) handleError(err error) error {
 	return nil
 }
 
-// allFetches is every panel's fetch, in the order startup and a project
-// switch run them.
-func (gui *Gui) allFetches() []fetch {
-	// Stacks first: which instances the instances panel leaves out is theirs
-	// to say.
-	return []fetch{
-		gui.fetchStacks, gui.fetchInstances, gui.fetchImages, gui.fetchVolumes,
-		gui.fetchNetworks, gui.fetchProfiles, gui.fetchServices,
+// fetchGroups is every panel's fetch, in groups read side by side. The
+// stacks lead theirs: which instances the instances panel leaves out is
+// theirs to say, and a compose instance has a row in both of the others.
+func (gui *Gui) fetchGroups() [][]fetch {
+	return [][]fetch{
+		{gui.fetchStacks, gui.fetchInstances, gui.fetchServices},
+		{gui.fetchImages},
+		{gui.fetchVolumes},
+		{gui.fetchNetworks},
+		{gui.fetchProfiles},
 	}
 }
 

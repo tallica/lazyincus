@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- On a remote with no stacks, Stacks and Services collapse to their titles and the focus starts on Instances; focusing either swaps them with Instances. `gui.collapseStacksElsewhere: false` turns it off.
+- Focusing Stacks empties the Snapshots panel instead of leaving the last instance's.
+- At startup and after switching remote or project, each panel fills as soon as it's read, instead of every one waiting on the slowest.
+- A panel not read yet says `Loading…`, in its list and the main panel, instead of looking empty.
+
 ## [0.12.0] - 2026-10-02
 
 ### Added

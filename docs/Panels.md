@@ -109,10 +109,11 @@ list has focus, so a tab being read follows too.
 One row per compose stack, a stack being a directory with a compose file
 in it: the local one, and every one saved with `a`. Stacks and Services are
 there whenever `incus-compose` is on `PATH` — `Run` asks `exec.LookPath`
-once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus,
-and Services `[2]`. Without it neither panel exists and the layout is what
-it always was. `SideListPanel.Hide` is what removes them, and the layout
-already copes: `setViewFromDimensions` marks a view with no box invisible.
+once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus
+when a stack is on the session's remote, and Services `[2]`. Without it
+neither panel exists and the layout is what it always was.
+`SideListPanel.Hide` is what removes them, and the layout already copes:
+`setViewFromDimensions` marks a view with no box invisible.
 
 That gate means panel numbering can't index `sidePanelDefs()` — a hidden
 first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
@@ -121,6 +122,19 @@ run over instead. Hidden-ness is a `hidden` func on the def rather than the
 panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask; and it's fixed for the session,
 the number keys being bound once.
+
+A remote with no stack listed on it - every stack pinned elsewhere, or none
+at all - keeps both panels but collapses them to their titles
+(`State.StacksHere`, set by each Stacks refresh), Stacks counting what it
+lists and Services leaving out the stack (`titleStacks`). Focusing either
+expands both and collapses Instances instead (`stacksCollapsed`), and
+focus crossing that swap lands on the panel's first main-panel tab
+(`stacksSwap`). Their numbers don't move: a hidden panel would renumber
+everything by remote. The Stacks refresh after startup or a remote switch
+(`State.Landing`) also moves the focus from either one to Instances;
+adding or removing a stack changes only the layout. All of it hangs on
+`stacksAway`, which [`gui.collapseStacksElsewhere`](Config.md#gui) can turn
+off.
 
 The local stack is the working directory's, or the one `--project-directory`
 names. The flag reaches this the way `--remote` reaches the daemon: `main`
@@ -314,8 +328,10 @@ off and the title back to "Instances" until it's pressed again; it's
 bound only when incus-compose is there to have stacks.
 `SpansProjects.Instances` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
-change which services they declare, or `C` is pressed. The stacks are fetched first at startup,
-so the instances panel doesn't show a stack's rows and then take them away.
+change which services they declare, or `C` is pressed. At startup and on
+a change of scope the stacks are read ahead of the instances, and the two
+shown together, so the instances panel doesn't show a stack's rows and then
+take them away.
 
 Because the stacks have panels of their own, startup doesn't scope the
 client to one — the instances panel spans projects like every other panel,
@@ -497,7 +513,8 @@ up:
 Follows whichever list you're in: the instances panel's `OnSelect` hands
 over its instance, the services panel's whatever its row stands for — a
 replica's own, and every replica's from a service's row above them, the
-service's snapshots being all of theirs. The view title names what the rows
+service's snapshots being all of theirs. Stacks hands over nothing, which
+empties it. The view title names what the rows
 belong to, the instance or the service - and its remote, when that isn't
 the session's - since the rows alone don't say; a
 panel holding more than one instance's snapshots grows a column naming the

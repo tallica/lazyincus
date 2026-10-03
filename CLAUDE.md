@@ -89,10 +89,13 @@ the number keys, `tab` and the layout count those slots, not views
 top-to-bottom layout order and the number-key order. A panel can be absent
 for the session (`hidden` on the def); everything user-facing is numbered
 over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
-what the app focuses at startup. `tab`/`shift+tab` cycle through them in
-that order, stepping from the last side panel to have focus; `←`/`→` and
-`h`/`l` do the same list by list, a shared slot's lists each a stop. The
-side column splits evenly between whichever panels aren't hidden, or — with
+what the app focuses at startup - unless it's Stacks with no stack on the
+session's remote, which collapses it and Services to their titles and
+hands the focus to Instances ([docs/Panels.md](docs/Panels.md#stacks)).
+`tab`/`shift+tab` cycle through them in that order, stepping from the last
+side panel to have focus; `←`/`→` and `h`/`l` do the same list by list, a
+shared slot's lists each a stop. The side column splits evenly between
+whichever panels aren't hidden or collapsed, or — with
 `gui.State.ExpandSidePanel`, seeded from config and toggled by `=` — gives
 the focused one everything the others don't need. "Focused" there means the
 last side panel to have focus, so stepping into the main panel doesn't

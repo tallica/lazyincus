@@ -70,6 +70,8 @@ type state struct {
 	listeners []*listener
 	// held and heldOpened are HoldListen's.
 	held, heldOpened chan struct{}
+	// imagesHeld is HoldImages'.
+	imagesHeld chan struct{}
 }
 
 // New is a Server answering from fixture.
@@ -103,8 +105,30 @@ func (s *Server) SetImages(images []api.Image) {
 	shared.imagesSet = true
 }
 
+// HoldImages has the image listings wait until release, as a slow
+// daemon's would.
+func (s *Server) HoldImages() (release func()) {
+	held := make(chan struct{})
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.imagesHeld = held
+	shared.mutex.Unlock()
+
+	return sync.OnceFunc(func() { close(held) })
+}
+
 func (s *Server) images() []api.Image {
 	shared := s.shared()
+
+	shared.mutex.Lock()
+	held := shared.imagesHeld
+	shared.mutex.Unlock()
+
+	if held != nil {
+		<-held
+	}
+
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()
 

@@ -1,9 +1,11 @@
 package gui
 
 import (
+	"sync"
 	"sync/atomic"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/samber/lo"
 )
 
 // A fetch asks the daemon for one panel's contents, off the main loop, and
@@ -55,6 +57,38 @@ func (gui *Gui) refresh(then func() error, fetches ...fetch) error {
 	})
 
 	return firstErr
+}
+
+// refreshAll reads every panel, at startup or on a change of scope: each
+// group shown as soon as it's read, so a slow remote's images don't hold
+// back its instances. Every group's error is returned.
+func (gui *Gui) refreshAll() []error {
+	groups := gui.fetchGroups()
+	errs := make([]error, len(groups))
+
+	var wg sync.WaitGroup
+	for i, group := range groups {
+		wg.Go(func() { errs[i] = gui.refresh(nil, group...) })
+	}
+
+	wg.Wait()
+
+	// What a failed read left unanswered is empty now, not loading.
+	gui.g.Update(func(*gocui.Gui) error {
+		for _, panel := range gui.allSidePanels() {
+			if !panel.StopAwaiting() {
+				continue
+			}
+
+			if err := panel.RerenderList(); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return lo.Compact(errs)
 }
 
 // refreshInstancesAndServices re-lists both panels as soon as something has

@@ -91,15 +91,12 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	// stale ones by name.
 	for _, panel := range gui.allSidePanels() {
 		if panel != panels.ISideListPanel(gui.Panels.Stacks) {
-			panel.ClearItems()
+			panel.Await(gui.Tr.Loading)
 		}
 	}
 
 	gui.composeInstances.Store(nil)
 	gui.composeProject.Store(nil)
-	// Whether the stack's remote is the session's may have changed.
-	gui.Views.Services.Title = gui.servicesPanelTitle()
-
 	// Or the next instance refresh redraws the old project's snapshots.
 	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
 	gui.setSnapshotsTitle("")
@@ -125,6 +122,11 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	}
 
 	return gui.WithWaitingStatus(gui.Tr.LoadingStatus, func() error {
-		return gui.refresh(nil, gui.allFetches()...)
+		// One popup for a remote that has gone, not one per group.
+		if errs := gui.refreshAll(); len(errs) > 0 {
+			return errs[0]
+		}
+
+		return nil
 	})
 }

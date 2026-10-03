@@ -144,9 +144,16 @@ func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
 		return gui.expandedSidePanelChildren(sideWindowNames, height)
 	}
 
+	focused := gui.currentSideWindowName()
+	fits := gui.collapsedFit(sideWindowNames, height)
+
 	// Equal weights: the side section splits evenly between however many
-	// panels are visible.
+	// panels are visible, but for stacks that have nothing on this remote.
 	return lo.Map(sideWindowNames, func(window string, _ int) *boxlayout.Box {
+		if fits && gui.stacksCollapsed(window, focused) {
+			return &boxlayout.Box{Window: window, Size: titleOnlyHeight}
+		}
+
 		return &boxlayout.Box{
 			Window: window,
 			Weight: 1,
@@ -154,16 +161,46 @@ func (gui *Gui) sidePanelChildren(width int, height int) []*boxlayout.Box {
 	})
 }
 
+// titleOnlyHeight is a frame with no rows inside, its title all it shows.
+const titleOnlyHeight = 2
+
+// stacksCollapsed is whether window shrinks to its title on a remote with
+// no stack listed: Stacks and Services, until either is focused, and then
+// Instances instead.
+func (gui *Gui) stacksCollapsed(window, focused string) bool {
+	if !gui.stacksAway() {
+		return false
+	}
+
+	stacksFocused := focused == "stacks" || focused == "services"
+	if window == "stacks" || window == "services" {
+		return !stacksFocused
+	}
+
+	return window == "instances" && stacksFocused
+}
+
+// stacksAway is whether Stacks and Services give way to Instances: no stack
+// is on the session's remote, and the config hasn't turned that off.
+func (gui *Gui) stacksAway() bool {
+	return !gui.State.StacksHere && gui.Config.UserConfig.Gui.CollapseStacksElsewhere
+}
+
+// collapsedFit is whether every panel but one could be collapsed and still
+// leave that one room - better a cramped list than panels squeezed out of
+// existence.
+func (gui *Gui) collapsedFit(sideWindowNames []string, height int) bool {
+	return height >= len(sideWindowNames)*collapsedSidePanelHeight+collapsedSidePanelHeight
+}
+
 // expandedSidePanelChildren gives the focused panel everything the collapsed
 // ones don't need. The focused panel is the last side panel that had focus,
 // so moving into the main panel doesn't collapse the list you were reading.
-//
-// Falls back to an even split when the panels can't all fit collapsed -
-// better a cramped list than panels squeezed out of existence.
+// Falls back to an even split when the panels can't all fit collapsed.
 func (gui *Gui) expandedSidePanelChildren(sideWindowNames []string, height int) []*boxlayout.Box {
 	focused := gui.currentSideWindowName()
 
-	if height < len(sideWindowNames)*collapsedSidePanelHeight+collapsedSidePanelHeight {
+	if !gui.collapsedFit(sideWindowNames, height) {
 		return lo.Map(sideWindowNames, func(window string, _ int) *boxlayout.Box {
 			return &boxlayout.Box{Window: window, Weight: 1}
 		})

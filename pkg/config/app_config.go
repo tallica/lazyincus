@@ -80,6 +80,10 @@ type GuiConfig struct {
 	// snapshots rather than following the selected instance.
 	ShowAllSnapshots bool `yaml:"showAllSnapshots,omitempty"`
 
+	// CollapseStacksElsewhere collapses Stacks and Services to their titles
+	// on a remote with no stack listed, and starts the focus on Instances.
+	CollapseStacksElsewhere bool `yaml:"collapseStacksElsewhere"`
+
 	// Determines whether we show the bottom line (the one containing keybinding
 	// info and the status of the app).
 	ShowBottomLine bool `yaml:"showBottomLine"`
@@ -132,10 +136,8 @@ type OSConfig struct {
 	CopyToClipboardCommand string `yaml:"copyToClipboardCommand,omitempty"`
 }
 
-// GetDefaultConfig returns the application default configuration NOTE (to
-// contributors, not users): do not default a boolean to true, because false is
-// the boolean zero value and this will be ignored when parsing the user's
-// config
+// GetDefaultConfig returns the application default configuration, which the
+// user's config.yml is read on top of.
 func GetDefaultConfig() UserConfig {
 	return UserConfig{
 		Gui: GuiConfig{
@@ -149,16 +151,17 @@ func GetDefaultConfig() UserConfig {
 				SelectedLineBgColor: []string{"blue"},
 				OptionsTextColor:    []string{"blue"},
 			},
-			ReturnImmediately:      false,
-			ExpandFocusedSidePanel: false,
-			ShowAllSnapshots:       false,
-			WrapMainPanel:          true,
-			SidePanelWidth:         0.3333,
-			ShowBottomLine:         true,
-			ScreenMode:             "normal",
-			InstanceStatusStyle:    "long",
-			InstanceColumns:        DefaultInstanceColumns,
-			ServiceColumns:         DefaultServiceColumns,
+			ReturnImmediately:       false,
+			ExpandFocusedSidePanel:  false,
+			ShowAllSnapshots:        false,
+			CollapseStacksElsewhere: true,
+			WrapMainPanel:           true,
+			SidePanelWidth:          0.3333,
+			ShowBottomLine:          true,
+			ScreenMode:              "normal",
+			InstanceStatusStyle:     "long",
+			InstanceColumns:         DefaultInstanceColumns,
+			ServiceColumns:          DefaultServiceColumns,
 		},
 		ConfirmOnQuit: false,
 		OS:            GetPlatformDefaultConfig(),
