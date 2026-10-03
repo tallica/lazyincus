@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"sync"
 	"sync/atomic"
 
@@ -21,6 +22,29 @@ type fetch func() (apply func() error, err error)
 // A failed fetch doesn't hold back the others; its error is returned, and
 // then is skipped - it could move focus out from under the error popup.
 func (gui *Gui) refresh(then func() error, fetches ...fetch) error {
+	applies, err := gather(fetches)
+	if err != nil {
+		then = nil
+	}
+
+	gui.g.Update(func(*gocui.Gui) error {
+		if err := applyAll(applies); err != nil {
+			return err
+		}
+
+		if then == nil {
+			return nil
+		}
+
+		return then()
+	})
+
+	return err
+}
+
+// gather runs the fetches, returning what shows the ones that succeeded and
+// the first error.
+func gather(fetches []fetch) ([]func() error, error) {
 	applies := make([]func() error, 0, len(fetches))
 
 	var firstErr error
@@ -38,25 +62,17 @@ func (gui *Gui) refresh(then func() error, fetches ...fetch) error {
 		applies = append(applies, apply)
 	}
 
-	if firstErr != nil {
-		then = nil
+	return applies, firstErr
+}
+
+func applyAll(applies []func() error) error {
+	for _, apply := range applies {
+		if err := apply(); err != nil {
+			return err
+		}
 	}
 
-	gui.g.Update(func(*gocui.Gui) error {
-		for _, apply := range applies {
-			if err := apply(); err != nil {
-				return err
-			}
-		}
-
-		if then == nil {
-			return nil
-		}
-
-		return then()
-	})
-
-	return firstErr
+	return nil
 }
 
 // refreshAll reads every panel, at startup or on a change of scope: each
@@ -66,29 +82,47 @@ func (gui *Gui) refreshAll() []error {
 	groups := gui.fetchGroups()
 	errs := make([]error, len(groups))
 
+	// Main loop only. Update doesn't keep order, so the last group shown,
+	// not one more Update, is what clears what the reads left unanswered.
+	unshown := len(groups)
+
 	var wg sync.WaitGroup
 	for i, group := range groups {
-		wg.Go(func() { errs[i] = gui.refresh(nil, group...) })
+		wg.Go(func() {
+			applies, err := gather(group)
+			errs[i] = err
+
+			gui.g.Update(func(*gocui.Gui) error {
+				unshown--
+
+				err := applyAll(applies)
+				if unshown > 0 {
+					return err
+				}
+
+				return errors.Join(err, gui.stopAwaiting())
+			})
+		})
 	}
 
 	wg.Wait()
 
-	// What a failed read left unanswered is empty now, not loading.
-	gui.g.Update(func(*gocui.Gui) error {
-		for _, panel := range gui.allSidePanels() {
-			if !panel.StopAwaiting() {
-				continue
-			}
+	return lo.Compact(errs)
+}
 
-			if err := panel.RerenderList(); err != nil {
-				return err
-			}
+// stopAwaiting has a panel no read answered say it's empty, not loading.
+func (gui *Gui) stopAwaiting() error {
+	for _, panel := range gui.allSidePanels() {
+		if !panel.StopAwaiting() {
+			continue
 		}
 
-		return nil
-	})
+		if err := panel.RerenderList(); err != nil {
+			return err
+		}
+	}
 
-	return lo.Compact(errs)
+	return nil
 }
 
 // refreshInstancesAndServices re-lists both panels as soon as something has
