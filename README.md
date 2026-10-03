@@ -242,7 +242,10 @@ footer — to that stack's remote, the way `R` does. While a stack isn't on
 the active remote, its Services and Snapshots titles and every
 confirmation for it name its remote. The compose files stay on this
 machine, so the "not on the same host" gotcha at the end of this section
-applies.
+applies. On a remote with none of the listed stacks, Stacks and Services
+shrink to their titles and the focus starts on Instances; focusing either
+swaps them with Instances, and `gui.collapseStacksElsewhere`
+([docs/Config.md](docs/Config.md#gui)) turns it off.
 
 A stack's row says how its instances are doing, as one status: theirs when
 they agree, `partial` when they don't, `none` when nothing is deployed,

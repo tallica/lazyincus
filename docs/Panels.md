@@ -328,8 +328,10 @@ off and the title back to "Instances" until it's pressed again; it's
 bound only when incus-compose is there to have stacks.
 `SpansProjects.Instances` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
-change which services they declare, or `C` is pressed. The stacks are fetched first at startup,
-so the instances panel doesn't show a stack's rows and then take them away.
+change which services they declare, or `C` is pressed. At startup and on
+a change of scope the stacks are read ahead of the instances, and the two
+shown together, so the instances panel doesn't show a stack's rows and then
+take them away.
 
 Because the stacks have panels of their own, startup doesn't scope the
 client to one — the instances panel spans projects like every other panel,
