@@ -97,8 +97,10 @@ func (gui *Gui) reloadAfterScopeChange() error {
 
 	gui.composeInstances.Store(nil)
 	gui.composeProject.Store(nil)
-	// Or the next instance refresh redraws the old project's snapshots.
+	// Or the next instance or volume refresh redraws the old scope's
+	// snapshots, a volume by a key the new scope may share.
 	gui.State.SnapshotsInstances, gui.State.SnapshotsLabel = nil, ""
+	gui.State.SnapshotsVolume = ""
 	gui.setSnapshotsTitle("")
 
 	// The blank frame below shows "No instances" in the main panel; without

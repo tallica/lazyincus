@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - At startup and after switching remote or project, each panel fills as soon as it's read, instead of every one waiting on the slowest.
 - A panel not read yet says `Loading…`, in its list and the main panel, instead of looking empty.
 
+### Fixed
+- After a remote or project switch, the Snapshots panel no longer lists the snapshots of a same-named volume there, untitled.
+
 ## [0.12.0] - 2026-10-02
 
 ### Added

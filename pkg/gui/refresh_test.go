@@ -108,6 +108,21 @@ func TestProjectSwitchForgetsTheSnapshotsShown(t *testing.T) {
 	assert.NotContains(t, screen, "Snapshots (a-name-long")
 }
 
+// A volume of the same key in the new scope isn't the one the panel was
+// following: nothing is, until a list hands its selection over again.
+func TestProjectSwitchForgetsTheVolumeFollowed(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Volumes) })
+	s.settle(t, "before-migration")
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Profiles) })
+
+	s.do(t, func() error { return s.gui.switchToProject("default") })
+
+	assert.NotContains(t, s.settle(t, "(fake/default)"), "before-migration")
+}
+
 // The switch blanks the focused panel before the new project's instances
 // arrive; the same instance at the top must still redraw the main panel.
 func TestProjectSwitchRedrawsTheSameFirstInstance(t *testing.T) {
