@@ -45,9 +45,16 @@ Instances". See [incus-compose integration](#incus-compose-integration).
 
 ### Per-instance actions
 
-- [x] **Attach (`a`)** — `incus console <name>`. VMs can also take
-      `--type vga` for a graphical console; not offered, since it opens a
-      separate viewer rather than using the terminal.
+- [x] **Attach (`a`)** — `incus console <name>`.
+- [ ] **Graphical console (`A`)** — a VM's VGA output, through
+      `incus console <vm> --type vga`, which mirrors the SPICE socket and
+      starts a viewer: the CLI config's `defaults.console_spice_command`,
+      else `remote-viewer`, else `spicy`. Started in the background, not as
+      a subprocess: the viewer is a window of its own, and the command ends
+      when it closes. With no viewer the CLI prints the socket path and
+      waits, unseen in the background, so refuse up front when none is on
+      `PATH` and the config names none - and on a container or a stopped
+      VM. On macOS that means installing virt-viewer.
 - [ ] **Open in browser (`w`)** — lazydocker opens the container's first HTTP
       port. Incus's port mapping is a proxy device; for an instance without
       one, "open `http://<ipv4>`" is the obvious translation, and
