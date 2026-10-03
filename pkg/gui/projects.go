@@ -103,7 +103,7 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	gui.State.SnapshotsVolume = ""
 	gui.setSnapshotsTitle("")
 
-	// The blank frame below shows "No instances" in the main panel; without
+	// The blank frame below shows "Loading…" in the main panel; without
 	// this, the same instance arriving at the top reads as nothing changed.
 	gui.resetMainView()
 
