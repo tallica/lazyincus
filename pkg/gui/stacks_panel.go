@@ -290,7 +290,7 @@ func (gui *Gui) stacksHere(stacks []*commands.ComposeStack) bool {
 // landOffStacks moves the focus from Stacks or Services to Instances when
 // no stack is on the session's remote.
 func (gui *Gui) landOffStacks() error {
-	if gui.State.StacksHere {
+	if !gui.stacksAway() {
 		return nil
 	}
 

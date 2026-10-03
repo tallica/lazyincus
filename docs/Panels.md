@@ -132,7 +132,9 @@ focus crossing that swap lands on the panel's first main-panel tab
 (`stacksSwap`). Their numbers don't move: a hidden panel would renumber
 everything by remote. The Stacks refresh after startup or a remote switch
 (`State.Landing`) also moves the focus from either one to Instances;
-adding or removing a stack changes only the layout.
+adding or removing a stack changes only the layout. All of it hangs on
+`stacksAway`, which [`gui.collapseStacksElsewhere`](Config.md#gui) can turn
+off.
 
 The local stack is the working directory's, or the one `--project-directory`
 names. The flag reaches this the way `--remote` reaches the daemon: `main`

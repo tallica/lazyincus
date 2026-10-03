@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 // testStack is a stack in a directory of its own under root, named for its
@@ -201,6 +202,30 @@ func TestNoStackHereCollapsesStacks(t *testing.T) {
 	s.press(t, '3')
 	s.settle(t, "Architecture:")
 	assert.Equal(t, 0, onLoop(t, s, func() int { return s.gui.Views.Main.TabIndex }))
+}
+
+// With collapseStacksElsewhere off, a remote with no stack keeps the even
+// split and the focus on Stacks.
+func TestNoStackHereWithoutCollapse(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
+	root := t.TempDir()
+	pinned := testStack(t, root, "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, func(userConfig *config.UserConfig) {
+		userConfig.Gui.CollapseStacksElsewhere = false
+	}, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": pve01})(s)
+		s.gui.home = root
+	})
+
+	require.Eventually(t, func() bool {
+		return slices.Equal(serviceNames(t, s), []string{"shop/api"})
+	}, 5*time.Second, 20*time.Millisecond)
+	s.settle(t, "[1]─Stacks─")
+	assert.Equal(t, "stacks", onLoop(t, s, s.gui.currentViewName))
+	assert.Greater(t, onLoop(t, s, func() int { return s.gui.Views.Stacks.Height() }), titleOnlyHeight)
 }
 
 // The services panel follows the Stacks panel's selection, and a fetch

@@ -168,7 +168,7 @@ const titleOnlyHeight = 2
 // no stack listed: Stacks and Services, until either is focused, and then
 // Instances instead.
 func (gui *Gui) stacksCollapsed(window, focused string) bool {
-	if gui.State.StacksHere {
+	if !gui.stacksAway() {
 		return false
 	}
 
@@ -178,6 +178,12 @@ func (gui *Gui) stacksCollapsed(window, focused string) bool {
 	}
 
 	return window == "instances" && stacksFocused
+}
+
+// stacksAway is whether Stacks and Services give way to Instances: no stack
+// is on the session's remote, and the config hasn't turned that off.
+func (gui *Gui) stacksAway() bool {
+	return !gui.State.StacksHere && gui.Config.UserConfig.Gui.CollapseStacksElsewhere
 }
 
 // collapsedFit is whether every panel but one could be collapsed and still

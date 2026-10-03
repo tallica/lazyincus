@@ -46,6 +46,10 @@ gui:
   # following the selected instance. 'e' toggles it during a session.
   showAllSnapshots: false
 
+  # On a remote with no stack listed, collapse Stacks and Services to their
+  # titles and start the focus on Instances.
+  collapseStacksElsewhere: true
+
   # Word-wrap the main panel's content.
   wrapMainPanel: true
 

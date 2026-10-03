@@ -164,7 +164,7 @@ func (gui *Gui) lastSideViewName() string {
 // and Services with Instances, on a remote with no stack: the panel landed
 // on starts at its first main-panel tab.
 func (gui *Gui) stacksSwap(from, to string) bool {
-	if gui.State.StacksHere {
+	if !gui.stacksAway() {
 		return false
 	}
 
