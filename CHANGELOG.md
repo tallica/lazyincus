@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-10-03
+
 ### Fixed
 - lazyincus no longer crashes at startup, leaving the terminal garbled, when stacks are listed on two or more other remotes.
 
@@ -298,7 +300,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md#blocked).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/tallica/lazyincus/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/tallica/lazyincus/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/tallica/lazyincus/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/tallica/lazyincus/compare/v0.10.1...v0.11.0
