@@ -128,6 +128,7 @@ type TranslationSet struct {
 	AllSnapshotsLabel            string
 	RestoringStatus              string
 	LoadingStatus                string
+	Loading                      string
 	ConnectingStatus             string
 	ConnectingTo                 string
 	CannotReachRemote            string
@@ -391,6 +392,7 @@ func englishSet() TranslationSet {
 		SnapshottingStatus:           "snapshotting",
 		RestoringStatus:              "restoring",
 		LoadingStatus:                "loading",
+		Loading:                      "Loading…",
 		ConnectingStatus:             "connecting",
 		ConnectingTo:                 "connecting to %s",
 		CannotReachRemote:            "can't reach %s - the stack's Info says why",

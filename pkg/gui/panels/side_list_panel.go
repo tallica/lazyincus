@@ -12,7 +12,8 @@ import (
 )
 
 type ISideListPanel interface {
-	ClearItems()
+	Await(note string)
+	StopAwaiting() bool
 	SetMainTabIndex(int)
 	SetMainTab(string) error
 	HandleSelect() error
@@ -42,6 +43,10 @@ type SideListPanel[T comparable] struct {
 	// EmptyNote is a line the list itself shows while it has no rows, for
 	// an empty that's worth noticing without focusing the panel.
 	EmptyNote func() string
+
+	// awaiting stands in for the list, and in the main panel, until items
+	// are next set: a read not answered yet, rather than nothing to list.
+	awaiting string
 
 	// a representation of the gui
 	Gui IGui
@@ -131,11 +136,16 @@ func (self *SideListPanel[T]) HandleSelect() error {
 			return err
 		}
 
-		if self.NoItemsMessage != "" {
+		message := self.NoItemsMessage
+		if self.awaiting != "" {
+			message = self.awaiting
+		}
+
+		if message != "" {
 			// Queued, not just built: an unqueued task renders nothing, which
 			// left the previous panel's content on screen when you focused an
 			// empty one.
-			task := self.Gui.NewSimpleRenderStringTask(func() string { return self.NoItemsMessage })
+			task := self.Gui.NewSimpleRenderStringTask(func() string { return message })
 
 			mainView := self.Gui.GetMainView()
 			mainView.Tabs = nil
@@ -225,13 +235,26 @@ func (self *SideListPanel[T]) Refocus() {
 	self.Gui.FocusY(self.SelectedIdx, self.List.Len(), self.View)
 }
 
-// ClearItems empties the panel. Typed SetItems isn't reachable through
-// ISideListPanel, so this is how generic code drops a panel's contents.
-func (self *SideListPanel[T]) ClearItems() {
+// Await empties the list, note standing in for it until items are next set.
+// Typed SetItems isn't reachable through ISideListPanel, so this is how
+// generic code drops a panel's contents.
+func (self *SideListPanel[T]) Await(note string) {
 	self.SetItems(nil)
+	self.awaiting = note
+}
+
+// StopAwaiting drops the note Await left, if no items have come since, and
+// says whether it did.
+func (self *SideListPanel[T]) StopAwaiting() bool {
+	awaiting := self.awaiting != ""
+	self.awaiting = ""
+
+	return awaiting
 }
 
 func (self *SideListPanel[T]) SetItems(items []T) {
+	self.awaiting = ""
+
 	// Read the selection before the list is replaced, not after: by then the
 	// index points into the new items and would anchor on the wrong one.
 	selected, hadSelection := self.List.TryGet(self.SelectedIdx)
@@ -364,8 +387,13 @@ func (self *SideListPanel[T]) writeRows() error {
 		return err
 	}
 
-	if len(self.rows) == 0 && self.EmptyNote != nil {
-		table = self.EmptyNote()
+	if len(self.rows) == 0 {
+		switch {
+		case self.awaiting != "":
+			table = self.awaiting
+		case self.EmptyNote != nil:
+			table = self.EmptyNote()
+		}
 	}
 
 	rows := strings.Split(table, "\n")

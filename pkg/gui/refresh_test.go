@@ -178,21 +178,35 @@ func TestTheInstancesPollRefreshesTheServices(t *testing.T) {
 	require.Eventually(t, func() bool { return webInstances() == 1 }, 3*time.Second, 20*time.Millisecond)
 }
 
-// A slow listing holds back only its own panel on a change of scope.
+// A slow listing holds back only its own panel, at startup and on a
+// change of scope, which says it's loading rather than that there's
+// nothing to list.
 func TestASlowPanelLoadsOnItsOwn(t *testing.T) {
-	s := startScreen(t, 140, 40, nil)
+	var release func()
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		release = s.server.HoldImages()
+	})
+	t.Cleanup(func() { release() })
+
+	screen := s.settle(t, "Name:         a-name-long-enough-to-be-cut-off")
+	assert.Contains(t, screen, "│Loading…")
+	assert.NotContains(t, screen, "Alpine 3.22 amd64 2")
+
+	release()
 	s.ready(t)
 
-	release := s.server.HoldImages()
-	t.Cleanup(release)
-
+	release = s.server.HoldImages()
 	s.do(t, func() error { return s.gui.switchToProject("default") })
 
 	// Nothing polls the networks here: only the switch's own read answers them.
 	require.Eventually(t, func() bool {
 		return strings.Contains(onLoop(t, s, s.gui.Views.Networks.Buffer), "incusbr0")
 	}, 5*time.Second, 20*time.Millisecond)
+	assert.Contains(t, s.snapshot(t), "│Loading…")
 
 	release()
-	s.settle(t, "Alpine 3.22 amd64 2")
+
+	screen = s.settle(t, "Alpine 3.22 amd64 2")
+	assert.NotContains(t, screen, "Loading…")
 }

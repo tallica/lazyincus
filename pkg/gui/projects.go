@@ -91,7 +91,7 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	// stale ones by name.
 	for _, panel := range gui.allSidePanels() {
 		if panel != panels.ISideListPanel(gui.Panels.Stacks) {
-			panel.ClearItems()
+			panel.Await(gui.Tr.Loading)
 		}
 	}
 

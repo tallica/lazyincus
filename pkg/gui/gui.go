@@ -477,6 +477,10 @@ func (gui *Gui) run(g *gocui.Gui) error {
 
 	gui.setPanels()
 
+	for _, panel := range gui.allSidePanels() {
+		panel.Await(gui.Tr.Loading)
+	}
+
 	if err := gui.keybindings(g); err != nil {
 		return err
 	}

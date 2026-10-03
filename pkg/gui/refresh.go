@@ -73,6 +73,21 @@ func (gui *Gui) refreshAll() []error {
 
 	wg.Wait()
 
+	// What a failed read left unanswered is empty now, not loading.
+	gui.g.Update(func(*gocui.Gui) error {
+		for _, panel := range gui.allSidePanels() {
+			if !panel.StopAwaiting() {
+				continue
+			}
+
+			if err := panel.RerenderList(); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
 	return lo.Compact(errs)
 }
 
