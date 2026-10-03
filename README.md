@@ -94,8 +94,9 @@ make run
 
 Flags: `-r` / `--remote` picks the remote ([Remotes](#remotes)),
 `-P` / `--project-directory` which compose stack to list first
-([Compose stacks](#compose-stacks)), `-d` / `--debug` for debug logging,
-`--version` to print version info.
+([Compose stacks](#compose-stacks)), `--read-only` to change nothing
+anywhere, `-d` / `--debug` for debug logging, `--version` to print version
+info.
 
 Tip: it's a lot of letters for something you open all day. An alias in
 your `~/.zshrc` or `~/.bashrc` shortens it:
@@ -117,7 +118,9 @@ lazyincus --remote myserver
 that variable, so the `incus` and `incus-compose` subprocesses follow the
 panels onto the same daemon. The footer shows the remote you are on, and
 `R` switches to another while running. A compose stack can live on a
-remote of its own — see [Compose stacks](#compose-stacks).
+remote of its own — see [Compose stacks](#compose-stacks). A remote you
+only want to look at can be made
+[read-only](docs/Config.md#top-level) in the config.
 [docs/Remotes.md](docs/Remotes.md) covers adding a remote and its token,
 reaching a daemon over SSH, and the gotchas behind running incusd in a
 local VM — macOS Local Network Privacy and guest clock skew both fail in

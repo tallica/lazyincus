@@ -26,9 +26,19 @@ type UserConfig struct {
 	// OS determines what defaults are set for opening files and links
 	OS OSConfig `yaml:"oS,omitempty"`
 
+	// Remotes holds settings for individual Incus remotes, by the name the
+	// incus CLI knows them by.
+	Remotes map[string]RemoteConfig `yaml:"remotes,omitempty"`
+
 	// For demo purposes: any list item with one of these strings as a substring
 	// will be filtered out and not displayed.
 	Ignore []string `yaml:"ignore,omitempty"`
+}
+
+// RemoteConfig is the settings for one Incus remote.
+type RemoteConfig struct {
+	// ReadOnly refuses every key that would change something on the remote.
+	ReadOnly bool `yaml:"readOnly,omitempty"`
 }
 
 // ThemeConfig is for setting the colors of panels and some text.
@@ -178,6 +188,8 @@ type AppConfig struct {
 	BuildSource string
 	UserConfig  *UserConfig
 	ConfigDir   string
+	// ReadOnly is --read-only: every remote read-only, whatever the config.
+	ReadOnly bool
 }
 
 // NewAppConfig makes a new app config

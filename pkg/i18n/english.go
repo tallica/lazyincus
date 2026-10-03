@@ -259,6 +259,10 @@ type TranslationSet struct {
 	SwitchRemote  string
 	RemotesTitle  string
 	AllProjects   string
+
+	ReadOnly        string
+	ReadOnlyRemote  string
+	ReadOnlySession string
 }
 
 func englishSet() TranslationSet {
@@ -522,5 +526,9 @@ func englishSet() TranslationSet {
 		SwitchRemote:  "switch remote",
 		RemotesTitle:  "Remotes",
 		AllProjects:   "all projects",
+
+		ReadOnly:        "read-only",
+		ReadOnlyRemote:  "%s is read-only in the config, so lazyincus changes nothing there.",
+		ReadOnlySession: "lazyincus was started with --read-only, so it changes nothing.",
 	}
 }

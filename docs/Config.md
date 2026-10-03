@@ -85,6 +85,7 @@ your file either).
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `confirmOnQuit` | bool | `false` | Prompt for confirmation when quitting with `q`/`esc` and no other panel is open. |
+| `remotes.<name>.readOnly` | bool | `false` | Refuse every key that would change something on the remote the incus CLI calls `<name>`, saying why: starting, stopping, deleting, snapshots, editing config, the compose verbs, and the `E`/`a` shells, which can change anything inside. Browsing, logs, copying, filtering and switching remote or project still work, and so do the Stacks panel's own list edits, which change `state.yml` rather than the remote. A stack's keys follow its own remote, not the session's. The footer says `read-only` while the session's remote is. `--read-only` makes every remote read-only for the run. |
 | `oS.openCommand` | string | macOS: `open {{filename}}`; Linux: `sh -c "xdg-open {{filename}} >/dev/null"` | Command used to open a file. |
 | `oS.openLinkCommand` | string | macOS: `open {{link}}`; Linux: `sh -c "xdg-open {{link}} >/dev/null"` | Command used to open a URL. Nothing opens one yet; it's kept for [open in browser](../BACKLOG.md#per-instance-actions). |
 | `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used. |

@@ -102,6 +102,13 @@ gui:
 # open.
 confirmOnQuit: false
 
+# Settings for individual remotes, by the name the incus CLI knows them by.
+# readOnly refuses every key that would change something there; the
+# --read-only flag does the same for every remote.
+# remotes:
+#   production:
+#     readOnly: true
+
 # oS is commented out by default: its real default is platform-specific
 # (computed at startup, not a fixed zero value), so setting either key
 # here - even to "" - would override that with an empty command. Uncomment

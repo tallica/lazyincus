@@ -16,6 +16,9 @@ type Binding struct {
 	Key         any // a rune or a gocui.Key
 	Modifier    gocui.Modifier
 	Description string
+	// Mutates is whether the key changes something on a daemon, which a
+	// read-only remote refuses.
+	Mutates bool
 }
 
 // keyLabels names the non-printing keys the keybinding menu can list.
@@ -157,6 +160,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceStart),
 			Description: gui.Tr.Start,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -164,6 +168,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceStop),
 			Description: gui.Tr.Stop,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -171,6 +176,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceRestart),
 			Description: gui.Tr.Restart,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -178,6 +184,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instancePauseResume),
 			Description: gui.Tr.Pause,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -185,6 +192,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -199,6 +207,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.snapshotCreatePrompt),
 			Description: gui.Tr.NewSnapshot,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -220,6 +229,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceAttachConsole),
 			Description: gui.Tr.Attach,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -227,6 +237,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceEdit),
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "instances",
@@ -234,6 +245,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceExecShell),
 			Description: gui.Tr.ExecShell,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "images",
@@ -241,6 +253,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Images, gui.imageDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "snapshots",
@@ -248,6 +261,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleSnapshotCreate,
 			Description: gui.Tr.NewSnapshot,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "snapshots",
@@ -262,6 +276,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotRestore),
 			Description: gui.Tr.RestoreSnapshotShort,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "snapshots",
@@ -269,6 +284,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "images",
@@ -276,6 +292,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Images, gui.imageEdit),
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "volumes",
@@ -283,6 +300,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Volumes, gui.volumeSnapshotCreatePrompt),
 			Description: gui.Tr.NewSnapshot,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "volumes",
@@ -290,6 +308,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Volumes, gui.volumeEdit),
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "networks",
@@ -297,6 +316,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Networks, gui.networkEdit),
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "images",
@@ -325,6 +345,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handlePruneImages,
 			Description: gui.Tr.PruneImages,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "networks",
@@ -346,6 +367,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Profiles, gui.profileEdit),
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "profiles",
@@ -353,6 +375,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Profiles, gui.profileDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "images",
@@ -395,6 +418,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Volumes, gui.volumeDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "networks",
@@ -402,6 +426,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Networks, gui.networkDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "main",
@@ -633,6 +658,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		}
 	}
 
+	for _, binding := range bindings {
+		if binding.Mutates {
+			gui.guardReadOnly(binding)
+		}
+	}
+
 	return bindings
 }
 
@@ -691,6 +722,12 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 	binding := func(key rune, handler func(*gocui.Gui, *gocui.View) error, description string) *Binding {
 		return &Binding{ViewName: "stacks", Key: key, Modifier: gocui.ModNone, Handler: handler, Description: description}
 	}
+	mutating := func(key rune, handler func(*gocui.Gui, *gocui.View) error, description string) *Binding {
+		b := binding(key, handler, description)
+		b.Mutates = true
+
+		return b
+	}
 
 	return []*Binding{
 		binding('a', gui.handleStackAdd, gui.Tr.AddStack),
@@ -701,16 +738,16 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 			ViewName: "stacks", Key: gocui.KeySpace, Modifier: gocui.ModNone,
 			Handler: onSelected(gui.Panels.Stacks, gui.stackSwitchRemote), Description: gui.Tr.SwitchToStackRemote,
 		},
-		binding('u', gui.onStackTarget(gui.composeUp), gui.Tr.ComposeUp),
-		binding('d', gui.onStackTarget(gui.composeDownMenu), gui.Tr.ComposeDown),
-		binding('U', gui.onStackTarget(gui.composeUpPullRecreate), gui.Tr.ComposeUpPullRecreate),
-		binding('S', gui.onStackTarget(gui.composeVerb("", "start")), gui.Tr.Start),
-		binding('s', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeStop, "stop")), gui.Tr.Stop),
-		binding('r', gui.onStackTarget(gui.composeVerb("", "restart")), gui.Tr.Restart),
-		binding('p', gui.onStack(gui.stackPause), gui.Tr.Pause),
-		binding('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
-		binding('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
-		binding('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
+		mutating('u', gui.onStackTarget(gui.composeUp), gui.Tr.ComposeUp),
+		mutating('d', gui.onStackTarget(gui.composeDownMenu), gui.Tr.ComposeDown),
+		mutating('U', gui.onStackTarget(gui.composeUpPullRecreate), gui.Tr.ComposeUpPullRecreate),
+		mutating('S', gui.onStackTarget(gui.composeVerb("", "start")), gui.Tr.Start),
+		mutating('s', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeStop, "stop")), gui.Tr.Stop),
+		mutating('r', gui.onStackTarget(gui.composeVerb("", "restart")), gui.Tr.Restart),
+		mutating('p', gui.onStack(gui.stackPause), gui.Tr.Pause),
+		mutating('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
+		mutating('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
+		mutating('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
 		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
 		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
@@ -730,6 +767,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeStart,
 			Description: gui.Tr.Start,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -737,6 +775,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeStop,
 			Description: gui.Tr.Stop,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -744,6 +783,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeRestart,
 			Description: gui.Tr.Restart,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -751,6 +791,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposePause,
 			Description: gui.Tr.Pause,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -758,6 +799,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeDown,
 			Description: gui.composeRowDescription(gui.Tr.ComposeDown, gui.Tr.Remove),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -765,6 +807,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeKill,
 			Description: gui.composeRowDescription(gui.Tr.ComposeKill, gui.Tr.ForceStop),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -772,6 +815,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceSnapshotCreate,
 			Description: gui.Tr.NewSnapshot,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -793,6 +837,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceEdit,
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -800,6 +845,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceExecShell,
 			Description: gui.Tr.ExecShell,
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -807,6 +853,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeUp,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposeUp),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -814,6 +861,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeUpPullRecreate,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposeUpPullRecreate),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -821,6 +869,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeBuild,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposeBuild),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",
@@ -828,6 +877,7 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposePull,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposePull),
+			Mutates:     true,
 		},
 		{
 			ViewName:    "services",

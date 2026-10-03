@@ -27,6 +27,7 @@ var (
 	debuggingFlag    = false
 	remoteFlag       = ""
 	projectDirectory = ""
+	readOnlyFlag     = false
 )
 
 // composeProjectDirectory resolves the --project-directory flag to an
@@ -70,6 +71,7 @@ func main() {
 	flaggy.Bool(&debuggingFlag, "d", "debug", "Write a development.log to the config directory")
 	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
 	flaggy.String(&projectDirectory, "P", "project-directory", "Compose project directory to list first in Stacks, in place of the working directory; overrides INCUS_COMPOSE_PROJECT_DIRECTORY")
+	flaggy.Bool(&readOnlyFlag, "", "read-only", "Change nothing on any remote: keys that would are refused")
 	flaggy.SetVersion(info)
 
 	flaggy.Parse()
@@ -98,6 +100,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	appConfig.ReadOnly = readOnlyFlag
 
 	lazyincusApp, err := app.NewApp(appConfig)
 	if err == nil {

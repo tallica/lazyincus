@@ -211,6 +211,10 @@ func (gui *Gui) incusStatusContent() string {
 		label += " (" + scope + ")"
 	}
 
+	if gui.isReadOnly(remote) {
+		label += " " + utils.ColoredString(gui.Tr.ReadOnly, color.FgYellow)
+	}
+
 	if gui.IncusCommand.IsConnected() {
 		label += " " + utils.ColoredString("●", color.FgGreen)
 	} else {
