@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -74,4 +75,26 @@ func TestInstanceRemoteNames(t *testing.T) {
 	}}}
 
 	assert.Equal(t, []string{"local", "web01"}, command.InstanceRemoteNames())
+}
+
+// Stacks on several remotes connect side by side, and GetInstanceServer
+// caches each remote's TLS details in the config's Remotes map.
+func TestConnectRemoteConcurrently(t *testing.T) {
+	cliCfg := &cliconfig.Config{ConfigDir: t.TempDir(), Remotes: map[string]cliconfig.Remote{}}
+	names := []string{"a", "b", "c", "d"}
+
+	for _, name := range names {
+		cliCfg.Remotes[name] = cliconfig.Remote{Addrs: []string{"https://127.0.0.1:1"}, Protocol: "incus"}
+	}
+
+	var wg sync.WaitGroup
+
+	for _, name := range names {
+		wg.Go(func() {
+			_, err := connectRemote(cliCfg, name)
+			assert.Error(t, err)
+		})
+	}
+
+	wg.Wait()
 }

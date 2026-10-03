@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
@@ -201,9 +202,10 @@ func connectRemote(cliCfg *cliconfig.Config, name string) (incus.InstanceServer,
 	}
 
 	done := make(chan result, 1)
+	own := connectionConfig(cliCfg)
 
 	go func() {
-		client, err := cliCfg.GetInstanceServer(name)
+		client, err := own.GetInstanceServer(name)
 		done <- result{client: client, err: err}
 	}()
 
@@ -212,6 +214,24 @@ func connectRemote(cliCfg *cliconfig.Config, name string) (incus.InstanceServer,
 		return res.client, res.err
 	case <-time.After(connectTimeout):
 		return nil, fmt.Errorf("no answer within %s", connectTimeout)
+	}
+}
+
+// connectionConfig is a copy of cliCfg for one connection to write to:
+// GetInstanceServer caches the remote's TLS details in Remotes, unlocked,
+// and connects to several remotes overlap. Built field by field, as
+// Config holds a mutex.
+func connectionConfig(cliCfg *cliconfig.Config) *cliconfig.Config {
+	return &cliconfig.Config{
+		DefaultRemote:   cliCfg.DefaultRemote,
+		Remotes:         maps.Clone(cliCfg.Remotes),
+		Aliases:         cliCfg.Aliases,
+		ConfigDir:       cliCfg.ConfigDir,
+		CacheDir:        cliCfg.CacheDir,
+		UserAgent:       cliCfg.UserAgent,
+		PromptPassword:  cliCfg.PromptPassword,
+		ProjectOverride: cliCfg.ProjectOverride,
+		Defaults:        cliCfg.Defaults,
 	}
 }
 

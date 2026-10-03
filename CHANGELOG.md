@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- lazyincus no longer crashes at startup, leaving the terminal garbled, when stacks are listed on two or more other remotes.
+
 ## [0.13.0] - 2026-10-03
 
 ### Changed
