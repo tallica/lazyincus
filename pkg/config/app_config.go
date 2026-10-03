@@ -136,10 +136,8 @@ type OSConfig struct {
 	CopyToClipboardCommand string `yaml:"copyToClipboardCommand,omitempty"`
 }
 
-// GetDefaultConfig returns the application default configuration NOTE (to
-// contributors, not users): do not default a boolean to true, because false is
-// the boolean zero value and this will be ignored when parsing the user's
-// config
+// GetDefaultConfig returns the application default configuration, which the
+// user's config.yml is read on top of.
 func GetDefaultConfig() UserConfig {
 	return UserConfig{
 		Gui: GuiConfig{
