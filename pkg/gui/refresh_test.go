@@ -218,7 +218,11 @@ func TestASlowPanelLoadsOnItsOwn(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return strings.Contains(onLoop(t, s, s.gui.Views.Networks.Buffer), "incusbr0")
 	}, 5*time.Second, 20*time.Millisecond)
-	assert.Contains(t, s.snapshot(t), "│Loading…")
+	// Polled, not one snapshot: that can be a frame drawn before the switch.
+	require.Eventually(t, func() bool {
+		screen := s.snapshot(t)
+		return strings.Contains(screen, "(fake/default)") && strings.Contains(screen, "│Loading…")
+	}, 5*time.Second, 20*time.Millisecond)
 
 	release()
 
