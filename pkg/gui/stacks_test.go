@@ -202,6 +202,16 @@ func TestNoStackHereCollapsesStacks(t *testing.T) {
 	s.press(t, '3')
 	s.settle(t, "Architecture:")
 	assert.Equal(t, 0, onLoop(t, s, func() int { return s.gui.Views.Main.TabIndex }))
+
+	// Coming from any other panel swaps them too, so Stacks leaves Config.
+	s.press(t, '1')
+	s.settle(t, "Directory:")
+	s.do(t, func() error { return s.gui.Panels.Stacks.SetMainTab("config") })
+	s.press(t, '5')
+	require.Eventually(t, func() bool { return height("stacks") == titleOnlyHeight }, 5*time.Second, 20*time.Millisecond)
+	s.press(t, '1')
+	s.settle(t, "Directory:")
+	assert.Equal(t, 0, onLoop(t, s, func() int { return s.gui.Views.Main.TabIndex }))
 }
 
 // With collapseStacksElsewhere off, a remote with no stack keeps the even

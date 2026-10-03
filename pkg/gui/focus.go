@@ -161,8 +161,9 @@ func (gui *Gui) lastSideViewName() string {
 }
 
 // stacksSwap is whether focus moving between these side views swaps Stacks
-// and Services with Instances, on a remote with no stack: the panel landed
-// on starts at its first main-panel tab.
+// and Services with Instances, on a remote with no stack: entering either
+// from anywhere else, or Instances from either. The panel landed on starts
+// at its first main-panel tab.
 func (gui *Gui) stacksSwap(from, to string) bool {
 	if !gui.stacksAway() {
 		return false
@@ -170,5 +171,5 @@ func (gui *Gui) stacksSwap(from, to string) bool {
 
 	stacks := func(name string) bool { return name == "stacks" || name == "services" }
 
-	return (stacks(from) && to == "instances") || (from == "instances" && stacks(to))
+	return (stacks(to) && !stacks(from)) || (to == "instances" && stacks(from))
 }
