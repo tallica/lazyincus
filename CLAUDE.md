@@ -59,6 +59,14 @@ verbs are exercised for real, and with a VM alongside the containers.
 - **Nothing machine-specific in the tree.** The repo is public and a push
   is permanent — no credentials, no local paths, no "works on my VM". That
   belongs in what you report, not in a file.
+- **Anything that changes a daemon honours read-only.** A key binding
+  that starts, stops, deletes, edits, snapshots or shells into anything
+  sets `Mutates: true`, and `guardReadOnly` (`pkg/gui/read_only.go`)
+  refuses it on a [read-only remote](docs/Config.md#top-level) - the
+  remote it acts on, which `actionRemote` works out per view. A change
+  that reaches a daemon some other way than a key binding needs the same
+  check by hand. When unsure, mark it: a refusal costs a keypress, a
+  missed one costs production.
 - **The tests see the screen, not the daemon.** The screen and refresh
   tests in `pkg/gui` run the real app on a headless gocui over
   `incustest`'s stand-in daemon; anything that talks to a real one still
