@@ -500,10 +500,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 	}()
 
 	go func() {
-		for _, fetch := range gui.allFetches() {
-			if err := gui.refresh(nil, fetch); err != nil {
-				gui.Log.Error(err)
-			}
+		for _, err := range gui.refreshAll() {
+			gui.Log.Error(err)
 		}
 
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
@@ -543,14 +541,16 @@ func (gui *Gui) handleError(err error) error {
 	return nil
 }
 
-// allFetches is every panel's fetch, in the order startup and a project
-// switch run them.
-func (gui *Gui) allFetches() []fetch {
-	// Stacks first: which instances the instances panel leaves out is theirs
-	// to say.
-	return []fetch{
-		gui.fetchStacks, gui.fetchInstances, gui.fetchImages, gui.fetchVolumes,
-		gui.fetchNetworks, gui.fetchProfiles, gui.fetchServices,
+// fetchGroups is every panel's fetch, in groups read side by side. The
+// stacks lead theirs: which instances the instances panel leaves out is
+// theirs to say, and a compose instance has a row in both of the others.
+func (gui *Gui) fetchGroups() [][]fetch {
+	return [][]fetch{
+		{gui.fetchStacks, gui.fetchInstances, gui.fetchServices},
+		{gui.fetchImages},
+		{gui.fetchVolumes},
+		{gui.fetchNetworks},
+		{gui.fetchProfiles},
 	}
 }
 

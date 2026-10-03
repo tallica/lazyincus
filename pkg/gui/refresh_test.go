@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"maps"
+	"strings"
 	"testing"
 	"time"
 
@@ -175,4 +176,23 @@ func TestTheInstancesPollRefreshesTheServices(t *testing.T) {
 
 	require.NoError(t, s.gui.refreshInstancesQuiet())
 	require.Eventually(t, func() bool { return webInstances() == 1 }, 3*time.Second, 20*time.Millisecond)
+}
+
+// A slow listing holds back only its own panel on a change of scope.
+func TestASlowPanelLoadsOnItsOwn(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	release := s.server.HoldImages()
+	t.Cleanup(release)
+
+	s.do(t, func() error { return s.gui.switchToProject("default") })
+
+	// Nothing polls the networks here: only the switch's own read answers them.
+	require.Eventually(t, func() bool {
+		return strings.Contains(onLoop(t, s, s.gui.Views.Networks.Buffer), "incusbr0")
+	}, 5*time.Second, 20*time.Millisecond)
+
+	release()
+	s.settle(t, "Alpine 3.22 amd64 2")
 }

@@ -122,6 +122,11 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	}
 
 	return gui.WithWaitingStatus(gui.Tr.LoadingStatus, func() error {
-		return gui.refresh(nil, gui.allFetches()...)
+		// One popup for a remote that has gone, not one per group.
+		if errs := gui.refreshAll(); len(errs) > 0 {
+			return errs[0]
+		}
+
+		return nil
 	})
 }
