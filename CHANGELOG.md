@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.
+
 ## [0.13.1] - 2026-10-03
 
 ### Fixed

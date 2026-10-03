@@ -127,9 +127,9 @@ A remote with no stack listed on it - every stack pinned elsewhere, or none
 at all - keeps both panels but collapses them to their titles
 (`State.StacksHere`, set by each Stacks refresh), Stacks counting what it
 lists and Services leaving out the stack (`titleStacks`). Focusing either
-expands both and collapses Instances instead (`stacksCollapsed`), and
-focus crossing that swap lands on the panel's first main-panel tab
-(`stacksSwap`). Their numbers don't move: a hidden panel would renumber
+expands both and collapses Instances instead (`stacksCollapsed`), counting
+what it lists the way Stacks does, and focus crossing that swap lands on
+the panel's first main-panel tab (`stacksSwap`). Their numbers don't move: a hidden panel would renumber
 everything by remote. The Stacks refresh after startup or a remote switch
 (`State.Landing`) also moves the focus from either one to Instances;
 adding or removing a stack changes only the layout. All of it hangs on

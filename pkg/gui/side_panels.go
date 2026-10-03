@@ -196,16 +196,26 @@ func (gui *Gui) cycleSideView(offset int) func() error {
 // servicesPanelTitle names the compose project the panel acts on. It's the
 // same one on every row, so it belongs in the title rather than in a column
 // - the reasoning the instances panel's project column already follows.
-// titleStacks names Stacks and Services for the space they have: collapsed
-// to its title, Stacks counts what it lists and Services leaves out the
-// stack. Every layout pass, since focus alone collapses them.
+// titleStacks names Stacks, Services and Instances for the space they have:
+// collapsed to its title, Stacks or Instances counts what it lists and
+// Services leaves out the stack. Every layout pass, since focus alone
+// collapses them.
 func (gui *Gui) titleStacks() {
 	if gui.Views.Stacks == nil || gui.Panels.Stacks == nil {
 		return
 	}
 
-	if gui.stacksCollapsed("stacks", gui.currentSideWindowName()) {
-		gui.Views.Stacks.Title = fmt.Sprintf(gui.Tr.StacksTitleCount, len(gui.Panels.Stacks.List.GetAllItems()))
+	focused := gui.currentSideWindowName()
+
+	if gui.Views.Instances != nil && gui.Panels.Instances != nil {
+		gui.Views.Instances.Title = gui.instancesPanelTitle()
+		if gui.stacksCollapsed("instances", focused) {
+			gui.Views.Instances.Title = fmt.Sprintf(gui.Tr.TitleCount, gui.Views.Instances.Title, gui.Panels.Instances.List.Len())
+		}
+	}
+
+	if gui.stacksCollapsed("stacks", focused) {
+		gui.Views.Stacks.Title = fmt.Sprintf(gui.Tr.TitleCount, gui.Tr.StacksTitle, len(gui.Panels.Stacks.List.GetAllItems()))
 		gui.Views.Services.Title = gui.Tr.ServicesTitle
 
 		return
