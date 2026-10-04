@@ -2,10 +2,12 @@ package panels
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
+	"github.com/sahilm/fuzzy"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/tasks"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -76,6 +78,13 @@ type SideListPanel[T comparable] struct {
 
 	// set this to true if you don't want to allow manual filtering via '/'
 	DisableFilter bool
+
+	// FuzzyFilter matches each word of the filter fuzzily, in any order,
+	// best match first, and puts the cursor on it.
+	FuzzyFilter bool
+
+	// FilterText is what the fuzzy filter matches; the cells when nil or "".
+	FilterText func(T) string
 
 	// This can be nil if you want to always show the panel
 	Hide func() bool
@@ -271,6 +280,7 @@ func (self *SideListPanel[T]) FilterAndSort() {
 
 func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 	filterString := self.Gui.FilterString(self.View)
+	fuzzyFilter := self.FuzzyFilter && filterString != ""
 
 	self.List.Filter(func(item T, index int) bool {
 		if self.Filter != nil && !self.Filter(item) {
@@ -285,7 +295,7 @@ func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 			return false
 		}
 
-		if filterString != "" {
+		if filterString != "" && !fuzzyFilter {
 			return lo.SomeBy(self.GetTableCells(item), func(searchString string) bool {
 				return strings.Contains(searchString, filterString)
 			})
@@ -294,18 +304,92 @@ func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 		return true
 	})
 
-	self.List.Sort(self.Sort)
+	if fuzzyFilter {
+		self.fuzzyFilter(filterString)
+	} else {
+		self.List.Sort(self.Sort)
+	}
 
 	self.clampSelectedLineIdx()
 
 	// Follow the selected item to wherever it sorted to. The list re-sorts on
 	// every background refresh, so holding the cursor at a fixed index would
 	// hand the selection to a different item the moment one changes state.
-	if hadSelection {
+	if hadSelection && !fuzzyFilter {
 		if index := self.selectedIndex(selected); index >= 0 {
 			self.SelectedIdx = index
 		}
 	}
+}
+
+// fuzzyFilter keeps the items matching every word of needle, best first.
+func (self *SideListPanel[T]) fuzzyFilter(needle string) {
+	items := self.List.GetItems()
+	texts := lo.Map(items, func(item T, _ int) string {
+		if self.FilterText != nil {
+			if text := self.FilterText(item); text != "" {
+				return text
+			}
+		}
+
+		return utils.Decolorise(strings.Join(self.GetTableCells(item), " "))
+	})
+
+	words := strings.Fields(needle)
+	scores := make([]int, len(items))
+	matched := make([]int, len(items))
+	literal := make([]int, len(items))
+	for _, word := range words {
+		for _, match := range fuzzy.FindNoSort(word, texts) {
+			tier := wordTier(texts[match.Index], word)
+			scores[match.Index] += match.Score + 1000*tier
+			matched[match.Index]++
+			if tier > 0 {
+				literal[match.Index]++
+			}
+		}
+	}
+
+	// Scattered matches are only worth showing when nothing has the words
+	// as typed.
+	counts := matched
+	if lo.Contains(literal, len(words)) {
+		counts = literal
+	}
+	indices := lo.Filter(lo.Range(len(items)), func(index int, _ int) bool { return counts[index] == len(words) })
+	sort.SliceStable(indices, func(i, j int) bool { return scores[indices[i]] > scores[indices[j]] })
+
+	rank := map[T]int{}
+	for position, index := range indices {
+		rank[items[index]] = position
+	}
+
+	self.List.Filter(func(item T, _ int) bool {
+		_, ok := rank[item]
+		return ok
+	})
+	self.List.Sort(func(a, b T) bool { return rank[a] < rank[b] })
+	self.SelectedIdx = 0
+}
+
+// wordTier ranks how word appears in text: 3 as a whole word, 2 starting
+// one, 1 inside one, 0 only scattered. The fuzzy score alone can't: its
+// greedy match takes the "st" of "instances" before the "stop" after it.
+func wordTier(text, word string) int {
+	text, word = strings.ToLower(text), strings.ToLower(word)
+	tier := 0
+	for _, field := range strings.Fields(text) {
+		switch {
+		case field == word:
+			return 3
+		case strings.HasPrefix(field, word):
+			tier = 2
+		case tier == 0 && strings.Contains(field, word):
+			tier = 1
+		}
+	}
+
+	return tier
 }
 
 // selectedIndex is where the previously selected item sorted to, by value

@@ -142,3 +142,35 @@ func TestRowsRefitWhenPanelResizes(t *testing.T) {
 
 	assert.Equal(t, []string{"alpha-beta-gamma", "delta"}, view.BufferLines())
 }
+
+type filteringGui struct {
+	stubGui
+	needle string
+}
+
+func (g filteringGui) FilterString(*gocui.View) string { return g.needle }
+
+// Each word matches on its own, in any order, and the best match comes
+// first with the cursor on it.
+func TestFuzzyFilterMatchesEveryWordBestFirst(t *testing.T) {
+	gui := &filteringGui{}
+	panel := newPanel([]*row{{name: "show stopped instances"}, {name: "instances stop"}, {name: "profiles stop"}, {name: "start"}})
+	panel.Gui = gui
+	panel.FuzzyFilter = true
+	panel.SelectedIdx = 2
+
+	gui.needle = "stop inst"
+	panel.FilterAndSort()
+
+	assert.Equal(t, []string{"instances stop", "show stopped instances"}, names(panel.List.GetItems()))
+	assert.Equal(t, 0, panel.SelectedIdx)
+}
+
+func names(rows []*row) []string {
+	result := make([]string, len(rows))
+	for i, item := range rows {
+		result[i] = item.name
+	}
+
+	return result
+}

@@ -15,6 +15,7 @@ require (
 	github.com/lxc/incus/v7 v7.5.1
 	github.com/mgutz/str v1.2.0
 	github.com/rivo/uniseg v0.4.7
+	github.com/sahilm/fuzzy v0.1.3
 	github.com/samber/lo v1.53.0
 	github.com/sasha-s/go-deadlock v0.3.9
 	github.com/sirupsen/logrus v1.10.2
