@@ -500,6 +500,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  wrappedHandler(gui.filteredNextLine),
 		},
 		{
+			ViewName: "filter",
+			Key:      gocui.KeyTab,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.paletteTab),
+		},
+		{
 			ViewName: "",
 			Key:      'J',
 			Modifier: gocui.ModNone,

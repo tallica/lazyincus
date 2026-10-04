@@ -30,6 +30,9 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		DisableFilter: true,
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
+		Filter: func(item *types.MenuItem) bool {
+			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
+		},
 	}
 }
 

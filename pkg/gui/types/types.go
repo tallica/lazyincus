@@ -13,4 +13,12 @@ type MenuItem struct {
 
 	// FilterText is what filtering the menu matches; the columns when empty.
 	FilterText string
+
+	// HideUntilFiltered keeps the item out of the menu until something is
+	// typed in its filter.
+	HideUntilFiltered bool
+
+	// OnTab is what tab does on the item in a filtered menu; nil for
+	// nothing.
+	OnTab func() error
 }

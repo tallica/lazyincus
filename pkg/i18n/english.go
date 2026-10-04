@@ -268,6 +268,7 @@ type TranslationSet struct {
 	CommandPaletteTitle  string
 	CommandPalettePrompt string
 	CommandPaletteGlobal string
+	PaletteItemGone      string
 }
 
 func englishSet() TranslationSet {
@@ -540,5 +541,6 @@ func englishSet() TranslationSet {
 		CommandPaletteTitle:  "Commands",
 		CommandPalettePrompt: "run",
 		CommandPaletteGlobal: "global",
+		PaletteItemGone:      "%s isn't listed any more.",
 	}
 }

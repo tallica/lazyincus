@@ -341,11 +341,15 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 	literal := make([]int, len(items))
 	for _, word := range words {
 		for _, match := range fuzzy.FindNoSort(word, texts) {
+			// Words as typed rank by how they appear, then in list order: their
+			// fuzzy scores differ by what else the text holds.
 			tier := wordTier(texts[match.Index], word)
-			scores[match.Index] += match.Score + 1000*tier
 			matched[match.Index]++
 			if tier > 0 {
+				scores[match.Index] += 1000 * tier
 				literal[match.Index]++
+			} else {
+				scores[match.Index] += match.Score
 			}
 		}
 	}
@@ -390,6 +394,20 @@ func wordTier(text, word string) int {
 	}
 
 	return tier
+}
+
+// Select puts the cursor on item, and says whether the list shows it. A
+// refresh may have rebuilt it since, so it's matched as selectedIndex
+// matches.
+func (self *SideListPanel[T]) Select(item T) bool {
+	index := self.selectedIndex(item)
+	if index < 0 {
+		return false
+	}
+
+	self.SetSelectedLineIdx(index)
+
+	return true
 }
 
 // selectedIndex is where the previously selected item sorted to, by value
