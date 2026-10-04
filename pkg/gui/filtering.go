@@ -75,6 +75,24 @@ func (gui *Gui) commitFilter() error {
 	return gui.returnFocus()
 }
 
+// filteredPrevLine and filteredNextLine move through the list being filtered
+// without leaving the filter.
+func (gui *Gui) filteredPrevLine() error {
+	if gui.State.Filter.panel == nil {
+		return nil
+	}
+
+	return gui.State.Filter.panel.HandlePrevLine()
+}
+
+func (gui *Gui) filteredNextLine() error {
+	if gui.State.Filter.panel == nil {
+		return nil
+	}
+
+	return gui.State.Filter.panel.HandleNextLine()
+}
+
 func (gui *Gui) filterPrompt() string {
 	return fmt.Sprintf("%s: ", gui.Tr.FilterPrompt)
 }

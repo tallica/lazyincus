@@ -472,6 +472,18 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  wrappedHandler(gui.escapeFilterPrompt),
 		},
 		{
+			ViewName: "filter",
+			Key:      gocui.KeyArrowUp,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.filteredPrevLine),
+		},
+		{
+			ViewName: "filter",
+			Key:      gocui.KeyArrowDown,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.filteredNextLine),
+		},
+		{
 			ViewName: "",
 			Key:      'J',
 			Modifier: gocui.ModNone,

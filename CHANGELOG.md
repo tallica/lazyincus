@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - With the main panel or a popup focused, the list it shows keeps its selected row in bold; `theme.inactiveSelectedLineBgColor` sets the style.
+- While filtering with `/`, `↑`/`↓` move through the list without leaving the filter.
 - Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.
 
 ### Fixed
