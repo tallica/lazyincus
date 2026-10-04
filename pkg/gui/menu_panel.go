@@ -28,6 +28,8 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 			return gui.resizePopupPanel(gui.Views.Menu)
 		},
 		DisableFilter: true,
+		FuzzyFilter:   true,
+		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
 	}
 }
 

@@ -31,6 +31,12 @@ func (gui *Gui) onFocusChange() error {
 	currentView := gui.g.CurrentView()
 	sideView := gui.currentSideViewName()
 	for _, view := range gui.g.Views() {
+		// The menu's inactive highlight is its own: see styleAllViews.
+		if view == gui.Views.Menu {
+			view.Highlight = true
+			continue
+		}
+
 		focused := view == currentView && view.Name() != "main"
 		view.HighlightInactive = !focused && view.Name() == sideView
 		view.Highlight = focused || view.HighlightInactive

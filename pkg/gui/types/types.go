@@ -10,4 +10,7 @@ type MenuItem struct {
 
 	// Only applies when Label is used
 	OpensMenu bool
+
+	// FilterText is what filtering the menu matches; the columns when empty.
+	FilterText string
 }
