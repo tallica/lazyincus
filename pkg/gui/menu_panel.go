@@ -8,7 +8,9 @@ import (
 )
 
 type CreateMenuOptions struct {
-	Title      string
+	Title string
+	// Subtitle is a hint gocui right-aligns on the top border.
+	Subtitle   string
 	Items      []*types.MenuItem
 	HideCancel bool
 }
@@ -95,6 +97,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 	}
 
 	gui.Views.Menu.Title = opts.Title
+	gui.Views.Menu.Subtitle = opts.Subtitle
 	gui.Views.Menu.Visible = true
 
 	return gui.switchFocus(gui.Views.Menu)

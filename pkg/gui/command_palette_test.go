@@ -109,7 +109,7 @@ func TestThePaletteListsItemsOnlyOnceYouType(t *testing.T) {
 	s.ready(t)
 
 	s.pressKey(t, tcell.KeyCtrlP)
-	s.settle(t, "Commands")
+	s.settle(t, "tab: an item's actions")
 	assert.False(t, onLoop(t, s, func() bool {
 		return lo.SomeBy(s.gui.Panels.Menu.List.GetItems(), func(item *types.MenuItem) bool { return item.HideUntilFiltered })
 	}))
@@ -149,6 +149,7 @@ func TestTabListsAnItemsActions(t *testing.T) {
 
 	screen := s.settle(t, "Commands: incusbr0")
 	assert.NotContains(t, screen, "switch remote")
+	assert.NotContains(t, screen, "tab:")
 
 	s.typeText(t, "delete")
 	s.pressKey(t, tcell.KeyEnter)

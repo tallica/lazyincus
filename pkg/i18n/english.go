@@ -264,11 +264,13 @@ type TranslationSet struct {
 	ReadOnlyRemote  string
 	ReadOnlySession string
 
-	CommandPalette       string
-	CommandPaletteTitle  string
-	CommandPalettePrompt string
-	CommandPaletteGlobal string
-	PaletteItemGone      string
+	CommandPalette         string
+	CommandPaletteTitle    string
+	CommandPalettePrompt   string
+	CommandPaletteGlobal   string
+	PaletteItemGone        string
+	CommandPaletteHint     string
+	CommandPaletteItemHint string
 }
 
 func englishSet() TranslationSet {
@@ -537,10 +539,12 @@ func englishSet() TranslationSet {
 		ReadOnlyRemote:  "%s is read-only in the config, so lazyincus changes nothing there.",
 		ReadOnlySession: "lazyincus was started with --read-only, so it changes nothing.",
 
-		CommandPalette:       "command palette",
-		CommandPaletteTitle:  "Commands",
-		CommandPalettePrompt: "run",
-		CommandPaletteGlobal: "global",
-		PaletteItemGone:      "%s isn't listed any more.",
+		CommandPalette:         "command palette",
+		CommandPaletteTitle:    "Commands",
+		CommandPalettePrompt:   "run",
+		CommandPaletteGlobal:   "global",
+		PaletteItemGone:        "%s isn't listed any more.",
+		CommandPaletteHint:     "enter: run, tab: an item's actions, esc: close",
+		CommandPaletteItemHint: "enter: run, esc: close",
 	}
 }

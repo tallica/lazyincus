@@ -38,13 +38,14 @@ func (gui *Gui) openPalette(g *gocui.Gui, v *gocui.View, item string) error {
 	gui.State.Filter.active = true
 	gui.State.Filter.panel = gui.Panels.Menu
 
-	title := gui.Tr.CommandPaletteTitle
+	title, hint := gui.Tr.CommandPaletteTitle, gui.Tr.CommandPaletteHint
 	if item != "" {
-		title = fmt.Sprintf("%s: %s", title, item)
+		title, hint = fmt.Sprintf("%s: %s", title, item), gui.Tr.CommandPaletteItemHint
 	}
 
 	if err := gui.Menu(CreateMenuOptions{
 		Title:      title,
+		Subtitle:   hint,
 		Items:      gui.paletteItems(g, v, item != ""),
 		HideCancel: true,
 	}); err != nil {
