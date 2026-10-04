@@ -66,6 +66,7 @@ your file either).
 | `theme.activeBorderColor` | []string | `[green, bold]` | Border color/attributes for the focused panel. |
 | `theme.inactiveBorderColor` | []string | `[default]` | Border color/attributes for unfocused panels. |
 | `theme.selectedLineBgColor` | []string | `[blue]` | Background color of the selected list row: a color name - `black` to `white`, or `brightblack` to `brightwhite` for the theme's bright variants - or a hex value. Where the palette's blue is too light to read the row's colored text on, a dark grey such as `["#515151"]` works on any dark theme. |
+| `theme.inactiveSelectedLineBgColor` | []string | `[default]` | Background of the selected row of the list the main panel is showing, while the main panel or a popup has the focus: color names, hex values or attributes, as `selectedLineBgColor` takes. The default is the terminal's own background, which leaves the row's text bold and brightened; a dark grey such as `["#3b3b3b"]` makes it a bar. |
 | `theme.optionsTextColor` | []string | `[blue]` | Color of the keybinding hints in the bottom line. |
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. |
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |

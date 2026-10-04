@@ -24,10 +24,16 @@ func (gui *Gui) getFocusLayout() func(g *gocui.Gui) error {
 	}
 }
 
+// onFocusChange highlights the focused view's selection, and the selection
+// of the list the main panel is showing while something else has the focus,
+// in the inactive style.
 func (gui *Gui) onFocusChange() error {
 	currentView := gui.g.CurrentView()
+	sideView := gui.currentSideViewName()
 	for _, view := range gui.g.Views() {
-		view.Highlight = view == currentView && view.Name() != "main"
+		focused := view == currentView && view.Name() != "main"
+		view.HighlightInactive = !focused && view.Name() == sideView
+		view.Highlight = focused || view.HighlightInactive
 	}
 	return nil
 }

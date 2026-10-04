@@ -30,6 +30,11 @@ gui:
     # a dark grey works on any dark theme, for example: ["#515151"]
     selectedLineBgColor:
       - blue
+    # The selected row of the list the main panel shows while the main
+    # panel or a popup has the focus: its text bold on the terminal's own
+    # background. A grey makes it a bar, e.g. ["#3b3b3b"]
+    inactiveSelectedLineBgColor:
+      - default
     optionsTextColor:
       - blue
 

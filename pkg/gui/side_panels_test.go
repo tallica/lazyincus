@@ -2,9 +2,12 @@ package gui
 
 import (
 	"testing"
+	"time"
 
+	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
@@ -98,4 +101,20 @@ func TestSpansMultipleProjects(t *testing.T) {
 	assert.False(t, spansMultipleProjects([]string{"", "default", ""}))
 	assert.True(t, spansMultipleProjects([]string{"default", "demo"}))
 	assert.True(t, spansMultipleProjects([]string{"demo", "", "default"}))
+}
+
+// The list the main panel shows keeps its selection, in the inactive
+// style, while the main panel has the focus; another list's goes.
+func TestTheShownListKeepsItsSelectionWhileTheMainPanelIsFocused(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Main) })
+
+	highlight := func(view *gocui.View) [2]bool {
+		return onLoop(t, s, func() [2]bool { return [2]bool{view.Highlight, view.HighlightInactive} })
+	}
+	require.Eventually(t, func() bool { return highlight(s.gui.Views.Instances) == [2]bool{true, true} }, 5*time.Second, 10*time.Millisecond)
+	assert.Equal(t, [2]bool{false, false}, highlight(s.gui.Views.Snapshots))
+	assert.Equal(t, [2]bool{false, false}, highlight(s.gui.Views.Main))
 }

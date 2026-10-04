@@ -49,7 +49,10 @@ type ThemeConfig struct {
 	ActiveBorderColor   []string `yaml:"activeBorderColor,omitempty"`
 	InactiveBorderColor []string `yaml:"inactiveBorderColor,omitempty"`
 	SelectedLineBgColor []string `yaml:"selectedLineBgColor,omitempty"`
-	OptionsTextColor    []string `yaml:"optionsTextColor,omitempty"`
+	// InactiveSelectedLineBgColor is the selected row of the list the main
+	// panel is showing while something else has the focus.
+	InactiveSelectedLineBgColor []string `yaml:"inactiveSelectedLineBgColor,omitempty"`
+	OptionsTextColor            []string `yaml:"optionsTextColor,omitempty"`
 }
 
 // GuiConfig is for configuring visual things like colors and whether we show or
@@ -159,10 +162,11 @@ func GetDefaultConfig() UserConfig {
 			ScrollPastBottom:  false,
 			IgnoreMouseEvents: false,
 			Theme: ThemeConfig{
-				ActiveBorderColor:   []string{"green", "bold"},
-				InactiveBorderColor: []string{"default"},
-				SelectedLineBgColor: []string{"blue"},
-				OptionsTextColor:    []string{"blue"},
+				ActiveBorderColor:           []string{"green", "bold"},
+				InactiveBorderColor:         []string{"default"},
+				SelectedLineBgColor:         []string{"blue"},
+				InactiveSelectedLineBgColor: []string{"default"},
+				OptionsTextColor:            []string{"blue"},
 			},
 			ReturnImmediately:       false,
 			ExpandFocusedSidePanel:  false,

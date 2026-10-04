@@ -126,6 +126,7 @@ func (gui *Gui) styleAllViews() {
 			view := *def.viewPtr
 			view.Highlight = true
 			view.SelBgColor = selectedLineBgColor
+			view.InactiveViewSelBgColor = GetGocuiStyle(gui.Config.UserConfig.Gui.Theme.InactiveSelectedLineBgColor)
 			view.Title = def.title
 			view.TitlePrefix = gui.sidePanelTitlePrefix(index)
 
