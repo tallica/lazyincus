@@ -193,7 +193,7 @@ func (gui *Gui) incusStatusContent() string {
 	if version != "" {
 		label += " v" + version
 	}
-	scope := remote
+	scope := gui.remoteName(remote)
 	if gui.IncusCommand.IsAllProjects() {
 		if scope == "" {
 			scope = gui.Tr.AllProjects

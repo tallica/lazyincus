@@ -39,6 +39,9 @@ type UserConfig struct {
 type RemoteConfig struct {
 	// ReadOnly refuses every key that would change something on the remote.
 	ReadOnly bool `yaml:"readOnly,omitempty"`
+
+	// Color marks the remote's name in the footer and the panels acting on it.
+	Color string `yaml:"color,omitempty"`
 }
 
 // ThemeConfig is for setting the colors of panels and some text.

@@ -104,10 +104,12 @@ confirmOnQuit: false
 
 # Settings for individual remotes, by the name the incus CLI knows them by.
 # readOnly refuses every key that would change something there; the
-# --read-only flag does the same for every remote.
+# --read-only flag does the same for every remote. color marks the remote's
+# name in the footer and the borders of the panels acting on it.
 # remotes:
 #   production:
 #     readOnly: true
+#     color: red
 
 # oS is commented out by default: its real default is platform-specific
 # (computed at startup, not a fixed zero value), so setting either key

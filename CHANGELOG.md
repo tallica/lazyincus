@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `remotes.<name>.readOnly` in the config, or `--read-only` for every remote, refuses any key that would change something there; the footer says `read-only`.
+- `remotes.<name>.color` colours that remote's name in the footer and the borders of panels acting on it.
 
 ### Changed
 - Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.

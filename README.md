@@ -120,7 +120,8 @@ panels onto the same daemon. The footer shows the remote you are on, and
 `R` switches to another while running. A compose stack can live on a
 remote of its own — see [Compose stacks](#compose-stacks). A remote you
 only want to look at can be made
-[read-only](docs/Config.md#top-level) in the config.
+[read-only](docs/Config.md#top-level) in the config, and any remote given
+a colour.
 [docs/Remotes.md](docs/Remotes.md) covers adding a remote and its token,
 reaching a daemon over SSH, and the gotchas behind running incusd in a
 local VM — macOS Local Network Privacy and guest clock skew both fail in

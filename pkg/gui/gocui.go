@@ -47,6 +47,12 @@ func GetGocuiStyle(keys []string) gocui.Attribute {
 
 // hexColor reads a colour IsValidHexValue has accepted: #rgb or #rrggbb.
 func hexColor(hex string) gocui.Attribute {
+	r, g, b := hexRGB(hex)
+
+	return gocui.NewRGBColor(int32(r), int32(g), int32(b))
+}
+
+func hexRGB(hex string) (int, int, int) {
 	digits := hex[1:]
 	if len(digits) == 3 {
 		digits = strings.Repeat(digits[0:1], 2) + strings.Repeat(digits[1:2], 2) + strings.Repeat(digits[2:3], 2)
@@ -54,5 +60,5 @@ func hexColor(hex string) gocui.Attribute {
 
 	value, _ := strconv.ParseUint(digits, 16, 32)
 
-	return gocui.NewRGBColor(int32(value>>16&0xff), int32(value>>8&0xff), int32(value&0xff))
+	return int(value >> 16 & 0xff), int(value >> 8 & 0xff), int(value & 0xff)
 }

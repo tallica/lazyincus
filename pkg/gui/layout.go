@@ -109,6 +109,7 @@ func (gui *Gui) layout(g *gocui.Gui) error {
 
 	gui.fitWindowTabs()
 	gui.titleStacks()
+	gui.colorRemoteFrames()
 
 	if gui.Views.Main != nil {
 		mainWidth := gui.Views.Main.InnerWidth()
