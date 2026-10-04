@@ -63,10 +63,11 @@ func TestTheFooterColorsTheRemoteName(t *testing.T) {
 
 	gui := bareGui(t)
 	gui.Config = &config.AppConfig{UserConfig: &config.UserConfig{Remotes: map[string]config.RemoteConfig{
-		"lenny": {Color: "red"}, "site-a": {Color: "#f08"},
+		"lenny": {Color: "red"}, "site-a": {Color: "#f08"}, "staging": {Color: "brightyellow"},
 	}}}
 
 	assert.Equal(t, "\x1b[31mlenny\x1b[0m", gui.remoteName("lenny"))
 	assert.Equal(t, "\x1b[38;2;255;0;136msite-a\x1b[0m", gui.remoteName("site-a"))
+	assert.Equal(t, "\x1b[93mstaging\x1b[0m", gui.remoteName("staging"))
 	assert.Equal(t, "local", gui.remoteName("local"))
 }

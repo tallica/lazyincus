@@ -65,7 +65,7 @@ your file either).
 | `mouseEvents` | bool | `false` | Set `true` to **disable** mouse interaction (the YAML key is `mouseEvents` even though it toggles ignoring them — inherited as-is from lazydocker). |
 | `theme.activeBorderColor` | []string | `[green, bold]` | Border color/attributes for the focused panel. |
 | `theme.inactiveBorderColor` | []string | `[default]` | Border color/attributes for unfocused panels. |
-| `theme.selectedLineBgColor` | []string | `[blue]` | Background color of the selected list row: a color name or a hex value. Where the palette's blue is too light to read the row's colored text on, a dark grey such as `["#515151"]` works on any dark theme. |
+| `theme.selectedLineBgColor` | []string | `[blue]` | Background color of the selected list row: a color name - `black` to `white`, or `brightblack` to `brightwhite` for the theme's bright variants - or a hex value. Where the palette's blue is too light to read the row's colored text on, a dark grey such as `["#515151"]` works on any dark theme. |
 | `theme.optionsTextColor` | []string | `[blue]` | Color of the keybinding hints in the bottom line. |
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. |
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |

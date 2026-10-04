@@ -17,6 +17,15 @@ var textColorMap = map[string]color.Attribute{
 	"magenta": color.FgMagenta,
 	"cyan":    color.FgCyan,
 	"white":   color.FgWhite,
+
+	"brightblack":   color.FgHiBlack,
+	"brightred":     color.FgHiRed,
+	"brightgreen":   color.FgHiGreen,
+	"brightyellow":  color.FgHiYellow,
+	"brightblue":    color.FgHiBlue,
+	"brightmagenta": color.FgHiMagenta,
+	"brightcyan":    color.FgHiCyan,
+	"brightwhite":   color.FgHiWhite,
 }
 
 // colorRemoteFrames gives each panel's border the colour of the remote its

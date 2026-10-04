@@ -9,18 +9,27 @@ import (
 )
 
 var gocuiColorMap = map[string]gocui.Attribute{
-	"default":   gocui.ColorDefault,
-	"black":     gocui.ColorBlack,
-	"red":       gocui.ColorRed,
-	"green":     gocui.ColorGreen,
-	"yellow":    gocui.ColorYellow,
-	"blue":      gocui.ColorBlue,
-	"magenta":   gocui.ColorMagenta,
-	"cyan":      gocui.ColorCyan,
-	"white":     gocui.ColorWhite,
-	"bold":      gocui.AttrBold,
-	"reverse":   gocui.AttrReverse,
-	"underline": gocui.AttrUnderline,
+	"default": gocui.ColorDefault,
+	"black":   gocui.ColorBlack,
+	"red":     gocui.ColorRed,
+	"green":   gocui.ColorGreen,
+	"yellow":  gocui.ColorYellow,
+	"blue":    gocui.ColorBlue,
+	"magenta": gocui.ColorMagenta,
+	"cyan":    gocui.ColorCyan,
+	"white":   gocui.ColorWhite,
+	// The terminal theme's bright variants, colours 8 to 15.
+	"brightblack":   gocui.ColorBlack + 8,
+	"brightred":     gocui.ColorRed + 8,
+	"brightgreen":   gocui.ColorGreen + 8,
+	"brightyellow":  gocui.ColorYellow + 8,
+	"brightblue":    gocui.ColorBlue + 8,
+	"brightmagenta": gocui.ColorMagenta + 8,
+	"brightcyan":    gocui.ColorCyan + 8,
+	"brightwhite":   gocui.ColorWhite + 8,
+	"bold":          gocui.AttrBold,
+	"reverse":       gocui.AttrReverse,
+	"underline":     gocui.AttrUnderline,
 }
 
 // GetGocuiAttribute gets the gocui color attribute from the string
