@@ -150,6 +150,19 @@ func TestTabListsAnItemsActions(t *testing.T) {
 	screen := s.settle(t, "Commands: incusbr0")
 	assert.NotContains(t, screen, "switch remote")
 	assert.NotContains(t, screen, "tab:")
+	assert.Equal(t, "networks", onLoop(t, s, s.gui.currentSideViewName))
+	assert.Equal(t, "incusbr0", onLoop(t, s, func() string {
+		network, _ := s.gui.Panels.Networks.GetSelectedItem()
+		return network.Name
+	}))
+
+	s.typeText(t, "web")
+	assert.False(t, onLoop(t, s, func() bool {
+		return lo.SomeBy(s.gui.Panels.Menu.List.GetItems(), func(item *types.MenuItem) bool { return item.HideUntilFiltered })
+	}))
+	for range "web" {
+		s.pressKey(t, tcell.KeyBackspace2)
+	}
 
 	s.typeText(t, "delete")
 	s.pressKey(t, tcell.KeyEnter)
@@ -166,4 +179,92 @@ func TestThePaletteLeavesItselfOut(t *testing.T) {
 	s.typeText(t, "palette")
 
 	assert.NotContains(t, s.settle(t, "run: palette"), "command palette")
+}
+
+// An action has no actions of its own: tab leaves the palette as it was.
+func TestTabOnAnActionDoesNothing(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "stop")
+	s.settle(t, "run: stop")
+	s.pressKey(t, tcell.KeyTab)
+
+	screen := s.settle(t, "run: stop")
+	assert.NotContains(t, screen, "Commands:")
+	assert.Equal(t, "filter", onLoop(t, s, s.gui.currentViewName))
+	assert.True(t, onLoop(t, s, s.gui.paletteOpen))
+}
+
+func TestEscFromAnItemsActionsLeavesItSelected(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "incusbr0")
+	s.settle(t, "run: incusbr0")
+	s.pressKey(t, tcell.KeyTab)
+	s.settle(t, "Commands: incusbr0")
+	s.pressKey(t, tcell.KeyEsc)
+
+	assert.NotContains(t, s.settle(t, ""), "Commands")
+	assert.Equal(t, "networks", onLoop(t, s, s.gui.currentViewName))
+	assert.False(t, onLoop(t, s, s.gui.paletteOpen))
+	assert.Equal(t, "incusbr0", onLoop(t, s, func() string {
+		network, _ := s.gui.Panels.Networks.GetSelectedItem()
+		return network.Name
+	}))
+}
+
+// The palette's items are the lists as they were when it opened.
+func TestTabOnAnItemGoneSinceSaysSo(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "db instances")
+	s.settle(t, "run: db instances")
+
+	s.removeInstance(t, "db")
+	s.pressKey(t, tcell.KeyTab)
+
+	screen := s.settle(t, "db isn't listed any more")
+	assert.NotContains(t, screen, "Commands")
+
+	s.pressKey(t, tcell.KeyEnter)
+	assert.NotContains(t, s.settle(t, ""), "listed any more")
+	assert.Equal(t, "instances", onLoop(t, s, s.gui.currentViewName))
+	assert.False(t, onLoop(t, s, s.gui.paletteOpen))
+}
+
+// Outside the palette, tab in a filter still moves to the next panel.
+func TestTabInAFilterCyclesPanels(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.press(t, '/')
+	s.typeText(t, "web")
+	s.settle(t, "filter: web")
+	s.pressKey(t, tcell.KeyTab)
+
+	require.Eventually(t, func() bool { return onLoop(t, s, s.gui.currentViewName) == "snapshots" }, 5*time.Second, 10*time.Millisecond)
+	assert.Nil(t, onLoop(t, s, func() any { return s.gui.State.Filter.panel }))
+	assert.Equal(t, 3, onLoop(t, s, s.gui.Panels.Instances.List.Len))
+}
+
+// removeInstance has the daemon drop name and waits for the list to follow.
+func (s *screen) removeInstance(t *testing.T, name string) {
+	t.Helper()
+
+	s.server.SetInstances(lo.Reject(fixtureServer().Instances, func(instance api.InstanceFull, _ int) bool {
+		return instance.Name == name
+	}))
+	require.NoError(t, s.gui.refreshInstances())
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, s.gui.Panels.Instances.List.Len) == len(fixtureServer().Instances)-1
+	}, 5*time.Second, 10*time.Millisecond)
 }
