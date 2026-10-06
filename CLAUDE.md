@@ -89,7 +89,12 @@ applies here.
 panels — view name, title, view pointer, panel accessor. View creation,
 styling (including the `[n]` title prefix), the number keys, the layout and
 `allSidePanels()` all derive from it, so a new panel is one entry there plus
-its own `*_panel.go`, presentation and refresh loop. A `window` on the def
+its own `*_panel.go`, presentation and refresh loop, and one in
+`paletteSources()` (`pkg/gui/command_palette.go`): without it the command
+palette lists none of its items, and its actions name nothing and act on
+whatever is selected when run. The palette's rows are the key bindings, so
+a panel's key that works with no row selected sets `NoSelection: true`, or
+the palette hides it while the panel is empty. A `window` on the def
 puts a panel in a slot it shares with others, as one of its tabs, which is
 how Images, Volumes, Networks and Profiles become the one Resources panel;
 the number keys, `tab` and the layout count those slots, not views
