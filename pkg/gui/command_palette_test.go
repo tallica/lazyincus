@@ -311,3 +311,20 @@ func TestAnItemsActionsWontActOnAnotherSelection(t *testing.T) {
 	screen := s.settle(t, "db isn't selected any more")
 	assert.NotContains(t, screen, "Are you sure")
 }
+
+// A menu opened after the palette is the plain menu again: its width,
+// prompt and border carry nothing of the palette's.
+func TestAMenuAfterThePaletteIsAPlainMenu(t *testing.T) {
+	s := startScreen(t, 90, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "st")
+	s.settle(t, "run: st")
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "")
+
+	s.press(t, 'x')
+	assertGolden(t, "menu-90x40", s.settle(t, "focus resources panel"))
+}
