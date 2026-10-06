@@ -382,7 +382,7 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 func wordTier(text, word string) int {
 	text, word = strings.ToLower(text), strings.ToLower(word)
 	tier := 0
-	for _, field := range strings.Fields(text) {
+	for field := range strings.FieldsSeq(text) {
 		switch {
 		case field == word:
 			return 3
