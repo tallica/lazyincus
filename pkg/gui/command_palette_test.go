@@ -352,3 +352,28 @@ func TestThePaletteRunsAPanelKeyAfterTheSelectionMoved(t *testing.T) {
 	assert.NotContains(t, s.settle(t, "filter:"), "isn't selected any more")
 	assert.Equal(t, "instances", onLoop(t, s, func() string { return s.gui.State.Filter.panel.GetView().Name() }))
 }
+
+// From the main panel, its keys act on the list beside it, and esc's row
+// returns to that list.
+func TestThePaletteFromTheMainPanel(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	selected := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Name
+	})
+
+	s.pressKey(t, tcell.KeyEnter)
+	require.Eventually(t, func() bool { return onLoop(t, s, s.gui.currentViewName) == "main" }, 5*time.Second, 10*time.Millisecond)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "return")
+	screen := s.settle(t, "run: return")
+	assert.Regexp(t, `esc +Main +return +`+regexp.QuoteMeta(selected), screen)
+
+	s.pressKey(t, tcell.KeyEnter)
+	require.Eventually(t, func() bool { return onLoop(t, s, s.gui.currentViewName) == "instances" }, 5*time.Second, 10*time.Millisecond)
+	assert.False(t, onLoop(t, s, s.gui.paletteOpen))
+}
