@@ -85,7 +85,8 @@ func TestThePaletteHonoursReadOnly(t *testing.T) {
 	s.settle(t, "fake is read-only")
 }
 
-// With no image there's nothing to delete, but pruning still makes sense.
+// With no image there's nothing to delete, but pruning and filtering still
+// make sense.
 func TestThePaletteLeavesOutWhatNeedsASelection(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.ready(t)
@@ -103,6 +104,7 @@ func TestThePaletteLeavesOutWhatNeedsASelection(t *testing.T) {
 	screen := s.settle(t, "run: images")
 
 	assert.Contains(t, screen, "prune unused images")
+	assert.Regexp(t, `Images +filter list`, screen)
 	assert.NotRegexp(t, `Images +delete`, screen)
 }
 
@@ -327,4 +329,26 @@ func TestAMenuAfterThePaletteIsAPlainMenu(t *testing.T) {
 
 	s.press(t, 'x')
 	assertGolden(t, "menu-90x40", s.settle(t, "focus resources panel"))
+}
+
+// A key that doesn't act on the row runs whatever a refresh has done to
+// the cursor since the palette opened.
+func TestThePaletteRunsAPanelKeyAfterTheSelectionMoved(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	selected := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Name
+	})
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "filter list instances")
+	s.settle(t, "run: filter list instances")
+	s.removeInstance(t, selected)
+	s.pressKey(t, tcell.KeyEnter)
+
+	assert.NotContains(t, s.settle(t, "filter:"), "isn't selected any more")
+	assert.Equal(t, "instances", onLoop(t, s, func() string { return s.gui.State.Filter.panel.GetView().Name() }))
 }

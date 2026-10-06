@@ -450,6 +450,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleExitMain,
 			Description: gui.Tr.Return,
+			NoSelection: true,
 		},
 		{
 			ViewName: "main",
@@ -663,6 +664,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Modifier:    gocui.ModNone,
 				Handler:     gui.handleEnterMain,
 				Description: gui.Tr.FocusMain,
+				NoSelection: true,
 			},
 			&Binding{
 				ViewName:    panel.GetView().Name(),
@@ -670,6 +672,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Modifier:    gocui.ModNone,
 				Handler:     wrappedHandler(panel.HandlePrevMainTab),
 				Description: gui.Tr.PreviousContext,
+				NoSelection: true,
 			},
 			&Binding{
 				ViewName:    panel.GetView().Name(),
@@ -677,6 +680,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Modifier:    gocui.ModNone,
 				Handler:     wrappedHandler(panel.HandleNextMainTab),
 				Description: gui.Tr.NextContext,
+				NoSelection: true,
 			},
 		)
 	}
@@ -689,6 +693,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Modifier:    gocui.ModNone,
 				Handler:     wrappedHandler(gui.handleOpenFilter),
 				Description: gui.Tr.LcFilter,
+				NoSelection: true,
 			})
 		}
 	}
