@@ -25,7 +25,8 @@ type Binding struct {
 	NoSelection bool
 }
 
-// keyLabels names the non-printing keys the keybinding menu can list.
+// keyLabels names the non-printing keys the keybinding menu and the command
+// palette can list.
 var keyLabels = map[gocui.Key]string{
 	gocui.KeyTab:        "tab",
 	gocui.KeyBacktab:    "shift+tab",
@@ -41,8 +42,8 @@ var keyLabels = map[gocui.Key]string{
 	gocui.KeyCtrlP:      "ctrl+p",
 }
 
-// GetKey is the binding's key as the keybinding menu shows it, empty for a
-// key it has no label for.
+// GetKey is the binding's key as the keybinding menu and the command palette
+// show it, empty for a key they have no label for.
 func (b *Binding) GetKey() string {
 	switch key := b.Key.(type) {
 	case rune:
