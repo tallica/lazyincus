@@ -99,7 +99,7 @@ func (gui *Gui) paletteItems(g *gocui.Gui, v *gocui.View, scoped bool) []*types.
 	// A key shown dimmed is that panel's, not one to press here.
 	add := func(binding *Binding, view string, here bool, run func() error) {
 		key := [2]string{binding.ViewName, binding.Description}
-		if binding.Description == "" || binding.GetKey() == "" || seen[key] {
+		if binding.Description == "" || binding.GetKey() == "" || binding.Key == gocui.KeyCtrlP || seen[key] {
 			return
 		}
 

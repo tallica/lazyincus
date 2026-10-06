@@ -156,3 +156,14 @@ func TestTabListsAnItemsActions(t *testing.T) {
 	s.settle(t, "incusbr0")
 	assert.Equal(t, "confirmation", onLoop(t, s, s.gui.currentViewName))
 }
+
+func TestThePaletteLeavesItselfOut(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "palette")
+
+	assert.NotContains(t, s.settle(t, "run: palette"), "command palette")
+}
