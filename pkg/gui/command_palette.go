@@ -108,10 +108,22 @@ func (gui *Gui) paletteItems(g *gocui.Gui, v *gocui.View, scoped bool) []*types.
 		}
 
 		target := ""
+		var stillSelected func() bool
 		if source, ok := sources[view]; ok && binding.ViewName != "" {
 			var selected bool
-			if target, selected = source.selected(); !selected && !binding.NoSelection {
+			if target, stillSelected, selected = source.selected(); !selected && !binding.NoSelection {
 				return
+			}
+		}
+		// A refresh can move the cursor off the row the palette named.
+		if stillSelected != nil && !binding.NoSelection {
+			named, act := target, run
+			run = func() error {
+				if !stillSelected() {
+					return gui.createErrorPanel(fmt.Sprintf(gui.Tr.PaletteSelectionGone, named))
+				}
+
+				return act()
 			}
 		}
 		// Scoped, the title names the target.
@@ -211,10 +223,10 @@ func (gui *Gui) paletteItems(g *gocui.Gui, v *gocui.View, scoped bool) []*types.
 	return items
 }
 
-// paletteSource is a panel as the palette sees it: its selection, named,
-// and every item it lists, to go to.
+// paletteSource is a panel as the palette sees it: its selection, named and
+// checkable later, and every item it lists, to go to.
 type paletteSource struct {
-	selected func() (string, bool)
+	selected func() (name string, stillSelected func() bool, ok bool)
 	items    func() []paletteEntry
 }
 
@@ -254,17 +266,17 @@ func (gui *Gui) paletteSources() map[string]paletteSource {
 // which can be nil.
 func sourceOf[T comparable](panel *panels.SideListPanel[T], name func(T) string, detail func(T) string) paletteSource {
 	return paletteSource{
-		selected: func() (string, bool) {
+		selected: func() (string, func() bool, bool) {
 			if panel == nil {
-				return "", false
+				return "", nil, false
 			}
 
 			item, err := panel.GetSelectedItem()
 			if err != nil {
-				return "", false
+				return "", nil, false
 			}
 
-			return name(item), true
+			return name(item), func() bool { return panel.IsSelected(item) }, true
 		},
 		items: func() []paletteEntry {
 			if panel == nil {

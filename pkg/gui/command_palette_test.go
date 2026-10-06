@@ -38,6 +38,8 @@ func TestThePaletteRunsTheFocusedPanelsAction(t *testing.T) {
 	screen := s.settle(t, "run: stop")
 	assert.Regexp(t, `s +Instances +stop +`+regexp.QuoteMeta(selected), screen)
 
+	// A refresh rebuilds the rows; the one the palette named is still selected.
+	require.NoError(t, s.gui.refreshInstances())
 	s.pressKey(t, tcell.KeyEnter)
 	s.settle(t, "Are you sure")
 }
@@ -267,4 +269,45 @@ func (s *screen) removeInstance(t *testing.T, name string) {
 	require.Eventually(t, func() bool {
 		return onLoop(t, s, s.gui.Panels.Instances.List.Len) == len(fixtureServer().Instances)-1
 	}, 5*time.Second, 10*time.Millisecond)
+}
+
+// An action runs only on the item the palette named, not on whatever a
+// refresh has moved the cursor to since.
+func TestThePaletteWontActOnAnotherSelection(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	selected := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Name
+	})
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "stop")
+	s.settle(t, "run: stop")
+	s.removeInstance(t, selected)
+	s.pressKey(t, tcell.KeyEnter)
+
+	screen := s.settle(t, selected+" isn't selected any more")
+	assert.NotContains(t, screen, "Are you sure")
+}
+
+func TestAnItemsActionsWontActOnAnotherSelection(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "db instances")
+	s.settle(t, "run: db instances")
+	s.pressKey(t, tcell.KeyTab)
+	s.settle(t, "Commands: db")
+	s.typeText(t, "restart")
+	s.settle(t, "run: restart")
+	s.removeInstance(t, "db")
+	s.pressKey(t, tcell.KeyEnter)
+
+	screen := s.settle(t, "db isn't selected any more")
+	assert.NotContains(t, screen, "Are you sure")
 }

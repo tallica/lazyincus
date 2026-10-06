@@ -269,6 +269,7 @@ type TranslationSet struct {
 	CommandPalettePrompt   string
 	CommandPaletteGlobal   string
 	PaletteItemGone        string
+	PaletteSelectionGone   string
 	CommandPaletteHint     string
 	CommandPaletteItemHint string
 }
@@ -544,6 +545,7 @@ func englishSet() TranslationSet {
 		CommandPalettePrompt:   "run",
 		CommandPaletteGlobal:   "global",
 		PaletteItemGone:        "%s isn't listed any more.",
+		PaletteSelectionGone:   "%s isn't selected any more, so nothing was done.",
 		CommandPaletteHint:     "enter: run, tab: an item's actions, esc: close",
 		CommandPaletteItemHint: "enter: run, esc: close",
 	}

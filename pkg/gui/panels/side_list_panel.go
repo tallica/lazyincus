@@ -410,6 +410,17 @@ func (self *SideListPanel[T]) Select(item T) bool {
 	return true
 }
 
+// IsSelected says whether the cursor is on item, matched as selectedIndex
+// matches.
+func (self *SideListPanel[T]) IsSelected(item T) bool {
+	selected, err := self.GetSelectedItem()
+	if err != nil {
+		return false
+	}
+
+	return selected == item || (self.SameItem != nil && self.SameItem(item, selected))
+}
+
 // selectedIndex is where the previously selected item sorted to, by value
 // and then - for panels that say so - by identity.
 func (self *SideListPanel[T]) selectedIndex(selected T) int {
