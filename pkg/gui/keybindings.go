@@ -19,8 +19,9 @@ type Binding struct {
 	// Mutates is whether the key changes something on a daemon, which a
 	// read-only remote refuses.
 	Mutates bool
-	// NoSelection marks a panel's key that does something with no row
-	// selected; the command palette leaves out the rest then.
+	// NoSelection marks a panel's key that doesn't act on the selected row:
+	// the command palette lists it with nothing selected, and runs it without
+	// checking the row is still the one it named.
 	NoSelection bool
 }
 

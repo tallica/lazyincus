@@ -93,8 +93,11 @@ its own `*_panel.go`, presentation and refresh loop, and one in
 `paletteSources()` (`pkg/gui/command_palette.go`): without it the command
 palette lists none of its items, and its actions name nothing and act on
 whatever is selected when run. The palette's rows are the key bindings, so
-a panel's key that works with no row selected sets `NoSelection: true`, or
-the palette hides it while the panel is empty. A `window` on the def
+a panel's key that doesn't act on the selected row sets `NoSelection:
+true`: the palette lists it while the panel is empty and runs it without
+checking the row is still the one it named. A key that acts on the row
+never sets it - that check is all that keeps a refresh from turning a
+restart onto the next row. A `window` on the def
 puts a panel in a slot it shares with others, as one of its tabs, which is
 how Images, Volumes, Networks and Profiles become the one Resources panel;
 the number keys, `tab` and the layout count those slots, not views
