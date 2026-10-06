@@ -130,8 +130,8 @@ Not planned:
 
 ### Cleanup
 
-- [ ] **Unused translation strings** — ten are defined but never
-      referenced: `MainTitle`, `GlobalTitle`, `ErrorOccurred`, `ForceRemove`,
+- [ ] **Unused translation strings** — nine are defined but never
+      referenced: `GlobalTitle`, `ErrorOccurred`, `ForceRemove`,
       `NoInstance`, `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
       `CreditsTitle`, `CannotDisplayEnvVariables`. Dead weight now that
       attach is wired up. Wire up or delete.

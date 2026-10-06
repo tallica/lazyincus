@@ -41,6 +41,10 @@ func (gui *Gui) wrapEditor(f func(v *gocui.View, key gocui.Key, ch rune, mod goc
 }
 
 func (gui *Gui) escapeFilterPrompt() error {
+	if gui.paletteOpen() {
+		return gui.handleMenuClose()
+	}
+
 	if err := gui.clearFilter(); err != nil {
 		return err
 	}
@@ -54,6 +58,7 @@ func (gui *Gui) clearFilter() error {
 	panel := gui.State.Filter.panel
 	gui.State.Filter.panel = nil
 	gui.Views.Filter.ClearTextArea()
+	_ = gui.setViewContent(gui.Views.FilterPrefix, gui.filterPrompt())
 
 	if panel == nil {
 		return nil
@@ -66,6 +71,10 @@ func (gui *Gui) clearFilter() error {
 
 // returns to the list view with the filter still applied
 func (gui *Gui) commitFilter() error {
+	if gui.paletteOpen() {
+		return gui.handleMenuPress()
+	}
+
 	if gui.State.Filter.needle == "" {
 		if err := gui.clearFilter(); err != nil {
 			return err
@@ -75,7 +84,29 @@ func (gui *Gui) commitFilter() error {
 	return gui.returnFocus()
 }
 
+// filteredPrevLine and filteredNextLine move through the list being filtered
+// without leaving the filter.
+func (gui *Gui) filteredPrevLine() error {
+	if gui.State.Filter.panel == nil {
+		return nil
+	}
+
+	return gui.State.Filter.panel.HandlePrevLine()
+}
+
+func (gui *Gui) filteredNextLine() error {
+	if gui.State.Filter.panel == nil {
+		return nil
+	}
+
+	return gui.State.Filter.panel.HandleNextLine()
+}
+
 func (gui *Gui) filterPrompt() string {
+	if gui.paletteOpen() {
+		return fmt.Sprintf("%s: ", gui.Tr.CommandPalettePrompt)
+	}
+
 	return fmt.Sprintf("%s: ", gui.Tr.FilterPrompt)
 }
 

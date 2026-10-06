@@ -148,6 +148,9 @@ func (gui *Gui) styleAllViews() {
 
 	gui.Views.Confirmation.Wrap = true
 	gui.Views.Menu.SelBgColor = selectedLineBgColor
+	// The palette keeps the focus in its filter, and its choice still shows.
+	gui.Views.Menu.HighlightInactive = true
+	gui.Views.Menu.InactiveViewSelBgColor = selectedLineBgColor
 
 	gui.Views.SnapshotOptions.Highlight = true
 	gui.Views.SnapshotOptions.SelBgColor = selectedLineBgColor

@@ -267,6 +267,17 @@ func (s *screen) press(t *testing.T, key rune) {
 	}
 }
 
+// pressKey is press for a key that isn't a rune.
+func (s *screen) pressKey(t *testing.T, key tcell.Key) {
+	t.Helper()
+
+	select {
+	case s.g.ReplayedEvents.Keys <- &gocui.TcellKeyEventWrapper{Key: key}:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("the main loop didn't take %v", key)
+	}
+}
+
 // click presses and releases the left button at a cell of the screen.
 func (s *screen) click(t *testing.T, x, y int) {
 	t.Helper()

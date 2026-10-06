@@ -19,6 +19,9 @@ type Binding struct {
 	// Mutates is whether the key changes something on a daemon, which a
 	// read-only remote refuses.
 	Mutates bool
+	// NoSelection marks a panel's key that does something with no row
+	// selected; the command palette leaves out the rest then.
+	NoSelection bool
 }
 
 // keyLabels names the non-printing keys the keybinding menu can list.
@@ -34,6 +37,7 @@ var keyLabels = map[gocui.Key]string{
 	gocui.KeyArrowDown:  "▼",
 	gocui.KeyPgup:       "PgUp",
 	gocui.KeyPgdn:       "PgDn",
+	gocui.KeyCtrlP:      "ctrl+p",
 }
 
 // GetKey is the binding's key as the keybinding menu shows it, empty for a
@@ -123,6 +127,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  gui.handleCreateOptionsMenu,
 		},
 		{
+			ViewName:    "",
+			Key:         gocui.KeyCtrlP,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCommandPalette,
+			Description: gui.Tr.CommandPalette,
+		},
+		{
 			ViewName: "menu",
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
@@ -200,6 +211,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleHideStoppedInstances,
 			Description: gui.Tr.HideStopped,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "instances",
@@ -262,6 +274,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:     gui.handleSnapshotCreate,
 			Description: gui.Tr.NewSnapshot,
 			Mutates:     true,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "snapshots",
@@ -269,6 +282,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleAllSnapshots,
 			Description: gui.Tr.ToggleAllSnapshots,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "snapshots",
@@ -346,6 +360,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:     gui.handlePruneImages,
 			Description: gui.Tr.PruneImages,
 			Mutates:     true,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "networks",
@@ -353,6 +368,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleUnmanagedNetworks,
 			Description: gui.Tr.HideUnmanagedNetworks,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "profiles",
@@ -470,6 +486,24 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
 			Handler:  wrappedHandler(gui.escapeFilterPrompt),
+		},
+		{
+			ViewName: "filter",
+			Key:      gocui.KeyArrowUp,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.filteredPrevLine),
+		},
+		{
+			ViewName: "filter",
+			Key:      gocui.KeyArrowDown,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.filteredNextLine),
+		},
+		{
+			ViewName: "filter",
+			Key:      gocui.KeyTab,
+			Modifier: gocui.ModNone,
+			Handler:  wrappedHandler(gui.paletteTab),
 		},
 		{
 			ViewName: "",
@@ -603,6 +637,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleToggleStackInstances,
 			Description: gui.Tr.ToggleStackInstances,
+			NoSelection: true,
 		})
 	}
 
@@ -730,7 +765,10 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 	}
 
 	return []*Binding{
-		binding('a', gui.handleStackAdd, gui.Tr.AddStack),
+		{
+			ViewName: "stacks", Key: 'a', Modifier: gocui.ModNone,
+			Handler: gui.handleStackAdd, Description: gui.Tr.AddStack, NoSelection: true,
+		},
 		binding('D', onSelected(gui.Panels.Stacks, gui.stackRemove), gui.Tr.RemoveStack),
 		binding('e', onSelected(gui.Panels.Stacks, gui.stackEdit), gui.Tr.EditStack),
 		binding('c', onSelected(gui.Panels.Stacks, gui.stackEditCompose), gui.Tr.EditComposeFile),

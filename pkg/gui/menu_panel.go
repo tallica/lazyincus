@@ -8,7 +8,9 @@ import (
 )
 
 type CreateMenuOptions struct {
-	Title      string
+	Title string
+	// Subtitle is a hint gocui right-aligns on the top border.
+	Subtitle   string
 	Items      []*types.MenuItem
 	HideCancel bool
 }
@@ -28,6 +30,11 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 			return gui.resizePopupPanel(gui.Views.Menu)
 		},
 		DisableFilter: true,
+		FuzzyFilter:   true,
+		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
+		Filter: func(item *types.MenuItem) bool {
+			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
+		},
 	}
 }
 
@@ -90,6 +97,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 	}
 
 	gui.Views.Menu.Title = opts.Title
+	gui.Views.Menu.Subtitle = opts.Subtitle
 	gui.Views.Menu.Visible = true
 
 	return gui.switchFocus(gui.Views.Menu)

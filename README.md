@@ -194,6 +194,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `=` | Expand / collapse the focused side panel |
 | `/` | Filter |
 | `x` / `?` | Keybinding menu |
+| `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions |
 | `q`, `ctrl+c` | Quit |
 
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
