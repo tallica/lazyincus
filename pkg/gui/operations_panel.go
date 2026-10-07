@@ -203,12 +203,12 @@ func (gui *Gui) operationInfoStr(operation *commands.Operation) string {
 		output += line("Progress", operation.Progress())
 	}
 	output += line("Class", op.Class)
-	output += line("Started", op.CreatedAt.Local().Format(presentation.DateTimeFormat))
+	output += line("Started", op.CreatedAt.Local().Format(presentation.SecondsFormat))
 
 	if operation.IsFinal() {
 		output += line("Took", presentation.OperationDuration(operation.Took()))
 	} else {
-		output += line("Updated", op.UpdatedAt.Local().Format(presentation.DateTimeFormat))
+		output += line("Updated", op.UpdatedAt.Local().Format(presentation.SecondsFormat))
 	}
 
 	output += line("Cancellable", gui.yesNo(op.MayCancel && !operation.IsFinal()))

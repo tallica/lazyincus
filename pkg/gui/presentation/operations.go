@@ -9,9 +9,12 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// TimeFormat is DateTimeFormat's time of day alone, which an operation from
-// this session needs.
-const TimeFormat = "15:04:05"
+// TimeFormat is DateTimeFormat's time of day alone, with seconds, which an
+// operation from this session needs; SecondsFormat is the whole of it.
+const (
+	TimeFormat    = "15:04:05"
+	SecondsFormat = "2006/01/02 15:04:05 MST"
+)
 
 // MinOperationDescriptionWidth is as narrow as the description goes for the
 // columns after it.
