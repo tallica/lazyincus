@@ -254,6 +254,10 @@ func (gui *Gui) fetchStacks() (func() error, error) {
 		gui.State.StacksHere = here
 		gui.setStackDirs(stacks)
 
+		if err := gui.leaveHiddenView(); err != nil {
+			return err
+		}
+
 		gui.Panels.Stacks.SetItems(stacks)
 
 		if err := gui.Panels.Stacks.RerenderList(); err != nil {
@@ -429,7 +433,7 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 
 	gui.refreshInBackground(gui.fetchServices)
 
-	return nil
+	return gui.followStackBackups()
 }
 
 // stackIdentity is what the services panel's contents depend on: which

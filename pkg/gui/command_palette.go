@@ -254,6 +254,9 @@ func (gui *Gui) paletteSources() map[string]paletteSource {
 		"snapshots": sourceOf(gui.Panels.Snapshots, func(snapshot *commands.Snapshot) string {
 			return gui.onRemote(snapshot.Owner+"/"+snapshot.Name, gui.actionRemote("snapshots"))
 		}, nil),
+		"backups": sourceOf(gui.Panels.Backups, func(backup *commands.ComposeBackup) string {
+			return gui.onRemote(gui.backupLabel(backup), gui.actionRemote("backups"))
+		}, nil),
 		"images": sourceOf(gui.Panels.Images, (*commands.Image).Label, nil),
 		"volumes": sourceOf(gui.Panels.Volumes, func(volume *commands.Volume) string { return volume.Name },
 			func(volume *commands.Volume) string { return volume.Pool }),

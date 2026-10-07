@@ -17,6 +17,7 @@ type Views struct {
 	Networks  *gocui.View
 	Profiles  *gocui.View
 	Snapshots *gocui.View
+	Backups   *gocui.View
 	Services  *gocui.View
 	Stacks    *gocui.View
 

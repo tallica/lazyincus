@@ -584,6 +584,56 @@ likewise an update of the volume carrying `Restore`. The `n` popup drops
 its stateful field for a volume, which has no runtime state. The panel's
 all-instances view stays instances only.
 
+## Backups
+
+With incus-compose, Snapshots shares its slot with **Backups**: a tab
+listing the selected stack's `incus-compose backup` runs, newest first,
+the way Services follows the stack. It's there on the remotes where Stacks
+and Services are, and gone where they give way to Instances
+(`gui.collapseStacksElsewhere`): there a stack elsewhere's backups would
+sit beside this remote's snapshots. `space` on the stack brings it back.
+Only the tab on show names whose list it is, as in `Snapshots - Backups
+(playground)`. A backup is a restore point on each
+of the stack's volumes under one timestamp, which is also what names it
+to every backup verb; the rows are when it was taken, its name if it has
+one, the volume count, the size where the pool can say and the pool.
+
+The list is `backup list --format json`, a shell-out like the stack's
+`config`, run when the stack changes, after a backup verb, on the volume
+events (a backup is volumes and their snapshots, in the stack's
+`<project>-backup` project), and polled while there's no event stream. A
+stack on another remote is listed through that remote's command, and not
+at all while it's away. A list that fails says why in place of the rows,
+rather than as a popup on every refresh: a stack never backed up has no
+backup project, which `list` answers with an empty list, but anything
+else - an unreachable daemon - is a message.
+
+`v` runs `backup verify` on the selected backup. It walks every restore
+point, so it's asked for rather than polled, and its report stays on the
+row - `ok`, or how many volumes aren't - across refreshes. `verify` exits non-zero when anything isn't `ok`, with its JSON
+report printed all the same, so `composeJSON` keeps stdout and stderr
+apart: stdout is the JSON, stderr the log lines that become the error. The
+Info tab pairs each volume with the one holding its restore points, then
+what `verify` said of it; a volume the stack has gained since the backup
+gets a line with no backup side.
+
+The verbs hand the terminal to incus-compose, the way the Services panel's
+do, so its own progress and refusals are what you read:
+
+- `n` asks for a name, which can be left empty, then whether to stop the
+  stack for it. Without `--live`, `backup create` stops the services,
+  snapshots their volumes and starts them again; the menu saying so is
+  the confirmation. The cursor moves to the new backup: incus-compose
+  picks its timestamp, so it's the newest the list didn't have before.
+- `d` deletes the selected backup, `D` all but the newest N
+  (`--keep-last`), confirming how many go first, counted off the list.
+- `r` restores the whole stack, or one service's volumes, from a menu
+  listing the services that mount a named volume - the Services panel's
+  selection first. lazyincus asks nothing: `restore` asks before it
+  overwrites anything, and refuses while the services holding the volumes
+  are running. Its `--yes` is for when it has no terminal, and
+  `runSubprocess` hands it the real one.
+
 ## Resources
 
 Images, volumes, networks and profiles are four panels sharing one window: a
@@ -595,8 +645,10 @@ on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
 swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
-is there. The tab on show keeps its full name longest, cut with an
-ellipsis before it's shortened too. Number keys, `tab` and the side column's split
+is there. A tab that names whose list it is - Snapshots, Backups - does so
+only while on show (its def's `plainTitle` otherwise), and the tab on show
+keeps its full name longest, cut with an ellipsis before it's shortened
+too. Number keys, `tab` and the side column's split
 all count windows, so the three take one number and one share of the
 height; they read something far less often than instances do.
 

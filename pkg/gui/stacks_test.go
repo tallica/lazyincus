@@ -44,6 +44,7 @@ func withStacks(t *testing.T, local *commands.ComposeStack, saved ...*commands.C
 
 	return func(s *screen) {
 		s.gui.State.ComposeAvailable = true
+		s.gui.loadBackups = func(*commands.IncusCommand, string) ([]*commands.ComposeBackup, error) { return nil, nil }
 
 		byDir := map[string]*commands.ComposeStack{}
 

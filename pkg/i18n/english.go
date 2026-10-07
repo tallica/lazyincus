@@ -272,6 +272,35 @@ type TranslationSet struct {
 	PaletteSelectionGone   string
 	CommandPaletteHint     string
 	CommandPaletteItemHint string
+
+	BackupsTitle           string
+	BackupsTitleProject    string
+	BackupsShort           string
+	SnapshotsShort         string
+	NoBackups              string
+	BackupsUnavailable     string
+	NewBackup              string
+	BackupNamePrompt       string
+	BackupNameHint         string
+	BackupModeMenuTitle    string
+	BackupStopped          string
+	BackupLive             string
+	DeleteBackup           string
+	PruneBackups           string
+	PruneBackupsPrompt     string
+	PruneBackupsHint       string
+	PruneNotANumber        string
+	ConfirmPruneBackups    string
+	NoBackupsToPrune       string
+	RestoreBackup          string
+	RestoreBackupMenuTitle string
+	RestoreWholeStack      string
+	RestoreService         string
+	VerifyBackup           string
+	VerifyingStatus        string
+	BackupVerifiedOK       string
+	BackupVerifyProblems   string
+	BackupNotVerified      string
 }
 
 func englishSet() TranslationSet {
@@ -548,5 +577,34 @@ func englishSet() TranslationSet {
 		PaletteSelectionGone:   "%s isn't selected any more, so nothing was done.",
 		CommandPaletteHint:     "enter: run, tab: an item's actions, esc: close",
 		CommandPaletteItemHint: "enter: run, esc: close",
+
+		BackupsTitle:           "Backups",
+		BackupsTitleProject:    "Backups (%s)",
+		BackupsShort:           "Bak",
+		SnapshotsShort:         "Snap",
+		NoBackups:              "No backups - take one with 'n'.",
+		BackupsUnavailable:     "Couldn't list backups: %s",
+		NewBackup:              "new backup",
+		BackupNamePrompt:       "Name for the backup of %s",
+		BackupNameHint:         "optional - enter to go on",
+		BackupModeMenuTitle:    "Back up %s",
+		BackupStopped:          "stop services, back up, start them again",
+		BackupLive:             "back up while running (--live, crash-consistent)",
+		DeleteBackup:           "Are you sure you want to delete the backup taken at %s?",
+		PruneBackups:           "delete all but the newest",
+		PruneBackupsPrompt:     "Keep how many of %s's newest backups?",
+		PruneBackupsHint:       "the rest are deleted",
+		PruneNotANumber:        "%q isn't a number of backups to keep.",
+		ConfirmPruneBackups:    "Are you sure you want to delete %d of %s's backups, keeping the newest %d?",
+		NoBackupsToPrune:       "%s has %d backups, so keeping %d deletes none.",
+		RestoreBackup:          "restore",
+		RestoreBackupMenuTitle: "Restore from %s",
+		RestoreWholeStack:      "every volume of %s",
+		RestoreService:         "%s's volumes only",
+		VerifyBackup:           "verify",
+		VerifyingStatus:        "verifying",
+		BackupVerifiedOK:       "ok",
+		BackupVerifyProblems:   "%d not ok",
+		BackupNotVerified:      "not verified - press 'v'",
 	}
 }

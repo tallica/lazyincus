@@ -99,7 +99,8 @@ checking the row is still the one it named. A key that acts on the row
 never sets it - that check is all that keeps a refresh from turning a
 restart onto the next row. A `window` on the def
 puts a panel in a slot it shares with others, as one of its tabs, which is
-how Images, Volumes, Networks and Profiles become the one Resources panel;
+how Images, Volumes, Networks and Profiles become the one Resources panel,
+and Backups a tab beside Snapshots;
 the number keys, `tab` and the layout count those slots, not views
 (`pkg/gui/window.go`). Order is both the
 top-to-bottom layout order and the number-key order. A panel can be absent
@@ -159,6 +160,8 @@ order:
 - **Snapshots** — follows whichever instance or service the lists above
   it have selected, or the custom volume the volumes list has, rather than
   having a selection of its own; or lists every instance's (`e`).
+- **Backups** — the selected stack's `incus-compose backup` runs, a tab
+  beside Snapshots on a remote with a stack listed.
 - **Resources** — how Images, Volumes, Networks and Profiles share one slot.
 - **Images**, **Volumes**, **Networks** — local images and what uses them;
   every pool's volumes in one list, with sizes; managed networks, the
