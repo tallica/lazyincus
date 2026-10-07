@@ -593,9 +593,10 @@ shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Img - Vol - Net - Prof`) on the layout
+swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
-is there. Number keys, `tab` and the side column's split
+is there. The tab on show keeps its full name longest, cut with an
+ellipsis before it's shortened too. Number keys, `tab` and the side column's split
 all count windows, so the three take one number and one share of the
 height; they read something far less often than instances do.
 

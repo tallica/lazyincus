@@ -118,3 +118,17 @@ func TestTheShownListKeepsItsSelectionWhileTheMainPanelIsFocused(t *testing.T) {
 	assert.Equal(t, [2]bool{false, false}, highlight(s.gui.Views.Snapshots))
 	assert.Equal(t, [2]bool{false, false}, highlight(s.gui.Views.Main))
 }
+
+func TestFitActiveTab(t *testing.T) {
+	defs := []sidePanelDef{
+		{name: "snapshots", title: "Snapshots (a-long-instance-name)", shortTitle: "Snap"},
+		{name: "backups", title: "Backups (shop)", shortTitle: "Bak"},
+	}
+
+	// The tab on show keeps its full title while the others shorten...
+	assert.Equal(t, []string{"Snapshots (a-long-instance-name)", "Bak"}, fitActiveTab(defs, "snapshots", 40))
+	// ...is cut once that isn't enough...
+	assert.Equal(t, []string{"Snapshots (a-long…", "Bak"}, fitActiveTab(defs, "snapshots", 24))
+	// ...and shortens last.
+	assert.Equal(t, []string{"Snap", "Bak"}, fitActiveTab(defs, "snapshots", 8))
+}
