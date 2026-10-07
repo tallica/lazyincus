@@ -370,12 +370,10 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
       be the common case.
 - [ ] **Partial and missing restore points** — `verify`'s other statuses
       (`backup volume missing`, `restore point missing`, `no longer in the
-      project`, `not in this backup`) were read out of incus-compose's
-      `backup_verify.go`, not seen. Every live run so far was a stack with
-      two volumes, every volume `ok`.
-- `r` passes no `--yes`: `runSubprocess` hands incus-compose the real
-  terminal, so it asks for itself, and refuses for itself while the
-  services are running.
+      project`, `not in this backup`) were read out of `backup_verify.go`
+      at [`13b1b7a`](https://github.com/lxc/incus-compose/commit/13b1b7a445dc0fe173ad329d4999ca8c31252fb8),
+      not seen. Every live run so far was a stack with two volumes, every
+      volume `ok`.
 
 ### Caveats
 

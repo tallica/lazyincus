@@ -72,7 +72,7 @@ your file either).
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |
 | `expandFocusedSidePanel` | bool | `false` | Start with the focused side panel given the space the others aren't using, collapsing them to their title and first row; `=` toggles it during a session. Falls back to an even split when the terminal is too short to fit them all collapsed. |
 | `showAllSnapshots` | bool | `false` | Start with the Snapshots panel listing every instance's snapshots rather than the selected instance's; `e` on that panel toggles it during a session. |
-| `collapseStacksElsewhere` | bool | `true` | On a remote with no stack listed, collapse Stacks and Services to their titles and start the focus on Instances; focusing either swaps them back. `false` keeps the even split and the focus on Stacks. |
+| `collapseStacksElsewhere` | bool | `true` | On a remote with no stack listed, collapse Stacks and Services to their titles, drop the Backups tab and start the focus on Instances; focusing either swaps them back. `false` keeps the even split, the tab and the focus on Stacks. |
 | `sidePanelWidth` | float | `0.3333` | Fraction of screen width used by the side panels' column. |
 | `showBottomLine` | bool | `true` | Show the bottom status/keybinding line. |
 | `screenMode` | string | `"normal"` | Initial screen mode: `normal`, `half`, or `full` (`fullscreen` is accepted as an alias). |

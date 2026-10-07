@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions.
 - `remotes.<name>.color` colours that remote's name in the footer and the borders of panels acting on it.
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
-- On a remote with a stack listed, a Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores the stack or one service, `d`/`D` delete or prune, `v` verifies.
+- A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.
 - The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
 
 ### Changed

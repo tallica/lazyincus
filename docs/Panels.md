@@ -59,6 +59,7 @@ an `instance-updated` refreshes at most every 10s.
 | Stacks | whatever refreshes the instances; a compose verb; another remote connecting, or answering differently | every 10s; once a minute while the stream is open, unless a stack is on another remote |
 | Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
+| Backups | whatever refreshes the volumes; the stack changing; a backup verb | as Images |
 | Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
 | Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
@@ -96,6 +97,7 @@ list has focus, so a tab being read follows too.
 | Service Info | every 1s | the newest services listing, and each instance's block the newest instances listing |
 | Service Config | once | every one of its instances' config |
 | Snapshot Config | once | the snapshot |
+| Backup Info | once | the backup and its last `v` |
 | Image Config | once | the image and what uses it |
 | Volume Config | once | the volume, less its usage, which changes with every write |
 | Network Leases | every 5s | its own read |
@@ -588,34 +590,25 @@ all-instances view stays instances only.
 
 With incus-compose, Snapshots shares its slot with **Backups**: a tab
 listing the selected stack's `incus-compose backup` runs, newest first,
-the way Services follows the stack. It's there on the remotes where Stacks
-and Services are, and gone where they give way to Instances
-(`gui.collapseStacksElsewhere`): there a stack elsewhere's backups would
-sit beside this remote's snapshots. `space` on the stack brings it back.
-Only the tab on show names whose list it is, as in `Snapshots - Backups
-(playground)`. A backup is a restore point on each
-of the stack's volumes under one timestamp, which is also what names it
-to every backup verb; the rows are when it was taken, its name if it has
-one, the volume count, the size where the pool can say and the pool.
+the way Services follows the stack. It's gone where Stacks and Services
+give way to Instances (`gui.collapseStacksElsewhere`), where a stack
+elsewhere's backups would sit beside this remote's snapshots. A backup is
+a restore point on each of the stack's volumes under one timestamp, which
+is also what names it to every backup verb.
 
 The list is `backup list --format json`, a shell-out like the stack's
-`config`, run when the stack changes, after a backup verb, on the volume
-events (a backup is volumes and their snapshots, in the stack's
-`<project>-backup` project), and polled while there's no event stream. A
-stack on another remote is listed through that remote's command, and not
-at all while it's away. A list that fails says why in place of the rows,
-rather than as a popup on every refresh: a stack never backed up has no
-backup project, which `list` answers with an empty list, but anything
-else - an unreachable daemon - is a message.
+`config`; a backup's volumes and their snapshots are in the stack's
+`<project>-backup` project, so the volume events are what refresh it. A
+list that fails says why in place of the rows rather than as a popup on
+every refresh. A stack never backed up isn't a failure: `list` answers an
+empty list.
 
-`v` runs `backup verify` on the selected backup. It walks every restore
-point, so it's asked for rather than polled, and its report stays on the
-row - `ok`, or how many volumes aren't - across refreshes. `verify` exits non-zero when anything isn't `ok`, with its JSON
-report printed all the same, so `composeJSON` keeps stdout and stderr
-apart: stdout is the JSON, stderr the log lines that become the error. The
-Info tab pairs each volume with the one holding its restore points, then
-what `verify` said of it; a volume the stack has gained since the backup
-gets a line with no backup side.
+`v` runs `backup verify`, which walks every restore point, so it's asked
+for rather than polled; its report stays on the row across refreshes.
+`verify` exits non-zero when anything isn't `ok`, its JSON printed all
+the same, so `composeJSON` keeps stdout, the JSON, apart from stderr, the
+log lines that become the error. The Info tab pairs each volume with the
+one holding its restore points and what `verify` said of it.
 
 The verbs hand the terminal to incus-compose, the way the Services panel's
 do, so its own progress and refusals are what you read:

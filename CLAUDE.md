@@ -104,7 +104,8 @@ and Backups a tab beside Snapshots;
 the number keys, `tab` and the layout count those slots, not views
 (`pkg/gui/window.go`). Order is both the
 top-to-bottom layout order and the number-key order. A panel can be absent
-for the session (`hidden` on the def); everything user-facing is numbered
+(`hidden` on the def) - for the session, or Backups while no stack is on
+the session's remote; everything user-facing is numbered
 over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
 what the app focuses at startup - unless it's Stacks with no stack on the
 session's remote, which collapses it and Services to their titles and

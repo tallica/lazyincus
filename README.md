@@ -170,7 +170,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `S` | Start; on the Services panel, start the service, or the selected replica |
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/resume (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses, and a backup through incus-compose); on the Services panel, bring the service down, or delete the selected replica |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica; on the Backups tab, delete the backup |
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
