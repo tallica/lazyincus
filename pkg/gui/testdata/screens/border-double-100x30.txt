@@ -18,7 +18,7 @@
 ║                                ║║  (no disk usage reported)                                      ▐
 ║                                ║║                                                                ▐
 ╚════════════════════════════════╝║Network:                                                        ▐
-╔═[3]═Images - Vol - Net - Prof══╗║  eth0:                                                         ▐
+╔═[3]═Images - Vo - Ne - Pr - Op═╗║  eth0:                                                         ▐
 ║Alpine 3.22 amd64 2 0123456789a…║║    Type:                                                       ▐
 ║Debian 13 amd64   0 fedcba98765…║║    State:                                                      ▐
 ║                                ║║    Host interface: veth144                                     ▐

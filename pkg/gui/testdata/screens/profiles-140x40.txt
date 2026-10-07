@@ -24,7 +24,7 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
+╭─[3]─Im - Vo - Ne - Profiles - Op────────────╮│                                                                                           │
 │default 2 eth0 root Default Incus profile    ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

@@ -22,6 +22,9 @@ const (
 	refreshVolumes
 	refreshNetworks
 	refreshProfiles
+	// refreshOperations is the stream opening, which no event of its own
+	// says: what started or ended while it was shut.
+	refreshOperations
 )
 
 // usedBy is every list that counts what uses it: an instance coming or
@@ -204,7 +207,7 @@ func (gui *Gui) eventsOpened() {
 	}
 
 	gui.eventsLive.Store(true)
-	gui.queueRefresh(usedBy)
+	gui.queueRefresh(usedBy | refreshOperations)
 
 	scope := gui.IncusCommand.ProjectName()
 	if scope == "" {
@@ -258,7 +261,12 @@ func (gui *Gui) onEvent(event commands.Event) {
 	gui.logEvent(event)
 
 	if event.Type == api.EventTypeOperation {
+		if event.Details != nil && !event.Details.IsToken() {
+			gui.recordOperation(event.Details)
+		}
+
 		gui.onOperation(event)
+
 		return
 	}
 
@@ -385,6 +393,10 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshProfiles != 0 {
 		fetches = append(fetches, gui.fetchProfiles)
+	}
+
+	if kinds&refreshOperations != 0 {
+		fetches = append(fetches, gui.fetchOperations)
 	}
 
 	return fetches

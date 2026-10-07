@@ -26,7 +26,7 @@
 │                                             ││    Received:   0B (0 packets)                                                             │
 │                                             ││    Sent:       0B (0 packets)                                                             │
 ╰─────────────────────────────────────────────╯│    IP addresses:                                                                          │
-╭─[5]─Images - Volumes - Networks - Profiles──╮│      inet:  192.0.2.144/ (global)                                                         │
+╭─[5]─Images - Vo - Ne - Pr - Op──────────────╮│      inet:  192.0.2.144/ (global)                                                         │
 │Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││                                                                                           │
 │Debian 13 amd64   0 fedcba987654 90.00MiB ne…││                                                                                           │
 │                                             ││                                                                                           │

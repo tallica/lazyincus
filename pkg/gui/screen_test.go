@@ -511,11 +511,13 @@ func TestArrowsStepThroughEveryList(t *testing.T) {
 		return name
 	}
 
-	for _, want := range []string{"snapshots", "images", "volumes", "networks", "profiles", "instances"} {
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "profiles", "operations", "instances"} {
 		s.do(t, s.gui.cycleSideView(1))
 		assert.Equal(t, want, current())
 	}
 
+	s.do(t, s.gui.cycleSideView(-1))
+	assert.Equal(t, "operations", current())
 	s.do(t, s.gui.cycleSideView(-1))
 	assert.Equal(t, "profiles", current())
 	s.do(t, s.gui.cycleSideView(-1))

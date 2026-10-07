@@ -102,6 +102,11 @@ func TestParseEventReadsAnOperationsInstances(t *testing.T) {
 	event, ok := parseEvent(raw, "default")
 
 	require.True(t, ok)
+	require.NotNil(t, event.Details)
+	assert.Equal(t, "prod", event.Details.Project)
+	assert.Equal(t, "web", event.Details.Target())
+
+	event.Details = nil
 	assert.Equal(t, Event{
 		Type: api.EventTypeOperation, Project: "prod", Action: "Restarting instance",
 		Operation: "op1", Status: api.Running, Instances: []string{"web", "my vm"},

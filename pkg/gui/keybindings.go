@@ -303,6 +303,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Mutates:     true,
 		},
 		{
+			ViewName:    "operations",
+			Key:         'd',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Operations, gui.operationCancel),
+			Description: gui.Tr.CancelOperation,
+			Mutates:     true,
+		},
+		{
 			ViewName:    "backups",
 			Key:         'n',
 			Modifier:    gocui.ModNone,

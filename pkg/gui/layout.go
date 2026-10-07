@@ -65,6 +65,10 @@ func (gui *Gui) onFocus(v *gocui.View) {
 
 	gui.focusPointInView(v)
 
+	if v.Name() == "operations" {
+		gui.seeOperations()
+	}
+
 	gui.Log.Info(v.Name() + " focus gained")
 }
 

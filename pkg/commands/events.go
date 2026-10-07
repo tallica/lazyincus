@@ -23,6 +23,8 @@ type Event struct {
 	Operation string
 	Status    api.StatusCode
 	Instances []string
+	// Details is the whole operation, for the Operations tab.
+	Details *Operation
 }
 
 // EventListener is the part of *incus.EventListener lazyincus uses, so a
@@ -144,6 +146,7 @@ func parseEvent(event api.Event, fallbackProject string) (Event, bool) {
 
 		parsed.Action = operation.Description
 		parsed.Operation = operation.ID
+		parsed.Details = &Operation{Operation: operation, Project: parsed.Project}
 		parsed.Status = operation.StatusCode
 
 		for _, path := range operation.Resources["instances"] {

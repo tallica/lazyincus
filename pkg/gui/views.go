@@ -11,15 +11,16 @@ import (
 
 type Views struct {
 	// side panels
-	Instances *gocui.View
-	Images    *gocui.View
-	Volumes   *gocui.View
-	Networks  *gocui.View
-	Profiles  *gocui.View
-	Snapshots *gocui.View
-	Backups   *gocui.View
-	Services  *gocui.View
-	Stacks    *gocui.View
+	Instances  *gocui.View
+	Images     *gocui.View
+	Volumes    *gocui.View
+	Networks   *gocui.View
+	Profiles   *gocui.View
+	Operations *gocui.View
+	Snapshots  *gocui.View
+	Backups    *gocui.View
+	Services   *gocui.View
+	Stacks     *gocui.View
 
 	// main panel
 	Main *gocui.View
@@ -181,7 +182,7 @@ func (gui *Gui) setInitialViewContent() error {
 }
 
 func (gui *Gui) getInformationContent() string {
-	return gui.incusStatusContent() + gui.Config.Version
+	return gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
 }
 
 // incusStatusContent renders the server version, the remote and project the

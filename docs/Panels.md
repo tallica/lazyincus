@@ -64,6 +64,7 @@ an `instance-updated` refreshes at most every 10s.
 | Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Profiles | `profile-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
+| Operations | every operation event; the stream opening | as Images |
 
 An operation event also marks a row the moment the daemon takes the
 action, whoever asked: `starting`, `stopping`, `restarting`, `restoring`,
@@ -105,6 +106,7 @@ list has focus, so a tab being read follows too.
 | Network ACLs, Forwards | once | a `network-acl-*` or `network-forward-*` event, neither being part of the network |
 | Network Config | once | the network |
 | Profile Devices, Config | once | the profile |
+| Operation Info | once | the operation's status, progress and last update |
 
 ## Stacks
 
@@ -629,23 +631,24 @@ do, so its own progress and refusals are what you read:
 
 ## Resources
 
-Images, volumes, networks and profiles are four panels sharing one window: a
+Images, volumes, networks, profiles and [operations](#operations) are five
+panels sharing one window: a
 `window` on their defs puts them in the same slot, and `window.go` is what
 knows about it. The views are stacked at the same position and the layout
 shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
+swaps in each def's `shortTitle` (`Images - Vo - Ne - Pr - Op`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
 is there. A tab that names whose list it is - Snapshots, Backups - does so
 only while on show (its def's `plainTitle` otherwise), and the tab on show
 keeps its full name longest, cut with an ellipsis before it's shortened
 too. Number keys, `tab` and the side column's split
-all count windows, so the four take one number and one share of the
+all count windows, so the five take one number and one share of the
 height; they read something far less often than instances do.
 
-`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the five are
 stops of their own there, where `tab` and the number keys stop at the
 window; `[`/`]` stay the main panel's tabs, which Networks has three of.
 The window's number key pressed again moves to its next list, and a click
@@ -656,7 +659,7 @@ like any other, so a filter on one list is dropped on moving to the next,
 as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
 
-`u` on any of the four narrows the instances panel to what uses the item
+`u` on Images, Volumes, Networks or Profiles narrows the instances panel to what uses the item
 and moves there, its title naming it; `esc` there brings the rest back and
 returns to the list `u` was pressed in, cursor where it was.
 While narrowed it shows every user, stopped or a stack's, the
@@ -790,3 +793,26 @@ other than default only reaches that project's instances. `c` is
 `incus profile edit`. `d` never asks about a project's `default`, which
 the daemon won't delete by name, nor about a profile in use - see
 [Confirmations](#confirmations) - and only ever takes the one project's.
+
+## Operations
+
+The fifth Resources tab: the daemon's operations - a snapshot being
+taken, an image downloading, an `incus exec` holding a websocket open -
+under way first, then the session's history, newest first. The daemon
+forgets an operation 5s after it ends (see [docs/Incus.md](Incus.md),
+"Operations"), so the history is lazyincus's own: `operationLog` keeps
+what the operation events say, the last 100 that ended, and a listing
+fills in what started while no stream was open. Nothing is kept on disk,
+and a change of remote or project starts it again, the history belonging
+to the scope the way every list does.
+
+A row is the status, what it does and to what, when it started, and how
+long it took or how far it's got. The Info tab adds the error, the
+resources and, for a task, its metadata; a websocket's metadata is its
+connection secrets, and a token - a join or certificate token, its secret
+in its metadata - isn't listed at all.
+
+`d` cancels one the daemon says may be cancelled, after a confirmation.
+The footer says how many are under way, and in red how many have failed
+since the tab last had focus.
+

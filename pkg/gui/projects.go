@@ -2,6 +2,7 @@ package gui
 
 import (
 	"sort"
+	"time"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
@@ -108,6 +109,10 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	gui.resetMainView()
 
 	gui.Panels.Instances.SetSelectedLineIdx(0)
+
+	// The history is the scope's, as every list is.
+	gui.operations.clear()
+	gui.State.OperationsSeenAt = time.Now()
 
 	// A fetch already in flight was asked about the old scope.
 	gui.refreshes.invalidateAll()

@@ -102,22 +102,29 @@ type Gui struct {
 	eventsLive atomic.Bool
 	// watching is watchEvents, which run waits out.
 	watching sync.WaitGroup
+	// operations is the session's operation history, main loop only, and
+	// operationCounts its running and unseen failed counts, packed, for the
+	// footer, which is drawn off it too.
+	operations      operationLog
+	operationCounts atomic.Int64
+
 	// networkTabs counts the forward and ACL events, which change what a
 	// network's tabs show without changing the network.
 	networkTabs atomic.Uint64
 }
 
 type Panels struct {
-	Instances *panels.SideListPanel[*commands.Instance]
-	Images    *panels.SideListPanel[*commands.Image]
-	Snapshots *panels.SideListPanel[*commands.Snapshot]
-	Backups   *panels.SideListPanel[*commands.ComposeBackup]
-	Volumes   *panels.SideListPanel[*commands.Volume]
-	Networks  *panels.SideListPanel[*commands.Network]
-	Profiles  *panels.SideListPanel[*commands.Profile]
-	Services  *panels.SideListPanel[*commands.ServiceRow]
-	Stacks    *panels.SideListPanel[*commands.ComposeStack]
-	Menu      *panels.SideListPanel[*types.MenuItem]
+	Instances  *panels.SideListPanel[*commands.Instance]
+	Images     *panels.SideListPanel[*commands.Image]
+	Snapshots  *panels.SideListPanel[*commands.Snapshot]
+	Backups    *panels.SideListPanel[*commands.ComposeBackup]
+	Volumes    *panels.SideListPanel[*commands.Volume]
+	Networks   *panels.SideListPanel[*commands.Network]
+	Profiles   *panels.SideListPanel[*commands.Profile]
+	Operations *panels.SideListPanel[*commands.Operation]
+	Services   *panels.SideListPanel[*commands.ServiceRow]
+	Stacks     *panels.SideListPanel[*commands.ComposeStack]
+	Menu       *panels.SideListPanel[*types.MenuItem]
 }
 
 type Mutexes struct {
@@ -204,6 +211,10 @@ type guiState struct {
 	// decides whether a row names its instance and project.
 	SnapshotsSpan snapshotsSpan
 
+	// OperationsSeenAt is when the Operations tab last had focus: the
+	// footer counts the failures since.
+	OperationsSeenAt time.Time
+
 	// BackupVerifications are `backup verify`'s reports, by backupKey:
 	// verifying walks every restore point, so it's asked for, not polled,
 	// and a report outlives the refreshes after it.
@@ -238,11 +249,12 @@ type snapshotsSpan struct {
 }
 
 type spansProjects struct {
-	Instances bool
-	Images    bool
-	Volumes   bool
-	Networks  bool
-	Profiles  bool
+	Instances  bool
+	Images     bool
+	Volumes    bool
+	Networks   bool
+	Profiles   bool
+	Operations bool
 }
 
 // projectColumns is how many columns a project column puts ahead of the
@@ -525,6 +537,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshBackupsQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshOperationsQuiet)
 		// The session's stream says nothing of another remote's stacks.
 		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
 	}()
@@ -566,21 +579,23 @@ func (gui *Gui) fetchGroups() [][]fetch {
 		{gui.fetchVolumes},
 		{gui.fetchNetworks},
 		{gui.fetchProfiles},
+		{gui.fetchOperations},
 	}
 }
 
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
-		Instances: gui.getInstancesPanel(),
-		Snapshots: gui.getSnapshotsPanel(),
-		Backups:   gui.getBackupsPanel(),
-		Images:    gui.getImagesPanel(),
-		Volumes:   gui.getVolumesPanel(),
-		Networks:  gui.getNetworksPanel(),
-		Profiles:  gui.getProfilesPanel(),
-		Services:  gui.getServicesPanel(),
-		Stacks:    gui.getStacksPanel(),
-		Menu:      gui.getMenuPanel(),
+		Instances:  gui.getInstancesPanel(),
+		Snapshots:  gui.getSnapshotsPanel(),
+		Backups:    gui.getBackupsPanel(),
+		Images:     gui.getImagesPanel(),
+		Volumes:    gui.getVolumesPanel(),
+		Networks:   gui.getNetworksPanel(),
+		Profiles:   gui.getProfilesPanel(),
+		Operations: gui.getOperationsPanel(),
+		Services:   gui.getServicesPanel(),
+		Stacks:     gui.getStacksPanel(),
+		Menu:       gui.getMenuPanel(),
 	}
 }
 

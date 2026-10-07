@@ -14,12 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
 - A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.
 - The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
+- An Operations tab in Resources lists what the daemon is doing and what it did this session, with progress and errors; `d` cancels one.
+- The footer counts running operations, and in red those that failed since you last looked at the Operations tab.
 
 ### Changed
 - With the main panel or a popup focused, the list it shows keeps its selected row in bold; `theme.inactiveSelectedLineBgColor` sets the style.
 - While filtering with `/`, `↑`/`↓` move through the list without leaving the filter.
 - Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.
-- A tabbed panel too narrow for every tab's name shortens the others before the one on show.
+- A tabbed panel too narrow for every tab's name shortens the others before the one on show, to two letters (`Im - Vo - Ne - Pr - Op`).
 
 ### Fixed
 - `n` on the Snapshots panel snapshots what the panel follows, asking which replica for a service, instead of the Instances panel's selection.

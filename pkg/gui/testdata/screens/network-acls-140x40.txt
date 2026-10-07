@@ -24,7 +24,7 @@
 │                                             ││ACTION SOURCE DESTINATION PROTOCOL PORT STATE                                              │
 │                                             ││allow  any    any         tcp      80   enabled                                            │
 ╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
+╭─[3]─Im - Vo - Networks - Pr - Op────────────╮│                                                                                           │
 │incusbr0 bridge managed 0                    ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

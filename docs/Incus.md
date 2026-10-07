@@ -120,6 +120,17 @@ inferred.
   nothing included, goes to `development.log` in the config directory,
   with a line each time a stream opens naming what it listens to - the
   place to look when a list doesn't refresh.
+- **Operations**: the daemon drops an operation 5s after it ends
+  (`done()` in `internal/server/operations/operations.go`), so
+  `GetOperationsAllProjects` is what's under way and what just ended;
+  anything older is only in the events seen at the time. `api.Operation`
+  carries no project - the event envelope does, and a listing's resource
+  URLs (`?project=`) - and no requestor. A `token` operation runs for as
+  long as its token is valid and holds the secret in its metadata, and a
+  websocket's metadata is its connection secrets. Cancelling is
+  `DeleteOperation`, refused unless `may_cancel`. `incus image copy` said
+  it had copied an image whose download operation had just been
+  cancelled, and the image was there: the CLI goes on another way.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an

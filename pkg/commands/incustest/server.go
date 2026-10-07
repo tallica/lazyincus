@@ -72,6 +72,10 @@ type state struct {
 	held, heldOpened chan struct{}
 	// imagesHeld is HoldImages'.
 	imagesHeld chan struct{}
+	// operations are what the operations listings return; cancelled, the
+	// IDs DeleteOperation was asked for.
+	operations []api.Operation
+	cancelled  []string
 }
 
 // New is a Server answering from fixture.
@@ -423,4 +427,54 @@ func (s *Server) GetStoragePoolVolumesAllProjects(pool string) ([]api.StorageVol
 
 func (s *Server) GetInstanceConsoleLog(name string, _ *incus.InstanceConsoleLogArgs) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader(s.ConsoleLogs[name])), nil
+}
+
+// SetOperations replaces what the operations listings return.
+func (s *Server) SetOperations(operations []api.Operation) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.operations = operations
+}
+
+// Cancelled is every operation DeleteOperation was asked to cancel.
+func (s *Server) Cancelled() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.cancelled)
+}
+
+// GetOperations is every project's operations: the scope matters to the
+// app, which asks, not to what the stand-in answers.
+func (s *Server) GetOperations() ([]api.Operation, error) {
+	return s.GetOperationsAllProjects()
+}
+
+func (s *Server) GetOperationsAllProjects() ([]api.Operation, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.operations), nil
+}
+
+func (s *Server) DeleteOperation(uuid string) error {
+	if err := s.reachable(); err != nil {
+		return err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.cancelled = append(shared.cancelled, uuid)
+
+	return nil
 }

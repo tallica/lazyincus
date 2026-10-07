@@ -302,6 +302,18 @@ type TranslationSet struct {
 	BackupVerifyProblems   string
 	BackupNotVerified      string
 	BackupOf               string
+
+	OperationsTitle         string
+	OperationsShort         string
+	NoOperations            string
+	OperationResources      string
+	OperationMetadata       string
+	OperationsRunning       string
+	OperationsFailed        string
+	CancelOperation         string
+	OperationNotCancellable string
+	ConfirmCancelOperation  string
+	CancellingStatus        string
 }
 
 func englishSet() TranslationSet {
@@ -445,10 +457,10 @@ func englishSet() TranslationSet {
 		DeleteVolume:                 "Are you sure you want to delete volume %s?",
 		NetworksTitle:                "Networks",
 		ProfilesTitle:                "Profiles",
-		ImagesShort:                  "Img",
-		VolumesShort:                 "Vol",
-		NetworksShort:                "Net",
-		ProfilesShort:                "Prof",
+		ImagesShort:                  "Im",
+		VolumesShort:                 "Vo",
+		NetworksShort:                "Ne",
+		ProfilesShort:                "Pr",
 		NoProfiles:                   "No profiles",
 		DevicesTitle:                 "Devices",
 		NoDevices:                    "The profile hands out no devices.",
@@ -581,8 +593,8 @@ func englishSet() TranslationSet {
 
 		BackupsTitle:           "Backups",
 		BackupsTitleProject:    "Backups (%s)",
-		BackupsShort:           "Bak",
-		SnapshotsShort:         "Snap",
+		BackupsShort:           "Ba",
+		SnapshotsShort:         "Sn",
 		NoBackups:              "No backups - take one with 'n'.",
 		BackupsUnavailable:     "Couldn't list backups: %s",
 		NewBackup:              "new backup",
@@ -608,5 +620,17 @@ func englishSet() TranslationSet {
 		BackupVerifyProblems:   "%d not ok",
 		BackupNotVerified:      "not verified - press 'v'",
 		BackupOf:               "backup of %s",
+
+		OperationsTitle:         "Operations",
+		OperationsShort:         "Op",
+		NoOperations:            "No operations - they're listed as they run",
+		OperationResources:      "Resources",
+		OperationMetadata:       "Metadata",
+		OperationsRunning:       "%d running",
+		OperationsFailed:        "%d failed",
+		CancelOperation:         "cancel",
+		OperationNotCancellable: "%s can't be cancelled.",
+		ConfirmCancelOperation:  "Are you sure you want to cancel %s?",
+		CancellingStatus:        "cancelling",
 	}
 }

@@ -261,6 +261,8 @@ func (gui *Gui) paletteSources() map[string]paletteSource {
 		"volumes": sourceOf(gui.Panels.Volumes, func(volume *commands.Volume) string { return volume.Name },
 			func(volume *commands.Volume) string { return volume.Pool }),
 		"networks": sourceOf(gui.Panels.Networks, func(network *commands.Network) string { return network.Name }, nil),
+		"operations": sourceOf(gui.Panels.Operations, operationLabel,
+			func(operation *commands.Operation) string { return operation.Status() }),
 		"profiles": sourceOf(gui.Panels.Profiles, func(profile *commands.Profile) string { return profile.Name }, nil),
 	}
 }
