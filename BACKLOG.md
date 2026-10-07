@@ -355,12 +355,12 @@ The stack's Info tab, beyond what shipped:
 
 `incus-compose backup` snapshots a project's data volumes into a
 `<project>-backup` Incus project. The Backups tab beside Snapshots
-lists the selected stack's; see [docs/Panels.md](docs/Panels.md#backups).
+lists the selected stack's, and the Volumes panel marks the volumes that
+hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 
-- [ ] **Mark backup volumes in the Volumes panel** — a stack with backups
-      puts `ic-backup-<volume>` rows and a `vol-ic-backup-manifest` row in
-      the Volumes panel, in a `<project>-backup` project, with nothing
-      saying they're backups rather than something a service mounts.
+- [x] **Mark backup volumes in the Volumes panel** — a marker in the users
+      column rather than a filter: a filter would hide what the panel
+      exists to show, a pool's space being spent.
 - [x] **A Backups panel** — a tab in the Snapshots slot rather than a
       panel of its own, backups being to a stack what snapshots are to an
       instance. `n`, `d`, `D` (`--keep-last`), `r` (the stack or one

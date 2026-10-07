@@ -3,6 +3,7 @@ package commands
 import (
 	"testing"
 
+	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,6 +42,22 @@ func TestParseComposeBackups(t *testing.T) {
 	none, err := parseComposeBackups([]byte("[]\n"))
 	require.NoError(t, err)
 	assert.Empty(t, none)
+}
+
+func TestIsComposeBackup(t *testing.T) {
+	volume := func(project, name string) *Volume {
+		return &Volume{Name: name, Volume: api.StorageVolume{Type: "custom", Project: project}}
+	}
+
+	for _, name := range []string{"ic-backup-redis-data", "vol-ic-backup-manifest"} {
+		backup := volume("playground-backup", name)
+		assert.True(t, backup.IsComposeBackup(), name)
+		assert.False(t, backup.IsOrphaned(), name)
+		assert.Equal(t, "playground", backup.BackupOf())
+	}
+
+	assert.False(t, volume("playground", "ic-backup-redis-data").IsComposeBackup())
+	assert.False(t, volume("playground-backup", "vol-redis-data").IsComposeBackup())
 }
 
 func TestNamedVolumes(t *testing.T) {

@@ -301,6 +301,7 @@ type TranslationSet struct {
 	BackupVerifiedOK       string
 	BackupVerifyProblems   string
 	BackupNotVerified      string
+	BackupOf               string
 }
 
 func englishSet() TranslationSet {
@@ -606,5 +607,6 @@ func englishSet() TranslationSet {
 		BackupVerifiedOK:       "ok",
 		BackupVerifyProblems:   "%d not ok",
 		BackupNotVerified:      "not verified - press 'v'",
+		BackupOf:               "backup of %s",
 	}
 }

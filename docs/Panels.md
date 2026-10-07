@@ -733,7 +733,9 @@ Only `custom` volumes can be deleted — the rest go away with the instance or
 image they belong to.
 
 After the name come the users count - red for a custom volume nothing has
-attached, the other types always belonging to something - and the size,
+attached, the other types always belonging to something; `backup` for a
+volume holding a stack's [backups](#backups), which nothing attaches
+either - and the size,
 the two a narrow panel should keep. Sizes are a request each
 (`GetStoragePoolVolumeState`), eight in flight at a time, on every poll;
 where the driver can't size a volume the cell is blank (see

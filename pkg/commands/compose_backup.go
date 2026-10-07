@@ -117,3 +117,24 @@ func composeJSON(cmd *exec.Cmd) ([]byte, error) {
 
 	return output, nil
 }
+
+// Where incus-compose keeps a stack's backups: a project of their own, named
+// for the stack's, holding an `ic-backup-` volume per backed-up volume and
+// `vol-ic-backup-manifest` for the runs' manifests, the `vol-` being what
+// incus-compose prefixes a volume it creates as a compose volume.
+const (
+	backupProjectSuffix = "-backup"
+	backupVolumePrefix  = "ic-backup-"
+)
+
+// IsComposeBackup reports a volume incus-compose keeps a stack's backups in.
+func (v *Volume) IsComposeBackup() bool {
+	return v.IsCustom() &&
+		strings.HasSuffix(v.Volume.Project, backupProjectSuffix) &&
+		strings.HasPrefix(strings.TrimPrefix(v.Name, "vol-"), backupVolumePrefix)
+}
+
+// BackupOf is the project of the stack whose backups the volume holds.
+func (v *Volume) BackupOf() string {
+	return strings.TrimSuffix(v.Volume.Project, backupProjectSuffix)
+}
