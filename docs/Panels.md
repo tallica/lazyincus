@@ -649,10 +649,10 @@ is there. A tab that names whose list it is - Snapshots, Backups - does so
 only while on show (its def's `plainTitle` otherwise), and the tab on show
 keeps its full name longest, cut with an ellipsis before it's shortened
 too. Number keys, `tab` and the side column's split
-all count windows, so the three take one number and one share of the
+all count windows, so the four take one number and one share of the
 height; they read something far less often than instances do.
 
-`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the three are
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
 stops of their own there, where `tab` and the number keys stop at the
 window; `[`/`]` stay the main panel's tabs, which Networks has three of.
 The window's number key pressed again moves to its next list, and a click
@@ -663,7 +663,7 @@ like any other, so a filter on one list is dropped on moving to the next,
 as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
 
-`u` on any of the three narrows the instances panel to what uses the item
+`u` on any of the four narrows the instances panel to what uses the item
 and moves there, its title naming it; `esc` there brings the rest back and
 returns to the list `u` was pressed in, cursor where it was.
 While narrowed it shows every user, stopped or a stack's, the
