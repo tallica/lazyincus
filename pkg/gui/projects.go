@@ -111,6 +111,7 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	gui.Panels.Instances.SetSelectedLineIdx(0)
 
 	// The history is the scope's, as every list is.
+	gui.operationsScope.Add(1)
 	gui.operations.clear()
 	gui.State.OperationsSeenAt = time.Now()
 

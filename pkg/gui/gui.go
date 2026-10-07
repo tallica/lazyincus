@@ -107,6 +107,9 @@ type Gui struct {
 	// footer, which is drawn off it too.
 	operations      operationLog
 	operationCounts atomic.Int64
+	// operationsScope counts the scope changes, which clear the log; each
+	// event stream knows the one it was opened for.
+	operationsScope atomic.Uint64
 
 	// networkTabs counts the forward and ACL events, which change what a
 	// network's tabs show without changing the network.

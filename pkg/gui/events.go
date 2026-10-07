@@ -155,7 +155,10 @@ func (gui *Gui) watchEvents() {
 		}()
 
 		opened := time.Now()
-		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, gui.onEvent)
+		scope := gui.operationsScope.Load()
+		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, func(event commands.Event) {
+			gui.onEventIn(scope, event)
+		})
 		gui.eventsLive.Store(false)
 		cancel()
 
@@ -254,6 +257,11 @@ func (gui *Gui) isStopped() bool {
 
 // onEvent runs on the listener's goroutine.
 func (gui *Gui) onEvent(event commands.Event) {
+	gui.onEventIn(gui.operationsScope.Load(), event)
+}
+
+// onEventIn is onEvent from a stream opened for scope, an operationsScope.
+func (gui *Gui) onEventIn(scope uint64, event commands.Event) {
 	if gui.isStopped() {
 		return
 	}
@@ -262,7 +270,7 @@ func (gui *Gui) onEvent(event commands.Event) {
 
 	if event.Type == api.EventTypeOperation {
 		if event.Details != nil && !event.Details.IsToken() {
-			gui.recordOperation(event.Details)
+			gui.recordOperation(scope, event.Details)
 		}
 
 		gui.onOperation(event)

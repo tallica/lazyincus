@@ -3,6 +3,7 @@ package gui
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -190,4 +191,23 @@ func TestOperationsListedAtStartup(t *testing.T) {
 	assert.Equal(t, []string{"export"}, onLoop(t, s, func() []string {
 		return lo.Map(s.gui.Panels.Operations.List.GetAllItems(), func(operation *commands.Operation, _ int) string { return operation.Key() })
 	}))
+}
+
+// A scope change clears the log before the old stream closes: what that
+// stream still delivers belongs to the scope left behind.
+func TestOperationsFromALeftScopeAreDropped(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	left := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Add(1) - 1 })
+
+	// Ended, so that no listing at startup takes them for gone.
+	s.gui.recordOperation(left, testOperation("stale", api.Success, 0))
+	s.gui.recordOperation(left+1, testOperation("current", api.Success, 0))
+
+	assert.Eventually(t, func() bool {
+		return slices.Equal([]string{"current"}, onLoop(t, s, func() []string {
+			return lo.Map(s.gui.Panels.Operations.List.GetAllItems(), func(operation *commands.Operation, _ int) string { return operation.Key() })
+		}))
+	}, 5*time.Second, 20*time.Millisecond)
 }

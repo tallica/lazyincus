@@ -261,11 +261,17 @@ func (gui *Gui) refreshOperationsQuiet() error {
 	return nil
 }
 
-// recordOperation takes an operation event into the log. Off the main loop.
-func (gui *Gui) recordOperation(operation *commands.Operation) {
+// recordOperation takes an operation event into the log, unless the scope
+// its stream was opened for has been left since: the old stream closes
+// after the log is cleared, and can still deliver. Off the main loop.
+func (gui *Gui) recordOperation(scope uint64, operation *commands.Operation) {
 	at := time.Now()
 
 	gui.g.Update(func(*gocui.Gui) error {
+		if gui.operationsScope.Load() != scope {
+			return nil
+		}
+
 		gui.operations.record(operation, at)
 
 		return gui.showOperations()
