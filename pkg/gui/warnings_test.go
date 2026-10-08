@@ -57,12 +57,40 @@ func TestScreenWarnings(t *testing.T) {
 	s.settle(t, "1 warning ")
 
 	// The popup stays open on the same row, now acknowledged; d asks first.
+	// Saying no goes back to the list.
 	s.press(t, 'd')
-	s.settle(t, `delete the warning "Storage pool almost`)
+	s.settle(t, "delete this warning")
+	s.press(t, 'n')
+	s.settle(t, "Warnings (fake)")
+
+	s.press(t, 'd')
+	screen = s.settle(t, "delete this warning")
+	assert.Contains(t, screen, "Storage pool almost full")
 	s.pressKey(t, tcell.KeyEnter)
 
 	assert.Eventually(t, func() bool { _, ok := warningStatuses(s)["disk"]; return !ok }, 5*time.Second, 20*time.Millisecond)
 	s.settle(t, "Warnings (fake)")
+}
+
+// Closing a warning's details goes back to the list, on that warning.
+func TestClosingAWarningsDetails(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) { s.server.SetWarnings(testWarnings()) })
+	s.ready(t)
+
+	s.press(t, 'W')
+	s.settle(t, "Warnings (fake)")
+	s.pressKey(t, tcell.KeyDown)
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "First seen:")
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "Warnings (fake)")
+
+	s.do(t, func() error {
+		item, err := s.gui.Panels.Menu.GetSelectedItem()
+		assert.NoError(t, err)
+		assert.Contains(t, item.FilterText, "KVM support is missing")
+		return nil
+	})
 }
 
 func TestWarningKeysHonourReadOnly(t *testing.T) {

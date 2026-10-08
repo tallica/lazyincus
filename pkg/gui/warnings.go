@@ -136,7 +136,7 @@ func (gui *Gui) warningsOpen() bool {
 // handleOpenWarnings is `W`: the popup from what the last poll found, read
 // again in the background, which redraws it.
 func (gui *Gui) handleOpenWarnings(g *gocui.Gui, v *gocui.View) error {
-	if err := gui.openWarnings(); err != nil {
+	if err := gui.openWarnings(""); err != nil {
 		return err
 	}
 
@@ -145,12 +145,16 @@ func (gui *Gui) handleOpenWarnings(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (gui *Gui) openWarnings() error {
+// openWarnings opens the popup on the warning keyed selected, or the first.
+func (gui *Gui) openWarnings(selected string) error {
+	index := slices.IndexFunc(gui.State.Warnings, func(warning *commands.Warning) bool { return warning.Key() == selected })
+
 	if err := gui.Menu(CreateMenuOptions{
 		Title:      fmt.Sprintf(gui.Tr.WarningsTitle, gui.remoteName(gui.IncusCommand.RemoteName())),
 		Subtitle:   gui.Tr.WarningsHint,
 		Items:      gui.warningItems(),
 		HideCancel: true,
+		Selected:   max(index, 0),
 	}); err != nil {
 		return err
 	}
@@ -184,8 +188,14 @@ func (gui *Gui) warningItems() []*types.MenuItem {
 }
 
 // showWarning is enter on a warning: all of it, which the row has no room
-// for.
+// for. Closing it goes back to the list.
 func (gui *Gui) showWarning(warning *commands.Warning) error {
+	back := func(*gocui.Gui, *gocui.View) error { return gui.openWarnings(warning.Key()) }
+
+	return gui.createConfirmationPanel(gui.Tr.WarningTitle, gui.warningDetails(warning), back, back)
+}
+
+func (gui *Gui) warningDetails(warning *commands.Warning) string {
 	w := warning.Warning
 	line := func(label, value string) string {
 		if value == "" {
@@ -214,7 +224,7 @@ func (gui *Gui) showWarning(warning *commands.Warning) error {
 		details += line("Member", w.Location)
 	}
 
-	return gui.createConfirmationPanel(gui.Tr.WarningTitle, strings.TrimRight(details, "\n"), nil, nil)
+	return strings.TrimRight(details, "\n")
 }
 
 // acknowledgeWarning is `a`; the popup stays open, redrawn.
@@ -228,9 +238,11 @@ func (gui *Gui) acknowledgeWarning(warning *commands.Warning) error {
 	})
 }
 
-// deleteWarning is `d`, asked first, then back to the list.
+// deleteWarning is `d`, asked first, then back to the list either way.
+// The prompt shows all of the warning: two of a type in one project can
+// differ only in their count and when they were first seen.
 func (gui *Gui) deleteWarning(warning *commands.Warning) error {
-	prompt := fmt.Sprintf(gui.Tr.ConfirmDeleteWarning, warning.Warning.Type)
+	prompt := gui.warningDetails(warning) + "\n\n" + gui.Tr.ConfirmDeleteWarning
 
 	return gui.createConfirmationPanel(gui.Tr.Confirm, prompt, func(g *gocui.Gui, v *gocui.View) error {
 		return gui.WithWaitingStatus(gui.Tr.RemovingStatus, func() error {
@@ -238,9 +250,9 @@ func (gui *Gui) deleteWarning(warning *commands.Warning) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refresh(gui.openWarnings, gui.fetchWarnings)
+			return gui.refresh(func() error { return gui.openWarnings("") }, gui.fetchWarnings)
 		})
-	}, nil)
+	}, func(*gocui.Gui, *gocui.View) error { return gui.openWarnings(warning.Key()) })
 }
 
 // warningsStatusContent is the footer's count of new warnings.

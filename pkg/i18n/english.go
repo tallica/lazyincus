@@ -652,7 +652,7 @@ func englishSet() TranslationSet {
 		WarningsCount:        "%d warnings",
 		WarningCount:         "1 warning",
 		WarningServerWide:    "the server's",
-		ConfirmDeleteWarning: "Are you sure you want to delete the warning %q? The daemon raises it again if its cause persists.",
+		ConfirmDeleteWarning: "Are you sure you want to delete this warning? The daemon raises it again if its cause persists.",
 		AcknowledgingStatus:  "acknowledging",
 	}
 }
