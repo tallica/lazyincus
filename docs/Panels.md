@@ -639,7 +639,7 @@ shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Images - Vo - Ne - Pr`) on the layout
+swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
 is there. A tab that names whose list it is - Snapshots, Backups - does so
 only while on show (its def's `plainTitle` otherwise), and the tab on show
