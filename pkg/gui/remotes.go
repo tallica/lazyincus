@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"sync"
 	"time"
 
@@ -261,8 +262,9 @@ func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]m
 // the lasting way.
 func (gui *Gui) handleSwitchRemote(g *gocui.Gui, v *gocui.View) error {
 	current := gui.IncusCommand.RemoteName()
+	names := gui.remotes.names()
 
-	items := lo.Map(gui.remotes.names(), func(name string, _ int) *types.MenuItem {
+	items := lo.Map(names, func(name string, _ int) *types.MenuItem {
 		return &types.MenuItem{
 			LabelColumns: []string{marker(name == current), name},
 			OnPress: func() error {
@@ -272,8 +274,9 @@ func (gui *Gui) handleSwitchRemote(g *gocui.Gui, v *gocui.View) error {
 	})
 
 	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.RemotesTitle,
-		Items: items,
+		Title:    gui.Tr.RemotesTitle,
+		Items:    items,
+		Selected: max(slices.Index(names, current), 0),
 	})
 }
 

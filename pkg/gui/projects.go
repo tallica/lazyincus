@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"slices"
 	"sort"
 	"time"
 
@@ -48,9 +49,15 @@ func (gui *Gui) projectsMenu(names []string) error {
 		}
 	})
 
+	selected := 0
+	if !gui.IncusCommand.IsAllProjects() {
+		selected = slices.Index(names, current) + 1
+	}
+
 	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.ProjectsTitle,
-		Items: append([]*types.MenuItem{allProjects}, menuItems...),
+		Title:    gui.Tr.ProjectsTitle,
+		Items:    append([]*types.MenuItem{allProjects}, menuItems...),
+		Selected: selected,
 	})
 }
 

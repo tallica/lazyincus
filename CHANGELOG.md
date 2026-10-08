@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `n` on the Snapshots panel snapshots what the panel follows, asking which replica for a service, instead of the Instances panel's selection.
 - A popup's title and the hint beside it no longer run together when the popup is only just wide enough for both.
+- The project (`P`) and remote (`R`) menus open on the current one instead of the first, so `enter` keeps where you are.
 
 ## [0.13.1] - 2026-10-03
 

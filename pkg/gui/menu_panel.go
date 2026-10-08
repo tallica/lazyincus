@@ -13,6 +13,8 @@ type CreateMenuOptions struct {
 	Subtitle   string
 	Items      []*types.MenuItem
 	HideCancel bool
+	// Selected is the row the cursor starts on.
+	Selected int
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -91,7 +93,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 
 	gui.State.WarningsMenu = false
 	gui.Panels.Menu.SetItems(opts.Items)
-	gui.Panels.Menu.SetSelectedLineIdx(0)
+	gui.Panels.Menu.SetSelectedLineIdx(opts.Selected)
 
 	if err := gui.Panels.Menu.RerenderList(); err != nil {
 		return err

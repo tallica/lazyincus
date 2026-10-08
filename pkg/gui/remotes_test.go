@@ -38,6 +38,21 @@ func TestTheRemotesMenu(t *testing.T) {
 	assert.Regexp(t, `│\s+pve01`, screen)
 }
 
+// The menu opens on the session's remote, not the first listed.
+func TestTheRemotesMenuStartsOnTheSessions(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, withRemotes(map[string]*incustest.Server{"alpha": incustest.New(incustest.Server{})}))
+	s.ready(t)
+
+	s.press(t, 'R')
+	s.settle(t, s.gui.Tr.RemotesTitle)
+
+	selected := onLoop(t, s, func() []string {
+		item, _ := s.gui.Panels.Menu.GetSelectedItem()
+		return item.LabelColumns
+	})
+	assert.Equal(t, []string{"*", "fake"}, selected)
+}
+
 // Switching moves every panel, the footer and the shell-outs onto the new
 // remote, and a stack pinned to the one left keeps reading from it.
 func TestSwitchingRemote(t *testing.T) {
