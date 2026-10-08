@@ -107,7 +107,6 @@ list has focus, so a tab being read follows too.
 | Network ACLs, Forwards | once | a `network-acl-*` or `network-forward-*` event, neither being part of the network |
 | Network Config | once | the network |
 | Profile Devices, Config | once | the profile |
-| Operation Info | once | the operation's status, progress and last update |
 
 ## Stacks
 
@@ -632,7 +631,7 @@ do, so its own progress and refusals are what you read:
 
 ## Resources
 
-Images, volumes, networks, profiles and [operations](#operations) are five
+Images, volumes, networks and profiles are four
 panels sharing one window: a
 `window` on their defs puts them in the same slot, and `window.go` is what
 knows about it. The views are stacked at the same position and the layout
@@ -640,7 +639,7 @@ shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Images - Vo - Ne - Pr - Op`) on the layout
+swaps in each def's `shortTitle` (`Images - Vo - Ne - Pr`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
 is there. A tab that names whose list it is - Snapshots, Backups - does so
 only while on show (its def's `plainTitle` otherwise), and the tab on show
@@ -795,43 +794,52 @@ other than default only reaches that project's instances. `c` is
 the daemon won't delete by name, nor about a profile in use - see
 [Confirmations](#confirmations) - and only ever takes the one project's.
 
-## Operations
+## Operations and warnings
 
-The fifth Resources tab: the daemon's operations - a snapshot being
-taken, an image downloading, an `incus exec` holding a websocket open -
-under way first, then the session's history, newest first. The daemon
-forgets an operation 5s after it ends (see [docs/Incus.md](Incus.md),
-"Operations"), so the history is lazyincus's own: `operationLog` keeps
-what the operation events say, the last 100 that ended, and a listing
-fills in what started while no stream was open. Nothing is kept on disk,
-and a change of remote or project starts it again, the history belonging
-to the scope the way every list does.
+Not panels: `W` opens one popup with two lists, the daemon's operations
+and its warnings, `[`/`]` switching between them. Both are the remote's
+rather than any item's, both are counted in the footer, and both are
+looked at now and then rather than watched; as Resources tabs they cost
+every other tab its name at 100 columns. The first `W` of a session opens
+on the warnings if any are new, the operations otherwise, and every one
+after on the list last shown.
 
-A row is the status, what it does and to what, when it started, and how
-long it took or how far it's got. The Info tab adds the error, the
-resources and, for a task, its metadata; a websocket's metadata is its
-connection secrets, and a token - a join or certificate token, its secret
-in its metadata - isn't listed at all.
-
-`d` cancels one the daemon says may be cancelled, after a confirmation.
-The footer says how many are under way, and in red how many have failed
-since the tab last had focus.
-
-## Warnings
-
-Not a panel: `W` opens them as a popup, the remote's warnings across
-every project and the server's own, new ones first, the most severe first
-among them. They're read now and then rather than watched, and a sixth
-Resources tab wouldn't fit a 100-column screen. A row is the severity,
-`new` or `ack`, how often it's been seen, the type, the project and the
-message; enter shows the rest. `a` acknowledges a new one or puts an
-acknowledged one back - the daemon's own status, so `incus warning list`
-and every other client agree - and `d` deletes one after asking, which
-the daemon undoes if the cause persists. The popup is redrawn in place,
-the cursor on the same warning: acknowledged, it moves down the list.
-
+The popup is redrawn in place as either list changes, the cursor on the
+same row: an acknowledged warning moves down the list, an operation that
+ends moves below the ones under way. `enter` shows all of a row, and
+closing that, or answering a key's confirmation, goes back to the list.
 The keys are the menu's (`MenuItem.Keys`), each saying whether it changes
 anything, since the menu's keys mean something else in every menu: a
-read-only remote refuses `a` and `d` here and nowhere else. The footer
-counts the warnings no one has acknowledged.
+read-only remote refuses them here and nowhere else.
 
+### Operations
+
+The daemon's operations - a snapshot being taken, an image downloading,
+an `incus exec` holding a websocket open - under way first, then the
+session's history, newest first. The daemon forgets an operation 5s after
+it ends (see [docs/Incus.md](Incus.md), "Operations"), so the history is
+lazyincus's own: `operationLog` keeps what the operation events say, the
+last 100 that ended, and a listing fills in what started while no stream
+was open. Nothing is kept on disk, and a change of remote or project
+starts it again, the history belonging to the scope the way every list
+does.
+
+A row is the status, what it does and to what, when it started, and how
+long it took or how far it's got. `enter` adds the error, the resources
+and, for a task, its metadata; a websocket's metadata is its connection
+secrets, and a token - a join or certificate token, its secret in its
+metadata - isn't listed at all. `d` cancels one the daemon says may be
+cancelled, after a confirmation. The footer says how many are under way,
+and in red how many have failed since the list was last on screen.
+
+### Warnings
+
+The remote's warnings across every project and the server's own, new
+ones first, the most severe first among them. A row is the severity,
+`new` or `ack`, how often it's been seen, the type, the project and the
+message. `a` acknowledges a new one or puts an acknowledged one back -
+the daemon's own status, so `incus warning list` and every other client
+agree - and `d` deletes one after asking, which the daemon undoes if the
+cause persists. Its confirmation shows the whole warning: two of a type
+in one project can differ only in their count and first sighting. The
+footer counts the warnings no one has acknowledged.

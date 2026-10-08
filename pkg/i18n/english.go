@@ -13,6 +13,7 @@ type TranslationSet struct {
 	Scroll                                     string
 	Close                                      string
 	Submit                                     string
+	SwitchList                                 string
 	Quit                                       string
 	ErrorTitle                                 string
 	NoViewMachingNewLineFocusedSwitchStatement string
@@ -305,13 +306,13 @@ type TranslationSet struct {
 	BackupOf               string
 
 	OperationsTitle         string
-	OperationsShort         string
 	NoOperations            string
+	OperationsHint          string
+	OperationTitle          string
 	OperationResources      string
 	OperationMetadata       string
 	OperationsRunning       string
 	OperationsFailed        string
-	CancelOperation         string
 	OperationNotCancellable string
 	ConfirmCancelOperation  string
 	CancellingStatus        string
@@ -359,6 +360,7 @@ func englishSet() TranslationSet {
 		Execute:                      "execute",
 		Close:                        "close",
 		Submit:                       "submit",
+		SwitchList:                   "switch list",
 		Quit:                         "quit",
 		Menu:                         "menu",
 		MenuTitle:                    "Menu",
@@ -635,19 +637,19 @@ func englishSet() TranslationSet {
 		BackupOf:               "backup of %s",
 
 		OperationsTitle:         "Operations",
-		OperationsShort:         "Op",
 		NoOperations:            "No operations - they're listed as they run",
+		OperationsHint:          "d: cancel, enter: details",
+		OperationTitle:          "Operation",
 		OperationResources:      "Resources",
 		OperationMetadata:       "Metadata",
 		OperationsRunning:       "%d running",
 		OperationsFailed:        "%d failed",
-		CancelOperation:         "cancel",
 		OperationNotCancellable: "%s can't be cancelled.",
 		ConfirmCancelOperation:  "Are you sure you want to cancel %s?",
 		CancellingStatus:        "cancelling",
 
-		ShowWarnings:         "warnings",
-		WarningsTitle:        "Warnings (%s)",
+		ShowWarnings:         "operations and warnings",
+		WarningsTitle:        "Warnings",
 		WarningTitle:         "Warning",
 		WarningsHint:         "a: acknowledge, d: delete, enter: details",
 		NoWarnings:           "No warnings",

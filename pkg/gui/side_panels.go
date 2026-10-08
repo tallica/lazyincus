@@ -119,14 +119,6 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			window:     resourcesWindow,
 			shortTitle: gui.Tr.ProfilesShort,
 		},
-		{
-			name:       "operations",
-			title:      gui.Tr.OperationsTitle,
-			viewPtr:    &gui.Views.Operations,
-			panel:      func() panels.ISideListPanel { return gui.Panels.Operations },
-			window:     resourcesWindow,
-			shortTitle: gui.Tr.OperationsShort,
-		},
 	}
 }
 

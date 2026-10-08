@@ -152,19 +152,21 @@ func TestScreenOperations(t *testing.T) {
 	screen := s.settle(t, "1 failed")
 	assert.Contains(t, screen, "1 running")
 
-	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Operations) })
-
-	screen = s.settle(t, "Downloading image")
+	// W opens on the operations, under way first.
+	s.press(t, 'W')
+	screen = s.settle(t, "Operations - Warnings")
 	assert.Contains(t, screen, "✗ failure")
+	assert.Regexp(t, `● running\s+Downloading image[^\n]*\n[^\n]*✗ failure`, screen)
 
-	// Under way sorts first.
-	s.do(t, func() error {
-		s.gui.Panels.Operations.SetSelectedLineIdx(0)
-		return s.gui.Panels.Operations.HandleSelect()
-	})
-	s.settle(t, "Progress:     rootfs: 23% (5.20MB/s)")
 	// Looked at, the failure stops being news.
+	screen = s.settle(t, "1 running")
 	assert.NotContains(t, strings.Split(screen, "\n")[len(strings.Split(screen, "\n"))-2], "failed")
+
+	// enter shows the rest; closing it goes back to the list.
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "Progress:     rootfs: 23% (5.20MB/s)")
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "d: cancel, enter: details")
 
 	// `d` cancels it, after asking.
 	s.press(t, 'd')
@@ -189,7 +191,7 @@ func TestOperationsListedAtStartup(t *testing.T) {
 
 	s.settle(t, "1 running")
 	assert.Equal(t, []string{"export"}, onLoop(t, s, func() []string {
-		return lo.Map(s.gui.Panels.Operations.List.GetAllItems(), func(operation *commands.Operation, _ int) string { return operation.Key() })
+		return lo.Map(s.gui.operations.list(), func(operation *commands.Operation, _ int) string { return operation.Key() })
 	}))
 }
 
@@ -207,7 +209,7 @@ func TestOperationsFromALeftScopeAreDropped(t *testing.T) {
 
 	assert.Eventually(t, func() bool {
 		return slices.Equal([]string{"current"}, onLoop(t, s, func() []string {
-			return lo.Map(s.gui.Panels.Operations.List.GetAllItems(), func(operation *commands.Operation, _ int) string { return operation.Key() })
+			return lo.Map(s.gui.operations.list(), func(operation *commands.Operation, _ int) string { return operation.Key() })
 		}))
 	}, 5*time.Second, 20*time.Millisecond)
 }

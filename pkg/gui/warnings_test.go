@@ -29,6 +29,17 @@ func testWarnings() []api.Warning {
 	}
 }
 
+// openWarnings opens W's popup, which opens on the warnings while any are
+// new.
+func openWarnings(t *testing.T, s *screen) string {
+	t.Helper()
+
+	s.settle(t, " warning")
+	s.press(t, 'W')
+
+	return s.settle(t, "a: acknowledge, d: delete")
+}
+
 func warningStatuses(s *screen) map[string]string {
 	warnings, _ := s.server.GetWarnings()
 
@@ -42,8 +53,7 @@ func TestScreenWarnings(t *testing.T) {
 	// The footer counts what no one has acknowledged.
 	s.settle(t, "2 warnings")
 
-	s.press(t, 'W')
-	screen := s.settle(t, "Warnings (fake)")
+	screen := openWarnings(t, s)
 	assert.Contains(t, screen, "KVM support is missing")
 
 	// New first, the most severe first among them.
@@ -61,7 +71,7 @@ func TestScreenWarnings(t *testing.T) {
 	s.press(t, 'd')
 	s.settle(t, "delete this warning")
 	s.press(t, 'n')
-	s.settle(t, "Warnings (fake)")
+	s.settle(t, "a: acknowledge, d: delete")
 
 	s.press(t, 'd')
 	screen = s.settle(t, "delete this warning")
@@ -69,7 +79,7 @@ func TestScreenWarnings(t *testing.T) {
 	s.pressKey(t, tcell.KeyEnter)
 
 	assert.Eventually(t, func() bool { _, ok := warningStatuses(s)["disk"]; return !ok }, 5*time.Second, 20*time.Millisecond)
-	s.settle(t, "Warnings (fake)")
+	s.settle(t, "a: acknowledge, d: delete")
 }
 
 // Closing a warning's details goes back to the list, on that warning.
@@ -77,13 +87,12 @@ func TestClosingAWarningsDetails(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) { s.server.SetWarnings(testWarnings()) })
 	s.ready(t)
 
-	s.press(t, 'W')
-	s.settle(t, "Warnings (fake)")
+	openWarnings(t, s)
 	s.pressKey(t, tcell.KeyDown)
 	s.pressKey(t, tcell.KeyEnter)
 	s.settle(t, "First seen:")
 	s.pressKey(t, tcell.KeyEsc)
-	s.settle(t, "Warnings (fake)")
+	s.settle(t, "a: acknowledge, d: delete")
 
 	s.do(t, func() error {
 		item, err := s.gui.Panels.Menu.GetSelectedItem()
@@ -99,10 +108,24 @@ func TestWarningKeysHonourReadOnly(t *testing.T) {
 	}, func(s *screen) { s.server.SetWarnings(testWarnings()) })
 	s.ready(t)
 
-	s.press(t, 'W')
-	s.settle(t, "Warnings (fake)")
+	openWarnings(t, s)
 	s.press(t, 'a')
 	s.settle(t, "fake is read-only")
 
 	assert.Equal(t, "new", warningStatuses(s)["disk"])
+}
+
+// W opens on the warnings while any are new, then on the list last shown.
+func TestWOpensOnNewWarningsThenTheLastList(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) { s.server.SetWarnings(testWarnings()) })
+	s.ready(t)
+
+	openWarnings(t, s)
+	s.press(t, '[')
+	s.settle(t, "d: cancel, enter: details")
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "x: menu")
+
+	s.press(t, 'W')
+	s.settle(t, "d: cancel, enter: details")
 }

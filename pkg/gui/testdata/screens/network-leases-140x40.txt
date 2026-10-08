@@ -24,7 +24,7 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[3]─Im - Vo - Networks - Pr - Op────────────╮│                                                                                           │
+╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
 │incusbr0 bridge managed 0                    ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

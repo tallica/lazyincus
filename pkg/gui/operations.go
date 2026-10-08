@@ -11,9 +11,8 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
-	"github.com/tallica/lazyincus/pkg/tasks"
+	"github.com/tallica/lazyincus/pkg/gui/types"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -132,54 +131,50 @@ func (l *operationLog) clear() {
 	l.entries = nil
 }
 
-func (gui *Gui) getOperationsPanel() *panels.SideListPanel[*commands.Operation] {
-	return &panels.SideListPanel[*commands.Operation]{
-		ContextState: &panels.ContextState[*commands.Operation]{
-			GetMainTabs: func() []panels.MainTab[*commands.Operation] {
-				return []panels.MainTab[*commands.Operation]{
-					{
-						Key:    "info",
-						Title:  gui.Tr.InfoTitle,
-						Render: gui.renderOperationInfo,
-					},
-				}
-			},
-			GetItemContextCacheKey: func(operation *commands.Operation) string {
-				return "operations-" + operation.Key() + "-" + operation.Status() + "-" +
-					operation.Operation.UpdatedAt.String() + "-" + operation.Progress()
-			},
-		},
-		ListPanel: panels.ListPanel[*commands.Operation]{
-			List: panels.NewFilteredList[*commands.Operation](),
-			View: gui.Views.Operations,
-		},
-		NoItemsMessage: gui.Tr.NoOperations,
-		Gui:            gui.intoInterface(),
-		// Under way first, being what the list is for; then newest first.
-		Sort: func(a, b *commands.Operation) bool {
-			if a.IsFinal() != b.IsFinal() {
-				return !a.IsFinal()
+// operationItems are the popup's rows, under way first, being what the list
+// is for, then newest first; and each one's operation's key.
+func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
+	operations := gui.operations.list()
+	slices.SortStableFunc(operations, func(a, b *commands.Operation) int {
+		if a.IsFinal() != b.IsFinal() {
+			if a.IsFinal() {
+				return 1
 			}
 
-			return a.Operation.CreatedAt.After(b.Operation.CreatedAt)
-		},
-		SameItem: func(a, b *commands.Operation) bool {
-			return a.Key() == b.Key()
-		},
-		GetTableCells: func(operation *commands.Operation) []string {
-			return presentation.GetOperationDisplayStrings(operation, gui.State.SpansProjects.Operations)
-		},
-		FlexColumns: func() []utils.FlexColumn {
-			return []utils.FlexColumn{{
-				Index:    projectColumns(gui.State.SpansProjects.Operations) + 1,
-				MinWidth: presentation.MinOperationDescriptionWidth,
-			}}
-		},
+			return -1
+		}
+
+		return b.Operation.CreatedAt.Compare(a.Operation.CreatedAt)
+	})
+
+	items := make([]*types.MenuItem, 0, len(operations))
+	keys := make([]string, 0, len(operations))
+
+	for _, operation := range operations {
+		keys = append(keys, operation.Key())
+		items = append(items, &types.MenuItem{
+			LabelColumns: presentation.GetOperationDisplayStrings(operation, gui.State.SpansProjects.Operations),
+			FilterText:   operationLabel(operation),
+			OnPress:      func() error { return gui.showOperation(operation) },
+			Keys: map[rune]types.MenuKey{
+				'd': {Handler: func() error { return gui.operationCancel(operation) }, Mutates: true},
+			},
+		})
 	}
+
+	if len(items) == 0 {
+		items = append(items, &types.MenuItem{LabelColumns: []string{gui.Tr.NoOperations}})
+	}
+
+	return items, keys
 }
 
-func (gui *Gui) renderOperationInfo(operation *commands.Operation) tasks.TaskFunc {
-	return gui.NewSimpleRenderStringTask(func() string { return gui.operationInfoStr(operation) })
+// showOperation is enter on an operation: all of it, which the row has no
+// room for. Closing it goes back to the list.
+func (gui *Gui) showOperation(operation *commands.Operation) error {
+	back := func(*gocui.Gui, *gocui.View) error { return gui.openDaemon(daemonOperations, operation.Key()) }
+
+	return gui.createConfirmationPanel(gui.Tr.OperationTitle, strings.TrimRight(gui.operationInfoStr(operation), "\n"), back, back)
 }
 
 func (gui *Gui) operationInfoStr(operation *commands.Operation) string {
@@ -217,15 +212,17 @@ func (gui *Gui) operationInfoStr(operation *commands.Operation) string {
 		output += line("Member", op.Location)
 	}
 
+	// Plain headings: sectionHeading rules to the main panel's width, wider
+	// than a popup.
 	if resources := operation.Resources(); len(resources) > 0 {
-		output += "\n" + gui.sectionHeading(gui.Tr.OperationResources) + "\n\n" + strings.Join(resources, "\n") + "\n"
+		output += "\n" + gui.Tr.OperationResources + ":\n" + strings.Join(resources, "\n") + "\n"
 	}
 
 	// A websocket's metadata is its connection secrets.
 	if op.Class == "task" && len(op.Metadata) > 0 {
 		data, err := utils.MarshalIntoYaml(op.Metadata)
 		if err == nil {
-			output += "\n" + gui.sectionHeading(gui.Tr.OperationMetadata) + "\n\n" + utils.ColoredYamlString(string(data))
+			output += "\n" + gui.Tr.OperationMetadata + ":\n" + utils.ColoredYamlString(string(data))
 		}
 	}
 
@@ -247,9 +244,10 @@ func (gui *Gui) fetchOperations() (func() error, error) {
 			return nil
 		}
 
+		selected := gui.daemonSelected(daemonOperations)
 		gui.operations.reconcile(operations, asked, time.Now())
 
-		return gui.showOperations()
+		return gui.showOperations(selected)
 	}, nil
 }
 
@@ -272,28 +270,22 @@ func (gui *Gui) recordOperation(scope uint64, operation *commands.Operation) {
 			return nil
 		}
 
+		selected := gui.daemonSelected(daemonOperations)
 		gui.operations.record(operation, at)
 
-		return gui.showOperations()
+		return gui.showOperations(selected)
 	})
 }
 
-// showOperations lists the log and says in the footer what's running and
-// what has failed unseen. Main loop only.
-func (gui *Gui) showOperations() error {
-	operations := gui.operations.list()
-
+// showOperations redraws the popup if it's open on the log, and says in
+// the footer what's running and what has failed unseen. selected is the
+// row the popup had selected before the log changed. Main loop only.
+func (gui *Gui) showOperations(selected string) error {
 	gui.State.SpansProjects.Operations = spansMultipleProjects(
-		lo.Map(operations, func(operation *commands.Operation, _ int) string { return operation.Project }))
+		lo.Map(gui.operations.list(), func(operation *commands.Operation, _ int) string { return operation.Project }))
 
-	gui.Panels.Operations.SetItems(operations)
-
-	if err := gui.Panels.Operations.RerenderList(); err != nil {
+	if err := gui.redrawDaemon(daemonOperations, selected); err != nil {
 		return err
-	}
-
-	if gui.currentViewName() == "operations" {
-		gui.State.OperationsSeenAt = time.Now()
 	}
 
 	return gui.countOperations()
@@ -308,7 +300,7 @@ func (gui *Gui) countOperations() error {
 	return gui.renderString(gui.g, "information", gui.getInformationContent())
 }
 
-// seeOperations is the Operations tab getting focus: its failures are seen.
+// seeOperations is the operations on screen: their failures are seen.
 func (gui *Gui) seeOperations() {
 	gui.State.OperationsSeenAt = time.Now()
 
@@ -338,8 +330,10 @@ func (gui *Gui) operationsStatusContent() string {
 	return strings.Join(parts, " ") + "  "
 }
 
-// operationCancel is `d`.
+// operationCancel is `d`, asked first, then back to the list either way.
 func (gui *Gui) operationCancel(operation *commands.Operation) error {
+	back := func() error { return gui.openDaemon(daemonOperations, operation.Key()) }
+
 	if operation.IsFinal() || !operation.Operation.MayCancel {
 		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.OperationNotCancellable, operation.Operation.Description))
 	}
@@ -352,9 +346,9 @@ func (gui *Gui) operationCancel(operation *commands.Operation) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refresh(nil, gui.fetchOperations)
+			return gui.refresh(back, gui.fetchOperations)
 		})
-	}, nil)
+	}, func(*gocui.Gui, *gocui.View) error { return back() })
 }
 
 // operationLabel names an operation for a prompt or the palette: what it

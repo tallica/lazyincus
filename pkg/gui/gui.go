@@ -120,17 +120,16 @@ type Gui struct {
 }
 
 type Panels struct {
-	Instances  *panels.SideListPanel[*commands.Instance]
-	Images     *panels.SideListPanel[*commands.Image]
-	Snapshots  *panels.SideListPanel[*commands.Snapshot]
-	Backups    *panels.SideListPanel[*commands.ComposeBackup]
-	Volumes    *panels.SideListPanel[*commands.Volume]
-	Networks   *panels.SideListPanel[*commands.Network]
-	Profiles   *panels.SideListPanel[*commands.Profile]
-	Operations *panels.SideListPanel[*commands.Operation]
-	Services   *panels.SideListPanel[*commands.ServiceRow]
-	Stacks     *panels.SideListPanel[*commands.ComposeStack]
-	Menu       *panels.SideListPanel[*types.MenuItem]
+	Instances *panels.SideListPanel[*commands.Instance]
+	Images    *panels.SideListPanel[*commands.Image]
+	Snapshots *panels.SideListPanel[*commands.Snapshot]
+	Backups   *panels.SideListPanel[*commands.ComposeBackup]
+	Volumes   *panels.SideListPanel[*commands.Volume]
+	Networks  *panels.SideListPanel[*commands.Network]
+	Profiles  *panels.SideListPanel[*commands.Profile]
+	Services  *panels.SideListPanel[*commands.ServiceRow]
+	Stacks    *panels.SideListPanel[*commands.ComposeStack]
+	Menu      *panels.SideListPanel[*types.MenuItem]
 }
 
 type Mutexes struct {
@@ -217,12 +216,17 @@ type guiState struct {
 	// decides whether a row names its instance and project.
 	SnapshotsSpan snapshotsSpan
 
-	// Warnings are the remote's, as the last listing had them, and
-	// WarningsMenu whether the popup open is theirs.
-	Warnings     []*commands.Warning
-	WarningsMenu bool
+	// Warnings are the remote's, as the last listing had them.
+	Warnings []*commands.Warning
 
-	// OperationsSeenAt is when the Operations tab last had focus: the
+	// DaemonPopup is whether the popup open is `W`'s, DaemonTab the list it
+	// shows, or showed last, and DaemonOpened whether it has been open.
+	DaemonPopup  bool
+	DaemonTab    daemonTab
+	DaemonOpened bool
+	WideMenu     bool
+
+	// OperationsSeenAt is when the operations were last on screen: the
 	// footer counts the failures since.
 	OperationsSeenAt time.Time
 
@@ -599,17 +603,16 @@ func (gui *Gui) fetchGroups() [][]fetch {
 
 func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
-		Instances:  gui.getInstancesPanel(),
-		Snapshots:  gui.getSnapshotsPanel(),
-		Backups:    gui.getBackupsPanel(),
-		Images:     gui.getImagesPanel(),
-		Volumes:    gui.getVolumesPanel(),
-		Networks:   gui.getNetworksPanel(),
-		Profiles:   gui.getProfilesPanel(),
-		Operations: gui.getOperationsPanel(),
-		Services:   gui.getServicesPanel(),
-		Stacks:     gui.getStacksPanel(),
-		Menu:       gui.getMenuPanel(),
+		Instances: gui.getInstancesPanel(),
+		Snapshots: gui.getSnapshotsPanel(),
+		Backups:   gui.getBackupsPanel(),
+		Images:    gui.getImagesPanel(),
+		Volumes:   gui.getVolumesPanel(),
+		Networks:  gui.getNetworksPanel(),
+		Profiles:  gui.getProfilesPanel(),
+		Services:  gui.getServicesPanel(),
+		Stacks:    gui.getStacksPanel(),
+		Menu:      gui.getMenuPanel(),
 	}
 }
 

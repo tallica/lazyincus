@@ -21,10 +21,10 @@
 │                      │o         open lazyincus config            │                     │
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
-│                      │W         warnings                         │                     │
+│                      │W         operations and warnings          │                     │
 │                      │R         switch remote                    │                     │
 ╰──────────────────────│+         next screen mode (normal/half/fu…│                     │
-╭─[3]─Im - Vo - Ne - Pr│_         prev screen mode                 │                     │
+╭─[3]─Images - Vo - Ne │_         prev screen mode                 │                     │
 │Alpine 3.22 amd64 2 01│=         expand/collapse the focused side…│                     │
 │Debian 13 amd64   0 fe│tab       next panel                       │                     │
 │                      │shift+tab previous panel                   │                     │

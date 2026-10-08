@@ -68,12 +68,9 @@ func (gui *Gui) refreshWarningsQuiet() error {
 }
 
 // showWarnings keeps the warnings, counts the new ones for the footer and
-// redraws the popup if it's open. Main loop only.
+// redraws the popup if it's open on them. Main loop only.
 func (gui *Gui) showWarnings(warnings []*commands.Warning) error {
-	selected := ""
-	if index := gui.Panels.Menu.SelectedIdx; gui.warningsOpen() && index < len(gui.State.Warnings) {
-		selected = gui.State.Warnings[index].Key()
-	}
+	selected := gui.daemonSelected(daemonWarnings)
 
 	sortWarnings(warnings)
 	gui.State.Warnings = warnings
@@ -91,21 +88,7 @@ func (gui *Gui) showWarnings(warnings []*commands.Warning) error {
 		return err
 	}
 
-	if !gui.warningsOpen() {
-		return nil
-	}
-
-	// In place: the menu is focused already, and opening it again would
-	// stack it on itself. The cursor follows its warning, which an
-	// acknowledgement moves down the list: left on the row, the next key
-	// would act on another one.
-	gui.Panels.Menu.SetItems(gui.warningItems())
-
-	if index := slices.IndexFunc(warnings, func(warning *commands.Warning) bool { return warning.Key() == selected }); index >= 0 {
-		gui.Panels.Menu.SetSelectedLineIdx(index)
-	}
-
-	return gui.Panels.Menu.RerenderList()
+	return gui.redrawDaemon(daemonWarnings, selected)
 }
 
 // sortWarnings puts new ones first, then the most severe, then the most
@@ -128,47 +111,13 @@ func sortWarnings(warnings []*commands.Warning) {
 	})
 }
 
-// warningsOpen reports the popup on screen being the warnings'.
-func (gui *Gui) warningsOpen() bool {
-	return gui.State.WarningsMenu && gui.Views.Menu.Visible
-}
-
-// handleOpenWarnings is `W`: the popup from what the last poll found, read
-// again in the background, which redraws it.
-func (gui *Gui) handleOpenWarnings(g *gocui.Gui, v *gocui.View) error {
-	if err := gui.openWarnings(""); err != nil {
-		return err
-	}
-
-	gui.refreshInBackground(gui.fetchWarnings)
-
-	return nil
-}
-
-// openWarnings opens the popup on the warning keyed selected, or the first.
-func (gui *Gui) openWarnings(selected string) error {
-	index := slices.IndexFunc(gui.State.Warnings, func(warning *commands.Warning) bool { return warning.Key() == selected })
-
-	if err := gui.Menu(CreateMenuOptions{
-		Title:      fmt.Sprintf(gui.Tr.WarningsTitle, gui.remoteName(gui.IncusCommand.RemoteName())),
-		Subtitle:   gui.Tr.WarningsHint,
-		Items:      gui.warningItems(),
-		HideCancel: true,
-		Selected:   max(index, 0),
-	}); err != nil {
-		return err
-	}
-
-	gui.State.WarningsMenu = true
-
-	return nil
-}
-
-// warningItems are the popup's rows.
-func (gui *Gui) warningItems() []*types.MenuItem {
+// warningItems are the popup's rows, and each one's warning's key.
+func (gui *Gui) warningItems() ([]*types.MenuItem, []string) {
 	items := make([]*types.MenuItem, 0, len(gui.State.Warnings))
+	keys := make([]string, 0, len(gui.State.Warnings))
 
 	for _, warning := range gui.State.Warnings {
+		keys = append(keys, warning.Key())
 		items = append(items, &types.MenuItem{
 			LabelColumns: presentation.GetWarningDisplayStrings(warning),
 			FilterText:   warning.Warning.Type + " " + warning.Warning.LastMessage,
@@ -184,13 +133,13 @@ func (gui *Gui) warningItems() []*types.MenuItem {
 		items = append(items, &types.MenuItem{LabelColumns: []string{gui.Tr.NoWarnings}})
 	}
 
-	return items
+	return items, keys
 }
 
 // showWarning is enter on a warning: all of it, which the row has no room
 // for. Closing it goes back to the list.
 func (gui *Gui) showWarning(warning *commands.Warning) error {
-	back := func(*gocui.Gui, *gocui.View) error { return gui.openWarnings(warning.Key()) }
+	back := func(*gocui.Gui, *gocui.View) error { return gui.openDaemon(daemonWarnings, warning.Key()) }
 
 	return gui.createConfirmationPanel(gui.Tr.WarningTitle, gui.warningDetails(warning), back, back)
 }
@@ -250,9 +199,9 @@ func (gui *Gui) deleteWarning(warning *commands.Warning) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refresh(func() error { return gui.openWarnings("") }, gui.fetchWarnings)
+			return gui.refresh(func() error { return gui.openDaemon(daemonWarnings, "") }, gui.fetchWarnings)
 		})
-	}, func(*gocui.Gui, *gocui.View) error { return gui.openWarnings(warning.Key()) })
+	}, func(*gocui.Gui, *gocui.View) error { return gui.openDaemon(daemonWarnings, warning.Key()) })
 }
 
 // warningsStatusContent is the footer's count of new warnings.

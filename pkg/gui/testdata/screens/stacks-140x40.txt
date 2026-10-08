@@ -30,7 +30,7 @@
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 ╰─────────────────────────────────────────────╯│                                                                                           │
-╭─[5]─Images - Vo - Ne - Pr - Op──────────────╮│                                                                                           │
+╭─[5]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
 │Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││                                                                                           │
 │Debian 13 amd64   0 fedcba987654 90.00MiB ne…││                                                                                           │
 │                                             ││                                                                                           │

@@ -180,6 +180,18 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  gui.handleMenuKey('d'),
 		},
 		{
+			ViewName: "menu",
+			Key:      '[',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDaemonTab(-1),
+		},
+		{
+			ViewName: "menu",
+			Key:      ']',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDaemonTab(1),
+		},
+		{
 			ViewName:    "instances",
 			Key:         'S',
 			Modifier:    gocui.ModNone,
@@ -312,14 +324,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotDelete),
 			Description: gui.Tr.Remove,
-			Mutates:     true,
-		},
-		{
-			ViewName:    "operations",
-			Key:         'd',
-			Modifier:    gocui.ModNone,
-			Handler:     onSelected(gui.Panels.Operations, gui.operationCancel),
-			Description: gui.Tr.CancelOperation,
 			Mutates:     true,
 		},
 		{
@@ -618,7 +622,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName:    "",
 			Key:         'W',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.handleOpenWarnings,
+			Handler:     gui.handleOpenDaemon,
 			Description: gui.Tr.ShowWarnings,
 		},
 		{

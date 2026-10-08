@@ -73,6 +73,7 @@ pkg/gui/
   instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
   projects.go                  project scope menu (all projects, or one), and the reload after any change of scope
   remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
+  daemon_popup.go              the `W` popup: operations.go, the session's operation history, and warnings.go, its lists
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel plus menu rows
 ```

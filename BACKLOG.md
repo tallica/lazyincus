@@ -32,8 +32,8 @@ derive from it automatically.
 ### Side panels
 
 lazydocker has six with a compose file local; lazyincus has three, or five
-with incus-compose installed, having folded images, volumes, networks,
-profiles and operations into one tabbed Resources panel. Stacks and Services are the Incus
+with incus-compose installed, having folded images, volumes, networks
+and profiles into one tabbed Resources panel. Stacks and Services are the Incus
 analog of lazydocker's docker-compose-specific Project/Services panels, and
 like lazydocker's they push the plain instance list down to "Standalone
 Instances". See [incus-compose integration](#incus-compose-integration).
