@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-08
+
 ### Added
 - `remotes.<name>.readOnly` in the config, or `--read-only` for every remote, refuses any key that would change something there; the footer says `read-only`.
 - `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions.
@@ -322,7 +324,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.13.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/tallica/lazyincus/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/tallica/lazyincus/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/tallica/lazyincus/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/tallica/lazyincus/compare/v0.11.0...v0.12.0
