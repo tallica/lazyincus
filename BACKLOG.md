@@ -5,9 +5,9 @@ just a place to park things so they don't get lost. See
 [CHANGELOG.md](CHANGELOG.md) for what's actually shipped and
 [CLAUDE.md](CLAUDE.md) for why the port is scoped the way it is.
 
-Actionable items are checkboxes — tick them as they land, and move the real
-description of what shipped into CHANGELOG.md. Plain bullets are context or
-decisions, not work: they'll never be ticked.
+Actionable items are checkboxes. Delete one when it lands - what shipped
+belongs in CHANGELOG.md and the docs - keeping any decision it records as
+a plain bullet. Plain bullets are context or decisions, not work.
 
 ## How the lazydocker gaps were established
 
@@ -17,15 +17,6 @@ reading its `pkg/gui` file list and its generated
 `docs/keybindings/Keybindings_en.md` cheatsheet, then diffing that against
 what's actually wired up in `pkg/gui/keybindings.go` here. Re-run that
 comparison if the pin ever moves.
-
-## Panel-switching infrastructure
-
-Shipped. `sidePanelDefs()` is the ordered list every part of the side-panel
-machinery derives from — see CLAUDE.md; the staged plan that got there is in
-the git history. Adding a panel is one entry in that list plus its own
-files; number keys, `tab`/`shift+tab` cycling, and
-`gui.expandFocusedSidePanel` for when an even split is too cramped all
-derive from it automatically.
 
 ## Missing vs lazydocker
 
@@ -39,13 +30,11 @@ like lazydocker's they push the plain instance list down to "Standalone
 Instances". See [incus-compose integration](#incus-compose-integration).
 
 - [ ] **An "about"/credits surface** — lazydocker's Project panel hosted its
-      credits tab (`CreditsTitle` is ported but unused). Ours has no
-      always-present panel to host it: Stacks is absent without
-      incus-compose, so this needs somewhere else.
+      credits tab. Stacks, our analog, is absent without incus-compose,
+      and no other panel is always there, so this needs somewhere else.
 
 ### Per-instance actions
 
-- [x] **Attach (`a`)** — `incus console <name>`.
 - [ ] **Graphical console (`A`)** — a VM's VGA output, through
       `incus console <vm> --type vga`, which mirrors the SPICE socket and
       starts a viewer: the CLI config's `defaults.console_spice_command`,
@@ -72,14 +61,10 @@ Not planned:
 
 ### Global
 
-- [x] **Edit/open config (`e` / `o`)** — bound globally as `o` (open) and
-      `O` (edit).
 - [ ] **Cheatsheet generator** — lazydocker generates `docs/keybindings/*.md`
       from its i18n set via `scripts/cheatsheet`. Here the README keybinding
       table is hand-maintained, which is why docs/Panels.md has to carry a
       reminder to keep it current.
-- [x] **Event stream** — lazyincus listens to Incus's lifecycle and
-      operation events; see [docs/Incus.md](docs/Incus.md).
 - [ ] **More row statuses from operations** — `operationStatuses` covers
       starting, stopping, restarting, restoring, freezing and unfreezing.
       "Deleting instance", "Rebuilding instance" and "Migrating instance"
@@ -149,23 +134,10 @@ projects, and remote-switching are Incus concepts with no Docker analog, so
 they never show up in the comparison above and are worth considering on their
 own merits.
 
-- [x] **Copy menu** — `y` is a menu of what the item has to copy, on
-      every list. A lease's address isn't among them: the Leases tab has
-      no cursor for a row to be chosen with.
-- [x] **Horizontal truncation indicator** — `SideListPanel` renders its
-      rows at the view's width, clipping each through a colour-aware
-      `utils.Truncate`, and re-renders on a width change. lazydocker clips silently, so there
-      was no upstream behaviour to match.
-- [x] **Remote switcher** — `R`, a menu of the CLI's instance remotes;
-      the session's command adopts the new connection in place
-      (`UseRemote`), so whatever holds it follows. Session-only, leaving
-      `incus remote switch` as the persistent path.
-- [x] **Profiles** — the Resources panel's fourth tab, with the other
-      resources' `u`, `c` and `d`. (Projects have a switcher — see
-      [incus-compose integration](#incus-compose-integration); remotes are
-      above.)
-- [x] **`--remote` flag** — names the remote for the session, applied as
-      `INCUS_REMOTE` so the shell-outs follow the panels.
+- **The copy menu leaves out a lease's address**: the Leases tab has no
+  cursor for a row to be chosen with.
+- **Switching remote is for the session**: `R` and `--remote` write
+  nothing, leaving `incus remote switch` as the persistent path.
 
 Deliberately deferred (don't re-pitch unprompted):
 
@@ -282,41 +254,24 @@ origin, read from `project/instance.go` in the source:
 
 Instances are named `<service>-<index>` (`web-1`, `app-1`).
 
-Two things fall out of this. Those keys live in `ExpandedConfig`, which the
-instance listing already carries — so both are presentation work on data
-lazyincus has in hand, not new API calls.
+Those keys live in `ExpandedConfig`, which the instance listing already
+carries, so the `service`, `health` and `image` columns cost no API calls.
 
-- [x] **Service column** — opt-in `service` column reading
-      `user.label.incus-compose.service`.
-- [x] **Health column** — opt-in `health` column. `ic-healthd` writes its
-      verdict straight onto the instance as `user.healthcheck.status`, which
-      is the only key it writes; the opt-in it consults
-      (`user.healthcheck.enabled`) can sit on the Incus project instead, and
-      `ExpandedConfig` expands profiles rather than projects, so status's
-      presence is the signal and the opt-in is no use for this.
+- **Health is the verdict's presence**: `ic-healthd` writes only
+  `user.healthcheck.status`, onto the instance. The opt-in it consults,
+  `user.healthcheck.enabled`, can sit on the Incus project instead, which
+  `ExpandedConfig` doesn't expand, so it's no use for telling.
 - [ ] **Health in the status column** — lazydocker renders health as a
       substatus beside the container's state, styled by
       `containerStatusHealthStyle` (`long`/`short`/`icon`), where ours is a
       column of its own. The inline form spends less width on a panel that
       rarely has any to spare.
-- [x] **Image column** — opt-in `image` column reading `user.image_alias`,
-      the reference the compose file named. Incus's own
-      `volatile.base_image` is a fingerprint, so this is the only place an
-      instance's image appears by name.
-- [x] **A services panel** — the other half of what lazydocker's Services
-      panel gave you, shipped: for the stack selected in Stacks, one row
-      per service its compose file declares, and the instances panel
-      becomes "Standalone Instances" without them. See
-      [docs/Panels.md](docs/Panels.md#services).
-
-      The panel reads the compose file rather than the daemon, which is what
-      buys the thing no column could: a service that's down still gets a
-      row, in state `none`. Grouping a stack inside the flat instances panel
-      is what this makes unnecessary — headers there would have meant
-      `SideListPanel[*commands.Instance]` becoming a panel over a
-      header-or-instance row, with every keybinding, `OnSelect`/`OnClick`
-      and the snapshots panel having to no-op on a header, for a separator
-      on a list the name sort already orders.
+- **A Services panel rather than headers in the instance list**: the
+  panel reads the compose file, so a service that's down still gets a row,
+  which no grouping of instances could give. Headers would also have made
+  the instance list a panel over header-or-instance rows, every key,
+  `OnSelect`/`OnClick` and the snapshots panel no-op'ing on a header, for
+  a separator on a list the name sort already orders.
 
 ### 3. Project panel
 
@@ -328,13 +283,9 @@ lists directories rather than every compose project on the server, a
 project with no compose file in reach being rows nothing could act on.
 lazydocker's local-project gate (`CannotManageNonLocalService`) is what
 that choice replaces. What's left is the part of lazydocker's panel that
-was a main-panel tab rather than the list:
+was a main-panel tab rather than the list - its credits tab is
+[above](#side-panels):
 
-- [x] **The verbs** and **the compose config tab** — shipped on both
-      panels: per service on Services, per stack on Stacks.
-- [ ] **Credits tab** — the home the
-      [missing credits surface](#side-panels) is waiting for. It lost the
-      panel it was going to live on, so it needs somewhere else.
 - [ ] **Interleaved logs tab** — lazydocker tails every container in the
       project at once, interleaved. `incus-compose logs -f` is the analog,
       on `M` as a subprocess. The stack's Logs tab stacks every instance's
@@ -357,20 +308,17 @@ The stack's Info tab, beyond what shipped:
       of line with the counters above; the stack's Usage section moves
       the whole column over instead.
 
-### 4. Backups (shipped)
+### 4. Backups
 
 `incus-compose backup` snapshots a project's data volumes into a
 `<project>-backup` Incus project. The Backups tab beside Snapshots
 lists the selected stack's, and the Volumes panel marks the volumes that
 hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 
-- [x] **Mark backup volumes in the Volumes panel** — a marker in the users
-      column rather than a filter: a filter would hide what the panel
-      exists to show, a pool's space being spent.
-- [x] **A Backups panel** — a tab in the Snapshots slot rather than a
-      panel of its own, backups being to a stack what snapshots are to an
-      instance. `n`, `d`, `D` (`--keep-last`), `r` (the stack or one
-      service) and `v`.
+- **A tab, not a panel**: backups are to a stack what snapshots are to an
+  instance, so they share Snapshots' slot.
+- **Backup volumes are marked, not filtered out**: a filter would hide what
+  the Volumes panel exists to show, a pool's space being spent.
 - [ ] **Back up one service** — `create` takes `SERVICE...`; `n` backs up
       the whole stack. Worth adding if restoring one service turns out to
       be the common case.
@@ -406,35 +354,7 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 
 ## Snapshots panel
 
-Shipped as a side panel following the instances panel's selection, with
-create/restore/delete; the read-only main-panel tab it replaced is gone.
-What's left:
-
-- [x] Stateful snapshots and expiry — both are fields in the `n` popup,
-      cycled with `← →`. The daemon's own refusal explains what stateful
-      wants beyond a running instance (`migration.stateful` on it).
 - [ ] Custom expiry — the field cycles never, 1, 7 and 30 days; anything
       else needs the CLI. A free-text duration would want parsing and an
       error path, or a `custom…` value that opens a prompt.
 - [ ] Rename (`RenameInstanceSnapshot`), if it turns out to be wanted.
-
-## Housekeeping
-
-- [x] **Backfill the GitHub releases for v0.1.0 and v0.2.0** — both cut
-      from their changelog sections, flagged not-latest so v0.3.0 keeps that
-      badge. Every tag now has a release.
-- [x] **Attach built binaries to releases** — GoReleaser builds macOS and
-      Linux, amd64 and arm64, on every `v*` tag. See
-      [CLAUDE.md](CLAUDE.md#releasing).
-
-## Blocked
-
-Nothing now. Freeze/unfreeze and exec shipped before there was a real VM
-to try them on; both have since been verified against one.
-
-- [x] Verify freeze/unfreeze against a real VM. `p` freezes a running VM,
-      which then reads `frozen`, and resumes it, with no `IsVM()` check
-      needed.
-- [x] Verify exec into a real VM. It goes through the Incus guest agent; a
-      VM without one still gets whatever the CLI prints, which hasn't been
-      seen yet.
