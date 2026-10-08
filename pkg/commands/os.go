@@ -81,7 +81,13 @@ func sanitisedCommandOutput(output []byte, err error) (string, error) {
 	if err != nil {
 		exitError, ok := err.(*exec.ExitError)
 		if ok {
-			return outputString, errors.New(string(exitError.Stderr))
+			// CombinedOutput leaves Stderr empty, having put it in output.
+			message := string(exitError.Stderr)
+			if message == "" {
+				message = strings.TrimSpace(outputString)
+			}
+
+			return outputString, errors.New(message)
 		}
 		return "", WrapError(err)
 	}
