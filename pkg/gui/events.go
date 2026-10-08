@@ -357,20 +357,20 @@ func (gui *Gui) flushEvents() {
 	}
 
 	gui.events.mutex.Lock()
-	kinds, ending := gui.events.pending, gui.events.ending
-	gui.events.pending, gui.events.ending, gui.events.scheduled = 0, nil, false
-	gui.events.mutex.Unlock()
 
-	// A subprocess has the terminal; hold the lists until it's back.
+	// A subprocess has the terminal; hold the lists until it's back, left
+	// queued rather than taken and put back, which a look in between would
+	// find empty.
 	if gui.PauseBackgroundThreads.Load() {
-		gui.events.mutex.Lock()
-		gui.events.ending = append(ending, gui.events.ending...)
+		time.AfterFunc(eventBatchWindow, gui.flushEvents)
 		gui.events.mutex.Unlock()
-
-		gui.queueRefresh(kinds)
 
 		return
 	}
+
+	kinds, ending := gui.events.pending, gui.events.ending
+	gui.events.pending, gui.events.ending, gui.events.scheduled = 0, nil, false
+	gui.events.mutex.Unlock()
 
 	if err := gui.refreshEnding(ending, gui.fetchesFor(kinds)...); err != nil {
 		gui.Log.Warn(err)
