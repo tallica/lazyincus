@@ -431,7 +431,9 @@ func TestAStackPinnedToARemote(t *testing.T) {
 	assert.Equal(t, "pve01", instance.Remote)
 
 	// The snapshots panel, pointed at it the way a new snapshot does,
-	// says where too.
+	// says where too. Focused first: while Stacks is, each Stacks refresh
+	// empties it, and pve01 connecting brings one.
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Snapshots) })
 	s.do(t, func() error { return s.gui.refreshSnapshotsFor(instance.Name, instance.Remote, instance) })
 	s.settle(t, "Snapshots (api-1 on pve01)")
 
