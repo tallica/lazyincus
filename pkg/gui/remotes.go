@@ -284,8 +284,14 @@ func (gui *Gui) handleSwitchRemote(g *gocui.Gui, v *gocui.View) error {
 // lets go of the remote the panels are on: a remote that doesn't answer
 // leaves everything where it was.
 func (gui *Gui) switchToRemote(name string) error {
+	return gui.switchToRemoteThen(name, func() error { return nil })
+}
+
+// switchToRemoteThen is switchToRemote, then is run on the main loop once
+// the panels are on the remote - straight away when they already are.
+func (gui *Gui) switchToRemoteThen(name string, then func() error) error {
 	if name == gui.IncusCommand.RemoteName() {
-		return nil
+		return then()
 	}
 
 	return gui.WithWaitingStatus(gui.Tr.ConnectingStatus, func() error {
@@ -295,7 +301,11 @@ func (gui *Gui) switchToRemote(name string) error {
 		}
 
 		gui.g.Update(func(*gocui.Gui) error {
-			return gui.moveToRemote(name, command)
+			if err := gui.moveToRemote(name, command); err != nil {
+				return err
+			}
+
+			return then()
 		})
 
 		return nil
@@ -336,9 +346,19 @@ func (gui *Gui) stackSwitchRemote(stack *commands.ComposeStack) error {
 		return nil
 	}
 
+	return gui.stackSwitchRemoteThen(stack, func() error { return nil })
+}
+
+// stackSwitchRemoteThen is stackSwitchRemote with then run once the panels
+// are on the stack's remote, or straight away when they already are.
+func (gui *Gui) stackSwitchRemoteThen(stack *commands.ComposeStack, then func() error) error {
+	if gui.onSessionRemote(stack.Remote) {
+		return then()
+	}
+
 	if !gui.remotes.known(stack.Remote) {
 		return gui.createErrorPanel(gui.unknownRemote(stack.Remote).Error())
 	}
 
-	return gui.switchToRemote(stack.Remote)
+	return gui.switchToRemoteThen(stack.Remote, then)
 }

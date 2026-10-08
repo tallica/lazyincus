@@ -187,6 +187,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create; on the Backups tab, back up the stack, stopping it for the backup or `--live` |
 | `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service; on the Backups tab, restore the stack's volumes, or one service's, from the backup (incus-compose asks first) |
 | `v` | Backups tab: verify the backup's restore points are all there |
+| `B` | Stacks and Services panels: go to the stack's Backups tab, switching to the stack's remote first if it's elsewhere, as `space` does |
 | `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
 | `E` | Exec a shell into the instance |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |

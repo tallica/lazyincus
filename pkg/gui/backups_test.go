@@ -8,7 +8,9 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -185,4 +187,68 @@ func TestBackupRowKeepsItsVerification(t *testing.T) {
 
 	s.settle(t, "before-…")
 	assert.Regexp(t, `before-.*2 vol\s+`+s.gui.Tr.BackupVerifiedOK, s.settle(t, "2 vol"))
+}
+
+// B goes to the Backups tab even when Snapshots was the last of the two on
+// show, which the window's number key would go back to.
+func TestBGoesToTheStacksBackups(t *testing.T) {
+	root := t.TempDir()
+	local := testStack(t, root, "default", "web")
+
+	var (
+		asked []string
+		mutex sync.Mutex
+	)
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, local)(s)
+		withBackups(&asked, &mutex, []*commands.ComposeBackup{testBackup("2026-09-21T06:00:00Z", "nightly", "db")}, nil)(s)
+	})
+
+	s.settle(t, "Services (default)")
+
+	for _, from := range []string{"stacks", "services"} {
+		s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Snapshots) })
+		s.do(t, func() error {
+			view, err := s.g.View(from)
+			if err != nil {
+				return err
+			}
+
+			return s.gui.switchFocus(view)
+		})
+
+		s.press(t, 'B')
+		s.settle(t, "nightly")
+		assert.Equal(t, "backups", onLoop(t, s, s.gui.currentViewName), "from %s", from)
+	}
+}
+
+// On a remote with no stack the Backups tab isn't there at all, so B on a
+// stack elsewhere takes the session to its remote first, as space would.
+func TestBOnAStackElsewhereMovesToItsRemote(t *testing.T) {
+	t.Setenv("INCUS_REMOTE", "fake")
+
+	there := testStack(t, t.TempDir(), "shop", "api")
+	there.Remote = "pve01"
+
+	var (
+		asked []string
+		mutex sync.Mutex
+	)
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, there)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+		withBackups(&asked, &mutex, []*commands.ComposeBackup{testBackup("2026-09-21T06:00:00Z", "nightly", "db")}, nil)(s)
+	})
+	require.Eventually(t, func() bool { return onLoop(t, s, func() int { return s.gui.Panels.Stacks.List.Len() }) == 1 }, 5*time.Second, 20*time.Millisecond)
+	s.do(t, func() error { return s.gui.switchFocus(s.gui.Views.Stacks) })
+	s.settle(t, "Services (shop on pve01)")
+	assert.True(t, onLoop(t, s, s.gui.backupsAway))
+
+	s.press(t, 'B')
+	s.settle(t, "nightly")
+	assert.Equal(t, "pve01", onLoop(t, s, s.gui.IncusCommand.RemoteName))
+	assert.Equal(t, "backups", onLoop(t, s, s.gui.currentViewName))
 }

@@ -876,6 +876,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
 		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
+		binding('B', gui.handleGoToBackups, gui.focusPanelDescription(gui.Tr.BackupsTitle)),
 	}
 }
 
@@ -1010,6 +1011,14 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleComposeLogs,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposeLogs),
+		},
+		{
+			ViewName:    "services",
+			Key:         'B',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleGoToBackups,
+			Description: gui.focusPanelDescription(gui.Tr.BackupsTitle),
+			NoSelection: true,
 		},
 	}
 

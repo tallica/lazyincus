@@ -474,3 +474,26 @@ func (gui *Gui) backupLabel(backup *commands.ComposeBackup) string {
 
 	return label
 }
+
+// handleGoToBackups focuses the Backups tab, whichever of its window's tabs
+// was last on show: the selected stack's backups, one key from the stack.
+// For a stack elsewhere it first moves the session to the stack's remote,
+// as space does, the tab being there only for a stack on it.
+func (gui *Gui) handleGoToBackups(g *gocui.Gui, v *gocui.View) error {
+	focus := func() error {
+		if gui.backupsAway() {
+			return nil
+		}
+
+		gui.resetMainView()
+
+		return gui.switchFocus(gui.Views.Backups)
+	}
+
+	stack, err := gui.Panels.Stacks.GetSelectedItem()
+	if err != nil {
+		return focus()
+	}
+
+	return gui.stackSwitchRemoteThen(stack, focus)
+}

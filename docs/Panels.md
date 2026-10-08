@@ -599,9 +599,10 @@ With incus-compose, Snapshots shares its slot with **Backups**: a tab
 listing the selected stack's `incus-compose backup` runs, newest first,
 the way Services follows the stack. It's gone where Stacks and Services
 give way to Instances (`gui.collapseStacksElsewhere`), where a stack
-elsewhere's backups would sit beside this remote's snapshots. A backup is
-a restore point on each of the stack's volumes under one timestamp, which
-is also what names it to every backup verb.
+elsewhere's backups would sit beside this remote's snapshots; `B` on
+such a stack moves the session to its remote first, as `space` does, then
+opens the tab. A backup is a restore point on each of the stack's volumes
+under one timestamp, which is also what names it to every backup verb.
 
 The list is `backup list --format json`, a shell-out like the stack's
 `config`; a backup's volumes and their snapshots are in the stack's
