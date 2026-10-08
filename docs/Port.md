@@ -45,12 +45,14 @@ pkg/commands/
   instance_compose.go          a compose instance's stop/restart/pause, done the way incus-compose does it
   snapshot.go                  Snapshot, an instance's or a custom volume's: create, restore, delete
   incus_compose.go             compose projects and services, paired with their instances
+  compose_backup.go            `incus-compose backup`: a stack's backups and what `verify` said of them
   compose_stack.go             ComposeStack, a compose project directory on a remote (remote:dir), and its rolled-up status
   instance_devices.go          what an instance's devices say: published ports, custom volumes, networks
   compose_config.go            `incus-compose config`: a stack's project and each service's definition, and ComposeCmd
   incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data, and an event stream Emit feeds
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
   used_by.go                   which instances use a network, volume, image or profile
+  operation.go, warning.go     the daemon's operations and warnings, for `W`'s popup
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
   errors.go, dummies.go        error wrapping; NewDummy* constructors for tests
 pkg/gui/
@@ -64,7 +66,7 @@ pkg/gui/
   layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
   keybindings.go               all key bindings
   focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  *_panel.go                   one per side panel: stacks, services, instances, snapshots, images, volumes, networks, profiles
+  *_panel.go                   one per side panel: stacks, services, instances, snapshots, backups, images, volumes, networks, profiles
   stacks_actions.go            the Stacks panel's compose verbs, over the whole stack
   stack_info.go                the stack's Info tab: identity, endpoints, usage, drift
   copy.go                      the `y` menu: what each kind of item offers to copy
@@ -74,8 +76,10 @@ pkg/gui/
   projects.go                  project scope menu (all projects, or one), and the reload after any change of scope
   remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
   daemon_popup.go              the `W` popup: operations.go, the session's operation history, and warnings.go, its lists
+  command_palette.go           `ctrl+p`: every panel's keys and every listed item, from paletteSources
+  read_only.go, remote_color.go  the remote a key acts on: refusing it there when read-only, and its colour
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
-  presentation/                table-cell rendering, one file per side panel plus menu rows
+  presentation/                table-cell rendering, one file per side panel and per `W` list, plus menu rows
 ```
 
 Everything in `pkg/gui` not listed above (`confirmation_panel.go`,

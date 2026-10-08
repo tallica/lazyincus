@@ -108,7 +108,8 @@ a missing file is an empty list.
 
 Ported from lazydocker's config so far: `gui`, `confirmOnQuit`, `oS`,
 `ignore`. Deliberately **not** ported (see
-[BACKLOG.md](../BACKLOG.md#missing-vs-lazydocker) for
-why): `commandTemplates` (docker-compose command templates), `customCommands`,
-`bulkCommands`, `stats`/`graphs`, `replacements`, and `logs` (`since`/`tail`/
-`timestamps` don't map onto Incus's console-log snapshot model).
+[BACKLOG.md](../BACKLOG.md#missing-vs-lazydocker) for why):
+`commandTemplates` (docker-compose command templates), `customCommands`,
+`bulkCommands`, `stats`/`graphs`, `replacements`, and `logs`
+(`since`/`tail`/ `timestamps` don't map onto Incus's console-log snapshot
+model).

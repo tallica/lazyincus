@@ -8,12 +8,12 @@ the keys as a user meets them are in [README.md](../README.md#usage).
 ## Confirmations
 
 A prompt that stops, deletes or restores something names the item's
-project whenever its list holds more than one project's (`qualified`):
-the same image alias, profile name or instance name can exist in several,
-and "delete image nginx:alpine?" doesn't say which is about to go. With
-one project the name stands alone. One for a stack on another remote than
-the session's names that remote too - see
-[Stacks on other remotes](#stacks-on-other-remotes). A delete the daemon would refuse (see
+project whenever its list holds more than one project's (`qualified`): the
+same image alias, profile name or instance name can exist in several, and
+"delete image nginx:alpine?" doesn't say which is about to go. With one
+project the name stands alone. One for a stack on another remote than the
+session's names that remote too - see [Stacks on other
+remotes](#stacks-on-other-remotes). A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
 listing's `used_by`, which events and the polls keep current, and the
 daemon has the last word either way.
@@ -127,37 +127,36 @@ panel's own `Hide`, because views are styled and keys bound before
 `setPanels` has built any panel to ask; and it's fixed for the session,
 the number keys being bound once.
 
-A remote with no stack listed on it - every stack pinned elsewhere, or none
-at all - keeps both panels but collapses them to their titles
+A remote with no stack listed on it - every stack pinned elsewhere, or
+none at all - keeps both panels but collapses them to their titles
 (`State.StacksHere`, set by each Stacks refresh), Stacks counting what it
 lists and Services leaving out the stack (`titleStacks`). Focusing either
 expands both and collapses Instances instead (`stacksCollapsed`), counting
 what it lists the way Stacks does, and focus crossing that swap lands on
-the panel's first main-panel tab (`stacksSwap`). Their numbers don't move: a hidden panel would renumber
-everything by remote. The Stacks refresh after startup or a remote switch
-(`State.Landing`) also moves the focus from either one to Instances;
-adding or removing a stack changes only the layout. All of it hangs on
-`stacksAway`, which [`gui.collapseStacksElsewhere`](Config.md#gui) can turn
-off.
+the panel's first main-panel tab (`stacksSwap`). Their numbers don't move:
+a hidden panel would renumber everything by remote. The Stacks refresh
+after startup or a remote switch (`State.Landing`) also moves the focus
+from either one to Instances; adding or removing a stack changes only the
+layout. All of it hangs on `stacksAway`, which
+[`gui.collapseStacksElsewhere`](Config.md#gui) can turn off.
 
-The local stack is the working directory's, or the one `--project-directory`
-names. The flag reaches this the way `--remote` reaches the daemon: `main`
-sets `INCUS_COMPOSE_PROJECT_DIRECTORY`, validated there, and
-`localStackDir` reads the variable back. A working directory with no
-compose file is no stack at all rather than a row saying so — most people
-start lazyincus from somewhere that isn't one — but a directory named with
-`-P` that has none is a row with the error. The local stack isn't saved, so
-`D` and `e` refuse it. The saved ones are `state.yml`'s
-([docs/Config.md](Config.md#state)); `a` adds to it, `e` replaces an entry
-in place (`ReplaceStack`), through `a`'s prompt pre-filled and its
-checks, and `D` removes from it,
-re-reading the file before each write so two sessions don't undo each
-other, and replacing it by rename. `a` takes a path through
-`openTextPrompt`, a one-line prompt in the confirmation view
-(`pkg/gui/prompt_panel.go`), and keeps it only once `incus-compose config`
-has read a project out of it: `~` and a relative path are resolved, and a
-path that's missing, not a directory, holds no compose project or is
-already listed is refused.
+The local stack is the working directory's, or the one
+`--project-directory` names. The flag reaches this the way `--remote`
+reaches the daemon: `main` sets `INCUS_COMPOSE_PROJECT_DIRECTORY`,
+validated there, and `localStackDir` reads the variable back. A working
+directory with no compose file is no stack at all rather than a row saying
+so — most people start lazyincus from somewhere that isn't one — but a
+directory named with `-P` that has none is a row with the error. The local
+stack isn't saved, so `D` and `e` refuse it. The saved ones are
+`state.yml`'s ([docs/Config.md](Config.md#state)); `a` adds to it, `e`
+replaces an entry in place (`ReplaceStack`), through `a`'s prompt
+pre-filled and its checks, and `D` removes from it, re-reading the file
+before each write so two sessions don't undo each other, and replacing it
+by rename. `a` takes a path through `openTextPrompt`, a one-line prompt in
+the confirmation view (`pkg/gui/prompt_panel.go`), and keeps it only once
+`incus-compose config` has read a project out of it: `~` and a relative
+path are resolved, and a path that's missing, not a directory, holds no
+compose project or is already listed is refused.
 
 A stack's config is one `incus-compose config --format json` in its
 directory (`LoadComposeStack`), read in `fetchStacks` rather than before
@@ -187,11 +186,11 @@ Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
 so does every Stacks refresh, the selection being the first row until
 someone moves it. It keeps the stack in `gui.selectedStack`, an atomic
 pointer, since `fetchServices` reads it off the main loop. A different
-stack — a different directory or remote, or a project the compose file
-now names differently — invalidates the services `refreshSeq`, empties the panel,
-retitles it and fetches for the new one. The stack is swapped before the
-invalidation, and `fetchServices` takes its ticket before reading the
-stack, so a fetch that isn't turned away has the new one.
+stack — a different directory or remote, or a project the compose file now
+names differently — invalidates the services `refreshSeq`, empties the
+panel, retitles it and fetches for the new one. The stack is swapped
+before the invalidation, and `fetchServices` takes its ticket before
+reading the stack, so a fetch that isn't turned away has the new one.
 
 Stacks refresh on the 10s cadence of the other lists that events keep
 current (`pollUnlessWatched`), on any event that refreshes the instances,
@@ -217,10 +216,9 @@ Main panel tabs:
   tunnel to the API is); **Usage**, the instance counters summed, a custom
   volume shared by replicas counted once; and **Drift**, compose instances
   whose service the file no longer declares and declared services with
-  none. Everything
-  past the services count comes from `gui.composeInstances` and
-  `gui.composeProject`, which `fetchServices` fills for the selected
-  stack, so the tab ticks until they arrive.
+  none. Everything past the services count comes from
+  `gui.composeInstances` and `gui.composeProject`, which `fetchServices`
+  fills for the selected stack, so the tab ticks until they arrive.
 - **Logs** — every instance's console log, services in name order, each
   under a heading naming its replica, or its service when it has only the
   one instance. `m` jumps here, as it does on the other panels.
@@ -236,16 +234,16 @@ it's pinned to the session's, so a session on another remote later can't
 run its verbs on the wrong daemon. It's saved as `remote:/dir`
 (`ComposeStack.Ref`), its identity everywhere a directory alone was: the
 same directory can be listed once per remote. `Run` pins an entry saved
-before stacks had remotes to the remote it starts on (`PinStacks`), the one
-each was shown against until then, which leaves the local stack, never
+before stacks had remotes to the remote it starts on (`PinStacks`), the
+one each was shown against until then, which leaves the local stack, never
 saved, the only one that follows the session. `listStacks` keys every
 stack by the remote it's on now, so the local stack and the same directory
 saved for the session's remote are one row, named by the saved entry so
 `D` and `e` act on it - `D` forgetting the entry, the row staying as the
-local stack, which its confirmation says. Whether a remote is the session's is asked only
-where it matters (`onSessionRemote`), so starting on another `--remote`
-never changes what's saved, and a remote that's known but doesn't answer
-is still added: it's the remote's to fix.
+local stack, which its confirmation says. Whether a remote is the
+session's is asked only where it matters (`onSessionRemote`), so starting
+on another `--remote` never changes what's saved, and a remote that's
+known but doesn't answer is still added: it's the remote's to fix.
 
 `gui.commandFor` gives a stack on another remote an `IncusCommand` of its
 own (`pkg/gui/remotes.go`), through which its statuses, its services and
@@ -318,7 +316,8 @@ holds an index, which by then belongs to a different replica.
 rendered by the instances panel's own `presentation.DisplayStatus`, a
 service being the instances underneath it. Only two values are the
 service's own: `partial` when replicas disagree, `none` when it has no
-instances. `Health` rolls up ic-healthd's verdict on the running replicas, worst-first.
+instances. `Health` rolls up ic-healthd's verdict on the running replicas,
+worst-first.
 
 The instances panel is the other half of the split: its filter
 (`isStackInstance`) drops the instances of every service a listed stack on
@@ -343,18 +342,16 @@ and `P` still narrows.
 
 Keys act on the selected row's service, passing its name as the `SERVICE`
 argument every incus-compose verb takes; which key runs which verb, and
-which of them a replica's row takes for itself, is README's
-[Compose stacks](../README.md#compose-stacks) section, alongside the rest of
-what a user sees. `composeRun` is all of them, run in the service's stack
+which of them a replica's row takes for itself, is README's [Compose
+stacks](../README.md#compose-stacks) section, alongside the rest of what a
+user sees. `composeRun` is all of them, run in the service's stack
 directory (`ComposeCmd`) with `INCUS_REMOTE` naming the stack's remote,
-and refreshes the instances, stacks and services
-panels once the subprocess returns rather than waiting for the poll.
-`s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
-don't — same rule as the instances panel. The same verbs over the whole
-stack are the Stacks panel's.
-`U` can fail on a non-local daemon for reasons
-that are incus-compose's, not ours — see
-[BACKLOG.md](../BACKLOG.md#caveats).
+and refreshes the instances, stacks and services panels once the
+subprocess returns rather than waiting for the poll. `s`, `d` and `f`
+confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
+The same verbs over the whole stack are the Stacks panel's. `U` can fail
+on a non-local daemon for reasons that are incus-compose's, not ours — see
+README's [Compose stacks](../README.md#compose-stacks).
 
 `onServiceRow` is what splits a key between the two, a replica's row taking
 the instances panel's own action where one exists. Those actions are the
@@ -375,56 +372,56 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`n`, `c`, `E`, `y`) reach the row's instance through
-`withServiceInstance`, which acts directly on the one
+The per-instance keys (`n`, `c`, `E`, `y`) reach the row's instance
+through `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
 behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
-rather than reading the selection. The menu is left for a service's own row, that row meaning all
-of its replicas.
+rather than reading the selection. The menu is left for a service's own
+row, that row meaning all of its replicas.
 
 Columns work the way the instances panel's do: `gui.serviceColumns` over
 `serviceColumnRenderers` in `pkg/gui/presentation/services.go`, taking the
-instance column names rendered from the service's instances rolled up, plus
-`replicas`. That one is blank unless the service has a different number of
-instances from what the compose file declared —
-`presentation.ServiceReplicas` is the rule, and the Info tab's line calls it
-too. It counts what exists
-rather than what's running: the status column says what state the instances
-are in and a replica's row says which is in which, so the figure before the
-slash is the number of rows underneath, and "3/4" is one replica missing
-rather than one stopped. A replica's row renders the same configured
-columns through `instanceColumnRenderers` instead (`replicaCell`), indented
-under the service and blank where only a service has the column, so the two
-kinds of row share one table. Which columns appear at all is the service
-half's to decide, replica rows following it — otherwise the rows would
-disagree on how many cells they have. `gui.instanceStatusStyle` covers the
-status column either way; `serviceStatusStyles` supplies the glyphs for
-`partial` and `none`, which no instance state has. There's no project
-column: every row shares the one project, so `servicesPanelTitle` puts it
-in the title instead, followed by the stack's remote when that isn't the
-session's.
+instance column names rendered from the service's instances rolled up,
+plus `replicas`. That one is blank unless the service has a different
+number of instances from what the compose file declared —
+`presentation.ServiceReplicas` is the rule, and the Info tab's line calls
+it too. It counts what exists rather than what's running: the status
+column says what state the instances are in and a replica's row says which
+is in which, so the figure before the slash is the number of rows
+underneath, and "3/4" is one replica missing rather than one stopped. A
+replica's row renders the same configured columns through
+`instanceColumnRenderers` instead (`replicaCell`), indented under the
+service and blank where only a service has the column, so the two kinds of
+row share one table. Which columns appear at all is the service half's to
+decide, replica rows following it — otherwise the rows would disagree on
+how many cells they have. `gui.instanceStatusStyle` covers the status
+column either way; `serviceStatusStyles` supplies the glyphs for `partial`
+and `none`, which no instance state has. There's no project column: every
+row shares the one project, so `servicesPanelTitle` puts it in the title
+instead, followed by the stack's remote when that isn't the session's.
 
 Main panel tabs:
 
 - **Info** — what the compose file declares for the service, then the Info
-  tab of each instance the row stands for, `instanceInfoStr` and all, which
-  is why this renders on a ticker. Each instance is ruled off by
-  `instanceHeading` and drops its own Name line, the heading having said it.
-  The heading numbers replicas — "Replica 2 of 4 · web-2", the blocks being
-  the same labels over and over — and numbers them over the service's
-  instances rather than the ones on screen, so a replica's row still reads
-  "2 of 4" while showing only itself. A service with one instance has no
-  count worth printing ("Instance · redis-1"), and one carrying the
-  service's own name has nothing left to say ("Instance"). It's ruled
-  either way: the rule is where the compose file's half ends and the
-  daemon's begins, which a service with no replicas has too.
+  tab of each instance the row stands for, `instanceInfoStr` and all,
+  which is why this renders on a ticker. Each instance is ruled off by
+  `instanceHeading` and drops its own Name line, the heading having said
+  it. The heading numbers replicas — "Replica 2 of 4 · web-2", the blocks
+  being the same labels over and over — and numbers them over the
+  service's instances rather than the ones on screen, so a replica's row
+  still reads "2 of 4" while showing only itself. A service with one
+  instance has no count worth printing ("Instance · redis-1"), and one
+  carrying the service's own name has nothing left to say ("Instance").
+  It's ruled either way: the rule is where the compose file's half ends
+  and the daemon's begins, which a service with no replicas has too.
   `instanceInfoStr` takes the identity lines to leave out, the service and
   the heading having just said them: where it lives, image and name
-  always, plus health for a lone instance. The compose fields are parsed with the stack's
-  config by `parseComposeConfig` and stored rendered, only display wanting
-  them; the Healthcheck line is the project's, from `gui.composeProject`
-  (`GetComposeProject` fetches it in `fetchServices`, so rendering makes no
-  API call; the tab renders off the main loop, so it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
+  always, plus health for a lone instance. The compose fields are parsed
+  with the stack's config by `parseComposeConfig` and stored rendered,
+  only display wanting them; the Healthcheck line is the project's, from
+  `gui.composeProject` (`GetComposeProject` fetches it in `fetchServices`,
+  so rendering makes no API call; the tab renders off the main loop, so
+  it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
   running instance's reference before the compose file's, whose own value
   may carry no registry host. Each refresh builds new `ComposeService`
   values, so the instance count is part of `GetItemContextCacheKey` —
@@ -442,14 +439,13 @@ Main panel tabs:
   split the per-instance keys make through `withServiceInstance`.
 - **Config** — both halves: a Compose section, the service's slice of
   `incus-compose config --format json`, read afresh in its stack's
-  directory, handed to `yaml.JSONToYAML`
-  untouched (decoding through `map[string]any` first would turn every count
-  into a float64 and render `replicas: 2` as `2.0`), then one
-  `instanceConfigStr` dump per instance the row stands for, under the Info
-  tab's own `instanceHeading`.
+  directory, handed to `yaml.JSONToYAML` untouched (decoding through
+  `map[string]any` first would turn every count into a float64 and render
+  `replicas: 2` as `2.0`), then one `instanceConfigStr` dump per instance
+  the row stands for, under the Info tab's own `instanceHeading`.
 
-The credits tab and aggregate-logs tab from lazydocker's Project panel
-aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
+The credits tab and the interleaved logs tab from lazydocker's Project
+panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 
 ## Instances
 
@@ -518,20 +514,19 @@ Follows whichever list you're in: the instances panel's `OnSelect` hands
 over its instance, the services panel's whatever its row stands for — a
 replica's own, and every replica's from a service's row above them, the
 service's snapshots being all of theirs. Stacks hands over nothing, which
-empties it. The view title names what the rows
-belong to, the instance or the service - and its remote, when that isn't
-the session's - since the rows alone don't say; a
-panel holding more than one instance's snapshots grows a column naming the
-replica each came from, and groups the list by instance before ordering it
-newest-first, replicas being snapshotted alike. Each panel hands its
-selection over rather than `renderSnapshots`
+empties it. The view title names what the rows belong to, the instance or
+the service - and its remote, when that isn't the session's - since the
+rows alone don't say; a panel holding more than one instance's snapshots
+grows a column naming the replica each came from, and groups the list by
+instance before ordering it newest-first, replicas being snapshotted
+alike. Each panel hands its selection over rather than `renderSnapshots`
 reading the focused view, because that read takes `ViewStackMutex`, which
-`switchFocus` holds while it runs an `OnSelect`: reading it there deadlocks
-the app. The rows are the `InstanceFull.Snapshots` the instance listing
-already carries, so moving through a list asks the daemon for nothing;
-create, delete and restore re-run that listing, which is what shows their
-result at once. Snapshot names can come back prefixed with the instance
-(`alpine/snap0`); every other call wants the bare name, which
+`switchFocus` holds while it runs an `OnSelect`: reading it there
+deadlocks the app. The rows are the `InstanceFull.Snapshots` the instance
+listing already carries, so moving through a list asks the daemon for
+nothing; create, delete and restore re-run that listing, which is what
+shows their result at once. Snapshot names can come back prefixed with the
+instance (`alpine/snap0`); every other call wants the bare name, which
 `snapshotName` strips.
 
 `e` swaps the selection for every instance the instances panel holds, the
@@ -545,35 +540,35 @@ then snapshots the selected row's instance, not the instances panel's, and
 the new snapshot is found by project, instance and name, since every
 replica of a service can carry one of the same name.
 
-`n` works from the instances panel as well as
-this one - it acts on what this panel follows either way, asking which
-replica when that's a whole service - and moves to the new snapshot once
-it exists, so taking one from the instances panel shows you the result. It opens a two-view popup: the editable
-confirmation view as a name field, and a `snapshotOptions` view parked under
-it, with `tab` moving focus between them. Its own view rather than the menu,
-so the menu panel's keybindings don't fight the navigation - which means
-teaching `newLineFocused`, `renderPanelOptions` and `resizeCurrentPopupPanel`
-about it, the last so it keeps its position under the prompt instead of
-being centred.
+`n` works from the instances panel as well as this one - it acts on what
+this panel follows either way, asking which replica when that's a whole
+service - and moves to the new snapshot once it exists, so taking one from
+the instances panel shows you the result. It opens a two-view popup: the
+editable confirmation view as a name field, and a `snapshotOptions` view
+parked under it, with `tab` moving focus between them. Its own view rather
+than the menu, so the menu panel's keybindings don't fight the navigation
+- which means teaching `newLineFocused`, `renderPanelOptions` and
+`resizeCurrentPopupPanel` about it, the last so it keeps its position
+under the prompt instead of being centred.
 
 The options are fields rather than a list of actions: a row shows a value
 that `← →` cycle in place, and enter means create wherever the focus is.
-Modelling them as actions put a cursor on a checkbox, which reads as though
-the row were a thing to run. The selected row is the view's cursor line, so
-gocui's own highlight marks it while the options have focus; its value is
-also bracketed, which is what identifies the field `← →` would change when
-focus is in the name field and nothing is highlighted. Hints live in the borders the way
-lazygit does it - `Subtitle` on the top, `Footer` on the bottom, the latter
-needing gocui's `ShowListFooter` and skipped entirely on a view with no
-lines, which is why the empty name field carries only a subtitle. A
-popup with a subtitle widens, still centred, to fit it beside the title
-(`popupFrameWidth`): gocui right-aligns the subtitle on the border the
-title starts, and the middle half of a narrow screen ran the two together.
-Stateful is a field of its own, flipped by `← →` like the rest, rather
-than another choice beside the expiries: the two are independent, and a
-flat list of both reads as though picking an expiry rules out stateful.
-Restore is an instance update carrying `Restore: <name>`, not a snapshot
-operation.
+Modelling them as actions put a cursor on a checkbox, which reads as
+though the row were a thing to run. The selected row is the view's cursor
+line, so gocui's own highlight marks it while the options have focus; its
+value is also bracketed, which is what identifies the field `← →` would
+change when focus is in the name field and nothing is highlighted. Hints
+live in the borders the way lazygit does it - `Subtitle` on the top,
+`Footer` on the bottom, the latter needing gocui's `ShowListFooter` and
+skipped entirely on a view with no lines, which is why the empty name
+field carries only a subtitle. A popup with a subtitle widens, still
+centred, to fit it beside the title (`popupFrameWidth`): gocui
+right-aligns the subtitle on the border the title starts, and the middle
+half of a narrow screen ran the two together. Stateful is a field of its
+own, flipped by `← →` like the rest, rather than another choice beside the
+expiries: the two are independent, and a flat list of both reads as though
+picking an expiry rules out stateful. Restore is an instance update
+carrying `Restore: <name>`, not a snapshot operation.
 
 A custom volume selected in the volumes panel is followed the same way,
 its title naming the volume, and `n` there or here snapshots it. A
@@ -631,45 +626,43 @@ do, so its own progress and refusals are what you read:
 
 ## Resources
 
-Images, volumes, networks and profiles are four
-panels sharing one window: a
-`window` on their defs puts them in the same slot, and `window.go` is what
-knows about it. The views are stacked at the same position and the layout
-shows the window's active one, which is whichever was focused there last
-(`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
-on each, each with its own `TabIndex` - so the title reads as the window's
-rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
-pass, so a resize refits them: a tab cut off the end is a list nobody knows
-is there. A tab that names whose list it is - Snapshots, Backups - does so
-only while on show (its def's `plainTitle` otherwise), and the tab on show
-keeps its full name longest, cut with an ellipsis before it's shortened
-too. Number keys, `tab` and the side column's split
-all count windows, so the five take one number and one share of the
-height; they read something far less often than instances do.
+Images, volumes, networks and profiles are four panels sharing one window:
+a `window` on their defs puts them in the same slot, and `window.go` is
+what knows about it. The views are stacked at the same position and the
+layout shows the window's active one, which is whichever was focused there
+last (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same
+list on each, each with its own `TabIndex` - so the title reads as the
+window's rather than the list's. When the names don't fit the title,
+`fitWindowTabs` swaps in each def's `shortTitle` (`Images - Vol - Net -
+Prof`) on the layout pass, so a resize refits them: a tab cut off the end
+is a list nobody knows is there. A tab that names whose list it is -
+Snapshots, Backups - does so only while on show (its def's `plainTitle`
+otherwise), and the tab on show keeps its full name longest, cut with an
+ellipsis before it's shortened too. Number keys, `tab` and the side
+column's split all count windows, so the four take one number and one
+share of the height; they read something far less often than instances do.
 
-`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the five are
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
 stops of their own there, where `tab` and the number keys stop at the
-window; `[`/`]` stay the main panel's tabs, which Networks has three of.
+window; `[`/`]` stay the main panel's tabs, which Networks has five of.
 The window's number key pressed again moves to its next list, and a click
-on a tab's name to that one. The arrows are global bindings, and the
-main panel's own - scrolling sideways - win while it has focus. It's a
-focus change
-like any other, so a filter on one list is dropped on moving to the next,
-as it is moving between any two panels. The hidden lists keep polling,
-so a switch shows current rows at once.
+on a tab's name to that one. The arrows are global bindings, and the main
+panel's own - scrolling sideways - win while it has focus. It's a focus
+change like any other, so a filter on one list is dropped on moving to the
+next, as it is moving between any two panels. The hidden lists keep
+polling, so a switch shows current rows at once.
 
-`u` on Images, Volumes, Networks or Profiles narrows the instances panel to what uses the item
-and moves there, its title naming it; `esc` there brings the rest back and
-returns to the list `u` was pressed in, cursor where it was.
-While narrowed it shows every user, stopped or a stack's, the
-question being what uses the thing. An image's users are its `UsedBy`.
+`u` on Images, Volumes, Networks or Profiles narrows the instances panel
+to what uses the item and moves there, its title naming it; `esc` there
+brings the rest back and returns to the list `u` was pressed in, cursor
+where it was. While narrowed it shows every user, stopped or a stack's,
+the question being what uses the thing. An image's users are its `UsedBy`.
 A network's or volume's `used_by` names a profile rather than the
-instances that have it, so those match on each instance's expanded
-devices - a NIC's `network` or `parent`, a disk's `pool` and `source` -
-as well as any instance `used_by` names outright; an entry there without
-a project is default's. A network or volume in a project other than
-default only counts that project's instances.
+instances that have it, so those match on each instance's expanded devices
+- a NIC's `network` or `parent`, a disk's `pool` and `source` - as well as
+any instance `used_by` names outright; an entry there without a project is
+default's. A network or volume in a project other than default only counts
+that project's instances.
 
 `c` hands the terminal to `incus image edit`, `incus storage volume edit`
 or `incus network edit` with the item's `--project` - and on the instances
@@ -697,18 +690,18 @@ change when someone pulls or deletes one, and a slower poll backs the
 events up (see [docs/Incus.md](Incus.md), Events).
 
 Each image carries the instances created from it (`Image.UsedBy`), matched
-on `volatile.base_image`, and the count is the column after the label - red
-at 0 - since whether an image can go is what the panel is for. The images
-fetch lists instances across every project for this, whatever the panels
-are scoped to: a project without `features.images` uses default's images,
-so an image one project lists can be another's instances' base. A client
-refused the all-projects listing falls back to its own project's; one that
-can't list instances at all still gets its images, their users `?` and
-none of them offered to prune.
-Instances are matched by fingerprint alone, so the per-project copies
-incus-compose makes of an image all count the same users. Then size, the
-date an instance was last created from it, and `vm` or `cached` where they
-apply; the container type every other image has isn't worth a column.
+on `volatile.base_image`, and the count is the column after the label -
+red at 0 - since whether an image can go is what the panel is for. The
+images fetch lists instances across every project for this, whatever the
+panels are scoped to: a project without `features.images` uses default's
+images, so an image one project lists can be another's instances' base. A
+client refused the all-projects listing falls back to its own project's;
+one that can't list instances at all still gets its images, their users
+`?` and none of them offered to prune. Instances are matched by
+fingerprint alone, so the per-project copies incus-compose makes of an
+image all count the same users. Then size, the date an instance was last
+created from it, and `vm` or `cached` where they apply; the container type
+every other image has isn't worth a column.
 
 `D` prunes: a menu of the unused cached images - what Incus cached on a
 launch and expires by itself - or every unused one, each with its count
@@ -731,10 +724,9 @@ image they belong to.
 After the name come the users count - red for a custom volume nothing has
 attached, the other types always belonging to something; `backup` for a
 volume holding a stack's [backups](#backups), which nothing attaches
-either - and the size,
-the two a narrow panel should keep. Sizes are a request each
-(`GetStoragePoolVolumeState`), eight in flight at a time, on every poll;
-where the driver can't size a volume the cell is blank (see
+either - and the size, the two a narrow panel should keep. Sizes are a
+request each (`GetStoragePoolVolumeState`), eight in flight at a time, on
+every poll; where the driver can't size a volume the cell is blank (see
 [docs/Incus.md](Incus.md)). Each pool's space is one more request a poll,
 shown on the Config tab with the driver, and so are the users by name:
 `Volume.Users` turns the used_by URLs into an instance's name, or a
@@ -749,10 +741,10 @@ and every instance's snapshots: `e` is each list's "show what's left out".
 Not `a`, which Instances spends on attach, lazydocker's key for it too.
 They outnumber Incus's own networks on most hosts and have nothing to do.
 
-The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a row, IPv4 and
-IPv6 side by side, the gateway first: the daemon lists an entry per
-address, which would give a dual-stack instance two half-rows. Asking for
-them takes a request per project using the network (see
+The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a
+row, IPv4 and IPv6 side by side, the gateway first: the daemon lists an
+entry per address, which would give a dual-stack instance two half-rows.
+Asking for them takes a request per project using the network (see
 [docs/Incus.md](Incus.md)). State is `incus network info`, with a bridge's
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a
