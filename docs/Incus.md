@@ -55,21 +55,22 @@ inferred.
   most things, silence for a connection error the modal already covers,
   `nil` returned either way so the loop carries on. Quitting is unaffected;
   gocui excludes `ErrQuit` before consulting it.
-- **Projects**: Incus scopes instances (and networks, volumes, profiles) per
-  project, and a client is scoped to one at a time. `UseProject` swaps
+- **Projects**: Incus scopes instances (and networks, volumes, profiles)
+  per project, and a client is scoped to one at a time. `UseProject` swaps
   `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor
   rather than a field, and every refresh builds its `Instance`s with a
-  client of their own. `P` (`handleSwitchProject` in `pkg/gui/projects.go`) scopes
-  to a single project.
-- **All projects**: the default, and "all projects" in that menu returns to
-  it. Lists every project at once through the `*AllProjects` endpoints. Each item then carries its own
-  project-scoped client (`clientFor`), so actions go to the project the item
-  came from - the `incus` CLI shell-outs included, which pass
-  `--project`. Identity includes the project everywhere items are
-  matched across refreshes: two projects can hold an instance, image or
-  volume of the same name. The project column is per-panel and driven by
-  `State.SpansProjects`, recomputed each refresh: a server with one project
-  shouldn't carry a column repeating it on every row.
+  client of their own. `P` (`handleSwitchProject` in
+  `pkg/gui/projects.go`) scopes to a single project.
+- **All projects**: the default, and "all projects" in that menu returns
+  to it. Lists every project at once through the `*AllProjects` endpoints.
+  Each item then carries its own project-scoped client (`clientFor`), so
+  actions go to the project the item came from - the `incus` CLI
+  shell-outs included, which pass `--project`. Identity includes the
+  project everywhere items are matched across refreshes: two projects can
+  hold an instance, image or volume of the same name. The project column
+  is per-panel and driven by `State.SpansProjects`, recomputed each
+  refresh: a server with one project shouldn't carry a column repeating it
+  on every row.
 - **List instances**: `GetInstancesFull` / `GetInstancesFullAllProjects`
   (recursion 2, what `incus list` itself asks for) return every instance's
   config, state and snapshots in one request, cheap enough for the
@@ -83,14 +84,14 @@ inferred.
   passed. Only events that change a list count, named one by one: the
   daemon also sends them for reads, an `instance-exec` for every `ps` the
   Top tab runs, so matching by prefix would have each refresh set off the
-  next. `instance-updated` - a device attached, a profile added - refreshes
-  the lists counting what uses a volume, network or profile, but at most
-  every 10s: ic-healthd sends one per instance each time it records a
-  healthcheck. `instance-agent-started` refreshes the instances: a VM's
-  state comes from its agent once there is one (`renderState` in the qemu
-  driver), and until then from the host side - on 7.4 a restarted VM's
-  address read `eth0` within 2s, then the guest's own `enp5s0` once the
-  agent was up, 7s later. An instance snapshot's edit sends no
+  next. `instance-updated` - a device attached, a profile added -
+  refreshes the lists counting what uses a volume, network or profile, but
+  at most every 10s: ic-healthd sends one per instance each time it
+  records a healthcheck. `instance-agent-started` refreshes the instances:
+  a VM's state comes from its agent once there is one (`renderState` in
+  the qemu driver), and until then from the host side - on 7.4 a restarted
+  VM's address read `eth0` within 2s, then the guest's own `enp5s0` once
+  the agent was up, 7s later. An instance snapshot's edit sends no
   `instance-snapshot-updated`, whatever `api` declares: `snapshotPut`
   calls `Update(args, false)`, and that `false`, `userRequested`, is what
   the event hangs on; only the "Updating snapshot" operation says so. A
@@ -99,27 +100,28 @@ inferred.
   and slow down while a stream is open. What each event refreshes, and
   what's left to the polls, is the table in
   [docs/Panels.md](Panels.md#what-keeps-them-current).
-  `*incus.EventListener` has unexported fields, so `commands.EventListener`
-  is the interface in front of it that `incustest` implements. An
-  operation event arrives the moment the daemon takes an action, whoever
-  asked for it, naming the instances it acts on, and again when it's done:
-  a CLI restart of a VM on 7.4 read `Restarting instance` Running, then
-  Success with the `instance-restarted` 1.6s later. The description is the
-  operation's only name, so `operationStatuses` matches those strings; one
-  it doesn't know marks nothing. Order takes care on both ends. The client
-  runs each `AddHandler` call on a goroutine of its own, so a handler can
-  see an operation's Running after its Success - seen on 7.4 as Running
-  before Pending - and a mark nothing would end; `ListenForEvents` reads
+  `*incus.EventListener` has unexported fields, so
+  `commands.EventListener` is the interface in front of it that
+  `incustest` implements. An operation event arrives the moment the daemon
+  takes an action, whoever asked for it, naming the instances it acts on,
+  and again when it's done: a CLI restart of a VM on 7.4 read `Restarting
+  instance` Running, then Success with the `instance-restarted` 1.6s
+  later. The description is the operation's only name, so
+  `operationStatuses` matches those strings; one it doesn't know marks
+  nothing. Order takes care on both ends. The client runs each
+  `AddHandler` call on a goroutine of its own, so a handler can see an
+  operation's Running after its Success - seen on 7.4 as Running before
+  Pending - and a mark nothing would end; `ListenForEvents` reads
   `AddChannel` instead, which keeps the daemon's order. And the daemon's
   `Start` (`internal/server/operations`) sends Running only after setting
   the work off, which a quick operation can finish first, so the last
   hundred operations to end are remembered and a Running for one of them
-  marks nothing. When the stream drops, the marks of
-  operations still under way come off, no event being left to end them.
-  Under `--debug` every event the stream delivers, the ones that change
-  nothing included, goes to `development.log` in the config directory,
-  with a line each time a stream opens naming what it listens to - the
-  place to look when a list doesn't refresh.
+  marks nothing. When the stream drops, the marks of operations still
+  under way come off, no event being left to end them. Under `--debug`
+  every event the stream delivers, the ones that change nothing included,
+  goes to `development.log` in the config directory, with a line each time
+  a stream opens naming what it listens to - the place to look when a list
+  doesn't refresh.
 - **Warnings**: the daemon raises a warning without an event - it writes
   it straight to its database (`UpsertWarning`) - so only a poll finds a
   new one. Acknowledging, resetting and deleting do send
@@ -173,24 +175,24 @@ inferred.
   key, answered synchronously, not a read-modify-write that would race
   ic-healthd's own writes to the same config.
 - **Status mid-action**: the daemon has no in-between status for an
-  instance. While a stop holds the instance it reports `Running`, and while
-  a start does, `Stopped` (`statusCode` in each driver), so a VM reads
-  `Running` for the whole of its shutdown. A restart goes from `Running` to
-  `Running` with a second or two of `Stopped` between, which the 2-second
-  poll rarely lands in, and a row that did would drop to the stopped end
-  of the list and back. Restoring a running instance's snapshot is the
-  same: Incus stops it, rolls it back and starts it again. So an action
-  lazyincus starts marks the instance itself (`Instance.BeginTransition`)
-  until a listing taken after it lands: the row reads `starting`,
-  `stopping`, `restarting`, `restoring`, `freezing` or `unfreezing`, and
-  keeps its place. Pausing is freezing: the API says `freeze`, `Frozen`
-  and "Freezing instance", the CLI `incus pause` and `incus resume`.
-  lazyincus splits them the way the CLI does, `incus pause` leaving an
-  instance `FROZEN` - `p` and the status bar say pause and resume, a row
-  freezing, frozen, unfreezing. An action
-  anyone else starts gets the same from its operation event (see Events).
-  The action and its event both mark the instance, and only the later mark
-  can end it, so neither ends the other early.
+  instance. While a stop holds the instance it reports `Running`, and
+  while a start does, `Stopped` (`statusCode` in each driver), so a VM
+  reads `Running` for the whole of its shutdown. A restart goes from
+  `Running` to `Running` with a second or two of `Stopped` between, which
+  the 2-second poll rarely lands in, and a row that did would drop to the
+  stopped end of the list and back. Restoring a running instance's
+  snapshot is the same: Incus stops it, rolls it back and starts it again.
+  So an action lazyincus starts marks the instance itself
+  (`Instance.BeginTransition`) until a listing taken after it lands: the
+  row reads `starting`, `stopping`, `restarting`, `restoring`, `freezing`
+  or `unfreezing`, and keeps its place. Pausing is freezing: the API says
+  `freeze`, `Frozen` and "Freezing instance", the CLI `incus pause` and
+  `incus resume`. lazyincus splits them the way the CLI does, `incus
+  pause` leaving an instance `FROZEN` - `p` and the status bar say pause
+  and resume, a row freezing, frozen, unfreezing. An action anyone else
+  starts gets the same from its operation event (see Events). The action
+  and its event both mark the instance, and only the later mark can end
+  it, so neither ends the other early.
 - **Delete**: Incus refuses to delete a running instance with a plain 400
   whose body is the string `Instance is running` (`instanceDelete` in
   `cmd/incusd/instance_delete.go`) — no dedicated error code, so
@@ -205,24 +207,25 @@ inferred.
   console ring buffer — pull-based, not a stream like Docker's
   `ContainerLogs(..., Follow: true)`, and **drain-on-read**: each read
   returns only what was buffered since the previous one (confirmed against
-  the `incus` CLI itself — `incus console <name> --show-log` twice in a row
-  shows output then nothing). `TailConsoleLog` therefore accumulates reads
-  into a capped 256 KiB per-instance buffer, and the tab polls that.
+  the `incus` CLI itself — `incus console <name> --show-log` twice in a
+  row shows output then nothing). `TailConsoleLog` therefore accumulates
+  reads into a capped 256 KiB per-instance buffer, and the tab polls that.
   Drain-on-read only holds for a running container. A VM's read drains
   QEMU's ring buffer into a log file and returns the whole file
   (`ConsoleLog` in the qemu driver), and a stopped instance's is its
   persisted log in full (`instanceConsoleLogGet`), so either replaces the
   buffer rather than adding to it - added, a VM's log repeated itself once
-  a second - and a stopped instance's is fetched just once. There's no header-based staleness check available: the client returns
-  only `resp.Body` and discards `Last-Modified`.
-  `incus-compose logs` reads the same endpoint, so it and the Logs tabs
-  drain each other: against 7.4 it printed nothing for running containers
-  whose output the tabs had already read. That's why `M` starts empty.
-  A VM's console is a serial terminal, and firmware and GRUB write it as
-  one: screen clears, cursor moves, `ESC c` resets, and the whole screen
-  white-on-black. The tab keeps only the colours (`utils.ConsoleText`),
-  less the backgrounds and the black and white that would paint every
-  line of a boot grey, and turns a clear into a line break.
+  a second - and a stopped instance's is fetched just once. There's no
+  header-based staleness check available: the client returns only
+  `resp.Body` and discards `Last-Modified`. `incus-compose logs` reads the
+  same endpoint, so it and the Logs tabs drain each other: against 7.4 it
+  printed nothing for running containers whose output the tabs had already
+  read. That's why `M` starts empty. A VM's console is a serial terminal,
+  and firmware and GRUB write it as one: screen clears, cursor moves, `ESC
+  c` resets, and the whole screen white-on-black. The tab keeps only the
+  colours (`utils.ConsoleText`), less the backgrounds and the black and
+  white that would paint every line of a boot grey, and turns a clear into
+  a line break.
 - **Deletes the daemon refuses**: a profile named `default`, in any
   project, can't be deleted or renamed - `profileDelete` and
   `profileRename` in `cmd/incusd/profiles.go` refuse the name before

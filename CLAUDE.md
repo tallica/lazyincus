@@ -87,9 +87,9 @@ applies here.
 
 `sidePanelDefs()` in `pkg/gui/side_panels.go` is the ordered list of side
 panels — view name, title, view pointer, panel accessor. View creation,
-styling (including the `[n]` title prefix), the number keys, the layout and
-`allSidePanels()` all derive from it, so a new panel is one entry there plus
-its own `*_panel.go`, presentation and refresh loop, and one in
+styling (including the `[n]` title prefix), the number keys, the layout
+and `allSidePanels()` all derive from it, so a new panel is one entry
+there plus its own `*_panel.go`, presentation and refresh loop, and one in
 `paletteSources()` (`pkg/gui/command_palette.go`): without it the command
 palette lists none of its items, and its actions name nothing and act on
 whatever is selected when run. The palette's rows are the key bindings, so
@@ -97,28 +97,25 @@ a panel's key that doesn't act on the selected row sets `NoSelection:
 true`: the palette lists it while the panel is empty and runs it without
 checking the row is still the one it named. A key that acts on the row
 never sets it - that check is all that keeps a refresh from turning a
-restart onto the next row. A `window` on the def
-puts a panel in a slot it shares with others, as one of its tabs, which is
-how Images, Volumes, Networks and Profiles become the one
-Resources panel,
-and Backups a tab beside Snapshots;
-the number keys, `tab` and the layout count those slots, not views
-(`pkg/gui/window.go`). Order is both the
-top-to-bottom layout order and the number-key order. A panel can be absent
-(`hidden` on the def) - for the session, or Backups while no stack is on
-the session's remote; everything user-facing is numbered
-over `visibleSidePanelDefs()`, so the first *visible* panel is `[1]` and is
-what the app focuses at startup - unless it's Stacks with no stack on the
-session's remote, which collapses it and Services to their titles and
-hands the focus to Instances ([docs/Panels.md](docs/Panels.md#stacks)).
-`tab`/`shift+tab` cycle through them in that order, stepping from the last
-side panel to have focus; `←`/`→` and `h`/`l` do the same list by list, a
-shared slot's lists each a stop. The side column splits evenly between
-whichever panels aren't hidden or collapsed, or — with
-`gui.State.ExpandSidePanel`, seeded from config and toggled by `=` — gives
-the focused one everything the others don't need. "Focused" there means the
-last side panel to have focus, so stepping into the main panel doesn't
-collapse the list you were reading.
+restart onto the next row. A `window` on the def puts a panel in a slot it
+shares with others, as one of its tabs, which is how Images, Volumes,
+Networks and Profiles become the one Resources panel, and Backups a tab
+beside Snapshots; the number keys, `tab` and the layout count those slots,
+not views (`pkg/gui/window.go`). Order is both the top-to-bottom layout
+order and the number-key order. A panel can be absent (`hidden` on the
+def) - for the session, or Backups while no stack is on the session's
+remote; everything user-facing is numbered over `visibleSidePanelDefs()`,
+so the first *visible* panel is `[1]` and is what the app focuses at
+startup - unless it's Stacks with no stack on the session's remote, which
+collapses it and Services to their titles and hands the focus to Instances
+([docs/Panels.md](docs/Panels.md#stacks)). `tab`/`shift+tab` cycle through
+them in that order, stepping from the last side panel to have focus;
+`←`/`→` and `h`/`l` do the same list by list, a shared slot's lists each a
+stop. The side column splits evenly between whichever panels aren't hidden
+or collapsed, or — with `gui.State.ExpandSidePanel`, seeded from config
+and toggled by `=` — gives the focused one everything the others don't
+need. "Focused" there means the last side panel to have focus, so stepping
+into the main panel doesn't collapse the list you were reading.
 
 Views, panels and `gui.State` belong to gocui's main loop. A refresh is a
 `fetch` (`pkg/gui/refresh.go`): it asks the daemon off the loop and returns
@@ -223,15 +220,15 @@ run that too when a change touches timing.
 
 CI is `.github/workflows/ci.yml`: test, lint and govulncheck on every push
 to master, pull request and `v*` tag. govulncheck lives in `vuln.yml`,
-which CI calls and which also runs weekly on its own. On a tag its `release` job waits for all three
-and publishes nothing unless they pass. Then GoReleaser builds
-macOS and Linux binaries for amd64 and arm64, archives each with the
-markdown and LICENSE, and publishes them with a `checksums.txt`. The
-release notes are the tag's `CHANGELOG.md` section
-(`scripts/release-notes.sh`), so a tag without one fails the release rather
-than publishing an empty one. `make release-snapshot` builds the same set
-into `dist/` without touching GitHub, and `make release-check` validates
-`.goreleaser.yaml`.
+which CI calls and which also runs weekly on its own. On a tag its
+`release` job waits for all three and publishes nothing unless they pass.
+Then GoReleaser builds macOS and Linux binaries for amd64 and arm64,
+archives each with the markdown and LICENSE, and publishes them with a
+`checksums.txt`. The release notes are the tag's `CHANGELOG.md` section
+(`scripts/release-notes.sh`), so a tag without one fails the release
+rather than publishing an empty one. `make release-snapshot` builds the
+same set into `dist/` without touching GitHub, and `make release-check`
+validates `.goreleaser.yaml`.
 
 A release isn't finished at the tag. GoReleaser doesn't publish to Homebrew,
 so [tallica/homebrew-tap](https://github.com/tallica/homebrew-tap) still
@@ -287,9 +284,9 @@ tmux new-session -d -s lzr -x 140 -y 40 \
 
 Move through the lists, every main-panel tab, `W`'s popup, a project
 switch or two (`P`), and the stacks and services panels if incus-compose
-is installed, for a minute or so; then quit. With a second remote to hand, list a stack
-on it and switch to it and back (`R`, `space`): connecting and reading it
-are goroutines of their own. Any `/tmp/lzi-race.*` file is a race.
-Read-only keys are enough - the races are between reading and refreshing.
-For the event stream, change something from a shell meanwhile - create
-and delete a throwaway profile - so events arrive while you move.
+is installed, for a minute or so; then quit. With a second remote to hand,
+list a stack on it and switch to it and back (`R`, `space`): connecting
+and reading it are goroutines of their own. Any `/tmp/lzi-race.*` file is
+a race. Read-only keys are enough - the races are between reading and
+refreshing. For the event stream, change something from a shell meanwhile
+- create and delete a throwaway profile - so events arrive while you move.

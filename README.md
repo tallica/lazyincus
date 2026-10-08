@@ -119,9 +119,8 @@ that variable, so the `incus` and `incus-compose` subprocesses follow the
 panels onto the same daemon. The footer shows the remote you are on, and
 `R` switches to another while running. A compose stack can live on a
 remote of its own — see [Compose stacks](#compose-stacks). A remote you
-only want to look at can be made
-[read-only](docs/Config.md#top-level) in the config, and any remote given
-a colour.
+only want to look at can be made [read-only](docs/Config.md#top-level) in
+the config, and any remote given a colour.
 [docs/Remotes.md](docs/Remotes.md) covers adding a remote and its token,
 reaching a daemon over SSH, and the gotchas behind running incusd in a
 local VM — macOS Local Network Privacy and guest clock skew both fail in
@@ -131,19 +130,20 @@ ways that point at the wrong component.
 
 Three side panels: **Instances** (`1`), listing both containers and VMs,
 **Snapshots** (`2`) for whichever instance or custom volume is selected,
-or every instance's, and **Resources** (`3`), which holds **Images**, **Volumes**,
-**Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l` reach each of them in turn,
-as does pressing `3` again or clicking a tab's name. All list every Incus project by
-default; `P` scopes them to a single project instead, `R` moves them to
-another remote ([docs/Remotes.md](docs/Remotes.md)), and the footer shows
-the current remote and scope, how many operations are running or have
-failed since you last looked at them, and how many of the daemon's
-warnings no one has acknowledged — `W` lists both, the operations to
-cancel (`d`), the warnings to acknowledge (`a`) or delete (`d`). A project column appears on any panel whose
-contents actually span projects, and actions run against the project the
-item came from. Every Info tab, and the top of every Config tab, says
-where the item lives: its remote, its project, and for a compose instance
-its stack and service.
+or every instance's, and **Resources** (`3`), which holds **Images**,
+**Volumes**, **Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l`
+reach each of them in turn, as does pressing `3` again or clicking a tab's
+name. All list every Incus project by default; `P` scopes them to a single
+project instead, `R` moves them to another remote
+([docs/Remotes.md](docs/Remotes.md)), and the footer shows the current
+remote and scope, how many operations are running or have failed since you
+last looked at them, and how many of the daemon's warnings no one has
+acknowledged — `W` lists both, the operations to cancel (`d`), the
+warnings to acknowledge (`a`) or delete (`d`). A project column appears on
+any panel whose contents actually span projects, and actions run against
+the project the item came from. Every Info tab, and the top of every
+Config tab, says where the item lives: its remote, its project, and for a
+compose instance its stack and service.
 
 With [incus-compose](#compose-stacks) installed, two more panels come
 first: **Stacks** (`1`) and the selected stack's **Services** (`2`), the
@@ -376,11 +376,12 @@ here. A star on this repo, though, is always welcome.
 Not full parity with lazydocker. Not included:
 
 - The credits tab lazydocker's Project panel had, and its logs tab
-  interleaving every container's — the panel itself and the compose verbs are covered by the Services
-  panel above; see
+  interleaving every container's — the panel itself and the compose verbs
+  are covered by the Services panel above; see
   [BACKLOG.md](BACKLOG.md#incus-compose-integration) for what's left
 - Custom and bulk commands
-- Historical resource-usage graphing (the Info tab's stats are point-in-time only)
+- Historical resource-usage graphing (the Info tab's stats are
+  point-in-time only)
 - Non-English translations
 - Windows support
 

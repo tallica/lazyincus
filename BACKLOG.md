@@ -191,8 +191,8 @@ none of it is needed to make typing a command useful.
 - [ ] **Typed incus-compose command (`;`)** — the same prompt against
       `incus-compose`, on the Stacks and Services panels, run through
       `ComposeCmd` in the selected stack's directory and on its remote, as
-      `composeRun` does. Nothing to prefill
-      beyond the selected service's name as a trailing argument.
+      `composeRun` does. Nothing to prefill beyond the selected service's
+      name as a trailing argument.
 
 Keys aren't settled: `:` and `;` are both free and read as a pair on one
 physical key, `!` being the alternative if `;` is too easy to hit by
@@ -202,14 +202,13 @@ accident.
 
 [incus-compose](https://github.com/lxc/incus-compose) is a drop-in
 replacement for `docker compose` that runs an unmodified `compose.yaml`
-against Incus, pulling OCI images straight from docker.io/ghcr.io via Incus's
-native OCI support. It started as [bketelsen/incus-compose] and now lives
-under the LXC org; its docs call it stable, and it needs Incus 7.0.1 LTS or
-7.2+ — of the *daemon*, not the client library this port builds against, so
-our client's version says nothing about it and an older server refuses
-every verb. Commands mirror compose: `up`,
-`down`, `start`, `stop`, `restart`, `list`/`ps`, `logs`, `exec`, `config`,
-`build`.
+against Incus, pulling OCI images straight from docker.io/ghcr.io via
+Incus's native OCI support. It started as [bketelsen/incus-compose] and
+now lives under the LXC org; its docs call it stable, and it needs Incus
+7.0.1 LTS or 7.2+ — of the *daemon*, not the client library this port
+builds against, so our client's version says nothing about it and an older
+server refuses every verb. Commands mirror compose: `up`, `down`, `start`,
+`stop`, `restart`, `list`/`ps`, `logs`, `exec`, `config`, `build`.
 
 [bketelsen/incus-compose]: https://github.com/bketelsen/incus-compose
 
