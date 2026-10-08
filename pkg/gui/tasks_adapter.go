@@ -170,7 +170,7 @@ func (gui *Gui) NewTickerTask(opts TickerTaskOpts) tasks.TaskFunc {
 				gui.Log.Info().Msg("exiting ticker task due to stopped channel")
 				return
 			case <-tickChan.C:
-				gui.Log.Info().Msg("running ticker task again")
+				gui.Log.Trace().Msg("running ticker task again")
 				opts.Func(ctx, notifyStopped)
 			}
 		}

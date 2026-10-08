@@ -96,7 +96,8 @@ Flags: `-r` / `--remote` picks the remote ([Remotes](#remotes)),
 `-P` / `--project-directory` which compose stack to list first
 ([Compose stacks](#compose-stacks)), `--read-only` to change nothing
 anywhere, `-d` / `--debug` for debug logging to `development.log` in the
-config directory, `--log-format json` to write it as JSON rather than plain
+config directory (`LOG_LEVEL=trace` adds the noisiest lines, `info` or
+`warn` trims it), `--log-format json` to write it as JSON rather than plain
 lines, `--version` to print version info.
 
 Tip: it's a lot of letters for something you open all day. An alias in
