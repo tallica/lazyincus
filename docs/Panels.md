@@ -352,9 +352,8 @@ panels once the subprocess returns rather than waiting for the poll.
 `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
 don't — same rule as the instances panel. The same verbs over the whole
 stack are the Stacks panel's.
-`U` can fail on a non-local daemon for reasons
-that are incus-compose's, not ours — see
-[BACKLOG.md](../BACKLOG.md#caveats).
+`U` can fail on a non-local daemon for reasons that are incus-compose's,
+not ours — see README's [Compose stacks](../README.md#compose-stacks).
 
 `onServiceRow` is what splits a key between the two, a replica's row taking
 the instances panel's own action where one exists. Those actions are the

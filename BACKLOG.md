@@ -400,21 +400,9 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
   hand. Two keys the table above missed turned up there:
   `user.incus-compose.managed` on every instance and project compose owns,
   and `user.image_alias`, now the image column.
-- `U` (pull and recreate) fails incus-compose's own way on a stack with a
-  bind mount or device passthrough (`error="failed to add a bind-mount for
-  service <name>: not on the same host"`) whenever the daemon isn't local —
-  a colima VM included. `--recreate` re-validates those sources, and
-  incus-compose refuses when it isn't running on the same host as the
-  daemon. Not a lazyincus bug and nothing to fix here; plain `u` doesn't
-  re-create an existing instance, so it doesn't hit this.
-- A `--recreate` that fails for any reason is rolled back by incus-compose
-  deleting the resources it just created ("Deleting resources
-  project=<name>"), so `U` reads as having deleted the stack. The error
-  left on screen is the rollback's own - observed as `delete network
-  default [error: The network is currently in use]`, the project's bridge
-  still carrying an instance the compose file no longer declares - and it
-  hides whatever actually failed. `--debug` outside lazyincus is the way
-  to see that one.
+- What fails incus-compose's own way on a daemon that isn't local, `U`
+  and a backup, is in README's [Compose stacks](README.md#compose-stacks):
+  nothing to fix here.
 
 ## Snapshots panel
 
