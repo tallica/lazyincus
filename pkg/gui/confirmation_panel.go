@@ -66,14 +66,16 @@ func popupColumns(screenWidth, minWidth int) (int, int) {
 }
 
 // popupFrameWidth is how wide a popup has to be for its title and the
-// subtitle gocui right-aligns on the same border to both show whole: each
-// plus the corners and the rule that keeps them apart.
+// subtitle gocui right-aligns on the same border to both show whole: gocui
+// starts the title two in from the left corner and ends the subtitle five
+// in from the right, and three of rule between them is what keeps them
+// reading as two.
 func popupFrameWidth(v *gocui.View) int {
 	if v.Subtitle == "" {
 		return 0
 	}
 
-	return utils.DisplayWidth(v.Title) + utils.DisplayWidth(v.Subtitle) + 8
+	return utils.DisplayWidth(v.Title) + utils.DisplayWidth(v.Subtitle) + 10
 }
 
 // popupRows centres rows of content on the screen. A popup taller than the

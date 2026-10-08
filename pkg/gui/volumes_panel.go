@@ -95,7 +95,10 @@ func (gui *Gui) volumeConfigStr(volume *commands.Volume) string {
 	}
 
 	usedBy := strings.Join(volume.Users(), ", ")
-	if usedBy == "" {
+	switch {
+	case volume.IsComposeBackup():
+		usedBy = fmt.Sprintf(gui.Tr.BackupOf, volume.BackupOf())
+	case usedBy == "":
 		usedBy = gui.Tr.UsedByNothing
 	}
 

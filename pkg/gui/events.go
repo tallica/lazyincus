@@ -373,8 +373,10 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 		fetches = append(fetches, gui.fetchImages)
 	}
 
+	// A backup is snapshots of volumes in a project of the stack's, so the
+	// events that say one changed are the volumes'.
 	if kinds&refreshVolumes != 0 {
-		fetches = append(fetches, gui.fetchVolumes)
+		fetches = append(fetches, gui.fetchVolumes, gui.fetchBackups)
 	}
 
 	if kinds&refreshNetworks != 0 {

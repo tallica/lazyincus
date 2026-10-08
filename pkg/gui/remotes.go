@@ -310,6 +310,10 @@ func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand) error 
 		if err := gui.landOffStacks(); err != nil {
 			return err
 		}
+
+		if err := gui.leaveHiddenView(); err != nil {
+			return err
+		}
 	}
 
 	gui.State.Landing = true

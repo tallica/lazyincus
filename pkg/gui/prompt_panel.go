@@ -11,6 +11,16 @@ import (
 // prompt down and hands submit what was typed, initial to start from; esc
 // drops it.
 func (gui *Gui) openTextPrompt(title, hint, initial string, submit func(string) error) error {
+	return gui.textPrompt(title, hint, initial, false, submit)
+}
+
+// openOptionalTextPrompt is openTextPrompt where enter on nothing typed
+// submits that.
+func (gui *Gui) openOptionalTextPrompt(title, hint string, submit func(string) error) error {
+	return gui.textPrompt(title, hint, "", true, submit)
+}
+
+func (gui *Gui) textPrompt(title, hint, initial string, allowEmpty bool, submit func(string) error) error {
 	gui.onNewPopupPanel()
 
 	if err := gui.prepareConfirmationPanel(title, ""); err != nil {
@@ -35,7 +45,7 @@ func (gui *Gui) openTextPrompt(title, hint, initial string, submit func(string) 
 	bindings := map[gocui.Key]func(*gocui.Gui, *gocui.View) error{
 		gocui.KeyEnter: func(*gocui.Gui, *gocui.View) error {
 			text := strings.TrimSpace(view.Buffer())
-			if text == "" {
+			if text == "" && !allowEmpty {
 				return nil
 			}
 

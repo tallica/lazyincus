@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
@@ -41,8 +42,19 @@ func TestFocusKeysStartAtOne(t *testing.T) {
 	assert.Equal(t, "[3]", gui.sidePanelTitlePrefix(2))
 }
 
+// panelsGui is a Gui with no screen, for what the side panels' definitions
+// say of themselves.
+func panelsGui() *Gui {
+	userConfig := config.GetDefaultConfig()
+
+	return &Gui{
+		Tr:     i18n.NewTranslationSet(commands.NewDummyLog(), "en"),
+		Config: &config.AppConfig{UserConfig: &userConfig},
+	}
+}
+
 func TestStacksAndServicesHiddenWithoutIncusCompose(t *testing.T) {
-	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
+	gui := panelsGui()
 
 	names := func() []string {
 		return lo.Map(gui.visibleSidePanelDefs(), func(def sidePanelDef, _ int) string { return def.name })
@@ -72,7 +84,7 @@ func TestInstancesAreStandaloneOnceAStackHasTheirs(t *testing.T) {
 func TestResourcesShareAWindow(t *testing.T) {
 	gui := &Gui{Tr: i18n.NewTranslationSet(commands.NewDummyLog(), "en")}
 
-	assert.Equal(t, []string{"instances", "snapshots", resourcesWindow}, gui.sideWindowNames())
+	assert.Equal(t, []string{"instances", snapshotsWindow, resourcesWindow}, gui.sideWindowNames())
 	assert.Equal(t, resourcesWindow, gui.windowOfView("volumes"))
 	assert.Equal(t, "instances", gui.windowOfView("instances"))
 	assert.Equal(t, "main", gui.windowOfView("main"))
@@ -87,6 +99,49 @@ func TestResourcesShareAWindow(t *testing.T) {
 	assert.Equal(t, "networks", gui.activeViewInWindow(resourcesWindow))
 	assert.True(t, gui.isHiddenInWindow("images"))
 	assert.False(t, gui.isHiddenInWindow("instances"))
+}
+
+func TestBackupsShareTheSnapshotsWindow(t *testing.T) {
+	gui := panelsGui()
+	tabs := func() []string {
+		return lo.Map(gui.windowDefs(snapshotsWindow), func(def sidePanelDef, _ int) string { return def.name })
+	}
+
+	// Without incus-compose, Snapshots has the window to itself.
+	assert.Equal(t, []string{"snapshots"}, tabs())
+	assert.False(t, gui.isHiddenInWindow("snapshots"))
+
+	// And with it, while no stack is on the session's remote.
+	gui.State.ComposeAvailable = true
+	assert.Equal(t, []string{"snapshots"}, tabs())
+
+	gui.State.StacksHere = true
+	assert.Equal(t, []string{"snapshots", "backups"}, tabs())
+	assert.True(t, gui.isHiddenInWindow("backups"))
+
+	gui.noteActiveView("backups")
+
+	assert.True(t, gui.isHiddenInWindow("snapshots"))
+	assert.False(t, gui.isHiddenInWindow("backups"))
+
+	// Moved to a remote with no stack, the window shows Snapshots again.
+	gui.State.StacksHere = false
+	assert.Equal(t, "snapshots", gui.activeViewInWindow(snapshotsWindow))
+	assert.False(t, gui.isHiddenInWindow("snapshots"))
+}
+
+func TestFitActiveTab(t *testing.T) {
+	defs := []sidePanelDef{
+		{name: "snapshots", title: "Snapshots (a-long-instance-name)", shortTitle: "Snap"},
+		{name: "backups", title: "Backups (shop)", shortTitle: "Bak"},
+	}
+
+	// The tab on show keeps its full title while the others shorten...
+	assert.Equal(t, []string{"Snapshots (a-long-instance-name)", "Bak"}, fitActiveTab(defs, "snapshots", 40))
+	// ...is cut once that isn't enough...
+	assert.Equal(t, []string{"Snapshots (a-long…", "Bak"}, fitActiveTab(defs, "snapshots", 24))
+	// ...and shortens last.
+	assert.Equal(t, []string{"Snap", "Bak"}, fitActiveTab(defs, "snapshots", 8))
 }
 
 func TestFocusPanelDescription(t *testing.T) {

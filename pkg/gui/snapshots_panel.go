@@ -187,10 +187,18 @@ func (gui *Gui) snapshotsVolume() (*commands.Volume, bool) {
 // every instance's snapshots, the stacks' included, or the selection's.
 func (gui *Gui) snapshotsSource() (string, []*commands.Instance) {
 	if gui.State.SnapshotsShowAll {
-		return gui.Tr.AllSnapshotsLabel, gui.Panels.Instances.List.GetAllItems()
+		return gui.snapshotsLabel(), gui.Panels.Instances.List.GetAllItems()
 	}
 
-	return gui.State.SnapshotsLabel, gui.State.SnapshotsInstances
+	return gui.snapshotsLabel(), gui.State.SnapshotsInstances
+}
+
+func (gui *Gui) snapshotsLabel() string {
+	if gui.State.SnapshotsShowAll {
+		return gui.Tr.AllSnapshotsLabel
+	}
+
+	return gui.State.SnapshotsLabel
 }
 
 func (gui *Gui) handleToggleAllSnapshots(g *gocui.Gui, v *gocui.View) error {
@@ -249,12 +257,21 @@ func (gui *Gui) handleSnapshotCreate(g *gocui.Gui, v *gocui.View) error {
 // setSnapshotsTitle names what the panel is showing, since the list alone
 // gives no clue which instance - or service - these snapshots belong to.
 func (gui *Gui) setSnapshotsTitle(label string) {
-	title := gui.Tr.SnapshotsTitle
-	if label != "" {
-		title += " (" + label + ")"
+	gui.Views.Snapshots.Title = snapshotsTitle(gui.Tr.SnapshotsTitle, label)
+}
+
+// snapshotsTabTitle is the title as its tab beside Backups, which the
+// layout draws in place of the view's own.
+func (gui *Gui) snapshotsTabTitle() string {
+	return snapshotsTitle(gui.Tr.SnapshotsTitle, gui.snapshotsLabel())
+}
+
+func snapshotsTitle(title, label string) string {
+	if label == "" {
+		return title
 	}
 
-	gui.Views.Snapshots.Title = title
+	return title + " (" + label + ")"
 }
 
 // snapshotPrompt is the state behind the new-snapshot popup: a name field,

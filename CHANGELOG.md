@@ -12,14 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions.
 - `remotes.<name>.color` colours that remote's name in the footer and the borders of panels acting on it.
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
+- A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.
+- The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
 
 ### Changed
 - With the main panel or a popup focused, the list it shows keeps its selected row in bold; `theme.inactiveSelectedLineBgColor` sets the style.
 - While filtering with `/`, `↑`/`↓` move through the list without leaving the filter.
 - Collapsed to its title while Stacks or Services has the focus, Instances says how many it lists, as Stacks does.
+- A tabbed panel too narrow for every tab's name shortens the others before the one on show.
 
 ### Fixed
 - `n` on the Snapshots panel snapshots what the panel follows, asking which replica for a service, instead of the Instances panel's selection.
+- A popup's title and the hint beside it no longer run together when the popup is only just wide enough for both.
 
 ## [0.13.1] - 2026-10-03
 

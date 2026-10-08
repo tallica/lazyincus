@@ -50,9 +50,10 @@ func (v *Volume) UsedByCount() int {
 }
 
 // IsOrphaned reports a custom volume nothing has attached, which is either
-// kept on purpose or forgotten. The other types always belong to something.
+// kept on purpose or forgotten. The other types always belong to something,
+// and so does a backup volume: its stack's backups.
 func (v *Volume) IsOrphaned() bool {
-	return v.IsCustom() && v.UsedByCount() == 0
+	return v.IsCustom() && v.UsedByCount() == 0 && !v.IsComposeBackup()
 }
 
 // Users names what the volume's used_by URLs point at: an instance by its

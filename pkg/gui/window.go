@@ -15,6 +15,12 @@ import (
 
 const resourcesWindow = "resources"
 
+// snapshotsWindow holds Snapshots, and Backups alongside it when there's
+// incus-compose: a stack's backups are its snapshots. Not named for the
+// snapshots view, since a window sharing its name with a view is that
+// view's own slot.
+const snapshotsWindow = "restorePoints"
+
 // sideWindowNames are the visible side panels' windows, top to bottom.
 func (gui *Gui) sideWindowNames() []string {
 	return lo.Uniq(lo.Map(gui.visibleSidePanelDefs(), func(def sidePanelDef, _ int) string {
@@ -40,14 +46,16 @@ func (gui *Gui) windowOfView(viewName string) string {
 	return def.windowName()
 }
 
-// activeViewInWindow is the view a window shows: the one last focused in it,
-// else its first.
+// activeViewInWindow is the view a window shows: the one last focused in it
+// while that's still there, else its first.
 func (gui *Gui) activeViewInWindow(window string) string {
-	if name, ok := gui.State.ActiveWindowViews[window]; ok {
+	defs := gui.windowDefs(window)
+
+	if name, ok := gui.State.ActiveWindowViews[window]; ok && lo.ContainsBy(defs, func(def sidePanelDef) bool { return def.name == name }) {
 		return name
 	}
 
-	return gui.windowDefs(window)[0].name
+	return defs[0].name
 }
 
 // noteActiveView records a focused side view as its window's active one.
@@ -73,8 +81,11 @@ func (gui *Gui) isHiddenInWindow(viewName string) bool {
 }
 
 func (gui *Gui) windowTitle(window string) string {
-	if window == resourcesWindow {
+	switch window {
+	case resourcesWindow:
 		return gui.Tr.ResourcesTitle
+	case snapshotsWindow:
+		return gui.Tr.SnapshotsTitle
 	}
 
 	return gui.windowDefs(window)[0].title
@@ -82,20 +93,34 @@ func (gui *Gui) windowTitle(window string) string {
 
 // fitWindowTabs gives a shared window's views their tab names, short ones
 // when the full ones would run past the title: a tab cut off the end is a
-// list nobody knows is there. The layout calls it, so a resize refits.
+// list nobody knows is there. Only the tab on show says whose list it is,
+// and it's the last to shorten. The layout calls it, so a resize refits.
 func (gui *Gui) fitWindowTabs() {
 	for index, window := range gui.sideWindowNames() {
 		defs := gui.windowDefs(window)
 		if len(defs) < 2 {
+			// A window down to one tab, Backups hidden, draws its title again.
+			for _, def := range defs {
+				(*def.viewPtr).Tabs = nil
+			}
+
 			continue
 		}
 
-		titles := lo.Map(defs, func(def sidePanelDef, _ int) string { return def.title })
+		active := gui.activeViewInWindow(window)
+		// The frame's corners, the rune either side of the prefix and the one
+		// gocui keeps before the closing corner.
+		room := (*defs[0].viewPtr).Width() - utils.DisplayWidth(gui.sidePanelTitlePrefix(index)) - 5
 
-		// The frame's corner and rune either side of the prefix.
-		room := (*defs[0].viewPtr).Width() - utils.DisplayWidth(gui.sidePanelTitlePrefix(index)) - 4
+		titles := lo.Map(defs, func(def sidePanelDef, _ int) string {
+			if def.name == active || def.plainTitle == "" {
+				return def.title
+			}
+
+			return def.plainTitle
+		})
 		if utils.DisplayWidth(strings.Join(titles, " - ")) > room {
-			titles = lo.Map(defs, func(def sidePanelDef, _ int) string { return def.shortTitle })
+			titles = fitActiveTab(defs, active, room)
 		}
 
 		for _, def := range defs {
@@ -159,4 +184,27 @@ func (gui *Gui) currentStaticWindowName() string {
 
 func (gui *Gui) currentSideWindowName() string {
 	return gui.windowOfView(gui.currentSideViewName())
+}
+
+// fitActiveTab is a window's tab names with every tab but the one on show
+// short, and that one cut to the room left - down to no shorter than its own
+// short name, past which they're all short.
+func fitActiveTab(defs []sidePanelDef, active string, room int) []string {
+	titles := lo.Map(defs, func(def sidePanelDef, _ int) string {
+		return lo.Ternary(def.name == active, def.title, def.shortTitle)
+	})
+
+	index := lo.IndexOf(lo.Map(defs, func(def sidePanelDef, _ int) string { return def.name }), active)
+	if index < 0 {
+		return lo.Map(defs, func(def sidePanelDef, _ int) string { return def.shortTitle })
+	}
+
+	others := utils.DisplayWidth(strings.Join(titles, " - ")) - utils.DisplayWidth(titles[index])
+	if room-others < utils.DisplayWidth(defs[index].shortTitle)+2 {
+		return lo.Map(defs, func(def sidePanelDef, _ int) string { return def.shortTitle })
+	}
+
+	titles[index] = utils.Truncate(titles[index], room-others)
+
+	return titles
 }

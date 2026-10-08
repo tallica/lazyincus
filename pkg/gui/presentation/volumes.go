@@ -29,8 +29,13 @@ func GetVolumeDisplayStrings(volume *commands.Volume, showProject bool) []string
 	return cells
 }
 
-// displayVolumeUsers marks a custom volume nothing has attached.
+// displayVolumeUsers marks a custom volume nothing has attached, and one
+// holding a stack's backups, which nothing attaches either.
 func displayVolumeUsers(volume *commands.Volume) string {
+	if volume.IsComposeBackup() {
+		return utils.ColoredString("backup", color.FgBlue)
+	}
+
 	count := strconv.Itoa(volume.UsedByCount())
 	if volume.IsOrphaned() {
 		return utils.ColoredString(count, color.FgRed)

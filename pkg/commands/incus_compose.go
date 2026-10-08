@@ -119,6 +119,21 @@ func (s *ComposeService) Status() string {
 	return RollUpStatus(statuses)
 }
 
+// NamedVolumes are the compose volumes the service mounts, leaving out its
+// bind mounts: what a backup holds of it.
+func (s *ComposeService) NamedVolumes() []string {
+	var names []string
+
+	for _, mount := range s.Volumes {
+		source, _, _ := strings.Cut(mount, ":")
+		if source != "" && !strings.ContainsAny(source, "/~") && !strings.HasPrefix(source, ".") {
+			names = append(names, source)
+		}
+	}
+
+	return names
+}
+
 // ResolvedImage is the image reference with its registry host, which the
 // compose file's own value may lack (`eclipse-mosquitto:2.1-alpine` in the
 // file, `docker.io/library/eclipse-mosquitto:2.1-alpine` once incus-compose

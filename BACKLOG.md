@@ -351,46 +351,29 @@ The stack's Info tab, beyond what shipped:
       of line with the counters above; the stack's Usage section moves
       the whole column over instead.
 
-### 4. Backups
+### 4. Backups (shipped)
 
 `incus-compose backup` snapshots a project's data volumes into a
-`<project>-backup` Incus project: `create`, `list`, `verify`, `restore` and
-`delete` (which also prunes, with `--keep-last`). `list` and `verify` take
-`--format json`, so a panel reads them the way `LoadComposeStack` reads
-`incus-compose config` — a shell-out and an unmarshal, no new daemon calls.
-`list` gives a timestamp, an optional name, and per-volume source and backup
-project/pool/name; `verify` gives a per-volume status.
+`<project>-backup` Incus project. The Backups tab beside Snapshots
+lists the selected stack's, and the Volumes panel marks the volumes that
+hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 
-Backups are to a compose project what snapshots are to an instance: a
-timestamped list belonging to a parent selected above it. That's the panel
-the [Snapshots panel](#snapshots-panel) already is, which is the argument
-for a panel over a menu of verbs.
-
-- [ ] **Mark backup volumes in the Volumes panel** — worth doing whether or
-      not the rest lands. A stack with backups puts `ic-backup-<volume>`
-      rows and a `vol-ic-backup-manifest` row in the Volumes panel, in a
-      `<project>-backup` project, with nothing saying they're backups
-      rather than something a service mounts. Both the project suffix and
-      the `ic-backup-` prefix are recognisable; whether that reads better
-      as a marker in a column or as a filter is the open question.
-- [ ] **A Backups panel** — one `sidePanelDefs()` entry plus its
-      `backups_panel.go`, following the selected stack the way Services
-      does. Rows are backups by timestamp, with the name, volume
-      count and pool `list` returns; the main-panel tab is the volume
-      mapping, and `verify` fills in a status column on demand rather than
-      on every refresh, since it walks the restore points. The verbs become
-      the keys the Snapshots panel already spells this way — `n` create,
-      `d` delete, `R` restore.
-
-`restore` needs no confirmation panel of its own: its `--yes` is documented
-as required only without a terminal, and `runSubprocess` hands over the real
-one, so incus-compose prompts for itself the way `incus console` prints its
-own detach hint. Passing `--yes` is what would be wrong.
-
-Unexercised, and worth being careful about: this was read off one stack with
-two volumes and a single backup, every volume `ok`. A partial backup, a
-missing restore point and `verify`'s status vocabulary beyond `ok` are all
-unseen.
+- [x] **Mark backup volumes in the Volumes panel** — a marker in the users
+      column rather than a filter: a filter would hide what the panel
+      exists to show, a pool's space being spent.
+- [x] **A Backups panel** — a tab in the Snapshots slot rather than a
+      panel of its own, backups being to a stack what snapshots are to an
+      instance. `n`, `d`, `D` (`--keep-last`), `r` (the stack or one
+      service) and `v`.
+- [ ] **Back up one service** — `create` takes `SERVICE...`; `n` backs up
+      the whole stack. Worth adding if restoring one service turns out to
+      be the common case.
+- [ ] **Partial and missing restore points** — `verify`'s other statuses
+      (`backup volume missing`, `restore point missing`, `no longer in the
+      project`, `not in this backup`) were read out of `backup_verify.go`
+      at [`13b1b7a`](https://github.com/lxc/incus-compose/commit/13b1b7a445dc0fe173ad329d4999ca8c31252fb8),
+      not seen. Every live run so far was a stack with two volumes, every
+      volume `ok`.
 
 ### Caveats
 

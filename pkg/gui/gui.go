@@ -79,7 +79,10 @@ type Gui struct {
 	// loadStack reads a stack's compose config; tests stand in for
 	// incus-compose here.
 	loadStack func(dir string) *commands.ComposeStack
-	stacks    stackCache
+	// loadBackups lists a stack's backups through command; tests stand in
+	// for incus-compose here too.
+	loadBackups func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
+	stacks      stackCache
 
 	// remotes are the commands for stacks on other remotes than the
 	// session's, and stacksElsewhere whether any is listed: the stacks
@@ -108,6 +111,7 @@ type Panels struct {
 	Instances *panels.SideListPanel[*commands.Instance]
 	Images    *panels.SideListPanel[*commands.Image]
 	Snapshots *panels.SideListPanel[*commands.Snapshot]
+	Backups   *panels.SideListPanel[*commands.ComposeBackup]
 	Volumes   *panels.SideListPanel[*commands.Volume]
 	Networks  *panels.SideListPanel[*commands.Network]
 	Profiles  *panels.SideListPanel[*commands.Profile]
@@ -199,6 +203,11 @@ type guiState struct {
 	// What the snapshots panel's rows span as of its last render, which
 	// decides whether a row names its instance and project.
 	SnapshotsSpan snapshotsSpan
+
+	// BackupVerifications are `backup verify`'s reports, by backupKey:
+	// verifying walks every restore point, so it's asked for, not polled,
+	// and a report outlives the refreshes after it.
+	BackupVerifications map[string]*commands.BackupVerification
 
 	// Whether each panel's current contents span more than one project, and
 	// so need a project column to stay unambiguous. Recomputed on refresh:
@@ -325,6 +334,7 @@ func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *c
 	gui := &Gui{
 		home:          home,
 		loadStack:     incusCommand.LoadComposeStack,
+		loadBackups:   (*commands.IncusCommand).ComposeBackups,
 		Log:           log,
 		IncusCommand:  incusCommand,
 		OSCommand:     oSCommand,
@@ -512,6 +522,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.goEvery(time.Second*2, gui.configReloader())
 		gui.pollUnlessWatched(time.Second*10, gui.refreshImagesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshVolumesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshBackupsQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
 		// The session's stream says nothing of another remote's stacks.
@@ -562,6 +573,7 @@ func (gui *Gui) setPanels() {
 	gui.Panels = Panels{
 		Instances: gui.getInstancesPanel(),
 		Snapshots: gui.getSnapshotsPanel(),
+		Backups:   gui.getBackupsPanel(),
 		Images:    gui.getImagesPanel(),
 		Volumes:   gui.getVolumesPanel(),
 		Networks:  gui.getNetworksPanel(),

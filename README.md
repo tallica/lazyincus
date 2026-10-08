@@ -144,7 +144,9 @@ its stack and service.
 
 With [incus-compose](#compose-stacks) installed, two more panels come
 first: **Stacks** (`1`) and the selected stack's **Services** (`2`), the
-others shifting down two numbers.
+others shifting down two numbers, and on a remote with a stack listed,
+Snapshots gains a **Backups** tab: the selected stack's `incus-compose
+backup` runs.
 
 The instances panel's columns (name, status, health, type, IPv4, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
@@ -156,7 +158,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 
 | Key | Action |
 |---|---|
-| `1` … `5` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources, its next tab |
+| `1` … `5` | Focus a side panel, numbered top to bottom as shown in its title; again on Resources or Snapshots, its next tab |
 | `tab` / `shift+tab` | Next / previous side panel |
 | `←`/`→`, `h`/`l` | Previous / next list, Images, Volumes, Networks and Profiles each a stop of their own |
 | `↑`/`↓`, `j`/`k` | Navigate |
@@ -168,17 +170,18 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `S` | Start; on the Services panel, start the service, or the selected replica |
 | `s` | Stop; on the Services panel, stop the service, or the selected replica (confirms first) |
 | `p` | Pause/resume (toggle) |
-| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica |
+| `d` | Delete the selected item (instances offer to stop first if running; only custom volumes and managed networks can be deleted, and a profile nothing uses); on the Services panel, bring the service down, or delete the selected replica; on the Backups tab, delete the backup |
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
-| `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Stacks panel, remove the stack from the list |
+| `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
 | `U` | Services panel: pull the latest image and recreate the service (confirms first) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
 | `M` | Stacks and Services panels: follow the stack's or service's logs, every instance's interleaved (`incus-compose logs --follow`) |
-| `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create |
-| `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service |
+| `n` | New snapshot of the selected instance, from either panel, or of the selected custom volume — name it, `tab` to the expiry/stateful fields, `enter` or `ctrl+s` to create; on the Backups tab, back up the stack, stopping it for the backup or `--live` |
+| `r` | Restart an instance, or restore a snapshot; on the Services panel, restart the service; on the Backups tab, restore the stack's volumes, or one service's, from the backup (incus-compose asks first) |
+| `v` | Backups tab: verify the backup's restore points are all there |
 | `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
 | `E` | Exec a shell into the instance |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
@@ -321,6 +324,15 @@ then the daemon's dump. From a service's row those cover every replica;
 from a replica's row, that replica alone. **Logs**, **Env** and **Top**
 need one instance, so a service's row with replicas under it points at
 them instead.
+
+The **Backups** tab, beside Snapshots, lists the selected stack's
+`incus-compose backup` runs, newest first. `n` takes one, named or not,
+asking whether to stop the stack for it — incus-compose's default, which
+it starts again after — or take it `--live`. `r` restores every volume, or
+one service's, `d` deletes a backup, `D` keeps only the newest N, and `v`
+checks its restore points are all there. A restore asks for itself and
+refuses while the services are running, so stop the stack first. See
+[docs/Panels.md](docs/Panels.md#backups).
 
 Two gotchas that aren't ours, both on `U`. It fails on a stack with a bind
 mount or device passthrough whenever the daemon isn't on the same host,

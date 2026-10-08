@@ -24,14 +24,17 @@ type sidePanelDef struct {
 	// panel returns the panel object for this definition, once setPanels has
 	// built them.
 	panel func() panels.ISideListPanel
-	// hidden reports whether this panel is absent for the session. Read
-	// while styling views and binding keys, both of which happen before
-	// setPanels, so it can't go through the panel's own Hide.
+	// hidden reports whether this panel is absent, for the session or - for
+	// Backups - while no stack is on its remote. Read while styling views and
+	// binding keys, both of which happen before setPanels, so it can't go
+	// through the panel's own Hide.
 	hidden func() bool
 	// window is the slot the panel shares with others, as one of its tabs;
-	// empty for a panel with a slot of its own. shortTitle is its tab's
-	// name when the window's full ones don't fit.
+	// empty for a panel with a slot of its own. plainTitle is its tab's name
+	// while another tab is on show, title's minus what it's showing, and
+	// shortTitle its name when the window's full ones don't fit.
 	window     string
+	plainTitle string
 	shortTitle string
 }
 
@@ -66,10 +69,23 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			panel:   func() panels.ISideListPanel { return gui.Panels.Instances },
 		},
 		{
-			name:    "snapshots",
-			title:   gui.Tr.SnapshotsTitle,
-			viewPtr: &gui.Views.Snapshots,
-			panel:   func() panels.ISideListPanel { return gui.Panels.Snapshots },
+			name:       "snapshots",
+			title:      gui.snapshotsTabTitle(),
+			viewPtr:    &gui.Views.Snapshots,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Snapshots },
+			window:     snapshotsWindow,
+			plainTitle: gui.Tr.SnapshotsTitle,
+			shortTitle: gui.Tr.SnapshotsShort,
+		},
+		{
+			name:       "backups",
+			title:      gui.backupsPanelTitle(),
+			viewPtr:    &gui.Views.Backups,
+			panel:      func() panels.ISideListPanel { return gui.Panels.Backups },
+			hidden:     gui.backupsAway,
+			window:     snapshotsWindow,
+			plainTitle: gui.Tr.BackupsTitle,
+			shortTitle: gui.Tr.BackupsShort,
 		},
 		{
 			name:       "images",
@@ -110,6 +126,30 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 // incus-compose there's no reading a compose file, nor acting on one.
 func (gui *Gui) composeUnavailable() bool {
 	return !gui.State.ComposeAvailable
+}
+
+// backupsAway hides the Backups tab where Stacks and Services give way: on
+// a remote with no stack listed, a stack elsewhere's backups would sit
+// beside this remote's snapshots.
+func (gui *Gui) backupsAway() bool {
+	return gui.composeUnavailable() || gui.stacksAway()
+}
+
+// leaveHiddenView moves the focus off a side panel that has just been
+// hidden, to whatever its window shows instead. Main loop only.
+func (gui *Gui) leaveHiddenView() error {
+	name := gui.currentViewName()
+	def, ok := lo.Find(gui.sidePanelDefs(), func(def sidePanelDef) bool { return def.name == name })
+	if !ok || def.hidden == nil || !def.hidden() {
+		return nil
+	}
+
+	view, err := gui.g.View(gui.activeViewInWindow(def.windowName()))
+	if err != nil {
+		return err
+	}
+
+	return gui.switchFocus(view)
 }
 
 // visibleSidePanelDefs drops the panels this session doesn't have. Both the

@@ -59,6 +59,7 @@ an `instance-updated` refreshes at most every 10s.
 | Stacks | whatever refreshes the instances; a compose verb; another remote connecting, or answering differently | every 10s; once a minute while the stream is open, unless a stack is on another remote |
 | Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
+| Backups | whatever refreshes the volumes; the stack changing; a backup verb | as Images |
 | Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
 | Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
@@ -96,6 +97,7 @@ list has focus, so a tab being read follows too.
 | Service Info | every 1s | the newest services listing, and each instance's block the newest instances listing |
 | Service Config | once | every one of its instances' config |
 | Snapshot Config | once | the snapshot |
+| Backup Info | once | the backup and its last `v` |
 | Image Config | once | the image and what uses it |
 | Volume Config | once | the volume, less its usage, which changes with every write |
 | Network Leases | every 5s | its own read |
@@ -584,6 +586,47 @@ likewise an update of the volume carrying `Restore`. The `n` popup drops
 its stateful field for a volume, which has no runtime state. The panel's
 all-instances view stays instances only.
 
+## Backups
+
+With incus-compose, Snapshots shares its slot with **Backups**: a tab
+listing the selected stack's `incus-compose backup` runs, newest first,
+the way Services follows the stack. It's gone where Stacks and Services
+give way to Instances (`gui.collapseStacksElsewhere`), where a stack
+elsewhere's backups would sit beside this remote's snapshots. A backup is
+a restore point on each of the stack's volumes under one timestamp, which
+is also what names it to every backup verb.
+
+The list is `backup list --format json`, a shell-out like the stack's
+`config`; a backup's volumes and their snapshots are in the stack's
+`<project>-backup` project, so the volume events are what refresh it. A
+list that fails says why in place of the rows rather than as a popup on
+every refresh. A stack never backed up isn't a failure: `list` answers an
+empty list.
+
+`v` runs `backup verify`, which walks every restore point, so it's asked
+for rather than polled; its report stays on the row across refreshes.
+`verify` exits non-zero when anything isn't `ok`, its JSON printed all
+the same, so `composeJSON` keeps stdout, the JSON, apart from stderr, the
+log lines that become the error. The Info tab pairs each volume with the
+one holding its restore points and what `verify` said of it.
+
+The verbs hand the terminal to incus-compose, the way the Services panel's
+do, so its own progress and refusals are what you read:
+
+- `n` asks for a name, which can be left empty, then whether to stop the
+  stack for it. Without `--live`, `backup create` stops the services,
+  snapshots their volumes and starts them again; the menu saying so is
+  the confirmation. The cursor moves to the new backup: incus-compose
+  picks its timestamp, so it's the newest the list didn't have before.
+- `d` deletes the selected backup, `D` all but the newest N
+  (`--keep-last`), confirming how many go first, counted off the list.
+- `r` restores the whole stack, or one service's volumes, from a menu
+  listing the services that mount a named volume - the Services panel's
+  selection first. lazyincus asks nothing: `restore` asks before it
+  overwrites anything, and refuses while the services holding the volumes
+  are running. Its `--yes` is for when it has no terminal, and
+  `runSubprocess` hands it the real one.
+
 ## Resources
 
 Images, volumes, networks and profiles are four panels sharing one window: a
@@ -593,13 +636,16 @@ shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
 rather than the list's. When the names don't fit the title, `fitWindowTabs`
-swaps in each def's `shortTitle` (`Img - Vol - Net - Prof`) on the layout
+swaps in each def's `shortTitle` (`Images - Vol - Net - Prof`) on the layout
 pass, so a resize refits them: a tab cut off the end is a list nobody knows
-is there. Number keys, `tab` and the side column's split
-all count windows, so the three take one number and one share of the
+is there. A tab that names whose list it is - Snapshots, Backups - does so
+only while on show (its def's `plainTitle` otherwise), and the tab on show
+keeps its full name longest, cut with an ellipsis before it's shortened
+too. Number keys, `tab` and the side column's split
+all count windows, so the four take one number and one share of the
 height; they read something far less often than instances do.
 
-`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the three are
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
 stops of their own there, where `tab` and the number keys stop at the
 window; `[`/`]` stay the main panel's tabs, which Networks has three of.
 The window's number key pressed again moves to its next list, and a click
@@ -610,7 +656,7 @@ like any other, so a filter on one list is dropped on moving to the next,
 as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
 
-`u` on any of the three narrows the instances panel to what uses the item
+`u` on any of the four narrows the instances panel to what uses the item
 and moves there, its title naming it; `esc` there brings the rest back and
 returns to the list `u` was pressed in, cursor where it was.
 While narrowed it shows every user, stopped or a stack's, the
@@ -680,7 +726,9 @@ Only `custom` volumes can be deleted — the rest go away with the instance or
 image they belong to.
 
 After the name come the users count - red for a custom volume nothing has
-attached, the other types always belonging to something - and the size,
+attached, the other types always belonging to something; `backup` for a
+volume holding a stack's [backups](#backups), which nothing attaches
+either - and the size,
 the two a narrow panel should keep. Sizes are a request each
 (`GetStoragePoolVolumeState`), eight in flight at a time, on every poll;
 where the driver can't size a volume the cell is blank (see
