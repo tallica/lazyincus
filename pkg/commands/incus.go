@@ -33,6 +33,11 @@ type IncusCommand struct {
 	// and all of them when the user switches remote.
 	clientMutex deadlock.Mutex
 	client      incus.InstanceServer
+	// unscoped is client for what belongs to no project - the warnings -
+	// made with the connection. UseProject copies a client without the lock
+	// an event stream that is connecting holds on it, so it isn't called on
+	// a live one for every listing.
+	unscoped    incus.InstanceServer
 	projectName string
 	allProjects bool
 	// remoteName is the CLI remote client is connected to, serverVersion
@@ -147,6 +152,7 @@ func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n
 		Tr:            tr,
 		Config:        cfg,
 		client:        client,
+		unscoped:      client.UseProject(""),
 		remoteName:    remote,
 		serverVersion: version,
 		projectName:   clientProjectName(client),
@@ -302,15 +308,24 @@ func (c *IncusCommand) PublishHost() string {
 func (c *IncusCommand) UseRemote(other *IncusCommand) {
 	client, project, _ := other.scope()
 	remote, version := other.RemoteName(), other.ServerVersion()
+	unscoped := other.unscopedClient()
 
 	c.clientMutex.Lock()
 	c.client, c.projectName, c.allProjects = client, project, true
+	c.unscoped = unscoped
 	c.remoteName, c.serverVersion = remote, version
 	c.clientMutex.Unlock()
 
 	c.setConnected(true)
 	// An instance on the new remote can share a name with one on the old.
 	c.runtimes.reset()
+}
+
+func (c *IncusCommand) unscopedClient() incus.InstanceServer {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	return c.unscoped
 }
 
 // Client returns the current instance server. A method rather than a field

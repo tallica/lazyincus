@@ -214,18 +214,20 @@ func (s *refreshSeq) invalidate() {
 
 // refreshSeqs is one refreshSeq per kind of fetch.
 type refreshSeqs struct {
-	instances refreshSeq
-	images    refreshSeq
-	volumes   refreshSeq
-	networks  refreshSeq
-	profiles  refreshSeq
-	services  refreshSeq
-	stacks    refreshSeq
-	backups   refreshSeq
+	instances  refreshSeq
+	images     refreshSeq
+	volumes    refreshSeq
+	networks   refreshSeq
+	profiles   refreshSeq
+	services   refreshSeq
+	stacks     refreshSeq
+	backups    refreshSeq
+	operations refreshSeq
+	warnings   refreshSeq
 }
 
 func (s *refreshSeqs) invalidateAll() {
-	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services, &s.stacks, &s.backups} {
+	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services, &s.stacks, &s.backups, &s.operations, &s.warnings} {
 		seq.invalidate()
 	}
 }

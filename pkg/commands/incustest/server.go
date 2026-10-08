@@ -5,6 +5,7 @@ package incustest
 import (
 	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"slices"
 	"strings"
@@ -72,6 +73,12 @@ type state struct {
 	held, heldOpened chan struct{}
 	// imagesHeld is HoldImages'.
 	imagesHeld chan struct{}
+	// operations are what the operations listings return; cancelled, the
+	// IDs DeleteOperation was asked for.
+	operations []api.Operation
+	cancelled  []string
+	// warnings are what GetWarnings returns, updated in place.
+	warnings []api.Warning
 }
 
 // New is a Server answering from fixture.
@@ -423,4 +430,101 @@ func (s *Server) GetStoragePoolVolumesAllProjects(pool string) ([]api.StorageVol
 
 func (s *Server) GetInstanceConsoleLog(name string, _ *incus.InstanceConsoleLogArgs) (io.ReadCloser, error) {
 	return io.NopCloser(strings.NewReader(s.ConsoleLogs[name])), nil
+}
+
+// SetOperations replaces what the operations listings return.
+func (s *Server) SetOperations(operations []api.Operation) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.operations = operations
+}
+
+// Cancelled is every operation DeleteOperation was asked to cancel.
+func (s *Server) Cancelled() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.cancelled)
+}
+
+// GetOperations is every project's operations: the scope matters to the
+// app, which asks, not to what the stand-in answers.
+func (s *Server) GetOperations() ([]api.Operation, error) {
+	return s.GetOperationsAllProjects()
+}
+
+func (s *Server) GetOperationsAllProjects() ([]api.Operation, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.operations), nil
+}
+
+func (s *Server) DeleteOperation(uuid string) error {
+	if err := s.reachable(); err != nil {
+		return err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.cancelled = append(shared.cancelled, uuid)
+
+	return nil
+}
+
+// SetWarnings replaces the warnings.
+func (s *Server) SetWarnings(warnings []api.Warning) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.warnings = warnings
+}
+
+// GetWarnings is every warning: the stand-in keeps no projects apart.
+func (s *Server) GetWarnings() ([]api.Warning, error) {
+	if err := s.reachable(); err != nil {
+		return nil, err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.warnings), nil
+}
+
+func (s *Server) UpdateWarning(uuid string, warning api.WarningPut, _ string) error {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	for i := range shared.warnings {
+		if shared.warnings[i].UUID == uuid {
+			shared.warnings[i].Status = warning.Status
+			return nil
+		}
+	}
+
+	return api.StatusErrorf(http.StatusNotFound, "Warning not found")
+}
+
+func (s *Server) DeleteWarning(uuid string) error {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.warnings = slices.DeleteFunc(shared.warnings, func(warning api.Warning) bool { return warning.UUID == uuid })
+
+	return nil
 }

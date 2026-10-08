@@ -168,6 +168,30 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Handler:  wrappedHandler(gui.handleMenuPress),
 		},
 		{
+			ViewName: "menu",
+			Key:      'a',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleMenuKey('a'),
+		},
+		{
+			ViewName: "menu",
+			Key:      'd',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleMenuKey('d'),
+		},
+		{
+			ViewName: "menu",
+			Key:      '[',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDaemonTab(-1),
+		},
+		{
+			ViewName: "menu",
+			Key:      ']',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDaemonTab(1),
+		},
+		{
 			ViewName:    "instances",
 			Key:         'S',
 			Modifier:    gocui.ModNone,
@@ -593,6 +617,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleSwitchProject,
 			Description: gui.Tr.SwitchProject,
+		},
+		{
+			ViewName:    "",
+			Key:         'W',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleOpenDaemon,
+			Description: gui.Tr.ShowWarnings,
 		},
 		{
 			ViewName:    "",

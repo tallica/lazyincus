@@ -99,7 +99,8 @@ checking the row is still the one it named. A key that acts on the row
 never sets it - that check is all that keeps a refresh from turning a
 restart onto the next row. A `window` on the def
 puts a panel in a slot it shares with others, as one of its tabs, which is
-how Images, Volumes, Networks and Profiles become the one Resources panel,
+how Images, Volumes, Networks and Profiles become the one
+Resources panel,
 and Backups a tab beside Snapshots;
 the number keys, `tab` and the layout count those slots, not views
 (`pkg/gui/window.go`). Order is both the
@@ -163,11 +164,15 @@ order:
   having a selection of its own; or lists every instance's (`e`).
 - **Backups** — the selected stack's `incus-compose backup` runs, a tab
   beside Snapshots on a remote with a stack listed.
-- **Resources** — how Images, Volumes, Networks and Profiles share one slot.
+- **Resources** — how Images, Volumes, Networks and Profiles share one
+  slot.
 - **Images**, **Volumes**, **Networks** — local images and what uses them;
   every pool's volumes in one list, with sizes; managed networks, the
   host's own interfaces behind `e`, with their leases.
 - **Profiles** — every project's, with the devices each hands out.
+- **Operations and warnings** — not panels but `W`'s popup: the daemon's
+  operations, under way and the session's history of them, which is
+  lazyincus's own record, and its warnings.
 
 ## Talking to Incus
 
@@ -179,7 +184,9 @@ never fatal, per-project clients and why item identity includes the
 project, the console log's drain-on-read behaviour, why `exec` and
 `attach` shell out to the `incus` CLI instead of using the client's
 websocket API, the status the daemon won't give an instance mid-action,
-and the event stream: which events count, and the order they arrive in.
+the event stream: which events count, and the order they arrive in, and
+how briefly the daemon keeps an operation once it has ended, and the
+warnings no event announces.
 
 ## Config
 

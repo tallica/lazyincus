@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"strings"
+
 	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
@@ -13,6 +15,13 @@ type CreateMenuOptions struct {
 	Subtitle   string
 	Items      []*types.MenuItem
 	HideCancel bool
+	// Selected is the row the cursor starts on.
+	Selected int
+	// Tabs, if any, stand in for the title, Tabs[TabIndex] the one on show.
+	Tabs     []string
+	TabIndex int
+	// Wide is for rows with more to say than a menu's.
+	Wide bool
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -89,15 +98,26 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 		}
 	}
 
+	gui.State.DaemonPopup = false
+	gui.State.WideMenu = opts.Wide
+	// Set before the rows are rendered, which sizes the popup to them.
+	gui.Views.Menu.Title = opts.Title
+	// The title as well when there are tabs: gocui draws the tabs, and the
+	// popup is sized by the title.
+	if len(opts.Tabs) > 0 {
+		gui.Views.Menu.Title = strings.Join(opts.Tabs, " - ")
+	}
+	gui.Views.Menu.Tabs = opts.Tabs
+	gui.Views.Menu.TabIndex = opts.TabIndex
+	gui.Views.Menu.Subtitle = opts.Subtitle
+
 	gui.Panels.Menu.SetItems(opts.Items)
-	gui.Panels.Menu.SetSelectedLineIdx(0)
+	gui.Panels.Menu.SetSelectedLineIdx(opts.Selected)
 
 	if err := gui.Panels.Menu.RerenderList(); err != nil {
 		return err
 	}
 
-	gui.Views.Menu.Title = opts.Title
-	gui.Views.Menu.Subtitle = opts.Subtitle
 	gui.Views.Menu.Visible = true
 
 	return gui.switchFocus(gui.Views.Menu)
@@ -111,6 +131,11 @@ func (gui *Gui) renderMenuOptions() error {
 		"↑ ↓":   gui.Tr.Navigate,
 		"enter": gui.Tr.Execute,
 	}
+
+	if gui.State.DaemonPopup {
+		optionsMap["[ ]"] = gui.Tr.SwitchList
+	}
+
 	return gui.renderOptionsMap(optionsMap)
 }
 

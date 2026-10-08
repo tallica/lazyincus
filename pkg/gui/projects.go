@@ -1,7 +1,9 @@
 package gui
 
 import (
+	"slices"
 	"sort"
+	"time"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
@@ -47,9 +49,15 @@ func (gui *Gui) projectsMenu(names []string) error {
 		}
 	})
 
+	selected := 0
+	if !gui.IncusCommand.IsAllProjects() {
+		selected = slices.Index(names, current) + 1
+	}
+
 	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.ProjectsTitle,
-		Items: append([]*types.MenuItem{allProjects}, menuItems...),
+		Title:    gui.Tr.ProjectsTitle,
+		Items:    append([]*types.MenuItem{allProjects}, menuItems...),
+		Selected: selected,
 	})
 }
 
@@ -108,6 +116,14 @@ func (gui *Gui) reloadAfterScopeChange() error {
 	gui.resetMainView()
 
 	gui.Panels.Instances.SetSelectedLineIdx(0)
+
+	// The history is the scope's, as every list is.
+	gui.operationsScope.Add(1)
+	// A remote's warnings are its own: the next listing says the new one's.
+	gui.State.Warnings = nil
+	gui.newWarnings.Store(0)
+	gui.operations.clear()
+	gui.State.OperationsSeenAt = time.Now()
 
 	// A fetch already in flight was asked about the old scope.
 	gui.refreshes.invalidateAll()

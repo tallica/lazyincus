@@ -102,6 +102,18 @@ type Gui struct {
 	eventsLive atomic.Bool
 	// watching is watchEvents, which run waits out.
 	watching sync.WaitGroup
+	// operations is the session's operation history, main loop only, and
+	// operationCounts its running and unseen failed counts, packed, for the
+	// footer, which is drawn off it too.
+	operations      operationLog
+	operationCounts atomic.Int64
+	// operationsScope counts the scope changes, which clear the log; each
+	// event stream knows the one it was opened for.
+	operationsScope atomic.Uint64
+	// newWarnings is how many warnings no one has acknowledged, for the
+	// footer, drawn off the main loop.
+	newWarnings atomic.Int32
+
 	// networkTabs counts the forward and ACL events, which change what a
 	// network's tabs show without changing the network.
 	networkTabs atomic.Uint64
@@ -204,6 +216,20 @@ type guiState struct {
 	// decides whether a row names its instance and project.
 	SnapshotsSpan snapshotsSpan
 
+	// Warnings are the remote's, as the last listing had them.
+	Warnings []*commands.Warning
+
+	// DaemonPopup is whether the popup open is `W`'s, DaemonTab the list it
+	// shows, or showed last, and DaemonOpened whether it has been open.
+	DaemonPopup  bool
+	DaemonTab    daemonTab
+	DaemonOpened bool
+	WideMenu     bool
+
+	// OperationsSeenAt is when the operations were last on screen: the
+	// footer counts the failures since.
+	OperationsSeenAt time.Time
+
 	// BackupVerifications are `backup verify`'s reports, by backupKey:
 	// verifying walks every restore point, so it's asked for, not polled,
 	// and a report outlives the refreshes after it.
@@ -238,11 +264,12 @@ type snapshotsSpan struct {
 }
 
 type spansProjects struct {
-	Instances bool
-	Images    bool
-	Volumes   bool
-	Networks  bool
-	Profiles  bool
+	Instances  bool
+	Images     bool
+	Volumes    bool
+	Networks   bool
+	Profiles   bool
+	Operations bool
 }
 
 // projectColumns is how many columns a project column puts ahead of the
@@ -525,6 +552,9 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshBackupsQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
+		gui.pollUnlessWatched(time.Second*10, gui.refreshOperationsQuiet)
+		// No event says the daemon has raised a warning.
+		gui.goEvery(time.Second*30, gui.refreshWarningsQuiet)
 		// The session's stream says nothing of another remote's stacks.
 		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
 	}()
@@ -566,6 +596,8 @@ func (gui *Gui) fetchGroups() [][]fetch {
 		{gui.fetchVolumes},
 		{gui.fetchNetworks},
 		{gui.fetchProfiles},
+		{gui.fetchOperations},
+		{gui.fetchWarnings},
 	}
 }
 

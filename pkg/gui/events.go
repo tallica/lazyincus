@@ -22,6 +22,10 @@ const (
 	refreshVolumes
 	refreshNetworks
 	refreshProfiles
+	refreshWarnings
+	// refreshOperations is the stream opening, which no event of its own
+	// says: what started or ended while it was shut.
+	refreshOperations
 )
 
 // usedBy is every list that counts what uses it: an instance coming or
@@ -82,6 +86,10 @@ var eventRefreshes = map[string]refreshKind{
 	api.EventLifecycleNetworkACLDeleted:     refreshNetworks,
 	api.EventLifecycleNetworkACLRenamed:     refreshNetworks,
 	api.EventLifecycleNetworkACLUpdated:     refreshNetworks,
+
+	api.EventLifecycleWarningAcknowledged: refreshWarnings,
+	api.EventLifecycleWarningReset:        refreshWarnings,
+	api.EventLifecycleWarningDeleted:      refreshWarnings,
 
 	api.EventLifecycleProfileCreated: refreshProfiles,
 	api.EventLifecycleProfileDeleted: refreshProfiles,
@@ -152,7 +160,10 @@ func (gui *Gui) watchEvents() {
 		}()
 
 		opened := time.Now()
-		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, gui.onEvent)
+		scope := gui.operationsScope.Load()
+		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, func(event commands.Event) {
+			gui.onEventIn(scope, event)
+		})
 		gui.eventsLive.Store(false)
 		cancel()
 
@@ -204,7 +215,7 @@ func (gui *Gui) eventsOpened() {
 	}
 
 	gui.eventsLive.Store(true)
-	gui.queueRefresh(usedBy)
+	gui.queueRefresh(usedBy | refreshOperations)
 
 	scope := gui.IncusCommand.ProjectName()
 	if scope == "" {
@@ -251,6 +262,11 @@ func (gui *Gui) isStopped() bool {
 
 // onEvent runs on the listener's goroutine.
 func (gui *Gui) onEvent(event commands.Event) {
+	gui.onEventIn(gui.operationsScope.Load(), event)
+}
+
+// onEventIn is onEvent from a stream opened for scope, an operationsScope.
+func (gui *Gui) onEventIn(scope uint64, event commands.Event) {
 	if gui.isStopped() {
 		return
 	}
@@ -258,7 +274,12 @@ func (gui *Gui) onEvent(event commands.Event) {
 	gui.logEvent(event)
 
 	if event.Type == api.EventTypeOperation {
+		if event.Details != nil && !event.Details.IsToken() {
+			gui.recordOperation(scope, event.Details)
+		}
+
 		gui.onOperation(event)
+
 		return
 	}
 
@@ -336,20 +357,20 @@ func (gui *Gui) flushEvents() {
 	}
 
 	gui.events.mutex.Lock()
-	kinds, ending := gui.events.pending, gui.events.ending
-	gui.events.pending, gui.events.ending, gui.events.scheduled = 0, nil, false
-	gui.events.mutex.Unlock()
 
-	// A subprocess has the terminal; hold the lists until it's back.
+	// A subprocess has the terminal; hold the lists until it's back, left
+	// queued rather than taken and put back, which a look in between would
+	// find empty.
 	if gui.PauseBackgroundThreads.Load() {
-		gui.events.mutex.Lock()
-		gui.events.ending = append(ending, gui.events.ending...)
+		time.AfterFunc(eventBatchWindow, gui.flushEvents)
 		gui.events.mutex.Unlock()
-
-		gui.queueRefresh(kinds)
 
 		return
 	}
+
+	kinds, ending := gui.events.pending, gui.events.ending
+	gui.events.pending, gui.events.ending, gui.events.scheduled = 0, nil, false
+	gui.events.mutex.Unlock()
 
 	if err := gui.refreshEnding(ending, gui.fetchesFor(kinds)...); err != nil {
 		gui.Log.Warn(err)
@@ -385,6 +406,14 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshProfiles != 0 {
 		fetches = append(fetches, gui.fetchProfiles)
+	}
+
+	if kinds&refreshWarnings != 0 {
+		fetches = append(fetches, gui.fetchWarnings)
+	}
+
+	if kinds&refreshOperations != 0 {
+		fetches = append(fetches, gui.fetchOperations)
 	}
 
 	return fetches

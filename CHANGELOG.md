@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
 - A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.
 - The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
+- `W` lists what the daemon is doing and did this session, with progress and errors (`d` cancels), and its warnings to acknowledge (`a`) or delete (`d`); `[`/`]` switch lists.
+- The footer counts running operations, in red those that failed since you last looked, and unacknowledged warnings.
 
 ### Changed
 - With the main panel or a popup focused, the list it shows keeps its selected row in bold; `theme.inactiveSelectedLineBgColor` sets the style.
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `n` on the Snapshots panel snapshots what the panel follows, asking which replica for a service, instead of the Instances panel's selection.
 - A popup's title and the hint beside it no longer run together when the popup is only just wide enough for both.
+- The project (`P`) and remote (`R`) menus open on the current one instead of the first, so `enter` keeps where you are.
+- A text prompt's footer says `enter` submits and `esc` closes, instead of offering `y`/`n`, which type into it.
 
 ## [0.13.1] - 2026-10-03
 

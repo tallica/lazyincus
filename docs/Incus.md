@@ -120,6 +120,29 @@ inferred.
   nothing included, goes to `development.log` in the config directory,
   with a line each time a stream opens naming what it listens to - the
   place to look when a list doesn't refresh.
+- **Warnings**: the daemon raises a warning without an event - it writes
+  it straight to its database (`UpsertWarning`) - so only a poll finds a
+  new one. Acknowledging, resetting and deleting do send
+  `warning-acknowledged`, `-reset` and `-deleted`, always in the `default`
+  project, which a stream scoped to another project never sees. A client
+  may set a warning's status to `acknowledged` or `new` and nothing else;
+  the daemon resolves one itself and deletes it 24 hours later. A warning
+  about the server has no project, and `GET /1.0/warnings` without one
+  lists every project's, so lazyincus lists them unscoped whatever `P`
+  says. Its client for that is made with the connection: `UseProject`
+  copies a client's `skipEvents` without the lock an event stream that is
+  connecting writes it under, which the race detector catches.
+- **Operations**: the daemon drops an operation 5s after it ends
+  (`done()` in `internal/server/operations/operations.go`), so
+  `GetOperationsAllProjects` is what's under way and what just ended;
+  anything older is only in the events seen at the time. `api.Operation`
+  carries no project - the event envelope does, and a listing's resource
+  URLs (`?project=`) - and no requestor. A `token` operation runs for as
+  long as its token is valid and holds the secret in its metadata, and a
+  websocket's metadata is its connection secrets. Cancelling is
+  `DeleteOperation`, refused unless `may_cancel`. `incus image copy` said
+  it had copied an image whose download operation had just been
+  cancelled, and the image was there: the CLI goes on another way.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an

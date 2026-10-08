@@ -12,6 +12,8 @@ type TranslationSet struct {
 	Execute                                    string
 	Scroll                                     string
 	Close                                      string
+	Submit                                     string
+	SwitchList                                 string
 	Quit                                       string
 	ErrorTitle                                 string
 	NoViewMachingNewLineFocusedSwitchStatement string
@@ -302,6 +304,29 @@ type TranslationSet struct {
 	BackupVerifyProblems   string
 	BackupNotVerified      string
 	BackupOf               string
+
+	OperationsTitle         string
+	NoOperations            string
+	OperationsHint          string
+	OperationTitle          string
+	OperationResources      string
+	OperationMetadata       string
+	OperationsRunning       string
+	OperationsFailed        string
+	OperationNotCancellable string
+	ConfirmCancelOperation  string
+	CancellingStatus        string
+
+	ShowWarnings         string
+	WarningsTitle        string
+	WarningTitle         string
+	WarningsHint         string
+	NoWarnings           string
+	WarningsCount        string
+	WarningCount         string
+	WarningServerWide    string
+	ConfirmDeleteWarning string
+	AcknowledgingStatus  string
 }
 
 func englishSet() TranslationSet {
@@ -334,6 +359,8 @@ func englishSet() TranslationSet {
 		Navigate:                     "navigate",
 		Execute:                      "execute",
 		Close:                        "close",
+		Submit:                       "submit",
+		SwitchList:                   "switch list",
 		Quit:                         "quit",
 		Menu:                         "menu",
 		MenuTitle:                    "Menu",
@@ -608,5 +635,28 @@ func englishSet() TranslationSet {
 		BackupVerifyProblems:   "%d not ok",
 		BackupNotVerified:      "not verified - press 'v'",
 		BackupOf:               "backup of %s",
+
+		OperationsTitle:         "Operations",
+		NoOperations:            "No operations - they're listed as they run",
+		OperationsHint:          "d: cancel, enter: details",
+		OperationTitle:          "Operation",
+		OperationResources:      "Resources",
+		OperationMetadata:       "Metadata",
+		OperationsRunning:       "%d running",
+		OperationsFailed:        "%d failed",
+		OperationNotCancellable: "%s can't be cancelled.",
+		ConfirmCancelOperation:  "Are you sure you want to cancel %s?",
+		CancellingStatus:        "cancelling",
+
+		ShowWarnings:         "operations and warnings",
+		WarningsTitle:        "Warnings",
+		WarningTitle:         "Warning",
+		WarningsHint:         "a: acknowledge, d: delete, enter: details",
+		NoWarnings:           "No warnings",
+		WarningsCount:        "%d warnings",
+		WarningCount:         "1 warning",
+		WarningServerWide:    "the server's",
+		ConfirmDeleteWarning: "Are you sure you want to delete this warning? The daemon raises it again if its cause persists.",
+		AcknowledgingStatus:  "acknowledging",
 	}
 }

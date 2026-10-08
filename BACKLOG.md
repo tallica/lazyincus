@@ -32,8 +32,8 @@ derive from it automatically.
 ### Side panels
 
 lazydocker has six with a compose file local; lazyincus has three, or five
-with incus-compose installed, having folded images, volumes, networks and
-profiles into one tabbed Resources panel. Stacks and Services are the Incus
+with incus-compose installed, having folded images, volumes, networks
+and profiles into one tabbed Resources panel. Stacks and Services are the Incus
 analog of lazydocker's docker-compose-specific Project/Services panels, and
 like lazydocker's they push the plain instance list down to "Standalone
 Instances". See [incus-compose integration](#incus-compose-integration).
@@ -88,6 +88,12 @@ Not planned:
       `DisplayStatus`'s maps and `StatusColor`. A deleted instance's mark
       has no row left to end on, so check it comes off with the listing
       that drops the row.
+- [ ] **`UseProject` against a connecting stream** — the warnings got a
+      client made with the connection because `UseProject` copies the
+      client's `skipEvents` unguarded while an event stream connecting on
+      it writes it ([docs/Incus.md](docs/Incus.md), "Warnings"). `clientFor`
+      and the per-instance clients a listing makes do the same; the race
+      detector hasn't caught them, but the window is the same one.
 - [ ] **Events for a restricted certificate** — `ListenForEvents` asks for
       every project's events whenever the panels list every project. A
       certificate restricted to some projects may be refused that, and

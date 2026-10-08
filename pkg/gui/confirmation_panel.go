@@ -172,6 +172,11 @@ func (gui *Gui) renderConfirmationOptions() error {
 		return gui.renderConnectionLostOptions()
 	}
 
+	// A text prompt is this view too, where y and n are typed.
+	if gui.Views.Confirmation.Editable {
+		return gui.renderOptionsMap(map[string]string{"esc": gui.Tr.Close, "enter": gui.Tr.Submit})
+	}
+
 	optionsMap := map[string]string{
 		"n/esc":   gui.Tr.No,
 		"y/enter": gui.Tr.Yes,
