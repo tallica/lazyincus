@@ -12,6 +12,7 @@ type TranslationSet struct {
 	Execute                                    string
 	Scroll                                     string
 	Close                                      string
+	Submit                                     string
 	Quit                                       string
 	ErrorTitle                                 string
 	NoViewMachingNewLineFocusedSwitchStatement string
@@ -357,6 +358,7 @@ func englishSet() TranslationSet {
 		Navigate:                     "navigate",
 		Execute:                      "execute",
 		Close:                        "close",
+		Submit:                       "submit",
 		Quit:                         "quit",
 		Menu:                         "menu",
 		MenuTitle:                    "Menu",
