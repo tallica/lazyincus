@@ -52,6 +52,9 @@ func (gui *Gui) getBackupsPanel() *panels.SideListPanel[*commands.ComposeBackup]
 		GetTableCells: func(backup *commands.ComposeBackup) []string {
 			return presentation.GetBackupDisplayStrings(backup, gui.backupVerification(backup), gui.Tr)
 		},
+		FlexColumns: func() []utils.FlexColumn {
+			return []utils.FlexColumn{{Index: presentation.BackupNameColumn, MinWidth: presentation.MinBackupNameWidth}}
+		},
 	}
 }
 

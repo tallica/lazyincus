@@ -11,8 +11,16 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+// BackupNameColumn gives way first when a row doesn't fit, down to
+// MinBackupNameWidth: the verification after it is what the row is read for.
+const (
+	BackupNameColumn   = 1
+	MinBackupNameWidth = 8
+)
+
 // GetBackupDisplayStrings leads with when the backup was taken, which is
-// what names it to every backup verb; verification is nil until `v`.
+// what names it to every backup verb; verification is nil until `v`, and
+// comes before the pool, which is rarely more than one.
 func GetBackupDisplayStrings(backup *commands.ComposeBackup, verification *commands.BackupVerification, tr *i18n.TranslationSet) []string {
 	size := ""
 	if backup.Size > 0 {
@@ -24,8 +32,8 @@ func GetBackupDisplayStrings(backup *commands.ComposeBackup, verification *comma
 		backup.Name,
 		strconv.Itoa(len(backup.Volumes)) + " vol",
 		utils.ColoredString(size, color.FgYellow),
-		utils.ColoredString(backup.Pool(), color.FgCyan),
 		displayBackupVerification(verification, tr),
+		utils.ColoredString(backup.Pool(), color.FgCyan),
 	}
 }
 

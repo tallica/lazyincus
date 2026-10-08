@@ -155,3 +155,34 @@ func TestBackupVolumesStr(t *testing.T) {
 	// A volume the stack has gained since, which the backup has nothing of.
 	assert.Contains(t, verified, "vol-new                                    not in this backup")
 }
+
+// A long name gives way before a verification does.
+func TestBackupRowKeepsItsVerification(t *testing.T) {
+	var (
+		asked []string
+		mutex sync.Mutex
+	)
+
+	backup := testBackup("2026-09-21T06:00:00Z", "before-the-big-upgrade", "db", "cache")
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
+		withBackups(&asked, &mutex, []*commands.ComposeBackup{backup}, nil)(s)
+	})
+
+	s.settle(t, "Services (default)")
+	s.do(t, func() error {
+		s.gui.State.BackupVerifications = map[string]*commands.BackupVerification{
+			s.gui.backupKey(backup): {Volumes: []commands.BackupVolumeStatus{{Status: commands.BackupVerifyOK}, {Status: commands.BackupVerifyOK}}},
+		}
+
+		if err := s.gui.switchFocus(s.gui.Views.Backups); err != nil {
+			return err
+		}
+
+		return s.gui.Panels.Backups.RerenderList()
+	})
+
+	s.settle(t, "before-…")
+	assert.Regexp(t, `before-.*2 vol\s+`+s.gui.Tr.BackupVerifiedOK, s.settle(t, "2 vol"))
+}
