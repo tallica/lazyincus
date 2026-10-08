@@ -164,13 +164,13 @@ func (gui *Gui) NewTickerTask(opts TickerTaskOpts) tasks.TaskFunc {
 		for {
 			select {
 			case <-notifyStopped:
-				gui.Log.Info("exiting ticker task due to notifyStopped channel")
+				gui.Log.Info().Msg("exiting ticker task due to notifyStopped channel")
 				return
 			case <-ctx.Done():
-				gui.Log.Info("exiting ticker task due to stopped channel")
+				gui.Log.Info().Msg("exiting ticker task due to stopped channel")
 				return
 			case <-tickChan.C:
-				gui.Log.Info("running ticker task again")
+				gui.Log.Info().Msg("running ticker task again")
 				opts.Func(ctx, notifyStopped)
 			}
 		}

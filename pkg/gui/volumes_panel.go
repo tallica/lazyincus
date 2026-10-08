@@ -159,7 +159,7 @@ func (gui *Gui) refreshVolumes() error {
 
 func (gui *Gui) refreshVolumesQuiet() error {
 	if err := gui.refreshVolumes(); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

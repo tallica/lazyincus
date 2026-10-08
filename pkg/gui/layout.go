@@ -55,7 +55,7 @@ func (gui *Gui) onFocusLost(v *gocui.View, newView *gocui.View) {
 
 	gui.focusPointInView(v)
 
-	gui.Log.Info(v.Name() + " focus lost")
+	gui.Log.Info().Msg(v.Name() + " focus lost")
 }
 
 func (gui *Gui) onFocus(v *gocui.View) {
@@ -65,7 +65,7 @@ func (gui *Gui) onFocus(v *gocui.View) {
 
 	gui.focusPointInView(v)
 
-	gui.Log.Info(v.Name() + " focus gained")
+	gui.Log.Info().Msg(v.Name() + " focus gained")
 }
 
 // layout is called for every screen re-render e.g. when the screen is resized

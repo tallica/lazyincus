@@ -124,7 +124,7 @@ func (gui *Gui) refreshImages() error {
 // pulls or deletes one, so it runs far less often than the instance list.
 func (gui *Gui) refreshImagesQuiet() error {
 	if err := gui.refreshImages(); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

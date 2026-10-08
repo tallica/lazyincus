@@ -87,7 +87,7 @@ func (gui *Gui) refreshForRemote() {
 	}
 
 	if err := gui.refresh(nil, gui.fetchStacks, gui.fetchServices); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 }
 

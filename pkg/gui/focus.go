@@ -45,8 +45,8 @@ func (gui *Gui) switchFocusAux(newView *gocui.View) error {
 
 	gui.pushView(newView.Name())
 	gui.noteActiveView(newView.Name())
-	gui.Log.Info("setting highlight to true for view " + newView.Name())
-	gui.Log.Info("new focused view is " + newView.Name())
+	gui.Log.Info().Msg("setting highlight to true for view " + newView.Name())
+	gui.Log.Info().Msg("new focused view is " + newView.Name())
 	if _, err := gui.g.SetCurrentView(newView.Name()); err != nil {
 		return err
 	}

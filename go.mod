@@ -15,10 +15,10 @@ require (
 	github.com/lxc/incus/v7 v7.5.1
 	github.com/mgutz/str v1.2.0
 	github.com/rivo/uniseg v0.4.7
+	github.com/rs/zerolog v1.35.1
 	github.com/sahilm/fuzzy v0.1.3
 	github.com/samber/lo v1.53.0
 	github.com/sasha-s/go-deadlock v0.3.9
-	github.com/sirupsen/logrus v1.10.2
 	github.com/spkg/bom v1.0.1
 	github.com/stretchr/testify v1.12.1
 )
@@ -60,6 +60,7 @@ require (
 	github.com/pkg/xattr v0.4.12 // indirect
 	github.com/rootless-containers/proto/go-proto v0.0.0-20260207013450-f6ee952d53d9 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/go-mtree v0.7.0 // indirect
 	github.com/zitadel/oidc/v3 v3.51.3 // indirect

@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"io"
-
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
@@ -30,10 +28,9 @@ func NewDummyAppConfig() *config.AppConfig {
 }
 
 // NewDummyLog creates a new dummy Log for testing
-func NewDummyLog() *logrus.Entry {
-	log := logrus.New()
-	log.Out = io.Discard
-	return log.WithField("test", "test")
+func NewDummyLog() *zerolog.Logger {
+	log := zerolog.Nop()
+	return &log
 }
 
 // NewDummyIncusCommand creates a new dummy IncusCommand for testing. It does

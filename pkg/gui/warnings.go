@@ -61,7 +61,7 @@ func (gui *Gui) fetchWarnings() (func() error, error) {
 
 func (gui *Gui) refreshWarningsQuiet() error {
 	if err := gui.refresh(nil, gui.fetchWarnings); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

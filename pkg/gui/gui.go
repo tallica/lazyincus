@@ -11,8 +11,8 @@ import (
 	lcUtils "github.com/jesseduffield/lazycore/pkg/utils"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/rs/zerolog"
 	"github.com/sasha-s/go-deadlock"
-	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
@@ -24,7 +24,7 @@ import (
 // Gui wraps the gocui Gui object which handles rendering and events
 type Gui struct {
 	g             *gocui.Gui
-	Log           *logrus.Entry
+	Log           *zerolog.Logger
 	IncusCommand  *commands.IncusCommand
 	OSCommand     *commands.OSCommand
 	State         guiState
@@ -338,7 +338,7 @@ func getScreenMode(config *config.AppConfig) WindowMaximisation {
 var deadlockOptions sync.Once
 
 // NewGui builds a new gui handler
-func NewGui(log *logrus.Entry, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
+func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand *commands.OSCommand, tr *i18n.TranslationSet, config *config.AppConfig) (*Gui, error) {
 	initialState := guiState{
 		Platform: *oSCommand.Platform,
 		Panels: &panelStates{
@@ -454,7 +454,7 @@ func (gui *Gui) Run() error {
 	gui.localStackDir, gui.localStackExplicit = localStackDir()
 
 	if err := gui.Config.PinStacks(gui.IncusCommand.RemoteName()); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	g, err := gocui.NewGui(gocui.NewGuiOpts{
@@ -542,7 +542,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 
 	go func() {
 		for _, err := range gui.refreshAll() {
-			gui.Log.Error(err)
+			gui.Log.Error().Err(err).Send()
 		}
 
 		gui.goEvery(time.Second*2, gui.refreshInstancesQuiet)
@@ -571,7 +571,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 // Update closure, and returning nil here means carry on instead. Quitting
 // is unaffected - gocui excludes ErrQuit before consulting this.
 func (gui *Gui) handleError(err error) error {
-	gui.Log.Error(err)
+	gui.Log.Error().Err(err).Send()
 
 	// The modal and the footer report an unreachable daemon already.
 	if commands.IsConnectionError(err) {
@@ -580,7 +580,7 @@ func (gui *Gui) handleError(err error) error {
 	}
 
 	if err := gui.createErrorPanel(err.Error()); err != nil {
-		gui.Log.Error(err)
+		gui.Log.Error().Err(err).Send()
 	}
 
 	return nil
@@ -623,7 +623,7 @@ func (gui *Gui) setPanels() {
 // and the footer is otherwise drawn once at startup.
 func (gui *Gui) refreshInstancesQuiet() error {
 	if err := gui.refreshInstancesAndServices(); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	gui.syncConnection()
@@ -739,7 +739,7 @@ func (gui *Gui) configReloader() func() error {
 		gui.g.Update(func(*gocui.Gui) error {
 			if err := gui.reloadConfig(); err != nil {
 				// Likely a half-written save; the next write reloads again.
-				gui.Log.Warn(err)
+				gui.Log.Warn().Err(err).Send()
 			}
 			return nil
 		})

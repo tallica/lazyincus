@@ -12,7 +12,7 @@ import (
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/util"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -36,7 +36,7 @@ type Instance struct {
 
 	Client    incus.InstanceServer
 	OSCommand *OSCommand
-	Log       *logrus.Entry
+	Log       *zerolog.Logger
 	Tr        *i18n.TranslationSet
 
 	runtime *instanceRuntime
@@ -137,7 +137,7 @@ func (i *Instance) IsOCI() bool {
 }
 
 func (i *Instance) updateState(action string, timeout int, force bool) error {
-	i.Log.Warn(fmt.Sprintf("%s instance %s", action, i.Name))
+	i.Log.Warn().Msgf("%s instance %s", action, i.Name)
 
 	return i.retryWhileBusy(func() error {
 		op, err := i.Client.UpdateInstanceState(i.Name, api.InstanceStatePut{
@@ -177,7 +177,7 @@ func (i *Instance) retryWhileBusy(request func() error) error {
 			return err
 		}
 
-		i.Log.Warn(fmt.Sprintf("instance %s is busy, retrying: %v", i.Name, err))
+		i.Log.Warn().Err(err).Msgf("instance %s is busy, retrying", i.Name)
 		time.Sleep(pause)
 	}
 }
@@ -252,7 +252,7 @@ var ErrInstanceNotRunning = errors.New("instance is not running")
 // stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
 // stop it first.
 func (i *Instance) Delete() error {
-	i.Log.Warn(fmt.Sprintf("deleting instance %s", i.Name))
+	i.Log.Warn().Msgf("deleting instance %s", i.Name)
 
 	return i.retryWhileBusy(func() error {
 		op, err := i.Client.DeleteInstance(i.Name)
@@ -268,7 +268,7 @@ func (i *Instance) Delete() error {
 // deletes it, mirroring `incus delete --force` (see deleteOne in
 // cmd/incus/delete.go).
 func (i *Instance) ForceDelete() error {
-	i.Log.Warn(fmt.Sprintf("force stopping instance %s before deleting it", i.Name))
+	i.Log.Warn().Msgf("force stopping instance %s before deleting it", i.Name)
 	if err := i.ForceStop(); err != nil {
 		return fmt.Errorf("stopping the instance failed: %w", err)
 	}

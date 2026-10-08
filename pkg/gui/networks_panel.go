@@ -420,7 +420,7 @@ func (gui *Gui) refreshNetworks() error {
 
 func (gui *Gui) refreshNetworksQuiet() error {
 	if err := gui.refreshNetworks(); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

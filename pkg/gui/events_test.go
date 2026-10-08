@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"strings"
 	"sync"
@@ -8,8 +10,7 @@ import (
 	"time"
 
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/sirupsen/logrus"
-	logtest "github.com/sirupsen/logrus/hooks/test"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -378,9 +379,9 @@ func bareGui(t *testing.T) *Gui {
 func TestEveryEventIsLoggedUnderDebug(t *testing.T) {
 	gui := bareGui(t)
 
-	logger, hook := logtest.NewNullLogger()
-	logger.SetLevel(logrus.DebugLevel)
-	gui.Log = logrus.NewEntry(logger)
+	var out bytes.Buffer
+	logger := zerolog.New(&out).Level(zerolog.DebugLevel)
+	gui.Log = &logger
 
 	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Project: "default", Action: api.EventLifecycleInstanceExec})
 	gui.onEvent(commands.Event{
@@ -388,23 +389,29 @@ func TestEveryEventIsLoggedUnderDebug(t *testing.T) {
 		Operation: "op1", Status: api.Running, Instances: []string{"web"},
 	})
 
-	entries := hook.AllEntries()
+	var entries []map[string]any
+	for line := range strings.Lines(out.String()) {
+		var entry map[string]any
+		require.NoError(t, json.Unmarshal([]byte(line), &entry))
+		entries = append(entries, entry)
+	}
+
 	require.Len(t, entries, 2)
-	assert.Equal(t, api.EventLifecycleInstanceExec, entries[0].Data["action"], "logged though it refreshes nothing")
-	assert.Equal(t, "Running", entries[1].Data["status"])
-	assert.Equal(t, []string{"web"}, entries[1].Data["instances"])
+	assert.Equal(t, api.EventLifecycleInstanceExec, entries[0]["action"], "logged though it refreshes nothing")
+	assert.Equal(t, "Running", entries[1]["status"])
+	assert.Equal(t, []any{"web"}, entries[1]["instances"])
 }
 
 func TestEventsAreNotLoggedWithoutDebug(t *testing.T) {
 	gui := bareGui(t)
 
-	logger, hook := logtest.NewNullLogger()
-	logger.SetLevel(logrus.ErrorLevel)
-	gui.Log = logrus.NewEntry(logger)
+	var out bytes.Buffer
+	logger := zerolog.New(&out).Level(zerolog.ErrorLevel)
+	gui.Log = &logger
 
 	gui.onEvent(commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleInstanceExec})
 
-	assert.Empty(t, hook.AllEntries())
+	assert.Empty(t, out.String())
 }
 
 // The daemon can send an operation's Running after its Success; it mustn't

@@ -7,12 +7,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/integrii/flaggy"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/app"
 	"github.com/tallica/lazyincus/pkg/config"
+	lazylog "github.com/tallica/lazyincus/pkg/log"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -28,6 +30,7 @@ var (
 	remoteFlag       = ""
 	projectDirectory = ""
 	readOnlyFlag     = false
+	logFormatFlag    = lazylog.Formats[0]
 )
 
 // composeProjectDirectory resolves the --project-directory flag to an
@@ -72,9 +75,14 @@ func main() {
 	flaggy.String(&remoteFlag, "r", "remote", "Incus remote to talk to, overriding INCUS_REMOTE and the CLI's default-remote")
 	flaggy.String(&projectDirectory, "P", "project-directory", "Compose project directory to list first in Stacks, in place of the working directory; overrides INCUS_COMPOSE_PROJECT_DIRECTORY")
 	flaggy.Bool(&readOnlyFlag, "", "read-only", "Change nothing on any remote: keys that would are refused")
+	flaggy.String(&logFormatFlag, "", "log-format", "Format of the --debug log: "+strings.Join(lazylog.Formats, " or "))
 	flaggy.SetVersion(info)
 
 	flaggy.Parse()
+
+	if !lazylog.ValidFormat(logFormatFlag) {
+		log.Fatalf("--log-format %s: want %s", logFormatFlag, strings.Join(lazylog.Formats, " or "))
+	}
 
 	// Both flags are applied as the environment variables they name rather
 	// than threaded inward, because the client is only half of the app:
@@ -102,6 +110,7 @@ func main() {
 	}
 
 	appConfig.ReadOnly = readOnlyFlag
+	appConfig.LogFormat = logFormatFlag
 
 	lazyincusApp, err := app.NewApp(appConfig)
 	if err == nil {
@@ -116,7 +125,7 @@ func main() {
 
 		newErr := errors.Wrap(err, 0)
 		stackTrace := newErr.ErrorStack()
-		lazyincusApp.Log.Error(stackTrace)
+		lazyincusApp.Log.Error().Msg(stackTrace)
 
 		log.Fatalf("%s\n\n%s", lazyincusApp.Tr.ErrorOccurred, stackTrace)
 	}

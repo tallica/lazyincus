@@ -55,7 +55,7 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 		select {
 		case <-interrupt:
 			if err := gui.OSCommand.Kill(cmd); err != nil {
-				gui.Log.Error(err)
+				gui.Log.Error().Err(err).Send()
 			}
 		case <-done:
 		}
@@ -66,7 +66,7 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 		fmt.Fprintf(os.Stdout, "\n%s\n\n", utils.ColoredString(msg, color.FgGreen))
 	}
 	if err := cmd.Run(); err != nil {
-		gui.Log.Error(err)
+		gui.Log.Error().Err(err).Send()
 	}
 
 	cmd.Stdin = nil

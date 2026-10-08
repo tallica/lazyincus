@@ -9,7 +9,6 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/sasha-s/go-deadlock"
-	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
@@ -179,7 +178,7 @@ func (gui *Gui) watchEvents() {
 			continue
 		}
 
-		gui.Log.Warn("event stream: ", err)
+		gui.Log.Warn().Err(err).Msg("event stream")
 
 		// A dropped stream may be the daemon gone: the instances' listing
 		// is what says, and the popup needn't wait for the poll.
@@ -222,24 +221,18 @@ func (gui *Gui) eventsOpened() {
 		scope = "all projects"
 	}
 
-	gui.Log.WithField("scope", scope).Debug("event stream open")
+	gui.Log.Debug().Str("scope", scope).Msg("event stream open")
 }
 
 // logEvent records every event the stream delivers, those that change
 // nothing included, under --debug.
 func (gui *Gui) logEvent(event commands.Event) {
-	if !gui.Log.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		return
-	}
-
-	fields := logrus.Fields{"type": event.Type, "project": event.Project, "action": event.Action}
+	entry := gui.Log.Debug().Str("type", event.Type).Str("project", event.Project).Str("action", event.Action)
 	if event.Type == api.EventTypeOperation {
-		fields["operation"] = event.Operation
-		fields["status"] = event.Status.String()
-		fields["instances"] = event.Instances
+		entry = entry.Str("operation", event.Operation).Stringer("status", event.Status).Strs("instances", event.Instances)
 	}
 
-	gui.Log.WithFields(fields).Debug("event")
+	entry.Msg("event")
 }
 
 // rescopeEvents has watchEvents reopen its listener for the scope the
@@ -373,7 +366,7 @@ func (gui *Gui) flushEvents() {
 	gui.events.mutex.Unlock()
 
 	if err := gui.refreshEnding(ending, gui.fetchesFor(kinds)...); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	// The listing just said whether the daemon answers - after a reopened

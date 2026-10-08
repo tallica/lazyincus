@@ -186,7 +186,7 @@ func (gui *Gui) fetchBackups() (func() error, error) {
 	}
 
 	if err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 
 		return gui.showBackups(ticket, nil, fmt.Sprintf(gui.Tr.BackupsUnavailable, firstLine(err.Error()))), nil
 	}
@@ -209,7 +209,7 @@ func (gui *Gui) showBackups(ticket uint64, backups []*commands.ComposeBackup, em
 
 func (gui *Gui) refreshBackupsQuiet() error {
 	if err := gui.refresh(nil, gui.fetchBackups); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

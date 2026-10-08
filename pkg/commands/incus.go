@@ -15,8 +15,8 @@ import (
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/cliconfig"
+	"github.com/rs/zerolog"
 	"github.com/sasha-s/go-deadlock"
-	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
@@ -24,7 +24,7 @@ import (
 // IncusCommand is the app's way into one Incus remote: the session's, or
 // another a stack is on.
 type IncusCommand struct {
-	Log       *logrus.Entry
+	Log       *zerolog.Logger
 	OSCommand *OSCommand
 	Tr        *i18n.TranslationSet
 	Config    *config.AppConfig
@@ -70,7 +70,7 @@ const connectTimeout = 10 * time.Second
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
 // every remote that doesn't keep it where we'd look - a daemon in a VM
 // records its own path in the remote's config.
-func NewIncusCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) (*IncusCommand, error) {
+func NewIncusCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {
 		return nil, &ConnectError{Err: err}
@@ -121,7 +121,7 @@ func (c *IncusCommand) InstanceRemoteNames() []string {
 	return names
 }
 
-func connectCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
+func connectCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
 	client, err := connectRemote(cliCfg, name)
 	if err != nil {
 		return nil, &ConnectError{Remote: name, Err: err}
@@ -137,13 +137,13 @@ func connectCommand(log *logrus.Entry, osCommand *OSCommand, tr *i18n.Translatio
 
 // NewIncusCommandWithClient is an IncusCommand around a client already
 // connected - to a remote, or to incustest's stand-in.
-func NewIncusCommandWithClient(log *logrus.Entry, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
+func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
 	// Best-effort: the footer just shows no version without it.
 	version := ""
 	if server, _, err := client.GetServer(); err == nil {
 		version = server.Environment.ServerVersion
 	} else if log != nil {
-		log.Warn(err)
+		log.Warn().Err(err).Send()
 	}
 
 	return &IncusCommand{
@@ -494,7 +494,7 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 	// and not the other.
 	users, usersErr := imageUsers(client)
 	if usersErr != nil {
-		c.Log.Warn(usersErr)
+		c.Log.Warn().Err(usersErr).Send()
 	}
 
 	ownImages := make([]*Image, len(apiImages))
@@ -648,7 +648,7 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 	for _, pool := range pools {
 		apiVolumes, err := c.listVolumes(client, pool.Name)
 		if err != nil {
-			c.Log.Warn(err)
+			c.Log.Warn().Err(err).Send()
 			continue
 		}
 

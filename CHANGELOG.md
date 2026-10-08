@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The `--debug` log is plain, readable lines by default; `--log-format json` keeps it JSON, one object per line.
+
 ## [0.14.0] - 2026-10-08
 
 ### Added

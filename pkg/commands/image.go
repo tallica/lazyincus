@@ -3,7 +3,7 @@ package commands
 import (
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
@@ -21,7 +21,7 @@ type Image struct {
 	UsersUnknown bool
 	Client       incus.InstanceServer
 	OSCommand    *OSCommand
-	Log          *logrus.Entry
+	Log          *zerolog.Logger
 	Tr           *i18n.TranslationSet
 }
 

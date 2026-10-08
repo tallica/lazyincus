@@ -128,7 +128,7 @@ func (gui *Gui) refreshProfiles() error {
 
 func (gui *Gui) refreshProfilesQuiet() error {
 	if err := gui.refreshProfiles(); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

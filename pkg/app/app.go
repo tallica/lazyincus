@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/gui"
@@ -15,7 +15,7 @@ import (
 // App struct
 type App struct {
 	Config       *config.AppConfig
-	Log          *logrus.Entry
+	Log          *zerolog.Logger
 	OSCommand    *commands.OSCommand
 	IncusCommand *commands.IncusCommand
 	Gui          *gui.Gui

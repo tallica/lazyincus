@@ -397,7 +397,7 @@ func (gui *Gui) setStackServices(stacks []*commands.ComposeStack) error {
 
 func (gui *Gui) refreshStacksQuiet() error {
 	if err := gui.refresh(nil, gui.fetchStacks); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil

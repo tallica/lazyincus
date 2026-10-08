@@ -387,7 +387,7 @@ func (gui *Gui) fetchServices() (func() error, error) {
 	// fetched here so rendering stays free of API calls.
 	project, projectErr := command.GetComposeProject(stack.Name)
 	if projectErr != nil {
-		gui.Log.Warn(projectErr)
+		gui.Log.Warn().Err(projectErr).Send()
 	}
 
 	return func() error {

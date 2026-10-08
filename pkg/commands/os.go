@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,7 +10,7 @@ import (
 
 	"github.com/jesseduffield/kill"
 	"github.com/mgutz/str"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -27,7 +26,7 @@ type Platform struct {
 
 // OSCommand holds all the os commands
 type OSCommand struct {
-	Log      *logrus.Entry
+	Log      *zerolog.Logger
 	Platform *Platform
 	Config   *config.AppConfig
 	command  func(string, ...string) *exec.Cmd
@@ -35,7 +34,7 @@ type OSCommand struct {
 }
 
 // NewOSCommand os command runner
-func NewOSCommand(log *logrus.Entry, config *config.AppConfig) *OSCommand {
+func NewOSCommand(log *zerolog.Logger, config *config.AppConfig) *OSCommand {
 	return &OSCommand{
 		Log:      log,
 		Platform: getPlatform(),
@@ -50,7 +49,7 @@ func (c *OSCommand) RunCommandWithOutput(command string) (string, error) {
 	cmd := c.ExecutableFromString(command)
 	before := time.Now()
 	output, err := sanitisedCommandOutput(cmd.Output())
-	c.Log.Warn(fmt.Sprintf("'%s': %s", command, time.Since(before)))
+	c.Log.Warn().Msgf("'%s': %s", command, time.Since(before))
 	return output, err
 }
 
@@ -190,7 +189,7 @@ func (c *OSCommand) Quote(message string) string {
 func (c *OSCommand) RunPreparedCommand(cmd *exec.Cmd) error {
 	out, err := cmd.CombinedOutput()
 	outString := string(out)
-	c.Log.Info(outString)
+	c.Log.Info().Msg(outString)
 	if err != nil {
 		if len(outString) == 0 {
 			return err

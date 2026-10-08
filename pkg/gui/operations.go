@@ -253,7 +253,7 @@ func (gui *Gui) fetchOperations() (func() error, error) {
 
 func (gui *Gui) refreshOperationsQuiet() error {
 	if err := gui.refresh(nil, gui.fetchOperations); err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	return nil
@@ -305,7 +305,7 @@ func (gui *Gui) seeOperations() {
 	gui.State.OperationsSeenAt = time.Now()
 
 	if err := gui.countOperations(); err != nil {
-		gui.Log.Error(err)
+		gui.Log.Error().Err(err).Send()
 	}
 }
 

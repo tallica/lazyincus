@@ -34,7 +34,7 @@ func (gui *Gui) renderLogsToMain(content func() string) tasks.TaskFunc {
 func (gui *Gui) instanceLogStr(instance *commands.Instance) string {
 	content, err := instance.TailConsoleLog()
 	if err != nil {
-		gui.Log.Warn(err)
+		gui.Log.Warn().Err(err).Send()
 	}
 
 	if content == "" {
@@ -49,7 +49,7 @@ func (gui *Gui) promptToReturn() {
 		fmt.Fprintf(os.Stdout, "\n\n%s", utils.ColoredString(gui.Tr.PressEnterToReturn, color.FgGreen))
 
 		if _, err := fmt.Scanln(); err != nil {
-			gui.Log.Error(err)
+			gui.Log.Error().Err(err).Send()
 		}
 	}
 }

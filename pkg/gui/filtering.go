@@ -33,7 +33,7 @@ func (gui *Gui) wrapEditor(f func(v *gocui.View, key gocui.Key, ch rune, mod goc
 		matched := f(v, key, ch, mod)
 		if matched {
 			if err := gui.onNewFilterNeedle(v.TextArea.GetContent()); err != nil {
-				gui.Log.Error(err)
+				gui.Log.Error().Err(err).Send()
 			}
 		}
 		return matched

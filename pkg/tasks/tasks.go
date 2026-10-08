@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/sasha-s/go-deadlock"
-	"github.com/sirupsen/logrus"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
@@ -14,7 +14,7 @@ type TaskManager struct {
 	currentTask  *Task
 	waitingMutex deadlock.Mutex
 	taskIDMutex  deadlock.Mutex
-	Log          *logrus.Entry
+	Log          *zerolog.Logger
 	Tr           *i18n.TranslationSet
 	newTaskId    int
 }
@@ -25,13 +25,13 @@ type Task struct {
 	stopped       bool
 	stopMutex     deadlock.Mutex
 	notifyStopped chan struct{}
-	Log           *logrus.Entry
+	Log           *zerolog.Logger
 	f             func(ctx context.Context)
 }
 
 type TaskFunc func(ctx context.Context)
 
-func NewTaskManager(log *logrus.Entry, translationSet *i18n.TranslationSet) *TaskManager {
+func NewTaskManager(log *zerolog.Logger, translationSet *i18n.TranslationSet) *TaskManager {
 	return &TaskManager{Log: log, Tr: translationSet}
 }
 
@@ -82,9 +82,9 @@ func (t *TaskManager) NewTask(f func(ctx context.Context)) error {
 		notifyStopped := make(chan struct{})
 
 		if t.currentTask != nil {
-			t.Log.Info("asking task to stop")
+			t.Log.Info().Msg("asking task to stop")
 			t.currentTask.Stop()
-			t.Log.Info("task stopped")
+			t.Log.Info().Msg("task stopped")
 		}
 
 		task := &Task{
@@ -101,7 +101,7 @@ func (t *TaskManager) NewTask(f func(ctx context.Context)) error {
 
 		go func() {
 			f(ctx)
-			t.Log.Info("returned from function, closing notifyStopped")
+			t.Log.Info().Msg("returned from function, closing notifyStopped")
 			close(notifyStopped)
 		}()
 	}()
@@ -117,8 +117,8 @@ func (t *Task) Stop() {
 	}
 
 	t.cancel()
-	t.Log.Info("closed stop channel, waiting for notifyStopped message")
+	t.Log.Info().Msg("closed stop channel, waiting for notifyStopped message")
 	<-t.notifyStopped
-	t.Log.Info("received notifystopped message")
+	t.Log.Info().Msg("received notifystopped message")
 	t.stopped = true
 }

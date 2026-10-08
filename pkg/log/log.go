@@ -5,56 +5,57 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
+// Formats are the values --log-format takes, the first the default.
+var Formats = []string{"console", "json"}
+
+// ValidFormat reports whether format is one of Formats.
+func ValidFormat(format string) bool {
+	return slices.Contains(Formats, format)
+}
+
 // NewLogger returns a new logger
-func NewLogger(config *config.AppConfig) *logrus.Entry {
-	var log *logrus.Logger
-	if config.Debug || os.Getenv("DEBUG") == "TRUE" {
-		log = newDevelopmentLogger(config)
-	} else {
-		log = newProductionLogger()
+func NewLogger(config *config.AppConfig) *zerolog.Logger {
+	if !config.Debug && os.Getenv("DEBUG") != "TRUE" {
+		log := zerolog.Nop()
+		return &log
 	}
 
-	// highly recommended: tail -f development.log | humanlog
-	// https://github.com/aybabtme/humanlog
-	log.Formatter = &logrus.JSONFormatter{}
-
-	return log.WithFields(logrus.Fields{
-		"debug":     config.Debug,
-		"version":   config.Version,
-		"commit":    config.Commit,
-		"buildDate": config.BuildDate,
-	})
-}
-
-func getLogLevel() logrus.Level {
-	strLevel := os.Getenv("LOG_LEVEL")
-	level, err := logrus.ParseLevel(strLevel)
-	if err != nil {
-		return logrus.DebugLevel
-	}
-	return level
-}
-
-func newDevelopmentLogger(config *config.AppConfig) *logrus.Logger {
-	log := logrus.New()
-	log.SetLevel(getLogLevel())
 	file, err := os.OpenFile(filepath.Join(config.ConfigDir, "development.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		fmt.Println("unable to log to file")
 		os.Exit(1)
 	}
-	log.SetOutput(file)
-	return log
+
+	log := zerolog.New(writer(file, config.LogFormat)).Level(getLogLevel()).With().Timestamp().Logger()
+	log.Info().
+		Str("version", config.Version).
+		Str("commit", config.Commit).
+		Str("buildDate", config.BuildDate).
+		Msg("starting")
+
+	return &log
 }
 
-func newProductionLogger() *logrus.Logger {
-	log := logrus.New()
-	log.Out = io.Discard
-	log.SetLevel(logrus.ErrorLevel)
-	return log
+func writer(out io.Writer, format string) io.Writer {
+	if format == "json" {
+		return out
+	}
+
+	return zerolog.ConsoleWriter{Out: out, NoColor: true, TimeFormat: time.RFC3339}
+}
+
+func getLogLevel() zerolog.Level {
+	// ParseLevel takes "" for NoLevel, which would log everything.
+	level, err := zerolog.ParseLevel(os.Getenv("LOG_LEVEL"))
+	if err != nil || level == zerolog.NoLevel {
+		return zerolog.DebugLevel
+	}
+	return level
 }

@@ -33,7 +33,7 @@ so an upstream bugfix wants checking against both before it's copied.
 main.go                        CLI entry point (flaggy flags, boots pkg/app)
 pkg/app/app.go                 wires config -> log -> i18n -> OSCommand -> IncusCommand -> Gui
 pkg/config/                    YAML user config, defaults, theme
-pkg/log/                       logrus setup (JSON, file-based when --debug/DEBUG=TRUE)
+pkg/log/                       zerolog setup (console or JSON, file-based when --debug/DEBUG=TRUE)
 pkg/i18n/                      TranslationSet; English only
 pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
 pkg/utils/                     string/table/color/yaml helpers; every display width goes through DisplayWidth

@@ -197,6 +197,8 @@ type AppConfig struct {
 	ConfigDir   string
 	// ReadOnly is --read-only: every remote read-only, whatever the config.
 	ReadOnly bool
+	// LogFormat is --log-format: how development.log is written.
+	LogFormat string
 }
 
 // NewAppConfig makes a new app config
