@@ -5,7 +5,6 @@ package i18n
 type TranslationSet struct {
 	NotEnoughSpace                             string
 	MainTitle                                  string
-	GlobalTitle                                string
 	Navigate                                   string
 	Menu                                       string
 	MenuTitle                                  string
@@ -65,7 +64,6 @@ type TranslationSet struct {
 	NoLeasesUnmanaged            string
 	CannotListLeases             string
 	CannotReadNetworkState       string
-	ForceRemove                  string
 	ForceStop                    string
 	MustForceToRemove            string
 	Confirm                      string
@@ -222,22 +220,16 @@ type TranslationSet struct {
 
 	CannotDeleteUnmanagedNetwork string
 	NoInstances                  string
-	NoInstance                   string
 	NoSnapshots                  string
-	RemoveWithForce              string
 	PressEnterToReturn           string
 	ExitShellToReturn            string
-	FilterList                   string
-	SortInstancesByState         string
 
-	LogsTitle                 string
-	ConfigTitle               string
-	EnvTitle                  string
-	SnapshotsTitle            string
-	TopTitle                  string
-	CreditsTitle              string
-	NothingToDisplay          string
-	CannotDisplayEnvVariables string
+	LogsTitle        string
+	ConfigTitle      string
+	EnvTitle         string
+	SnapshotsTitle   string
+	TopTitle         string
+	NothingToDisplay string
 
 	CannotListProcesses                string
 	CannotListProcessesStoppedInstance string
@@ -402,7 +394,6 @@ func englishSet() TranslationSet {
 		NoLeasesUnmanaged:            "Only networks Incus manages hand out leases.",
 		CannotListLeases:             "Could not list the network's leases.",
 		CannotReadNetworkState:       "Could not read the network's state.",
-		ForceRemove:                  "force delete",
 		ForceStop:                    "force stop",
 		MustForceToRemove:            "This instance is still running, so Incus refused to delete it. Stop it and delete it anyway?",
 		Stop:                         "stop",
@@ -426,10 +417,7 @@ func englishSet() TranslationSet {
 		CopyProject:                  "project",
 		CopyDirectory:                "directory",
 		CopySnapshotRef:              "owner/snapshot",
-		FilterList:                   "filter list",
-		SortInstancesByState:         "sort instances by state",
 
-		GlobalTitle:                  "Global",
 		MainTitle:                    "Main",
 		InstanceTitle:                "Instance",
 		InstancesTitle:               "Instances",
@@ -556,16 +544,13 @@ func englishSet() TranslationSet {
 
 		SnapshotsTitle: "Snapshots",
 		TopTitle:       "Top",
-		CreditsTitle:   "About",
 
 		NothingToDisplay:                   "Nothing to display",
 		CannotListProcesses:                "Could not list processes.\n\n`ps` has to exist inside the instance, and a VM also\nneeds the Incus guest agent running.",
 		CannotListProcessesStoppedInstance: "You cannot list the processes of a stopped instance (start it with the 'S' key)",
-		CannotDisplayEnvVariables:          "Something went wrong while displaying instance details",
 
 		NoInstances: "No instances",
 		NoSnapshots: "No snapshots",
-		NoInstance:  "No instance",
 
 		ConfirmQuit:        "Are you sure you want to quit?",
 		StopInstance:       "Are you sure you want to stop instance %s?",

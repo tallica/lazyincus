@@ -119,14 +119,6 @@ Not planned:
   lazydocker's `RecordedStats`/graph config machinery wasn't ported.
 - **Non-English translations**, **Windows support**.
 
-### Cleanup
-
-- [ ] **Unused translation strings** — nine are defined but never
-      referenced: `GlobalTitle`, `ErrorOccurred`, `ForceRemove`,
-      `NoInstance`, `RemoveWithForce`, `FilterList`, `SortInstancesByState`,
-      `CreditsTitle`, `CannotDisplayEnvVariables`. Dead weight now that
-      attach is wired up. Wire up or delete.
-
 ## Not lazydocker-shaped
 
 The interesting gaps aren't all inherited from lazydocker. Profiles,
