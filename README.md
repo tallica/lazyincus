@@ -373,8 +373,8 @@ here. A star on this repo, though, is always welcome.
 
 Not full parity with lazydocker. Not included:
 
-- The credits and aggregate-log tabs lazydocker's Services/Project panel
-  had — the panel itself and the compose verbs are covered by the Services
+- The credits tab lazydocker's Project panel had, and its logs tab
+  interleaving every container's — the panel itself and the compose verbs are covered by the Services
   panel above; see
   [BACKLOG.md](BACKLOG.md#incus-compose-integration) for what's left
 - Custom and bulk commands

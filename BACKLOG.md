@@ -76,7 +76,7 @@ Not planned:
       `O` (edit).
 - [ ] **Cheatsheet generator** — lazydocker generates `docs/keybindings/*.md`
       from its i18n set via `scripts/cheatsheet`. Here the README keybinding
-      table is hand-maintained, which is why CLAUDE.md has to carry a
+      table is hand-maintained, which is why docs/Panels.md has to carry a
       reminder to keep it current.
 - [x] **Event stream** — lazyincus listens to Incus's lifecycle and
       operation events; see [docs/Incus.md](docs/Incus.md).

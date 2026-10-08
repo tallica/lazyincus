@@ -215,8 +215,9 @@ No `vendor/` directory — plain module mode.
 
 The screen tests compare against `pkg/gui/testdata/screens`. A change
 that moves the layout on purpose rewrites them with
-`go test ./pkg/gui -run TestScreen -update`; read the diff before
-keeping it.
+`go test ./pkg/gui -update`; read the diff before keeping it. CI runs the
+tests under `-race` (`go test -race ./...`), which `make test` doesn't:
+run that too when a change touches timing.
 
 ### Releasing
 
@@ -284,9 +285,9 @@ tmux new-session -d -s lzr -x 140 -y 40 \
   "GORACE=log_path=/tmp/lzi-race CONFIG_DIR=/tmp/lzi-cfg /tmp/lazyincus-race"
 ```
 
-Move through the lists, every main-panel tab, a project switch or two
-(`P`), and the stacks and services panels if incus-compose is installed,
-for a minute or so; then quit. With a second remote to hand, list a stack
+Move through the lists, every main-panel tab, `W`'s popup, a project
+switch or two (`P`), and the stacks and services panels if incus-compose
+is installed, for a minute or so; then quit. With a second remote to hand, list a stack
 on it and switch to it and back (`R`, `space`): connecting and reading it
 are goroutines of their own. Any `/tmp/lzi-race.*` file is a race.
 Read-only keys are enough - the races are between reading and refreshing.

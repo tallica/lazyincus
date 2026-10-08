@@ -448,8 +448,8 @@ Main panel tabs:
   `instanceConfigStr` dump per instance the row stands for, under the Info
   tab's own `instanceHeading`.
 
-The credits tab and aggregate-logs tab from lazydocker's Project panel
-aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
+The credits tab and the interleaved logs tab from lazydocker's Project
+panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 
 ## Instances
 
@@ -631,10 +631,9 @@ do, so its own progress and refusals are what you read:
 
 ## Resources
 
-Images, volumes, networks and profiles are four
-panels sharing one window: a
-`window` on their defs puts them in the same slot, and `window.go` is what
-knows about it. The views are stacked at the same position and the layout
+Images, volumes, networks and profiles are four panels sharing one
+window: a `window` on their defs puts them in the same slot, and
+`window.go` is what knows about it. The views are stacked at the same position and the layout
 shows the window's active one, which is whichever was focused there last
 (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same list
 on each, each with its own `TabIndex` - so the title reads as the window's
@@ -644,19 +643,18 @@ pass, so a resize refits them: a tab cut off the end is a list nobody knows
 is there. A tab that names whose list it is - Snapshots, Backups - does so
 only while on show (its def's `plainTitle` otherwise), and the tab on show
 keeps its full name longest, cut with an ellipsis before it's shortened
-too. Number keys, `tab` and the side column's split
-all count windows, so the five take one number and one share of the
-height; they read something far less often than instances do.
+too. Number keys, `tab` and the side column's split all count windows,
+so the four take one number and one share of the height; they read
+something far less often than instances do.
 
-`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the five are
+`←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
 stops of their own there, where `tab` and the number keys stop at the
-window; `[`/`]` stay the main panel's tabs, which Networks has three of.
+window; `[`/`]` stay the main panel's tabs, which Networks has five of.
 The window's number key pressed again moves to its next list, and a click
 on a tab's name to that one. The arrows are global bindings, and the
 main panel's own - scrolling sideways - win while it has focus. It's a
-focus change
-like any other, so a filter on one list is dropped on moving to the next,
-as it is moving between any two panels. The hidden lists keep polling,
+focus change like any other, so a filter on one list is dropped on moving
+to the next, as it is moving between any two panels. The hidden lists keep polling,
 so a switch shows current rows at once.
 
 `u` on Images, Volumes, Networks or Profiles narrows the instances panel to what uses the item
