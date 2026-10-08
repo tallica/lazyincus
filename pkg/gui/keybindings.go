@@ -520,6 +520,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			NoSelection: true,
 		},
 		{
+			ViewName:    "main",
+			Key:         '/',
+			Modifier:    gocui.ModNone,
+			Handler:     wrappedHandler(gui.handleOpenSearch),
+			Description: gui.Tr.LcSearch,
+			NoSelection: true,
+		},
+		{
 			ViewName: "main",
 			Key:      gocui.KeyArrowLeft,
 			Modifier: gocui.ModNone,

@@ -65,6 +65,12 @@ func (gui *Gui) switchFocusAux(newView *gocui.View) error {
 		}
 	}
 
+	if gui.State.Filter.search && !lo.Contains(newViewStack, "main") {
+		if err := gui.clearFilter(); err != nil {
+			return err
+		}
+	}
+
 	if !lo.Contains(newViewStack, "menu") {
 		gui.Views.Menu.Visible = false
 	}

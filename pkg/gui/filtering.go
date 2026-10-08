@@ -22,8 +22,45 @@ func (gui *Gui) handleOpenFilter() error {
 	return gui.switchFocus(gui.Views.Filter)
 }
 
+// handleOpenSearch searches the main panel, the matches highlighted as you
+// type; once the prompt is left, n and N step through them and esc clears it.
+func (gui *Gui) handleOpenSearch() error {
+	if gui.State.Filter.active {
+		if err := gui.clearFilter(); err != nil {
+			return err
+		}
+	}
+
+	gui.State.Filter.active = true
+	gui.State.Filter.search = true
+	// Or a ticker's next write would scroll away from the match.
+	gui.Views.Main.Autoscroll = false
+	gui.renderFilterPrompt()
+
+	return gui.switchFocus(gui.Views.Filter)
+}
+
+func (gui *Gui) onSearchEscape() error {
+	if !gui.State.Filter.search {
+		return nil
+	}
+
+	return gui.clearFilter()
+}
+
 func (gui *Gui) onNewFilterNeedle(value string) error {
 	gui.State.Filter.needle = value
+	if gui.State.Filter.search {
+		if value == "" {
+			gui.Views.Main.ClearSearch()
+			gui.renderFilterPrompt()
+		} else {
+			gui.Views.Main.Search(value, nil)
+		}
+
+		return nil
+	}
+
 	gui.ResetOrigin(gui.State.Filter.panel.GetView())
 	return gui.State.Filter.panel.RerenderList()
 }
@@ -45,20 +82,43 @@ func (gui *Gui) escapeFilterPrompt() error {
 		return gui.handleMenuClose()
 	}
 
+	search := gui.State.Filter.search
 	if err := gui.clearFilter(); err != nil {
 		return err
+	}
+
+	if search {
+		return gui.leaveSearchPrompt()
 	}
 
 	return gui.returnFocus()
 }
 
+// leaveSearchPrompt returns to the main panel, taking the prompt off the
+// view stack: returning to a list does that by itself, but returning to the
+// main panel doesn't, and its esc would return to the prompt.
+func (gui *Gui) leaveSearchPrompt() error {
+	if err := gui.switchFocus(gui.Views.Main); err != nil {
+		return err
+	}
+
+	gui.removeViewFromStack(gui.Views.Filter)
+
+	return nil
+}
+
 func (gui *Gui) clearFilter() error {
+	if gui.State.Filter.search {
+		gui.Views.Main.ClearSearch()
+	}
+
 	gui.State.Filter.needle = ""
 	gui.State.Filter.active = false
+	gui.State.Filter.search = false
 	panel := gui.State.Filter.panel
 	gui.State.Filter.panel = nil
 	gui.Views.Filter.ClearTextArea()
-	_ = gui.setViewContent(gui.Views.FilterPrefix, gui.filterPrompt())
+	gui.renderFilterPrompt()
 
 	if panel == nil {
 		return nil
@@ -75,10 +135,15 @@ func (gui *Gui) commitFilter() error {
 		return gui.handleMenuPress()
 	}
 
+	search := gui.State.Filter.search
 	if gui.State.Filter.needle == "" {
 		if err := gui.clearFilter(); err != nil {
 			return err
 		}
+	}
+
+	if search {
+		return gui.leaveSearchPrompt()
 	}
 
 	return gui.returnFocus()
@@ -107,7 +172,28 @@ func (gui *Gui) filterPrompt() string {
 		return fmt.Sprintf("%s: ", gui.Tr.CommandPalettePrompt)
 	}
 
+	if gui.State.Filter.search {
+		return gui.searchPrompt()
+	}
+
 	return fmt.Sprintf("%s: ", gui.Tr.FilterPrompt)
+}
+
+func (gui *Gui) searchPrompt() string {
+	if !gui.Views.Main.IsSearching() {
+		return fmt.Sprintf("%s: ", gui.Tr.SearchPrompt)
+	}
+
+	index, total := gui.Views.Main.GetSearchStatus()
+	if total == 0 {
+		return fmt.Sprintf("%s (%s): ", gui.Tr.SearchPrompt, gui.Tr.NoMatches)
+	}
+
+	return fmt.Sprintf("%s ("+gui.Tr.MatchOf+"): ", gui.Tr.SearchPrompt, index+1, total)
+}
+
+func (gui *Gui) renderFilterPrompt() {
+	_ = gui.setViewContent(gui.Views.FilterPrefix, gui.filterPrompt())
 }
 
 // FilterString returns the current filter needle for the given view, if the

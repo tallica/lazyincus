@@ -201,7 +201,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `O` | Edit the lazyincus config file in `$VISUAL`/`$EDITOR` |
 | `+` / `_` | Next / previous screen mode |
 | `=` | Expand / collapse the focused side panel |
-| `/` | Filter |
+| `/` | Filter; in the main panel, search it: `n` / `N` step through the matches, `esc` clears them |
 | `x` / `?` | Keybinding menu |
 | `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions |
 | `q`, `ctrl+c` | Quit |

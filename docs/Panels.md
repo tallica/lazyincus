@@ -42,6 +42,16 @@ stopped instance's address - is left out rather than offered empty. A
 network's addresses are Incus's `ipv4.address`/`ipv6.address`, the
 gateway with its prefix, and labelled as such rather than as the subnet.
 
+## Searching the main panel
+
+`/` with the main panel focused searches whatever tab it shows, with
+gocui's own search (`View.Search`): case-insensitive unless the text has
+a capital, and found again on every write, so a ticking tab or one
+switched to keeps its matches. The prompt is the filter's bottom line, so
+a list filter still applied is cleared by it, as the command palette
+clears one. Starting a search stops the panel following new output, as
+scrolling up does. Focus leaving the main panel ends the search.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which

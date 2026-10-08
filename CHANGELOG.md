@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `/` in the main panel searches it, highlighting the matches: `n`/`N` step through them, `esc` clears.
+
 ### Changed
 - The `--debug` log is plain, readable lines by default; `--log-format json` keeps it JSON, one object per line.
 

@@ -310,6 +310,8 @@ type filterState struct {
 	panel panels.ISideListPanel
 	// The string that we're filtering on
 	needle string
+	// Or the main panel is being searched, and panel is nil.
+	search bool
 }
 
 // screen sizing determines how much space your selected window takes up (window
@@ -495,6 +497,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 	}
 
 	g.ErrorHandler = gui.handleError
+	g.OnSearchEscape = gui.onSearchEscape
+	g.SetRenderSearchStatusFunc(func(*gocui.View, int, int) { gui.renderFilterPrompt() })
 
 	// A popup has the keyboard, so a click or a wheel outside it does
 	// nothing; gocui would otherwise move the cursor of the list under it

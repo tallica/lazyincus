@@ -70,6 +70,7 @@ type TranslationSet struct {
 	Return                       string
 	FocusMain                    string
 	LcFilter                     string
+	LcSearch                     string
 	StopInstance                 string
 	DeleteInstance               string
 	ForceStopInstance            string
@@ -242,6 +243,10 @@ type TranslationSet struct {
 	LcToggleExpandSidePanel string
 
 	FilterPrompt string
+	SearchPrompt string
+	// MatchOf takes the current match's number and how many there are.
+	MatchOf   string
+	NoMatches string
 
 	NextPanel string
 	PrevPanel string
@@ -348,6 +353,7 @@ func englishSet() TranslationSet {
 		Return:                       "return",
 		FocusMain:                    "focus main panel",
 		LcFilter:                     "filter list",
+		LcSearch:                     "search (n/N: next/previous match)",
 		Navigate:                     "navigate",
 		Execute:                      "execute",
 		Close:                        "close",
@@ -568,6 +574,9 @@ func englishSet() TranslationSet {
 		LcToggleExpandSidePanel: "expand/collapse the focused side panel",
 
 		FilterPrompt: "filter",
+		SearchPrompt: "search",
+		MatchOf:      "%d of %d",
+		NoMatches:    "no matches",
 
 		NextPanel:     "next panel",
 		PrevPanel:     "previous panel",

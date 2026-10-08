@@ -69,6 +69,16 @@ func (gui *Gui) writeMain(ctx context.Context, write func(view *gocui.View)) {
 		gui.mainView.write = number
 		write(view)
 
+		// The matches are found again on every write, but which is current
+		// isn't, and can be left pointing past the last of them.
+		if view.IsSearching() {
+			if index, total := view.GetSearchStatus(); index >= total {
+				view.SetNearestSearchPosition()
+			}
+
+			gui.renderFilterPrompt()
+		}
+
 		return nil
 	})
 }
