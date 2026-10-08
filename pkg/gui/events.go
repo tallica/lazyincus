@@ -22,6 +22,7 @@ const (
 	refreshVolumes
 	refreshNetworks
 	refreshProfiles
+	refreshWarnings
 	// refreshOperations is the stream opening, which no event of its own
 	// says: what started or ended while it was shut.
 	refreshOperations
@@ -85,6 +86,10 @@ var eventRefreshes = map[string]refreshKind{
 	api.EventLifecycleNetworkACLDeleted:     refreshNetworks,
 	api.EventLifecycleNetworkACLRenamed:     refreshNetworks,
 	api.EventLifecycleNetworkACLUpdated:     refreshNetworks,
+
+	api.EventLifecycleWarningAcknowledged: refreshWarnings,
+	api.EventLifecycleWarningReset:        refreshWarnings,
+	api.EventLifecycleWarningDeleted:      refreshWarnings,
 
 	api.EventLifecycleProfileCreated: refreshProfiles,
 	api.EventLifecycleProfileDeleted: refreshProfiles,
@@ -401,6 +406,10 @@ func (gui *Gui) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshProfiles != 0 {
 		fetches = append(fetches, gui.fetchProfiles)
+	}
+
+	if kinds&refreshWarnings != 0 {
+		fetches = append(fetches, gui.fetchWarnings)
 	}
 
 	if kinds&refreshOperations != 0 {

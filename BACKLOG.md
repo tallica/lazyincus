@@ -88,6 +88,12 @@ Not planned:
       `DisplayStatus`'s maps and `StatusColor`. A deleted instance's mark
       has no row left to end on, so check it comes off with the listing
       that drops the row.
+- [ ] **`UseProject` against a connecting stream** — the warnings got a
+      client made with the connection because `UseProject` copies the
+      client's `skipEvents` unguarded while an event stream connecting on
+      it writes it ([docs/Incus.md](docs/Incus.md), "Warnings"). `clientFor`
+      and the per-instance clients a listing makes do the same; the race
+      detector hasn't caught them, but the window is the same one.
 - [ ] **Events for a restricted certificate** — `ListenForEvents` asks for
       every project's events whenever the panels list every project. A
       certificate restricted to some projects may be refused that, and

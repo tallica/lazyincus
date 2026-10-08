@@ -110,6 +110,9 @@ type Gui struct {
 	// operationsScope counts the scope changes, which clear the log; each
 	// event stream knows the one it was opened for.
 	operationsScope atomic.Uint64
+	// newWarnings is how many warnings no one has acknowledged, for the
+	// footer, drawn off the main loop.
+	newWarnings atomic.Int32
 
 	// networkTabs counts the forward and ACL events, which change what a
 	// network's tabs show without changing the network.
@@ -213,6 +216,11 @@ type guiState struct {
 	// What the snapshots panel's rows span as of its last render, which
 	// decides whether a row names its instance and project.
 	SnapshotsSpan snapshotsSpan
+
+	// Warnings are the remote's, as the last listing had them, and
+	// WarningsMenu whether the popup open is theirs.
+	Warnings     []*commands.Warning
+	WarningsMenu bool
 
 	// OperationsSeenAt is when the Operations tab last had focus: the
 	// footer counts the failures since.
@@ -541,6 +549,8 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.pollUnlessWatched(time.Second*10, gui.refreshNetworksQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshProfilesQuiet)
 		gui.pollUnlessWatched(time.Second*10, gui.refreshOperationsQuiet)
+		// No event says the daemon has raised a warning.
+		gui.goEvery(time.Second*30, gui.refreshWarningsQuiet)
 		// The session's stream says nothing of another remote's stacks.
 		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
 	}()
@@ -583,6 +593,7 @@ func (gui *Gui) fetchGroups() [][]fetch {
 		{gui.fetchNetworks},
 		{gui.fetchProfiles},
 		{gui.fetchOperations},
+		{gui.fetchWarnings},
 	}
 }
 

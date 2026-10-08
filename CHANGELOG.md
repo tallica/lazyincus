@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
 - An Operations tab in Resources lists what the daemon is doing and what it did this session, with progress and errors; `d` cancels one.
 - The footer counts running operations, and in red those that failed since you last looked at the Operations tab.
+- `W` lists the remote's warnings, to acknowledge (`a`) or delete (`d`); the footer counts the unacknowledged ones.
 
 ### Changed
 - With the main panel or a popup focused, the list it shows keeps its selected row in bold; `theme.inactiveSelectedLineBgColor` sets the style.

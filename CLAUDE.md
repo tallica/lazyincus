@@ -184,7 +184,8 @@ project, the console log's drain-on-read behaviour, why `exec` and
 `attach` shell out to the `incus` CLI instead of using the client's
 websocket API, the status the daemon won't give an instance mid-action,
 the event stream: which events count, and the order they arrive in, and
-how briefly the daemon keeps an operation once it has ended.
+how briefly the daemon keeps an operation once it has ended, and the
+warnings no event announces.
 
 ## Config
 

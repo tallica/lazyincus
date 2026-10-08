@@ -65,6 +65,7 @@ an `instance-updated` refreshes at most every 10s.
 | Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Profiles | `profile-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Operations | every operation event; the stream opening | as Images |
+| Warnings | `warning-acknowledged`/`-reset`/`-deleted` | every 30s, stream or not: no event says one was raised |
 
 An operation event also marks a row the moment the daemon takes the
 action, whoever asked: `starting`, `stopping`, `restarting`, `restoring`,
@@ -815,4 +816,22 @@ in its metadata - isn't listed at all.
 `d` cancels one the daemon says may be cancelled, after a confirmation.
 The footer says how many are under way, and in red how many have failed
 since the tab last had focus.
+
+## Warnings
+
+Not a panel: `W` opens them as a popup, the remote's warnings across
+every project and the server's own, new ones first, the most severe first
+among them. They're read now and then rather than watched, and a sixth
+Resources tab wouldn't fit a 100-column screen. A row is the severity,
+`new` or `ack`, how often it's been seen, the type, the project and the
+message; enter shows the rest. `a` acknowledges a new one or puts an
+acknowledged one back - the daemon's own status, so `incus warning list`
+and every other client agree - and `d` deletes one after asking, which
+the daemon undoes if the cause persists. The popup is redrawn in place,
+the cursor on the same warning: acknowledged, it moves down the list.
+
+The keys are the menu's (`MenuItem.Keys`), each saying whether it changes
+anything, since the menu's keys mean something else in every menu: a
+read-only remote refuses `a` and `d` here and nowhere else. The footer
+counts the warnings no one has acknowledged.
 

@@ -89,6 +89,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 		}
 	}
 
+	gui.State.WarningsMenu = false
 	gui.Panels.Menu.SetItems(opts.Items)
 	gui.Panels.Menu.SetSelectedLineIdx(0)
 

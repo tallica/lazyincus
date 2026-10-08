@@ -1,8 +1,7 @@
 ╭─[1]─Instances──────────────╮╭─Info - Logs - Config - Env - Top─────────────────────────╮
-│a-name-long-enough-to-be-cu…││Remote:       fake                                        │
-│web                   ╭─Menu──────────────────────────────────────╮                     │
-│db                    │S         start                            │e-cut-off            │
-│                      │s         stop                             │                     │
+│a-name-long-enough-to-╭─Menu──────────────────────────────────────╮                     │
+│web                   │S         start                            │                     │
+│db                    │s         stop                             │e-cut-off            │
 │                      │r         restart                          │                     │
 │                      │p         pause/resume                     │                     │
 │                      │d         delete                           │                     │
@@ -10,9 +9,9 @@
 │                      │n         new snapshot                     │                     │
 │                      │m         view logs                        │                     │
 │                      │y         copy name, address…              │                     │
-╰──────────────────────│a         attach to console                │                     │
-╭─[2]─Snapshots (a-name│c         edit config in $EDITOR           │                     │
-│                      │E         exec shell                       │                     │
+│                      │a         attach to console                │                     │
+╰──────────────────────│c         edit config in $EDITOR           │                     │
+╭─[2]─Snapshots (a-name│E         exec shell                       │                     │
 │                      │enter     focus main panel                 │                     │
 │                      │[         previous tab                     │                     │
 │                      │]         next tab                         │                     │
@@ -22,6 +21,7 @@
 │                      │o         open lazyincus config            │                     │
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
+│                      │W         warnings                         │                     │
 │                      │R         switch remote                    │                     │
 ╰──────────────────────│+         next screen mode (normal/half/fu…│                     │
 ╭─[3]─Im - Vo - Ne - Pr│_         prev screen mode                 │                     │

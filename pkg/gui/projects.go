@@ -112,6 +112,9 @@ func (gui *Gui) reloadAfterScopeChange() error {
 
 	// The history is the scope's, as every list is.
 	gui.operationsScope.Add(1)
+	// A remote's warnings are its own: the next listing says the new one's.
+	gui.State.Warnings = nil
+	gui.newWarnings.Store(0)
 	gui.operations.clear()
 	gui.State.OperationsSeenAt = time.Now()
 

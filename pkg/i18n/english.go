@@ -314,6 +314,17 @@ type TranslationSet struct {
 	OperationNotCancellable string
 	ConfirmCancelOperation  string
 	CancellingStatus        string
+
+	ShowWarnings         string
+	WarningsTitle        string
+	WarningTitle         string
+	WarningsHint         string
+	NoWarnings           string
+	WarningsCount        string
+	WarningCount         string
+	WarningServerWide    string
+	ConfirmDeleteWarning string
+	AcknowledgingStatus  string
 }
 
 func englishSet() TranslationSet {
@@ -632,5 +643,16 @@ func englishSet() TranslationSet {
 		OperationNotCancellable: "%s can't be cancelled.",
 		ConfirmCancelOperation:  "Are you sure you want to cancel %s?",
 		CancellingStatus:        "cancelling",
+
+		ShowWarnings:         "warnings",
+		WarningsTitle:        "Warnings (%s)",
+		WarningTitle:         "Warning",
+		WarningsHint:         "a: acknowledge, d: delete, enter: details",
+		NoWarnings:           "No warnings",
+		WarningsCount:        "%d warnings",
+		WarningCount:         "1 warning",
+		WarningServerWide:    "the server's",
+		ConfirmDeleteWarning: "Are you sure you want to delete the warning %q? The daemon raises it again if its cause persists.",
+		AcknowledgingStatus:  "acknowledging",
 	}
 }

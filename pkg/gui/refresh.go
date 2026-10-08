@@ -223,10 +223,11 @@ type refreshSeqs struct {
 	stacks     refreshSeq
 	backups    refreshSeq
 	operations refreshSeq
+	warnings   refreshSeq
 }
 
 func (s *refreshSeqs) invalidateAll() {
-	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services, &s.stacks, &s.backups, &s.operations} {
+	for _, seq := range []*refreshSeq{&s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.services, &s.stacks, &s.backups, &s.operations, &s.warnings} {
 		seq.invalidate()
 	}
 }

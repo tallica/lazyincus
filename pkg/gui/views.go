@@ -182,7 +182,7 @@ func (gui *Gui) setInitialViewContent() error {
 }
 
 func (gui *Gui) getInformationContent() string {
-	return gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
+	return gui.warningsStatusContent() + gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
 }
 
 // incusStatusContent renders the server version, the remote and project the
