@@ -214,6 +214,7 @@ With no key of their own, in the command palette and the keybinding menu:
 |---|---|
 | rename | Instances panel: rename an instance; a running one is stopped first and started again, once confirmed |
 | rename | Snapshots panel: rename the snapshot, an instance's or a custom volume's |
+| edit description | Instances and Services panels: edit the instance's description in a one-line prompt; saving it empty clears it |
 
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
 `~/Library/Application Support/lazyincus` unless the former exists). See

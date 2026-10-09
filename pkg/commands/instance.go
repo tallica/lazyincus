@@ -271,6 +271,28 @@ func (i *Instance) Rename(name string, start bool) error {
 	return i.updateStateOf(name, "start", -1, false)
 }
 
+// SetDescription replaces the instance's description, read back first so
+// the update keeps the rest of its config, and refused if that changes in
+// between.
+func (i *Instance) SetDescription(description string) error {
+	return i.retryWhileBusy(func() error {
+		instance, etag, err := i.Client.GetInstance(i.Name)
+		if err != nil {
+			return err
+		}
+
+		put := instance.Writable()
+		put.Description = description
+
+		op, err := i.Client.UpdateInstance(i.Name, put, etag)
+		if err != nil {
+			return err
+		}
+
+		return op.Wait()
+	})
+}
+
 // Delete deletes the instance. Incus refuses to delete an instance that isn't
 // stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
 // stop it first.

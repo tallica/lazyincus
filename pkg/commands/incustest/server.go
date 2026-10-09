@@ -558,6 +558,27 @@ type doneOperation struct{ incus.Operation }
 
 func (doneOperation) Wait() error { return nil }
 
+func (s *Server) GetInstance(name string) (*api.Instance, string, error) {
+	instances, err := s.instances()
+	if err != nil {
+		return nil, "", err
+	}
+
+	for _, instance := range instances {
+		if instance.Name == name && instance.Project == s.scope() {
+			return &instance.Instance, "", nil
+		}
+	}
+
+	return nil, "", api.StatusErrorf(http.StatusNotFound, "Instance not found")
+}
+
+// UpdateInstance takes the instance's description; the rest of put it
+// ignores.
+func (s *Server) UpdateInstance(name string, put api.InstancePut, _ string) (incus.Operation, error) {
+	return s.updateInstance(name, func(instance *api.InstanceFull) { instance.Description = put.Description })
+}
+
 // UpdateInstanceState starts or stops the instance in what the listings
 // return; other actions it ignores.
 func (s *Server) UpdateInstanceState(name string, state api.InstanceStatePut, _ string) (incus.Operation, error) {

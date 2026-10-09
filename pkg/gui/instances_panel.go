@@ -473,6 +473,27 @@ func (gui *Gui) renameInstance(instance *commands.Instance, name string, start b
 	}, gui.fetchInstances, gui.fetchServices)
 }
 
+// instanceEditDescription edits the description in a one-line prompt, the
+// lines of one written elsewhere run together as the Info tab shows them.
+func (gui *Gui) instanceEditDescription(instance *commands.Instance) error {
+	current := strings.Join(strings.Fields(instance.Latest().Instance.Description), " ")
+	title := fmt.Sprintf(gui.Tr.EditDescriptionPrompt, instance.Name)
+
+	return gui.textPrompt(title, gui.Tr.EditDescriptionHint, current, true, func(description string) error {
+		if description == current {
+			return nil
+		}
+
+		return gui.WithWaitingStatus(gui.Tr.SavingStatus, func() error {
+			if err := instance.SetDescription(description); err != nil {
+				return err
+			}
+
+			return gui.refreshInstancesAndServices()
+		})
+	})
+}
+
 // instanceAttachConsole shells out to `incus console`, the analog of
 // lazydocker's `docker attach`: it hands the terminal to the instance's
 // console rather than starting a process in it the way exec does.
