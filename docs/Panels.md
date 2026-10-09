@@ -494,7 +494,7 @@ up:
 
 - **Info** — where the instance lives ([above](#where-an-item-lives)),
   then what it is (name, status, type, image, health where it has one,
-  architecture, dates, addresses, snapshot count),
+  architecture, dates, addresses, proxy devices as ports, snapshot count),
   then the counters from `InstanceFull.State`: CPU, memory, process count,
   disk, network. A gap sets those off rather than a heading — CPU and
   memory say what they are, and a ruled heading would weigh the same as the

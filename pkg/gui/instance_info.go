@@ -65,7 +65,7 @@ func (gui *Gui) sectionHeading(title string) string {
 // instanceIdentityStr is what `incus info` prints before the counters,
 // minus what's a tab of its own: no config, no profiles list, no snapshot
 // dates. Fields an instance may not have - a compose image, a health
-// verdict, addresses - are left out rather than shown empty.
+// verdict, addresses, proxy devices - are left out rather than shown empty.
 // identityPadding lines every label's value up in the same column, the Info
 // tab being one block of them once the identity lines and the counters run
 // together.
@@ -93,6 +93,8 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 	output += line("Last used", localTime(instance.Instance.LastUsedAt))
 	output += line("IPv4", strings.Join(instance.Addresses("inet"), " "))
 	output += line("IPv6", strings.Join(instance.Addresses("inet6"), " "))
+	output += line("Ports", strings.Join(lo.Map(instance.PublishedPorts(gui.publishHostFor(instance.Remote)),
+		func(port commands.PublishedPort, _ int) string { return port.Label() }), "  "))
 
 	output += line("Snapshots", strconv.Itoa(len(instance.Instance.Snapshots)))
 
