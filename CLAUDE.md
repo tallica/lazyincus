@@ -92,7 +92,8 @@ and `allSidePanels()` all derive from it, so a new panel is one entry
 there plus its own `*_panel.go`, presentation and refresh loop, and one in
 `paletteSources()` (`pkg/gui/command_palette.go`): without it the command
 palette lists none of its items, and its actions name nothing and act on
-whatever is selected when run. The palette's rows are the key bindings, so
+whatever is selected when run. The palette's rows are the key bindings - a
+binding with no `Key` is an action the palette and `x` offer alone - so
 a panel's key that doesn't act on the selected row sets `NoSelection:
 true`: the palette lists it while the panel is empty and runs it without
 checking the row is still the one it named. A key that acts on the row

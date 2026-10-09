@@ -12,7 +12,7 @@ func (gui *Gui) getBindings(v *gocui.View) []*Binding {
 	bindings := gui.GetInitialKeybindings()
 
 	for _, binding := range bindings {
-		if binding.GetKey() != "" && binding.Description != "" {
+		if binding.listed() {
 			switch binding.ViewName {
 			case "":
 				bindingsGlobal = append(bindingsGlobal, binding)
@@ -25,10 +25,10 @@ func (gui *Gui) getBindings(v *gocui.View) []*Binding {
 	if v.ParentView != nil {
 	L:
 		for _, binding := range bindings {
-			if binding.GetKey() != "" && binding.Description != "" {
+			if binding.listed() {
 				if binding.ViewName == v.ParentView.Name() {
 					for _, ownBinding := range bindingsPanel {
-						if ownBinding.GetKey() == binding.GetKey() {
+						if binding.Key != nil && ownBinding.GetKey() == binding.GetKey() {
 							continue L
 						}
 					}
@@ -51,7 +51,7 @@ func (gui *Gui) handleCreateOptionsMenu(g *gocui.Gui, v *gocui.View) error {
 		return &types.MenuItem{
 			LabelColumns: []string{binding.GetKey(), binding.Description},
 			OnPress: func() error {
-				if binding.Key == nil {
+				if binding.Handler == nil {
 					return nil
 				}
 
