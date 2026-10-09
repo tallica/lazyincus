@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - When `incus-compose config` fails, the Config tab says why instead of ending at "Error running `incus-compose config`:".
 
+### Security
+- Built with Go 1.27.2 and `golang.org/x/net` v0.60.0, fixing GO-2026-6603, -6605, -6607, -6608, -6610, -6611, -6613 and -6617 in its HTTP and TLS client.
+
 ## [0.14.0] - 2026-10-08
 
 ### Added

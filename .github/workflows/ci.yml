@@ -33,7 +33,7 @@ jobs:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.1
+          version: v2.14.0
 
   audit:
     uses: ./.github/workflows/vuln.yml
