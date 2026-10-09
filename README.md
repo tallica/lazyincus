@@ -214,6 +214,7 @@ With no key of their own, in the command palette and the keybinding menu:
 |---|---|
 | rename | Instances panel: rename an instance; a running one is stopped first and started again, once confirmed |
 | rename | Snapshots panel: rename the snapshot, an instance's or a custom volume's |
+| new instance from snapshot | Snapshots panel: copy an instance's snapshot into a new instance in the same project (`incus copy`), named in a prompt; not a compose instance's, whose copy would join its service |
 | edit description | Instances and Services panels: edit the instance's description in a one-line prompt; saving it empty clears it |
 
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,

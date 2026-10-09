@@ -359,6 +359,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Mutates:     true,
 		},
 		{
+			ViewName:    "snapshots",
+			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotNewInstance),
+			Description: gui.Tr.NewInstanceFromSnapshot,
+			Mutates:     true,
+		},
+		{
 			ViewName:    "backups",
 			Key:         'n',
 			Modifier:    gocui.ModNone,

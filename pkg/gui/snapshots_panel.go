@@ -680,6 +680,34 @@ func (gui *Gui) snapshotRename(snapshot *commands.Snapshot) error {
 	})
 }
 
+// snapshotNewInstance is `incus copy <instance>/<snapshot> <name>`, in the
+// background. The CLI rather than the API: it prepares the copy's config,
+// dropping the source's volatile keys, by rules internal to Incus.
+func (gui *Gui) snapshotNewInstance(snapshot *commands.Snapshot) error {
+	if snapshot.Instance == nil {
+		return gui.createErrorPanel(gui.Tr.CannotCopyVolumeSnapshot)
+	}
+
+	// The copy keeps the source's user keys, its service label among them.
+	if snapshot.Instance.ComposeService() != "" {
+		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotCopyComposeSnapshot, snapshot.Owner))
+	}
+
+	title := fmt.Sprintf(gui.Tr.NewInstancePrompt, gui.snapshotOwnerName(snapshot), snapshot.Name)
+
+	return gui.openTextPrompt(title, gui.Tr.NewInstanceHint, snapshot.Owner+"-"+snapshot.Name, func(name string) error {
+		cmd := gui.instanceCmd(snapshot.Instance, "copy", snapshot.Owner+"/"+snapshot.Name, name)
+
+		return gui.WithWaitingStatus(gui.Tr.CopyingStatus, func() error {
+			if _, err := gui.runIncus(cmd); err != nil {
+				return err
+			}
+
+			return gui.refreshInstancesAndServices()
+		})
+	})
+}
+
 // snapshotOwnerName is what the snapshot was taken of, for a prompt: with
 // its project where the list it came from spans several.
 func (gui *Gui) snapshotOwnerName(snapshot *commands.Snapshot) string {

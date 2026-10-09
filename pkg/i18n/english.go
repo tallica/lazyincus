@@ -55,6 +55,12 @@ type TranslationSet struct {
 	RenameHint                   string
 	RenamingStatus               string
 	RenameSnapshotPrompt         string
+	NewInstanceFromSnapshot      string
+	NewInstancePrompt            string
+	NewInstanceHint              string
+	CopyingStatus                string
+	CannotCopyVolumeSnapshot     string
+	CannotCopyComposeSnapshot    string
 	StopToRename                 string
 	EditDescription              string
 	EditDescriptionPrompt        string
@@ -403,6 +409,12 @@ func englishSet() TranslationSet {
 		RenameHint:                   "enter to rename · esc to cancel",
 		RenamingStatus:               "renaming",
 		RenameSnapshotPrompt:         "Rename snapshot %s of %s",
+		NewInstanceFromSnapshot:      "new instance from snapshot",
+		NewInstancePrompt:            "New instance from %s/%s",
+		NewInstanceHint:              "enter to create · esc to cancel",
+		CopyingStatus:                "copying",
+		CannotCopyVolumeSnapshot:     "Only an instance's snapshot makes a new instance.",
+		CannotCopyComposeSnapshot:    "%s belongs to a compose stack: a copy would keep its service label and join the service. Copy it with `incus copy` and change the label.",
 		EditDescription:              "edit description",
 		EditDescriptionPrompt:        "Description of %s",
 		EditDescriptionHint:          "enter to save, empty to clear · esc to cancel",
