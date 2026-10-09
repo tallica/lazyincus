@@ -406,6 +406,24 @@ func (gui *Gui) instanceEdit(instance *commands.Instance) error {
 		[]fetch{gui.fetchInstances, gui.fetchServices})
 }
 
+// instanceEditFile is `incus file edit`, which pulls the file into $EDITOR
+// and pushes it back on save; the CLI says why when it can't.
+func (gui *Gui) instanceEditFile(instance *commands.Instance) error {
+	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.EditFilePrompt, instance.Name), gui.Tr.EditFileHint, "/", func(path string) error {
+		return gui.runSubprocess(gui.instanceFileEditCmd(instance, path))
+	})
+}
+
+// instanceFileEditCmd takes a path without its leading slash as meaning
+// one, `<instance><path>` being how the CLI names a file.
+func (gui *Gui) instanceFileEditCmd(instance *commands.Instance, path string) *exec.Cmd {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	return gui.instanceCmd(instance, "file", "edit", instance.Name+path)
+}
+
 // instanceAttachConsole shells out to `incus console`, the analog of
 // lazydocker's `docker attach`: it hands the terminal to the instance's
 // console rather than starting a process in it the way exec does.

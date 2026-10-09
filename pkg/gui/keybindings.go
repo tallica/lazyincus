@@ -279,6 +279,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "instances",
+			Key:         'F',
+			Modifier:    gocui.ModNone,
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceEditFile),
+			Description: gui.Tr.EditFile,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "instances",
 			Key:         'E',
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceExecShell),
@@ -963,6 +971,14 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceEdit,
 			Description: gui.Tr.EditInEditor,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "services",
+			Key:         'F',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleServiceEditFile,
+			Description: gui.Tr.EditFile,
 			Mutates:     true,
 		},
 		{

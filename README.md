@@ -190,6 +190,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `B` | Stacks and Services panels: go to the stack's Backups tab, switching to the stack's remote first if it's elsewhere, as `space` does |
 | `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
 | `E` | Exec a shell into the instance |
+| `F` | Edit a file inside the instance in `$EDITOR`, through `incus file edit`, asking for its path (on the Services panel, the replica's) |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
