@@ -179,12 +179,13 @@ against a live daemon or read out of the Incus source rather than inferred:
 how the client resolves a remote, and connects to another by name or
 moves onto it in place, why a daemon going away mid-session is
 never fatal, per-project clients and why item identity includes the
-project, the console log's drain-on-read behaviour, why `exec` and
-`attach` shell out to the `incus` CLI instead of using the client's
-websocket API, the status the daemon won't give an instance mid-action,
-the event stream: which events count, and the order they arrive in, and
-how briefly the daemon keeps an operation once it has ended, and the
-warnings no event announces.
+project, the console log's drain-on-read behaviour, why `exec`, `attach`
+and a copy from a snapshot shell out to the `incus` CLI instead of using
+the client, the files an OCI container won't let `F` save, the status
+the daemon won't give an instance mid-action, the event stream: which
+events count, and the order they arrive in, and how briefly the daemon
+keeps an operation once it has ended, and the warnings no event
+announces.
 
 ## Config
 

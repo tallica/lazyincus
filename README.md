@@ -46,7 +46,8 @@ isn't there; see "What's not here yet" below, and
 - Your user in the `incus`/`incus-admin` group (or root) for local socket
   access.
 - The `incus` CLI on `PATH` — used for attaching to a console, a shell in
-  an instance, and editing an item's config in your editor.
+  an instance, editing an item's config or a file inside an instance in
+  your editor, and making a new instance from a snapshot.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in

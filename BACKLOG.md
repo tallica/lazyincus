@@ -142,7 +142,8 @@ Deliberately deferred (don't re-pitch unprompted):
   first — prompt for one string and shell out to `incus launch` via
   `runSubprocessWithMessage`, mirroring `instanceExecShell`. That also shows
   image-download progress natively, which a `WithWaitingStatus` spinner would
-  hide.
+  hide. A copy from a snapshot went the other way: `incus copy` in the
+  background through `Gui.runIncus`, under the spinner.
 
 ### What gocui master makes possible
 

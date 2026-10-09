@@ -489,10 +489,8 @@ Keybindings live in [README.md](../README.md#usage) — the canonical source,
 keep that table current rather than duplicating it here. Three behaviors it
 doesn't convey: `s`/`d` confirm before acting, `p` toggles between
 `incus pause` and `incus resume` depending on current status, and `F`
-can't save `/etc/hosts` or `/etc/hostname` on an OCI app container - Incus
-bind-mounts both from the host and rewrites them on every start, so
-`incus file edit` reports `permission denied` once the editor closes, and
-the edit is lost.
+can't save `/etc/hosts` or `/etc/hostname` on an OCI app container
+([docs/Incus.md](Incus.md), "Files").
 
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a
@@ -546,9 +544,10 @@ reading the focused view, because that read takes `ViewStackMutex`, which
 `switchFocus` holds while it runs an `OnSelect`: reading it there
 deadlocks the app. The rows are the `InstanceFull.Snapshots` the instance
 listing already carries, so moving through a list asks the daemon for
-nothing; create, delete and restore re-run that listing, which is what
-shows their result at once. Snapshot names can come back prefixed with the
-instance (`alpine/snap0`); every other call wants the bare name, which
+nothing; create, delete, rename and restore re-run that listing, which
+is what shows their result at once, a renamed snapshot keeping the
+cursor. Snapshot names can come back prefixed with the instance
+(`alpine/snap0`); every other call wants the bare name, which
 `snapshotName` strips.
 
 `e` swaps the selection for every instance the instances panel holds, the

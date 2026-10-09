@@ -264,3 +264,17 @@ inferred.
   window-resize messages). `instanceExecShell` shells out to the `incus` CLI
   instead, the same pattern lazydocker uses for `docker exec`. Trade-off:
   requires the `incus` binary on PATH, not just socket access.
+- **Files**: `F` is `incus file edit`, the CLI pulling the file into
+  `$EDITOR` and pushing it back on save. On an OCI application container,
+  `/etc/hosts` and `/etc/hostname` refuse the push with `permission
+  denied`: Incus writes both into the instance's directory on the host and
+  bind-mounts them in at every start (`startCommon` in
+  `internal/server/instance/drivers/driver_lxc.go`, for an OCI image), so
+  they're the host's and rewritten anyway. The edit is lost, the CLI having
+  removed its temporary copy.
+- **Copy**: a new instance from a snapshot runs `incus copy
+  <instance>/<snapshot> <name>` in the background (`Gui.runIncus`) rather
+  than calling `CopyInstanceSnapshot`, because the CLI first strips the
+  source's volatile keys by `instance.InstanceIncludeWhenCopying`, internal
+  to Incus (`cmd/incus/copy.go`). It refuses `--instance-only` for a
+  snapshot source, which never carries snapshots anyway.
