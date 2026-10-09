@@ -681,8 +681,9 @@ func (gui *Gui) snapshotRename(snapshot *commands.Snapshot) error {
 }
 
 // snapshotNewInstance is `incus copy <instance>/<snapshot> <name>`, in the
-// background. The CLI rather than the API: it prepares the copy's config,
-// dropping the source's volatile keys, by rules internal to Incus.
+// background, then focuses the new instance. The CLI rather than the API:
+// it prepares the copy's config, dropping the source's volatile keys, by
+// rules internal to Incus.
 func (gui *Gui) snapshotNewInstance(snapshot *commands.Snapshot) error {
 	if snapshot.Instance == nil {
 		return gui.createErrorPanel(gui.Tr.CannotCopyVolumeSnapshot)
@@ -703,7 +704,20 @@ func (gui *Gui) snapshotNewInstance(snapshot *commands.Snapshot) error {
 				return err
 			}
 
-			return gui.refreshInstancesAndServices()
+			created := &commands.Instance{Name: name, Project: snapshot.Instance.Project}
+
+			return gui.refresh(func() error {
+				// A fresh copy is stopped, so hidden while stopped ones are.
+				if !gui.Panels.Instances.Select(created) {
+					return nil
+				}
+
+				if err := gui.switchFocus(gui.Views.Instances); err != nil {
+					return err
+				}
+
+				return gui.Panels.Instances.HandleSelect()
+			}, gui.fetchInstances, gui.fetchServices)
 		})
 	})
 }

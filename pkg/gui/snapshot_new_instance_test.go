@@ -24,14 +24,15 @@ func newInstanceFromSnapshot(t *testing.T, s *screen) {
 }
 
 // The CLI copies the snapshot into a new instance, named in the prompt,
-// in the source's project, and the instance list shows it once it's done.
+// in the source's project, and the instance list shows it once it's done,
+// with the cursor on it.
 func TestNewInstanceFromASnapshot(t *testing.T) {
 	ran := make(chan []string, 1)
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		s.gui.runIncus = func(cmd *exec.Cmd) (string, error) {
 			copied := fixtureServer().Instances[1]
-			copied.Name, copied.Snapshots = "web-daily-b", nil
+			copied.Name, copied.Status, copied.Snapshots = "web-daily-b", "Stopped", nil
 			s.server.SetInstances(append(fixtureServer().Instances, copied))
 			ran <- cmd.Args
 
@@ -56,6 +57,9 @@ func TestNewInstanceFromASnapshot(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return slices.Contains(instanceNames(t, s), "fake:web-daily-b")
 	}, 5*time.Second, 20*time.Millisecond)
+
+	s.settle(t, "Snapshots (web-daily-b)")
+	assert.Equal(t, "instances", onLoop(t, s, s.gui.currentViewName))
 }
 
 // What the CLI says when it fails is the error.

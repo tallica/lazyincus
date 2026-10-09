@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename an instance from the command palette or the `x` menu, stopping and restarting a running one once confirmed; it has no key of its own.
 - Rename a snapshot the same way, an instance's or a custom volume's.
 - Edit an instance's description from the command palette or the `x` menu, on Instances or a service's replica.
-- Make a new instance from an instance's snapshot, from the command palette or the `x` menu on Snapshots.
+- Make a new instance from an instance's snapshot, from the command palette or the `x` menu on Snapshots; the cursor lands on it once it's created.
 
 ### Changed
 - The `--debug` log is plain, readable lines by default; `--log-format json` keeps it JSON, one object per line.
