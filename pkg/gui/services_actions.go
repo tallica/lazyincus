@@ -362,6 +362,10 @@ func (gui *Gui) handleServiceEdit(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.EditInEditor, gui.instanceEdit)
 }
 
+func (gui *Gui) handleServiceEditFile(g *gocui.Gui, v *gocui.View) error {
+	return gui.withServiceInstance(gui.Tr.EditFile, gui.instanceEditFile)
+}
+
 func (gui *Gui) handleServiceExecShell(g *gocui.Gui, v *gocui.View) error {
 	return gui.withServiceInstance(gui.Tr.ExecShell, gui.instanceExecShell)
 }

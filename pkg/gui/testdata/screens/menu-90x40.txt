@@ -11,7 +11,8 @@
 │                      │y         copy name, address…              │                     │
 │                      │a         attach to console                │                     │
 ╰──────────────────────│c         edit config in $EDITOR           │                     │
-╭─[2]─Snapshots (a-name│E         exec shell                       │                     │
+╭─[2]─Snapshots (a-name│F         edit a file in $EDITOR           │                     │
+│                      │E         exec shell                       │                     │
 │                      │enter     focus main panel                 │                     │
 │                      │[         previous tab                     │                     │
 │                      │]         next tab                         │                     │
@@ -22,11 +23,11 @@
 │                      │O         edit lazyincus config            │                     │
 │                      │P         switch project                   │                     │
 │                      │W         operations and warnings          │                     │
-│                      │R         switch remote                    │                     │
-╰──────────────────────│+         next screen mode (normal/half/fu…│                     │
-╭─[3]─Img - Vol - Net -│_         prev screen mode                 │                     │
-│Alpine 3.22 amd64 2 01│=         expand/collapse the focused side…│                     │
-│Debian 13 amd64   0 fe│tab       next panel                       │                     │
+╰──────────────────────│R         switch remote                    │                     │
+╭─[3]─Img - Vol - Net -│+         next screen mode (normal/half/fu…│                     │
+│Alpine 3.22 amd64 2 01│_         prev screen mode                 │                     │
+│Debian 13 amd64   0 fe│=         expand/collapse the focused side…│                     │
+│                      │tab       next panel                       │                     │
 │                      │shift+tab previous panel                   │                     │
 │                      │◄         previous list                    │                     │
 │                      │h         previous list                    │                     │
@@ -35,6 +36,5 @@
 │                      │1         focus instances panel            │                     │
 │                      │2         focus snapshots panel            │                     │
 │                      │3         focus resources panel            │                     │
-│                      ╰───────────────────────────────────────────╯                     │
-╰────────────────────────────╯╰──────────────────────────────────────────────────────────╯
+╰──────────────────────╰───────────────────────────────────────────╯─────────────────────╯
 enter: execute, esc: close, ↑ ↓: navigate          Incus v7.4 (fake/all projects) ●  test

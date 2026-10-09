@@ -47,6 +47,9 @@ type TranslationSet struct {
 	InstancesUsing               string
 	NothingUses                  string
 	EditInEditor                 string
+	EditFile                     string
+	EditFilePrompt               string
+	EditFileHint                 string
 	CannotEditUnmanagedNetwork   string
 	ACLsTitle                    string
 	NoACLs                       string
@@ -383,6 +386,9 @@ func englishSet() TranslationSet {
 		InstancesUsing:               "Instances using %s",
 		NothingUses:                  "No instance uses %s.",
 		EditInEditor:                 "edit config in $EDITOR",
+		EditFile:                     "edit a file in $EDITOR",
+		EditFilePrompt:               "Edit a file in %s",
+		EditFileHint:                 "enter to edit · esc to cancel",
 		CannotEditUnmanagedNetwork:   "Only networks Incus manages have a config to edit.",
 		ACLsTitle:                    "ACLs",
 		NoACLs:                       "No ACLs apply to this network, on it or on the NICs using it.",

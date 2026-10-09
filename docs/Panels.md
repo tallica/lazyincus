@@ -268,8 +268,9 @@ skip a remote whose statuses last failed, the list saying so in place of
 rows (`EmptyNote`), and a remote gone from the CLI's
 config - renamed since the stack was saved - isn't tried at all
 (`unknownRemote`), its message pointing at `e`. The compose verbs and the
-instances' `incus console`/`exec`/`config edit` need no connection, only
-`INCUS_REMOTE` set to the stack's remote (`commands.WithRemote`).
+instances' `incus console`/`exec`/`config edit`/`file edit` need no
+connection, only `INCUS_REMOTE` set to the stack's remote
+(`commands.WithRemote`).
 
 Everything else - Standalone Instances, Snapshots, Resources, the event
 stream, the connection-lost modal - is the session's remote. So a stack
@@ -382,7 +383,7 @@ doesn't name is listed last rather than dropped. The panels don't exist at
 the first call, which is startup binding the keys rather than anyone reading
 them.
 
-The per-instance keys (`n`, `c`, `E`, `y`) reach the row's instance
+The per-instance keys (`n`, `c`, `E`, `F`, `y`) reach the row's instance
 through `withServiceInstance`, which acts directly on the one
 `SelectedInstance` names and otherwise asks which — the reason the actions
 behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
@@ -485,9 +486,13 @@ new column means one entry in that map plus the default/valid-values list in
 `pkg/config/app_config.go`.
 
 Keybindings live in [README.md](../README.md#usage) — the canonical source,
-keep that table current rather than duplicating it here. Two behaviors it
-doesn't convey: `s`/`d` confirm before acting, and `p` toggles between
-`incus pause` and `incus resume` depending on current status.
+keep that table current rather than duplicating it here. Three behaviors it
+doesn't convey: `s`/`d` confirm before acting, `p` toggles between
+`incus pause` and `incus resume` depending on current status, and `F`
+can't save `/etc/hosts` or `/etc/hostname` on an OCI app container - Incus
+bind-mounts both from the host and rewrites them on every start, so
+`incus file edit` reports `permission denied` once the editor closes, and
+the edit is lost.
 
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
