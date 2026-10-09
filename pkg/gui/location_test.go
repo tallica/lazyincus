@@ -198,3 +198,28 @@ func TestTheInfoTabListsAnInstancesPorts(t *testing.T) {
 	assert.Equal(t, []string{"Ports: *:8080 → 80 192.0.2.1:53 → 53/udp"}, ports(web.Name))
 	assert.Empty(t, ports(plain.Name))
 }
+
+// An instance's description is one line under its name, and one without a
+// description has no such line.
+func TestTheInfoTabShowsAnInstancesDescription(t *testing.T) {
+	web := fixtureServer().Instances[0]
+	web.Description = "Shop front\nbehind the proxy"
+	plain := fixtureServer().Instances[1]
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.server.SetInstances([]api.InstanceFull{web, plain})
+	})
+
+	instances := func() []*commands.Instance { return s.gui.Panels.Instances.List.GetAllItems() }
+
+	require.Eventually(t, func() bool { return len(onLoop(t, s, instances)) == 2 },
+		5*time.Second, 20*time.Millisecond)
+
+	description := func(name string) []string {
+		instance, _ := lo.Find(onLoop(t, s, instances), func(i *commands.Instance) bool { return i.Name == name })
+		return identityLines(s.gui.instanceIdentityStr(instance), "Description")
+	}
+
+	assert.Equal(t, []string{"Description: Shop front behind the proxy"}, description(web.Name))
+	assert.Empty(t, description(plain.Name))
+}

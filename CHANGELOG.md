@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/` in the main panel searches it, highlighting the matches: `n`/`N` step through them, `esc` clears.
 - `B` on the Stacks or Services panel goes straight to the stack's Backups tab, switching to the stack's remote first if it's elsewhere.
 - An instance's Info tab lists its proxy devices on a Ports line, as `host:port → target`.
+- An instance's Info tab shows its description, under its name.
 
 ### Changed
 - The `--debug` log is plain, readable lines by default; `--log-format json` keeps it JSON, one object per line.
