@@ -528,3 +528,28 @@ func (s *Server) DeleteWarning(uuid string) error {
 
 	return nil
 }
+
+// doneOperation is an operation that has already succeeded.
+type doneOperation struct{ incus.Operation }
+
+func (doneOperation) Wait() error { return nil }
+
+// RenameInstance renames the instance in what the listings return.
+func (s *Server) RenameInstance(name string, instance api.InstancePost) (incus.Operation, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if !shared.changed {
+		shared.instances, shared.changed = slices.Clone(s.Instances), true
+	}
+
+	for i := range shared.instances {
+		if shared.instances[i].Name == name && shared.instances[i].Project == s.scope() {
+			shared.instances[i].Name = instance.Name
+			return doneOperation{}, nil
+		}
+	}
+
+	return nil, api.StatusErrorf(http.StatusNotFound, "Instance not found")
+}

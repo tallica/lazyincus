@@ -50,6 +50,11 @@ type TranslationSet struct {
 	EditFile                     string
 	EditFilePrompt               string
 	EditFileHint                 string
+	RenameInstance               string
+	RenameInstancePrompt         string
+	RenameInstanceHint           string
+	RenamingStatus               string
+	CannotRenameRunningInstance  string
 	CannotEditUnmanagedNetwork   string
 	ACLsTitle                    string
 	NoACLs                       string
@@ -389,6 +394,11 @@ func englishSet() TranslationSet {
 		EditFile:                     "edit a file in $EDITOR",
 		EditFilePrompt:               "Edit a file in %s",
 		EditFileHint:                 "enter to edit · esc to cancel",
+		RenameInstance:               "rename",
+		RenameInstancePrompt:         "Rename %s",
+		RenameInstanceHint:           "enter to rename · esc to cancel",
+		RenamingStatus:               "renaming",
+		CannotRenameRunningInstance:  "Stop %s first: Incus renames only a stopped instance.",
 		CannotEditUnmanagedNetwork:   "Only networks Incus manages have a config to edit.",
 		ACLsTitle:                    "ACLs",
 		NoACLs:                       "No ACLs apply to this network, on it or on the NICs using it.",

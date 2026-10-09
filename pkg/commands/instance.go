@@ -248,6 +248,18 @@ var ErrInstanceRunning = errors.New("instance is running")
 // instance, such as listing its processes.
 var ErrInstanceNotRunning = errors.New("instance is not running")
 
+// Rename renames the instance, which Incus does only while it's stopped.
+func (i *Instance) Rename(name string) error {
+	i.Log.Info().Msgf("renaming instance %s to %s", i.Name, name)
+
+	op, err := i.Client.RenameInstance(i.Name, api.InstancePost{Name: name})
+	if err != nil {
+		return err
+	}
+
+	return op.Wait()
+}
+
 // Delete deletes the instance. Incus refuses to delete an instance that isn't
 // stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
 // stop it first.

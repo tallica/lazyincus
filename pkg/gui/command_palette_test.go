@@ -328,7 +328,7 @@ func TestAMenuAfterThePaletteIsAPlainMenu(t *testing.T) {
 	s.settle(t, "")
 
 	s.press(t, 'x')
-	assertGolden(t, "menu-90x40", s.settle(t, "focus resources panel"))
+	assertGolden(t, "menu-90x40", s.settle(t, "focus snapshots panel"))
 }
 
 // A key that doesn't act on the row runs whatever a refresh has done to

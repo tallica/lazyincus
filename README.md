@@ -208,6 +208,12 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions |
 | `q`, `ctrl+c` | Quit |
 
+With no key of their own, in the command palette and the keybinding menu:
+
+| Action | What it does |
+|---|---|
+| rename | Instances panel: rename a stopped instance |
+
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
 `~/Library/Application Support/lazyincus` unless the former exists). See
 [docs/Config.md](docs/Config.md) for the full list of options and defaults.

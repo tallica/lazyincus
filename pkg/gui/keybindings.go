@@ -293,6 +293,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		},
 		{
 			ViewName:    "instances",
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceRename),
+			Description: gui.Tr.RenameInstance,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "instances",
 			Key:         'E',
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceExecShell),
