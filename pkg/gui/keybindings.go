@@ -13,7 +13,7 @@ import (
 type Binding struct {
 	ViewName    string
 	Handler     func(*gocui.Gui, *gocui.View) error
-	Key         any // a rune or a gocui.Key
+	Key         any // a rune or a gocui.Key, or nil: the palette and menu offer it alone
 	Modifier    gocui.Modifier
 	Description string
 	// Mutates is whether the key changes something on a daemon, which a
@@ -57,6 +57,12 @@ func (b *Binding) GetKey() string {
 	}
 
 	return ""
+}
+
+// listed is whether the keybinding menu and the command palette offer the
+// binding: one that says what it does, on a key they can name or on none.
+func (b *Binding) listed() bool {
+	return b.Description != "" && (b.Key == nil || b.GetKey() != "")
 }
 
 // GetInitialKeybindings is a function.
@@ -283,6 +289,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceEditFile),
 			Description: gui.Tr.EditFile,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "instances",
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceRename),
+			Description: gui.Tr.RenameInstance,
 			Mutates:     true,
 		},
 		{
@@ -801,6 +813,10 @@ func (gui *Gui) keybindings(g *gocui.Gui) error {
 	bindings := gui.GetInitialKeybindings()
 
 	for _, binding := range bindings {
+		if binding.Key == nil {
+			continue
+		}
+
 		if err := g.SetKeybinding(binding.ViewName, binding.Key, binding.Modifier, binding.Handler); err != nil {
 			return err
 		}

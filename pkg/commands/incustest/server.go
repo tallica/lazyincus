@@ -528,3 +528,46 @@ func (s *Server) DeleteWarning(uuid string) error {
 
 	return nil
 }
+
+// doneOperation is an operation that has already succeeded.
+type doneOperation struct{ incus.Operation }
+
+func (doneOperation) Wait() error { return nil }
+
+// UpdateInstanceState starts or stops the instance in what the listings
+// return; other actions it ignores.
+func (s *Server) UpdateInstanceState(name string, state api.InstanceStatePut, _ string) (incus.Operation, error) {
+	status := map[string]string{"start": "Running", "stop": "Stopped"}[state.Action]
+
+	return s.updateInstance(name, func(instance *api.InstanceFull) {
+		if status != "" {
+			instance.Status = status
+		}
+	})
+}
+
+// RenameInstance renames the instance in what the listings return.
+func (s *Server) RenameInstance(name string, instance api.InstancePost) (incus.Operation, error) {
+	return s.updateInstance(name, func(renamed *api.InstanceFull) { renamed.Name = instance.Name })
+}
+
+// updateInstance applies change to the instance called name in this
+// copy's project.
+func (s *Server) updateInstance(name string, change func(*api.InstanceFull)) (incus.Operation, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if !shared.changed {
+		shared.instances, shared.changed = slices.Clone(s.Instances), true
+	}
+
+	for i := range shared.instances {
+		if shared.instances[i].Name == name && shared.instances[i].Project == s.scope() {
+			change(&shared.instances[i])
+			return doneOperation{}, nil
+		}
+	}
+
+	return nil, api.StatusErrorf(http.StatusNotFound, "Instance not found")
+}

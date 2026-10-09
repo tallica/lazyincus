@@ -424,6 +424,55 @@ func (gui *Gui) instanceFileEditCmd(instance *commands.Instance, path string) *e
 	return gui.instanceCmd(instance, "file", "edit", instance.Name+path)
 }
 
+// instanceRename renames an instance, the cursor following it to where
+// its new name sorts. Incus renames only a stopped one, so a running one is
+// stopped first, once confirmed, and started again under the new name.
+func (gui *Gui) instanceRename(instance *commands.Instance) error {
+	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameInstanceHint, instance.Name, func(name string) error {
+		if name == instance.Name {
+			return nil
+		}
+
+		if isStopped(instance.Latest()) {
+			return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
+				return gui.renameInstance(instance, name, false)
+			})
+		}
+
+		message := fmt.Sprintf(gui.Tr.StopToRename, gui.qualifiedInstance(instance), name)
+
+		return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(*gocui.Gui, *gocui.View) error {
+			return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
+				if err := gui.inTransition(instance, "Stopping", instance.Stop); err != nil {
+					return err
+				}
+
+				return gui.renameInstance(instance, name, true)
+			})
+		}, nil)
+	})
+}
+
+func (gui *Gui) renameInstance(instance *commands.Instance, name string, start bool) error {
+	if err := instance.Rename(name, start); err != nil {
+		return err
+	}
+
+	renamed := &commands.Instance{Name: name, Project: instance.Project}
+
+	return gui.refresh(func() error {
+		if !gui.Panels.Instances.Select(renamed) {
+			return nil
+		}
+
+		if err := gui.Panels.Instances.RerenderList(); err != nil {
+			return err
+		}
+
+		return gui.Panels.Instances.HandleSelect()
+	}, gui.fetchInstances, gui.fetchServices)
+}
+
 // instanceAttachConsole shells out to `incus console`, the analog of
 // lazydocker's `docker attach`: it hands the terminal to the instance's
 // console rather than starting a process in it the way exec does.

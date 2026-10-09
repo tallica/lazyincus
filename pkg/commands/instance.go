@@ -137,10 +137,16 @@ func (i *Instance) IsOCI() bool {
 }
 
 func (i *Instance) updateState(action string, timeout int, force bool) error {
-	i.Log.Warn().Msgf("%s instance %s", action, i.Name)
+	return i.updateStateOf(i.Name, action, timeout, force)
+}
+
+// updateStateOf is updateState on the instance by name, which a rename
+// has moved off i.Name.
+func (i *Instance) updateStateOf(name, action string, timeout int, force bool) error {
+	i.Log.Warn().Msgf("%s instance %s", action, name)
 
 	return i.retryWhileBusy(func() error {
-		op, err := i.Client.UpdateInstanceState(i.Name, api.InstanceStatePut{
+		op, err := i.Client.UpdateInstanceState(name, api.InstanceStatePut{
 			Action:  action,
 			Timeout: timeout,
 			Force:   force,
@@ -247,6 +253,23 @@ var ErrInstanceRunning = errors.New("instance is running")
 // ErrInstanceNotRunning is returned by operations that need a running
 // instance, such as listing its processes.
 var ErrInstanceNotRunning = errors.New("instance is not running")
+
+// Rename renames the instance, which Incus does only while it's stopped,
+// and with start starts it again under its new name.
+func (i *Instance) Rename(name string, start bool) error {
+	i.Log.Info().Msgf("renaming instance %s to %s", i.Name, name)
+
+	op, err := i.Client.RenameInstance(i.Name, api.InstancePost{Name: name})
+	if err != nil {
+		return err
+	}
+
+	if err := op.Wait(); err != nil || !start {
+		return err
+	}
+
+	return i.updateStateOf(name, "start", -1, false)
+}
 
 // Delete deletes the instance. Incus refuses to delete an instance that isn't
 // stopped, in which case this returns ErrInstanceRunning; use ForceDelete to
