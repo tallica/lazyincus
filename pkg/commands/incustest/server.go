@@ -1,5 +1,6 @@
 // Package incustest is an Incus daemon for tests: a client that answers the
-// listing calls lazyincus makes from fixed data.
+// listing calls lazyincus makes from fixed data, and applies the changes
+// it asks for to what those then return.
 package incustest
 
 import (

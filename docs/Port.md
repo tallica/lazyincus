@@ -49,7 +49,7 @@ pkg/commands/
   compose_stack.go             ComposeStack, a compose project directory on a remote (remote:dir), and its rolled-up status
   instance_devices.go          what an instance's devices say: published ports, custom volumes, networks
   compose_config.go            `incus-compose config`: a stack's project and each service's definition, and ComposeCmd
-  incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data, and an event stream Emit feeds
+  incustest/                   a stand-in daemon for tests, answering the listing calls from fixed data and applying the changes asked of it, and an event stream Emit feeds
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
   used_by.go                   which instances use a network, volume, image or profile
   operation.go, warning.go     the daemon's operations and warnings, for `W`'s popup
