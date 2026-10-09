@@ -46,7 +46,9 @@ func TestThePaletteRenamesAStoppedInstance(t *testing.T) {
 	}))
 }
 
-func TestRenameRefusesARunningInstance(t *testing.T) {
+// A running instance is stopped, once confirmed, renamed and started
+// again.
+func TestRenameStopsARunningInstanceFirst(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.ready(t)
 	selectInstance(t, s, "web")
@@ -55,7 +57,40 @@ func TestRenameRefusesARunningInstance(t *testing.T) {
 	s.settle(t, "Commands")
 	s.typeText(t, "rename")
 	s.pressKey(t, tcell.KeyEnter)
-	s.settle(t, "Stop web first")
+	s.settle(t, "Rename web")
+
+	s.typeText(t, "-2")
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "rename it to web-2")
+	s.press(t, 'y')
+
+	s.settle(t, "Snapshots (web-2)")
+	instance := onLoop(t, s, func() *commands.Instance {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance
+	})
+	assert.Equal(t, "web-2", instance.Name)
+	assert.Equal(t, "Running", instance.Instance.Status)
+}
+
+// Declining the stop leaves the instance as it was.
+func TestRenameLeavesARunningInstanceWhenDeclined(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+	selectInstance(t, s, "web")
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "rename")
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "Rename web")
+
+	s.typeText(t, "-2")
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "start it again?")
+	s.press(t, 'n')
+
+	assert.Contains(t, instanceNames(t, s), "fake:web")
 }
 
 // The keybinding menu lists rename with no key beside it.

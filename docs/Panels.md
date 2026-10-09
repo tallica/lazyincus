@@ -495,8 +495,10 @@ bind-mounts both from the host and rewrites them on every start, so
 the edit is lost.
 
 Rename has no key and isn't on the Services panel: a compose instance's
-name, `<service>-<n>`, is incus-compose's to choose. After a rename the
-cursor follows the instance to where its new name sorts.
+name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a
+stopped instance, so a running one is stopped, renamed and started again
+once confirmed. After a rename the cursor follows the instance to where
+its new name sorts.
 
 Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:

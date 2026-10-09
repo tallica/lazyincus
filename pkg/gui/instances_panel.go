@@ -424,38 +424,53 @@ func (gui *Gui) instanceFileEditCmd(instance *commands.Instance, path string) *e
 	return gui.instanceCmd(instance, "file", "edit", instance.Name+path)
 }
 
-// instanceRename renames a stopped instance, the cursor following it to
-// where its new name sorts.
+// instanceRename renames an instance, the cursor following it to where
+// its new name sorts. Incus renames only a stopped one, so a running one is
+// stopped first, once confirmed, and started again under the new name.
 func (gui *Gui) instanceRename(instance *commands.Instance) error {
-	if !isStopped(instance) {
-		return gui.createErrorPanel(fmt.Sprintf(gui.Tr.CannotRenameRunningInstance, instance.Name))
-	}
-
 	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameInstanceHint, instance.Name, func(name string) error {
 		if name == instance.Name {
 			return nil
 		}
 
-		return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
-			if err := instance.Rename(name); err != nil {
-				return gui.createErrorPanel(err.Error())
-			}
+		if isStopped(instance.Latest()) {
+			return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
+				return gui.renameInstance(instance, name, false)
+			})
+		}
 
-			renamed := &commands.Instance{Name: name, Project: instance.Project}
+		message := fmt.Sprintf(gui.Tr.StopToRename, gui.qualifiedInstance(instance), name)
 
-			return gui.refresh(func() error {
-				if !gui.Panels.Instances.Select(renamed) {
-					return nil
-				}
-
-				if err := gui.Panels.Instances.RerenderList(); err != nil {
+		return gui.createConfirmationPanel(gui.Tr.Confirm, message, func(*gocui.Gui, *gocui.View) error {
+			return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
+				if err := gui.inTransition(instance, "Stopping", instance.Stop); err != nil {
 					return err
 				}
 
-				return gui.Panels.Instances.HandleSelect()
-			}, gui.fetchInstances, gui.fetchServices)
-		})
+				return gui.renameInstance(instance, name, true)
+			})
+		}, nil)
 	})
+}
+
+func (gui *Gui) renameInstance(instance *commands.Instance, name string, start bool) error {
+	if err := instance.Rename(name, start); err != nil {
+		return err
+	}
+
+	renamed := &commands.Instance{Name: name, Project: instance.Project}
+
+	return gui.refresh(func() error {
+		if !gui.Panels.Instances.Select(renamed) {
+			return nil
+		}
+
+		if err := gui.Panels.Instances.RerenderList(); err != nil {
+			return err
+		}
+
+		return gui.Panels.Instances.HandleSelect()
+	}, gui.fetchInstances, gui.fetchServices)
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

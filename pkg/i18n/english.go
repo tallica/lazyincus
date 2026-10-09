@@ -54,7 +54,7 @@ type TranslationSet struct {
 	RenameInstancePrompt         string
 	RenameInstanceHint           string
 	RenamingStatus               string
-	CannotRenameRunningInstance  string
+	StopToRename                 string
 	CannotEditUnmanagedNetwork   string
 	ACLsTitle                    string
 	NoACLs                       string
@@ -398,7 +398,7 @@ func englishSet() TranslationSet {
 		RenameInstancePrompt:         "Rename %s",
 		RenameInstanceHint:           "enter to rename · esc to cancel",
 		RenamingStatus:               "renaming",
-		CannotRenameRunningInstance:  "Stop %s first: Incus renames only a stopped instance.",
+		StopToRename:                 "Incus renames only a stopped instance. Stop %s, rename it to %s and start it again?",
 		CannotEditUnmanagedNetwork:   "Only networks Incus manages have a config to edit.",
 		ACLsTitle:                    "ACLs",
 		NoACLs:                       "No ACLs apply to this network, on it or on the NICs using it.",
