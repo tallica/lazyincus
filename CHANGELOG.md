@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An instance's Info tab shows its description, under its name.
 - `F` on an instance, or a service's replica, edits a file inside it in `$EDITOR`, asking for the path.
 - Rename an instance from the command palette or the `x` menu, stopping and restarting a running one once confirmed; it has no key of its own.
+- Rename a snapshot the same way, an instance's or a custom volume's.
 
 ### Changed
 - The `--debug` log is plain, readable lines by default; `--log-format json` keeps it JSON, one object per line.

@@ -348,4 +348,3 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 - [ ] Custom expiry — the field cycles never, 1, 7 and 30 days; anything
       else needs the CLI. A free-text duration would want parsing and an
       error path, or a `custom…` value that opens a prompt.
-- [ ] Rename (`RenameInstanceSnapshot`), if it turns out to be wanted.

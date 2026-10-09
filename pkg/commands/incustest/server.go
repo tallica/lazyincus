@@ -397,7 +397,31 @@ func (s *Server) GetStoragePools() ([]api.StoragePool, error) {
 }
 
 func (s *Server) GetStoragePoolVolumeSnapshots(_, _, name string) ([]api.StorageVolumeSnapshot, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
 	return slices.Clone(s.VolumeSnapshots[name]), nil
+}
+
+// RenameStoragePoolVolumeSnapshot renames the volume's snapshot in what
+// the listing returns.
+func (s *Server) RenameStoragePoolVolumeSnapshot(_, _, volume, snapshot string, renamed api.StorageVolumeSnapshotPost) (incus.Operation, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	snapshots := slices.Clone(s.VolumeSnapshots[volume])
+	for i := range snapshots {
+		if snapshots[i].Name == snapshot {
+			snapshots[i].Name = renamed.Name
+			s.VolumeSnapshots[volume] = snapshots
+
+			return doneOperation{}, nil
+		}
+	}
+
+	return nil, api.StatusErrorf(http.StatusNotFound, "Snapshot not found")
 }
 
 func (s *Server) GetStoragePoolResources(pool string) (*api.ResourcesStoragePool, error) {
@@ -544,6 +568,28 @@ func (s *Server) UpdateInstanceState(name string, state api.InstanceStatePut, _ 
 			instance.Status = status
 		}
 	})
+}
+
+// RenameInstanceSnapshot renames the instance's snapshot in what the
+// listings return, which name it `<instance>/<snapshot>`.
+func (s *Server) RenameInstanceSnapshot(instance, snapshot string, renamed api.InstanceSnapshotPost) (incus.Operation, error) {
+	found := false
+
+	op, err := s.updateInstance(instance, func(full *api.InstanceFull) {
+		// A copy: the listings handed out share the old one.
+		full.Snapshots = slices.Clone(full.Snapshots)
+
+		for i := range full.Snapshots {
+			if full.Snapshots[i].Name == instance+"/"+snapshot {
+				full.Snapshots[i].Name, found = instance+"/"+renamed.Name, true
+			}
+		}
+	})
+	if err == nil && !found {
+		return nil, api.StatusErrorf(http.StatusNotFound, "Snapshot not found")
+	}
+
+	return op, err
 }
 
 // RenameInstance renames the instance in what the listings return.

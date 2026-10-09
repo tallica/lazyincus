@@ -213,6 +213,7 @@ With no key of their own, in the command palette and the keybinding menu:
 | Action | What it does |
 |---|---|
 | rename | Instances panel: rename an instance; a running one is stopped first and started again, once confirmed |
+| rename | Snapshots panel: rename the snapshot, an instance's or a custom volume's |
 
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
 `~/Library/Application Support/lazyincus` unless the former exists). See

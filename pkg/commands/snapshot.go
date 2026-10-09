@@ -95,6 +95,25 @@ func (s *Snapshot) Delete() error {
 	return op.Wait()
 }
 
+// Rename renames the snapshot.
+func (s *Snapshot) Rename(name string) error {
+	var op incus.Operation
+
+	var err error
+
+	if s.Volume != nil {
+		op, err = s.Client.RenameStoragePoolVolumeSnapshot(s.Volume.Pool, s.Volume.Volume.Type, s.Owner, s.Name, api.StorageVolumeSnapshotPost{Name: name})
+	} else {
+		op, err = s.Client.RenameInstanceSnapshot(s.Owner, s.Name, api.InstanceSnapshotPost{Name: name})
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return op.Wait()
+}
+
 // Restore rolls the instance or volume back to this snapshot. Incus takes a
 // restore as an update to the thing itself, so this reads it first to keep
 // the rest of its config intact.

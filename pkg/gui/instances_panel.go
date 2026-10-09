@@ -428,7 +428,7 @@ func (gui *Gui) instanceFileEditCmd(instance *commands.Instance, path string) *e
 // its new name sorts. Incus renames only a stopped one, so a running one is
 // stopped first, once confirmed, and started again under the new name.
 func (gui *Gui) instanceRename(instance *commands.Instance) error {
-	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameInstanceHint, instance.Name, func(name string) error {
+	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameHint, instance.Name, func(name string) error {
 		if name == instance.Name {
 			return nil
 		}

@@ -643,6 +643,43 @@ func (gui *Gui) snapshotDelete(snapshot *commands.Snapshot) error {
 	}, nil)
 }
 
+// snapshotRename renames a snapshot, the cursor following it to where its
+// new name sorts. Incus renames one whatever state its instance is in.
+func (gui *Gui) snapshotRename(snapshot *commands.Snapshot) error {
+	title := fmt.Sprintf(gui.Tr.RenameSnapshotPrompt, snapshot.Name, gui.snapshotOwnerName(snapshot))
+
+	return gui.openTextPrompt(title, gui.Tr.RenameHint, snapshot.Name, func(name string) error {
+		if name == snapshot.Name {
+			return nil
+		}
+
+		return gui.WithWaitingStatus(gui.Tr.RenamingStatus, func() error {
+			if err := snapshot.Rename(name); err != nil {
+				return err
+			}
+
+			renamed := &commands.Snapshot{Project: snapshot.Project, Owner: snapshot.Owner, Name: name, Volume: snapshot.Volume}
+
+			fetches := []fetch{gui.fetchInstances, gui.fetchServices}
+			if snapshot.Volume != nil {
+				fetches = []fetch{gui.fetchVolumes}
+			}
+
+			return gui.refresh(func() error {
+				if !gui.Panels.Snapshots.Select(renamed) {
+					return nil
+				}
+
+				if err := gui.Panels.Snapshots.RerenderList(); err != nil {
+					return err
+				}
+
+				return gui.Panels.Snapshots.HandleSelect()
+			}, fetches...)
+		})
+	})
+}
+
 // snapshotOwnerName is what the snapshot was taken of, for a prompt: with
 // its project where the list it came from spans several.
 func (gui *Gui) snapshotOwnerName(snapshot *commands.Snapshot) string {
