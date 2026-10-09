@@ -5,7 +5,7 @@ go 1.27.2
 require (
 	github.com/OpenPeeDeeP/xdg v1.0.0
 	github.com/fatih/color v1.19.0
-	github.com/gdamore/tcell/v2 v2.13.5
+	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/integrii/flaggy v1.8.0
