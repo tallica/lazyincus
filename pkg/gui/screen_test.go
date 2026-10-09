@@ -671,7 +671,7 @@ func TestScreenMenu(t *testing.T) {
 	s := startScreen(t, 90, 40, nil)
 	s.ready(t)
 	s.do(t, func() error { return s.gui.handleCreateOptionsMenu(s.g, s.gui.Views.Instances) })
-	assertGolden(t, "menu-90x40", s.settle(t, "focus snapshots panel"))
+	assertGolden(t, "menu-90x40", s.settle(t, "focus main panel"))
 }
 
 func TestScreenConfirmation(t *testing.T) {

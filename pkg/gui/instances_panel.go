@@ -428,7 +428,7 @@ func (gui *Gui) instanceFileEditCmd(instance *commands.Instance, path string) *e
 // its new name sorts. Incus renames only a stopped one, so a running one is
 // stopped first, once confirmed, and started again under the new name.
 func (gui *Gui) instanceRename(instance *commands.Instance) error {
-	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameInstanceHint, instance.Name, func(name string) error {
+	return gui.openTextPrompt(fmt.Sprintf(gui.Tr.RenameInstancePrompt, instance.Name), gui.Tr.RenameHint, instance.Name, func(name string) error {
 		if name == instance.Name {
 			return nil
 		}
@@ -471,6 +471,27 @@ func (gui *Gui) renameInstance(instance *commands.Instance, name string, start b
 
 		return gui.Panels.Instances.HandleSelect()
 	}, gui.fetchInstances, gui.fetchServices)
+}
+
+// instanceEditDescription edits the description in a one-line prompt, the
+// lines of one written elsewhere run together as the Info tab shows them.
+func (gui *Gui) instanceEditDescription(instance *commands.Instance) error {
+	current := strings.Join(strings.Fields(instance.Latest().Instance.Description), " ")
+	title := fmt.Sprintf(gui.Tr.EditDescriptionPrompt, instance.Name)
+
+	return gui.textPrompt(title, gui.Tr.EditDescriptionHint, current, true, func(description string) error {
+		if description == current {
+			return nil
+		}
+
+		return gui.WithWaitingStatus(gui.Tr.SavingStatus, func() error {
+			if err := instance.SetDescription(description); err != nil {
+				return err
+			}
+
+			return gui.refreshInstancesAndServices()
+		})
+	})
 }
 
 // instanceAttachConsole shells out to `incus console`, the analog of

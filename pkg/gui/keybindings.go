@@ -294,7 +294,13 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 		{
 			ViewName:    "instances",
 			Handler:     onSelected(gui.Panels.Instances, gui.instanceRename),
-			Description: gui.Tr.RenameInstance,
+			Description: gui.Tr.Rename,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "instances",
+			Handler:     onSelected(gui.Panels.Instances, gui.instanceEditDescription),
+			Description: gui.Tr.EditDescription,
 			Mutates:     true,
 		},
 		{
@@ -344,6 +350,12 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotDelete),
 			Description: gui.Tr.Remove,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "snapshots",
+			Handler:     onSelected(gui.Panels.Snapshots, gui.snapshotRename),
+			Description: gui.Tr.Rename,
 			Mutates:     true,
 		},
 		{
@@ -995,6 +1007,12 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.handleServiceEditFile,
 			Description: gui.Tr.EditFile,
+			Mutates:     true,
+		},
+		{
+			ViewName:    "services",
+			Handler:     gui.handleServiceEditDescription,
+			Description: gui.Tr.EditDescription,
 			Mutates:     true,
 		},
 		{
