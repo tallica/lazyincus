@@ -142,7 +142,11 @@ inferred.
   URLs (`?project=`) - and no requestor. A `token` operation runs for as
   long as its token is valid and holds the secret in its metadata, and a
   websocket's metadata is its connection secrets. Cancelling is
-  `DeleteOperation`, refused unless `may_cancel`. Cancelling an image
+  `DeleteOperation`, refused unless `may_cancel`. `updated_at` moves for
+  new metadata or resources, not for a new status: an operation that
+  reports no progress ends with it still at its start, so its duration is
+  taken from the timestamp of the event that ended it (`Operation.Ended`),
+  on the daemon's clock, as `created_at` is. Cancelling an image
   download isn't kept, though: on 7.4 the operation reads Cancelled and
   the daemon finishes the download anyway - one cancelled at 17% through
   the API alone, no CLI waiting on it, was listed 26s later. Cancelling
