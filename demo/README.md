@@ -3,7 +3,8 @@
 The walkthrough linked from the [README](../README.md) is recorded here: a
 script presses every key against a throwaway fixture on two Incus remotes,
 captioning each, and writes an asciicast, a gif and an mp4, then cuts the
-short gif the README shows from it.
+short gif the README shows from it. Beside it are short recordings of one
+feature each, to link from its CHANGELOG entry.
 
 | File | What it does |
 |---|---|
@@ -11,6 +12,8 @@ short gif the README shows from it.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
+| `palette.sh` | Records the command palette, with a fixture of its own |
+| `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
 
@@ -81,6 +84,8 @@ holding copies of the two stacks, so their paths read `~/lzi-stack`.
 | `BIN` | `./lazyincus` | The lazyincus binary to record |
 | `COLS`, `ROWS` | `140`, `40` | The terminal's size |
 | `PAUSE` | `1.2` | Seconds held after each key |
+| `TYPE_DELAY` | `0.08` | Seconds between typed characters |
+| `LEAD` | `4` | Seconds the recording opens on before the first key |
 | `SPEED` | `1` | Playback speed of the rendered gif and mp4 |
 | `SHELL_SPEED` | `3` | How much faster time outside lazyincus plays, in the cast too |
 | `FONT` | JetBrainsMono Nerd Font Mono | The gifs' font |
@@ -100,6 +105,30 @@ asciinema upload demo/demo.cast
 
 Then point both links at the top of the [README](../README.md) at the new
 recording, and commit `docs/highlights.gif` with any change to the scripts.
+
+## Short recordings
+
+One feature each, under a minute, on one remote, `REMOTE_A`:
+
+```sh
+REMOTE_A=site-a demo/palette.sh
+```
+
+It writes `demo/palette.cast`, `.gif` and `.mp4`, and takes the settings
+above at a slower default pace, to be read rather than skimmed: a size of
+`120`×`32`, `PAUSE` `2`, `TYPE_DELAY` `0.15` and `LEAD` `1.5`. It builds its own fixture, project
+`lzi-shop`, which it leaves behind, renamed as the recording left it;
+`demo/palette.sh down` removes it. The project is chosen before the
+recording starts, so it opens on the feature.
+
+Upload the cast the same way, then link it at the end of the CHANGELOG
+entry it shows, `([demo](https://asciinema.org/a/…))` - which carries it
+into the release notes - and from wherever the feature is documented: its
+key's row in the [README](../README.md), or its section of
+[docs/Panels.md](../docs/Panels.md).
+
+A new one is a copy of `palette.sh`: its fixture's `up` and `down`, and
+its storyboard.
 
 ## The fixture
 

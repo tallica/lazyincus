@@ -2,8 +2,7 @@
 *.log
 /dist/
 /.archive/
-/demo/demo.cast
-/demo/demo.gif
-/demo/demo.mp4
-/demo/demo.screens
-/demo/demo.raw.cast
+/demo/*.cast
+/demo/*.gif
+/demo/*.mp4
+/demo/*.screens
