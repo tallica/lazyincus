@@ -36,11 +36,13 @@ feature each, to link from its CHANGELOG entry.
 - A lazyincus binary. The released one keeps the footer's version clean:
 
   ```sh
-  gh release download v0.13.0 -R tallica/lazyincus \
-    -p 'lazyincus_0.13.0_darwin_arm64.tar.gz' -O - | tar xz -C /tmp lazyincus
+  tag=$(gh release view -R tallica/lazyincus --json tagName -q .tagName)
+  gh release download "$tag" -R tallica/lazyincus \
+    -p "lazyincus_${tag#v}_darwin_arm64.tar.gz" -O - | tar xz -C /tmp lazyincus
   ```
 
-  or `make build` for the checkout's own, which `demo.sh` uses by default.
+  or `make build` for the checkout's own, which every recording uses by
+  default, its footer then reading something like `v0.15.0-2-g8ecb76c`.
 
 ## Recording
 
