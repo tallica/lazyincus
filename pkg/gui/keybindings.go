@@ -802,6 +802,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Description: gui.Tr.NextContext,
 				NoSelection: true,
 			},
+			&Binding{
+				ViewName:    panel.GetView().Name(),
+				Key:         ':',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.handleTypedCommand(panel.GetView().Name()),
+				Description: gui.Tr.TypedCommand,
+				Mutates:     true,
+				NoSelection: true,
+			},
 		)
 	}
 

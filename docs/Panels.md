@@ -52,6 +52,19 @@ a list filter still applied is cleared by it, as the command palette
 clears one. Starting a search stops the panel following new output, as
 scrolling up does. Focus leaving the main panel ends the search.
 
+## Typed commands
+
+`:` on any side panel opens a one-line prompt (`openTextPrompt`) and runs
+what's typed as `incus` with the terminal handed over, then re-reads
+every panel: a command can change anything. It runs on the remote the
+panel's keys act on (`actionRemote`), which is also the one the read-only
+check refuses it on, and starts from the selected row's `--project` -
+the scope's own when the row names none - so the common case is typing
+the verb alone. `str.ToArgv` splits it, honouring quotes, and nothing
+goes through a shell: a prompt that runs what it's given unconfirmed
+takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
+dropped.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which

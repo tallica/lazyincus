@@ -18,23 +18,23 @@
 │                      │enter     focus main panel                 ▐                     │
 │                      │[         previous tab                     ▐                     │
 │                      │]         next tab                         ▐                     │
+│                      │:         run an incus command             ▐                     │
 │                      │/         filter list                      ▐                     │
 │                      │                                           ▐                     │
 │                      │ctrl+p    command palette                  ▐                     │
 │                      │o         open lazyincus config            ▐                     │
-│                      │O         edit lazyincus config            ▐                     │
-╰──────────────────────│P         switch project                   ▐                     │
-╭─[3]─Img - Vol - Net -│W         operations and warnings          ▐                     │
-│Alpine 3.22 amd64 2 01│R         switch remote                    ▐                     │
-│Debian 13 amd64   0 fe│+         next screen mode (normal/half/fu…▐                     │
+╰──────────────────────│O         edit lazyincus config            ▐                     │
+╭─[3]─Img - Vol - Net -│P         switch project                   ▐                     │
+│Alpine 3.22 amd64 2 01│W         operations and warnings          ▐                     │
+│Debian 13 amd64   0 fe│R         switch remote                    ▐                     │
+│                      │+         next screen mode (normal/half/fu…▐                     │
 │                      │_         prev screen mode                 ▐                     │
 │                      │=         expand/collapse the focused side…▐                     │
 │                      │tab       next panel                       ▐                     │
 │                      │shift+tab previous panel                   ▐                     │
 │                      │◄         previous list                    ▐                     │
-│                      │h         previous list                    ▐                     │
-│                      │►         next list                        ▐                     │
+│                      │h         previous list                    │                     │
+│                      │►         next list                        │                     │
 │                      │l         next list                        │                     │
-│                      │1         focus instances panel            │                     │
 ╰──────────────────────╰───────────────────────────────────────────╯─────────────────────╯
 enter: execute, esc: close, ↑ ↓: navigate           Incus v7.4 (fake/all projects) ●  test
