@@ -163,41 +163,12 @@ Available since the move off lazydocker's 2024 pin; none of it wired up.
 
 ### Typed commands
 
-`incus-compose` has this already, as an extension rather than a compose
-verb: `incus-compose incus <args>` runs the real incus CLI in the compose
-project's context — `incus-compose incus list` in a stack's directory lists
-that project's instances, not the default project's. The value isn't a
-command list, it's the scoping: the wrapper injects the context so you
-don't type it. lazyincus knows the same context from whichever row the
-cursor is on, which is the argument for a typed passthrough over
-lazydocker's configured menu.
-
-Both entries below are one prompt and one runner, so the first should write
-`runTypedCommand(binary, prefill)` and the second should be a caller and a
-gate. Deliberately out of scope for a first version: command history,
-completion, and a menu of saved commands — each is state of its own, and
-none of it is needed to make typing a command useful.
-
-- [ ] **Typed incus command (`:`)** — an editable prompt, submitted to
-      `incus` as a subprocess. The prompt seeds with the selected row's
-      `--project` (`projectCLIArgs`), cursor after it, and runs on the
-      row's remote the way `instanceCmd` does, so the common case
-      is typing the verb alone and the uncommon one is deleting a prefix.
-      Reuses `openTextPrompt`, the one Stacks' `a` asks for a directory
-      with, and `runSubprocess`, so an interactive command works
-      and the panels refresh afterwards the way `composeRun` refreshes
-      them. Tokenize respecting quotes rather than splitting on whitespace,
-      and don't route through `sh -c`: pipes and `$(...)` aren't worth an
-      unconfirmed prompt that runs what it's given.
-- [ ] **Typed incus-compose command (`;`)** — the same prompt against
-      `incus-compose`, on the Stacks and Services panels, run through
-      `ComposeCmd` in the selected stack's directory and on its remote, as
-      `composeRun` does. Nothing to prefill beyond the selected service's
-      name as a trailing argument.
-
-Keys aren't settled: `:` and `;` are both free and read as a pair on one
-physical key, `!` being the alternative if `;` is too easy to hit by
-accident.
+`:` and `;` ([docs/Panels.md](docs/Panels.md#typed-commands)) are a
+typed `incus` or `incus-compose` command, scoped by the selected row the
+way `incus-compose incus` scopes the CLI to a stack - the argument for a
+typed passthrough over lazydocker's configured menu. Left out on purpose,
+each being state of its own: command history, completion, and a menu of
+saved commands.
 
 ## incus-compose integration
 

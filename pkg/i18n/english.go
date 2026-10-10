@@ -50,6 +50,11 @@ type TranslationSet struct {
 	EditFile                     string
 	EditFilePrompt               string
 	EditFileHint                 string
+	TypedCommand                 string
+	TypedCommandTitle            string
+	TypedCommandHint             string
+	TypedComposeCommand          string
+	TypedComposeCommandTitle     string
 	Rename                       string
 	RenameInstancePrompt         string
 	RenameHint                   string
@@ -404,6 +409,11 @@ func englishSet() TranslationSet {
 		EditFile:                     "edit a file in $EDITOR",
 		EditFilePrompt:               "Edit a file in %s",
 		EditFileHint:                 "enter to edit · esc to cancel",
+		TypedCommand:                 "run an incus command",
+		TypedCommandTitle:            "incus",
+		TypedCommandHint:             "enter to run · esc to cancel",
+		TypedComposeCommand:          "run an incus-compose command",
+		TypedComposeCommandTitle:     "incus-compose: %s",
 		Rename:                       "rename",
 		RenameInstancePrompt:         "Rename %s",
 		RenameHint:                   "enter to rename · esc to cancel",
