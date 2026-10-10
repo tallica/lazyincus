@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
 - A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.
 - The Volumes panel marks the volumes holding a stack's backups as `backup` instead of an unused red `0`.
-- `W` lists what the daemon is doing and did this session, with progress and errors (`d` cancels), and its warnings to acknowledge (`a`) or delete (`d`); `[`/`]` switch lists.
+- `W` lists what the daemon is doing and did this session, with progress and errors (`d` cancels), and its warnings to acknowledge (`a`) or delete (`d`); `[`/`]` switch lists ([demo](https://asciinema.org/a/1268025)).
 - The footer counts running operations, in red those that failed since you last looked, and unacknowledged warnings.
 
 ### Changed
