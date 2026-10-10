@@ -119,7 +119,7 @@ func (gui *Gui) infoSectionChildren(informationStr string, appStatus string) []*
 			},
 			{
 				Window: "information",
-				Size:   utils.DisplayWidth(INFO_SECTION_PADDING) + utils.DisplayWidth(informationStr),
+				Size:   utils.DisplayWidth(informationStr),
 			},
 		}...,
 	)

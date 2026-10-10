@@ -27,4 +27,4 @@
 │                                ││    Sent:       0B (0 packets)                                  ▐
 │                                ││    IP addresses:                                               │
 ╰────────────────────────────────╯╰────────────────────────────────────────────────────────────────╯
-PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate       Incus v7.4 (fake/all projects) ●  test
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate        Incus v7.4 (fake/all projects) ●  test

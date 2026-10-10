@@ -180,8 +180,9 @@ func (gui *Gui) setInitialViewContent() error {
 	return nil
 }
 
+// The padding leads, so the options cut short beside it stop a space before it.
 func (gui *Gui) getInformationContent() string {
-	return gui.warningsStatusContent() + gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
+	return INFO_SECTION_PADDING + gui.warningsStatusContent() + gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
 }
 
 // incusStatusContent renders the server version, the remote and project the

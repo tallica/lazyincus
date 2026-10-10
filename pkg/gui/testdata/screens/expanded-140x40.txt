@@ -37,4 +37,4 @@
 ╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
 │Alpine 3.22 amd64 2 0123456789ab 3.00MiB  20…││                                                                                           │
 ╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
-PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                               Incus v7.4 (fake/all projects) ●  test
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                                Incus v7.4 (fake/all projects) ●  test
