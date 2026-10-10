@@ -12,7 +12,8 @@ feature each, to link from its CHANGELOG entry.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
-| `palette.sh`, `readonly.sh`, `operations.sh` | The short recordings, each with a fixture of its own |
+| `palette.sh`, `readonly.sh`, `operations.sh`, `snapshots.sh`, `inside.sh`, `backups.sh` | The short recordings, each with a fixture of its own |
+| `lzi-notes/` | The compose stack `backups.sh` backs up |
 | `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
@@ -67,7 +68,7 @@ Time spent outside lazyincus - a shell in an instance, an editor, a
 compose command's output - plays faster than it was recorded: while
 recording, the screen is checked four times a second for lazyincus's
 footer, and the spans without it play `SHELL_SPEED` times faster, no pause
-in them longer than 0.4s. The keys still went at the pace the commands
+in them longer than `SHELL_HOLD`. The keys still went at the pace the commands
 ran at, so nothing is skipped; only the playback is quicker. A command's
 "Press enter to return" plays at full length, for its output to be read.
 
@@ -88,6 +89,7 @@ holding copies of the two stacks, so their paths read `~/lzi-stack`.
 | `LEAD` | `4` | Seconds the recording opens on before the first key |
 | `SPEED` | `1` | Playback speed of the rendered gif and mp4 |
 | `SHELL_SPEED` | `3` | How much faster time outside lazyincus plays, in the cast too |
+| `SHELL_HOLD` | `0.4` | The longest pause kept outside lazyincus |
 | `FONT` | JetBrainsMono Nerd Font Mono | The gifs' font |
 | `OUT` | `demo/demo` | Where the cast, gif and mp4 go, less the extension |
 | `SKIP_FIXTURE` | unset | Set to record against the fixture as it stands |
@@ -109,18 +111,24 @@ recording, and commit `docs/highlights.gif` with any change to the scripts.
 ## Short recordings
 
 One feature each, around a minute, paced to be read rather than skimmed:
-`PAUSE` `2`, `TYPE_DELAY` `0.15`, and a shorter `LEAD`.
+`PAUSE` around `2`, `TYPE_DELAY` `0.15`, and a shorter `LEAD`.
 
 | Script | Shows | Remotes | Fixture project |
 |---|---|---|---|
 | `palette.sh` | The command palette | `REMOTE_A` | `lzi-shop`: `web`, `db`, `cache` |
 | `readonly.sh` | A read-only remote, and a writable one beside it | `REMOTE_B` as `production`, read-only; `REMOTE_A` as `staging` | `lzi-app` on both: `api`, `billing`, `worker` |
 | `operations.sh` | `W`: a warning acknowledged, a command cancelled, a failed start | `REMOTE_A` | `lzi-ops`: `ingest`, `scheduler`, and `report`, which can't start; network `lzidemo1`, whose `raw.dnsmasq` raises the warning |
+| `snapshots.sh` | A snapshot taken, renamed, and made into a described instance | `REMOTE_A` | `lzi-snap`: `blog` |
+| `inside.sh` | The Info tab's Ports, `F` editing a file, `/` searching the main panel | `REMOTE_A` | `lzi-web`: `front`, with a description and a proxy device |
+| `backups.sh` | `B`, a new backup, `verify`, and the volumes holding them | `REMOTE_A` | the `lzi-notes` stack, backed up once |
 
 ```sh
 REMOTE_A=site-a demo/palette.sh
 REMOTE_A=site-a REMOTE_B=site-b demo/readonly.sh
 REMOTE_A=site-a demo/operations.sh
+REMOTE_A=site-a demo/snapshots.sh
+REMOTE_A=site-a demo/inside.sh
+REMOTE_A=site-a demo/backups.sh
 ```
 
 Each writes `demo/<script>.cast`, `.gif` and `.mp4`, and takes the

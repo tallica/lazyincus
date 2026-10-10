@@ -14,6 +14,7 @@ TYPE_DELAY=${TYPE_DELAY:-0.08} # seconds between typed characters
 LEAD=${LEAD:-4}              # seconds the recording opens on before the first key
 SPEED=${SPEED:-1}            # playback speed of the rendered gif/mp4; the daemon waits shrink too
 SHELL_SPEED=${SHELL_SPEED:-3} # how much faster time outside lazyincus plays: shells, editors, compose
+SHELL_HOLD=${SHELL_HOLD:-0.4} # the longest pause kept outside lazyincus
 OUT=${OUT:-$HERE/$(basename "$0" .sh)}
 # base16 Tomorrow Night Eighties: background, foreground, then ANSI 0-15
 PALETTE=222222,cccccc,666666,f2777a,99cc99,ffcc66,6699cc,cc99cc,66cccc,ffffff,666666,f2777a,99cc99,ffcc66,6699cc,cc99cc,66cccc,ffffff
@@ -172,7 +173,7 @@ watch_screen() {
 
 # squeeze_shells <cast> <screens> — play the time out of lazyincus, as
 # watch_screen saw it, SHELL_SPEED times faster, no pause in it longer than
-# 0.4s. The keys were sent at the pace the commands ran at; only playback
+# SHELL_HOLD. The keys were sent at the pace the commands ran at; only playback
 # changes.
 squeeze_shells() {
   local spans
@@ -182,11 +183,11 @@ squeeze_shells() {
     END { if (from != "") printf "%s[%s,1e9]", (n ? "," : ""), from }' "$2")
 
   { head -1 "$1"
-    tail -n +2 "$1" | jq -c -n --argjson f "$SHELL_SPEED" --argjson spans "[$spans]" '
+    tail -n +2 "$1" | jq -c -n --argjson f "$SHELL_SPEED" --argjson hold "$SHELL_HOLD" --argjson spans "[$spans]" '
       foreach inputs as $e ({prev: 0, at: 0};
         ($e[0] - .prev) as $d
         | ([$spans[] | select(.[0] <= $e[0] and $e[0] <= .[1])] | length > 0) as $out
-        | .at += (if $out then [$d / $f, 0.4] | min else $d end)
+        | .at += (if $out then [$d / $f, $hold] | min else $d end)
         | .prev = $e[0];
         [.at, $e[1], $e[2]])'
   } >"$1.tmp" && mv "$1.tmp" "$1"

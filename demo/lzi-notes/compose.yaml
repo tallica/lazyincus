@@ -1,0 +1,8 @@
+name: lzi-notes
+services:
+  db:
+    image: docker.io/library/redis:alpine
+    volumes:
+      - data:/data
+volumes:
+  data:
