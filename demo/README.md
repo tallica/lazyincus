@@ -12,7 +12,7 @@ feature each, to link from its CHANGELOG entry.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
-| `palette.sh`, `readonly.sh` | The short recordings, each with a fixture of its own |
+| `palette.sh`, `readonly.sh`, `operations.sh` | The short recordings, each with a fixture of its own |
 | `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
@@ -115,10 +115,12 @@ One feature each, around a minute, paced to be read rather than skimmed:
 |---|---|---|---|
 | `palette.sh` | The command palette | `REMOTE_A` | `lzi-shop`: `web`, `db`, `cache` |
 | `readonly.sh` | A read-only remote, and a writable one beside it | `REMOTE_B` as `production`, read-only; `REMOTE_A` as `staging` | `lzi-app` on both: `api`, `billing`, `worker` |
+| `operations.sh` | `W`: a warning acknowledged, a command cancelled, a failed start | `REMOTE_A` | `lzi-ops`: `ingest`, `scheduler`, and `report`, which can't start; network `lzidemo1`, whose `raw.dnsmasq` raises the warning |
 
 ```sh
 REMOTE_A=site-a demo/palette.sh
 REMOTE_A=site-a REMOTE_B=site-b demo/readonly.sh
+REMOTE_A=site-a demo/operations.sh
 ```
 
 Each writes `demo/<script>.cast`, `.gif` and `.mp4`, and takes the
