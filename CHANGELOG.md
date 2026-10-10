@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `R` keeps the project you're scoped to when the new remote has one by that name, instead of listing all its projects.
+
 ### Fixed
 - On a narrow terminal, the footer's key hints stop a space short of the status beside them instead of running into it.
 - An error, or an operation's or warning's details, offers `esc/enter: close` in the footer instead of a yes or no it isn't asking.

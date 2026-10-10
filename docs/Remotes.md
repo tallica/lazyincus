@@ -27,7 +27,8 @@ wherever the daemon actually lives.
 
 Once running, `R` switches to another of the CLI's remotes - the
 `incus`-protocol ones `incus remote list` shows, so not `images:` or an
-OCI registry. Every panel moves over, listing all of its projects, and so
+OCI registry. Every panel moves over - to the project you were scoped to,
+if the remote has one by that name, or to all of its projects - and so
 does `INCUS_REMOTE`, so the subprocesses follow. A remote that doesn't
 answer within 10s, or `local` off Linux, as above, leaves you where you
 were, saying why.

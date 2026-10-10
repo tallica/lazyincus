@@ -97,6 +97,25 @@ func TestSwitchingRemote(t *testing.T) {
 	}))
 }
 
+// A switch keeps the project the panels are scoped to, where the remote
+// has one by that name.
+func TestSwitchingRemoteKeepsTheProject(t *testing.T) {
+	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "web", "")}})
+	edge := incustest.New(incustest.Server{})
+
+	s := startScreenWith(t, 140, 40, nil, withRemotes(map[string]*incustest.Server{"pve01": pve01, "edge": edge}))
+	s.ready(t)
+
+	s.do(t, func() error { return s.gui.switchToProject("shop") })
+	s.settle(t, "(fake/shop)")
+
+	s.do(t, func() error { return s.gui.switchToRemote("pve01") })
+	s.settle(t, "(pve01/shop)")
+
+	s.do(t, func() error { return s.gui.switchToRemote("edge") })
+	s.settle(t, "(edge/all projects)")
+}
+
 // A remote that doesn't answer leaves everything where it was.
 func TestSwitchingToAnUnreachableRemote(t *testing.T) {
 	t.Setenv("INCUS_REMOTE", "fake")

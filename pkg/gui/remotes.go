@@ -288,10 +288,16 @@ func (gui *Gui) switchToRemote(name string) error {
 }
 
 // switchToRemoteThen is switchToRemote, then is run on the main loop once
-// the panels are on the remote - straight away when they already are.
+// the panels are on the remote - straight away when they already are. A
+// project the panels are scoped to stays, if the remote has one by that name.
 func (gui *Gui) switchToRemoteThen(name string, then func() error) error {
 	if name == gui.IncusCommand.RemoteName() {
 		return then()
+	}
+
+	project := ""
+	if !gui.IncusCommand.IsAllProjects() {
+		project = gui.IncusCommand.ProjectName()
 	}
 
 	return gui.WithWaitingStatus(gui.Tr.ConnectingStatus, func() error {
@@ -300,8 +306,14 @@ func (gui *Gui) switchToRemoteThen(name string, then func() error) error {
 			return err
 		}
 
+		if project != "" {
+			if names, err := command.GetProjectNames(); err != nil || !slices.Contains(names, project) {
+				project = ""
+			}
+		}
+
 		gui.g.Update(func(*gocui.Gui) error {
-			if err := gui.moveToRemote(name, command); err != nil {
+			if err := gui.moveToRemote(name, command, project); err != nil {
 				return err
 			}
 
@@ -312,9 +324,13 @@ func (gui *Gui) switchToRemoteThen(name string, then func() error) error {
 	})
 }
 
-// moveToRemote puts every panel on command's remote. Main loop only.
-func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand) error {
+// moveToRemote puts every panel on command's remote, scoped to project, or
+// to every project when that's empty. Main loop only.
+func (gui *Gui) moveToRemote(name string, command *commands.IncusCommand, project string) error {
 	gui.IncusCommand.UseRemote(command)
+	if project != "" {
+		gui.IncusCommand.UseProject(project)
+	}
 
 	// From the stacks already listed, rather than once every panel has been
 	// read again from the new remote; the stacks read then confirms it.
