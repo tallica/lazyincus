@@ -298,6 +298,21 @@ func (gui *Gui) landOffStacks() error {
 		return nil
 	}
 
+	// A popup opened first - P straight after startup - hands the focus
+	// back to Instances when it closes.
+	if gui.popupPanelFocused() {
+		gui.ViewStackMutex.Lock()
+		defer gui.ViewStackMutex.Unlock()
+
+		for i, name := range gui.State.ViewStack {
+			if name == "stacks" || name == "services" {
+				gui.State.ViewStack[i] = "instances"
+			}
+		}
+
+		return nil
+	}
+
 	if name := gui.currentViewName(); name != "stacks" && name != "services" {
 		return nil
 	}

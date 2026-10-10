@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -165,6 +166,28 @@ func TestStacksAreFocusedFirst(t *testing.T) {
 // With no stack on the session's remote, Stacks and Services collapse and
 // the focus starts on Instances; either one focused expands both, and
 // collapses Instances instead.
+// P pressed before the stacks are first read: closing, the menu hands the
+// focus to Instances, not back to Stacks.
+func TestNoStackHereLandsPastAPopup(t *testing.T) {
+	pinned := testStack(t, t.TempDir(), "shop", "api")
+	pinned.Remote = "pve01"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		withRemotes(map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})})(s)
+	})
+
+	landed(t, s, "stacks")
+	s.press(t, 'P')
+	s.settle(t, "all projects")
+	s.do(t, s.gui.landOffStacks)
+
+	s.pressKey(t, tcell.KeyEscape)
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() string { return s.gui.currentViewName() }) == "instances"
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
 func TestNoStackHereCollapsesStacks(t *testing.T) {
 	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")}})
 	root := t.TempDir()
