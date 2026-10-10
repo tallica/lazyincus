@@ -43,18 +43,24 @@ t() { env -u TMUX tmux -L "$SOCK" -f /dev/null "$@"; }
 cleanup() { t kill-server 2>/dev/null || true; rm -rf "$CFG" "$DEMO_HOME"; }
 trap cleanup EXIT
 
-# demo_home <remote>… — the incus config lazyincus sees: these remotes, the first the default
+# demo_home <remote>… — the incus config lazyincus sees: these remotes, the
+# first the one it starts on. <name>=<remote> lists a remote as <name>.
 demo_home() {
-  local r keep=" "
+  local arg names=""
   mkdir -p "$DEMO_HOME/incus/servercerts"
   cp "$REAL_CONF/client.crt" "$REAL_CONF/client.key" "$DEMO_HOME/incus/"
-  for r in "$@"; do
-    cp "$REAL_CONF/servercerts/$r.crt" "$DEMO_HOME/incus/servercerts/"
-    keep+="$r: "
+  for arg in "$@"; do
+    [[ $arg == *=* ]] || arg=$arg=$arg
+    cp "$REAL_CONF/servercerts/${arg#*=}.crt" "$DEMO_HOME/incus/servercerts/${arg%%=*}.crt"
+    names+="${arg#*=}=${arg%%=*} "
   done
-  { echo "default-remote: $1"; echo "remotes:"
-    awk -v keep="$keep" '
-      /^  [^ ]/ { k = index(keep, " " $1 " ") > 0 } /^[^ ]/ { k = 0 } k' "$REAL_CONF/config.yml"
+  APP_REMOTE=${1%%=*}
+  { echo "default-remote: $APP_REMOTE"; echo "remotes:"
+    awk -v names="$names" '
+      BEGIN { n = split(names, m, " "); for (i = 1; i <= n; i++) { split(m[i], p, "="); as[p[1]] = p[2] } }
+      /^[^ ]/ { k = 0 }
+      /^  [^ ]/ { r = $1; sub(/:$/, "", r); k = r in as; if (k) { print "  " as[r] ":"; next } }
+      k' "$REAL_CONF/config.yml"
     echo "aliases: {}"; } >"$DEMO_HOME/incus/config.yml"
 }
 
@@ -196,10 +202,10 @@ embed_theme() {
     tail -n +2 "$1"; } >"$1.tmp" && mv "$1.tmp" "$1"
 }
 
-# start_app — lazyincus in its own tmux server, with a caption bar
+# start_app — lazyincus in its own tmux server, with a caption bar, on demo_home's first remote
 start_app() {
   t new-session -d -s app -x "$COLS" -y "$ROWS" -c "$DEMO_HOME" \
-    "HOME=$DEMO_HOME TMPDIR=/tmp INCUS_CONF=$DEMO_HOME/incus COLORTERM=truecolor CONFIG_DIR=$CFG EDITOR=vim INCUS_REMOTE=$REMOTE_A $BIN"
+    "HOME=$DEMO_HOME TMPDIR=/tmp INCUS_CONF=$DEMO_HOME/incus COLORTERM=truecolor CONFIG_DIR=$CFG EDITOR=vim INCUS_REMOTE=$APP_REMOTE $BIN"
   t set -g default-terminal tmux-256color
   t set -as terminal-features ',*:RGB'     # pass the hex selection colour through
   t set -g status-position bottom

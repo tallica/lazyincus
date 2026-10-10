@@ -13,7 +13,7 @@ P=lzi-shop
 
 down() {
   local c
-  for c in web db cache postgres; do incus delete -f "$c" --project "$P" 2>/dev/null || true; done
+  for c in $(incus list --project "$P" -f csv -c n 2>/dev/null); do incus delete -f "$c" --project "$P" || true; done
   incus project delete "$P" 2>/dev/null || true
 }
 

@@ -12,7 +12,7 @@ feature each, to link from its CHANGELOG entry.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
-| `palette.sh` | Records the command palette, with a fixture of its own |
+| `palette.sh`, `readonly.sh` | The short recordings, each with a fixture of its own |
 | `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
@@ -108,18 +108,26 @@ recording, and commit `docs/highlights.gif` with any change to the scripts.
 
 ## Short recordings
 
-One feature each, under a minute, on one remote, `REMOTE_A`:
+One feature each, around a minute, paced to be read rather than skimmed:
+`PAUSE` `2`, `TYPE_DELAY` `0.15`, and a shorter `LEAD`.
+
+| Script | Shows | Remotes | Fixture project |
+|---|---|---|---|
+| `palette.sh` | The command palette | `REMOTE_A` | `lzi-shop`: `web`, `db`, `cache` |
+| `readonly.sh` | A read-only remote, and a writable one beside it | `REMOTE_B` as `production`, read-only; `REMOTE_A` as `staging` | `lzi-app` on both: `api`, `billing`, `worker` |
 
 ```sh
 REMOTE_A=site-a demo/palette.sh
+REMOTE_A=site-a REMOTE_B=site-b demo/readonly.sh
 ```
 
-It writes `demo/palette.cast`, `.gif` and `.mp4`, and takes the settings
-above at a slower default pace, to be read rather than skimmed: a size of
-`120`×`32`, `PAUSE` `2`, `TYPE_DELAY` `0.15` and `LEAD` `1.5`. It builds its own fixture, project
-`lzi-shop`, which it leaves behind, renamed as the recording left it;
-`demo/palette.sh down` removes it. The project is chosen before the
-recording starts, so it opens on the feature.
+Each writes `demo/<script>.cast`, `.gif` and `.mp4`, and takes the
+settings above. Each builds its fixture afresh and leaves it behind as
+the recording left it; `demo/<script>.sh down` removes it. Instances on
+one network need unique names, which is why the fixtures don't share any.
+The project is chosen before the recording starts, so it opens on the
+feature. `readonly.sh` changes nothing on `REMOTE_B` past its fixture:
+every key it presses there is refused.
 
 Upload the cast the same way, then link it at the end of the CHANGELOG
 entry it shows, `([demo](https://asciinema.org/a/…))` - which carries it
@@ -127,8 +135,9 @@ into the release notes - and from wherever the feature is documented: its
 key's row in the [README](../README.md), or its section of
 [docs/Panels.md](../docs/Panels.md).
 
-A new one is a copy of `palette.sh`: its fixture's `up` and `down`, and
-its storyboard.
+A new one is a copy of one of these: its fixture's `up` and `down`, and
+its storyboard. `demo_home name=remote` lists a remote under a name of
+the story's own.
 
 ## The fixture
 
