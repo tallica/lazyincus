@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `remotes.<name>.readOnly` in the config, or `--read-only` for every remote, refuses any key that would change something there; the footer says `read-only`.
-- `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions.
+- `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions ([demo](https://asciinema.org/a/1268020)).
 - `remotes.<name>.color` colours that remote's name in the footer and the borders of panels acting on it.
 - Theme and remote colours also take `brightblack` to `brightwhite`, the terminal theme's bright variants.
 - A Backups tab beside Snapshots lists the selected stack's `incus-compose backup` runs: `n` backs up, `r` restores, `d`/`D` delete or prune, `v` verifies.

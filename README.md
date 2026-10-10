@@ -206,7 +206,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `=` | Expand / collapse the focused side panel |
 | `/` | Filter; in the main panel, search it: `n` / `N` step through the matches, `esc` clears them |
 | `x` / `?` | Keybinding menu |
-| `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions |
+| `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions ([demo](https://asciinema.org/a/1268020)) |
 | `q`, `ctrl+c` | Quit |
 
 With no key of their own, in the command palette and the keybinding menu:
