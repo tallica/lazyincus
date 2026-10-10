@@ -142,9 +142,11 @@ inferred.
   URLs (`?project=`) - and no requestor. A `token` operation runs for as
   long as its token is valid and holds the secret in its metadata, and a
   websocket's metadata is its connection secrets. Cancelling is
-  `DeleteOperation`, refused unless `may_cancel`. `incus image copy` said
-  it had copied an image whose download operation had just been
-  cancelled, and the image was there: the CLI goes on another way.
+  `DeleteOperation`, refused unless `may_cancel`. Cancelling an image
+  download isn't kept, though: on 7.4 the operation reads Cancelled and
+  the daemon finishes the download anyway - one cancelled at 17% through
+  the API alone, no CLI waiting on it, was listed 26s later. Cancelling
+  an `exec` does end its command.
 - **Instances are values**: each refresh builds new `*Instance`s rather
   than updating the last ones in place, which is what made them safe to
   read from a render goroutine. What has to outlive a refresh lives in an
