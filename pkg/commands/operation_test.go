@@ -37,7 +37,11 @@ func TestOperationTook(t *testing.T) {
 	assert.Zero(t, operation.Took(), "still running")
 
 	operation.Operation.StatusCode = api.Success
-	assert.Equal(t, 1500*time.Millisecond, operation.Took())
+	assert.Equal(t, 1500*time.Millisecond, operation.Took(), "only ever listed: its last update")
+
+	// The daemon leaves UpdatedAt alone when only the status changes.
+	operation.Ended = start.Add(10 * time.Second)
+	assert.Equal(t, 10*time.Second, operation.Took())
 }
 
 // A token runs for as long as it's valid, its secret in its metadata.

@@ -64,6 +64,13 @@ func (l *operationLog) record(operation *commands.Operation, at time.Time) {
 		if have > got || (have == got && logged.operation.Operation.UpdatedAt.After(operation.Operation.UpdatedAt)) {
 			return
 		}
+
+		// A listing doesn't say when it ended; the event did.
+		if operation.Ended.IsZero() && !logged.operation.Ended.IsZero() {
+			kept := *operation
+			kept.Ended = logged.operation.Ended
+			operation = &kept
+		}
 	}
 
 	l.entries[operation.Key()] = &loggedOperation{operation: operation, seen: at}

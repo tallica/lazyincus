@@ -54,6 +54,19 @@ func TestOperationLogNeverGoesBack(t *testing.T) {
 	})).Operation.UpdatedAt)
 }
 
+// A listing of an operation that has ended doesn't say when; the event did.
+func TestOperationLogKeepsWhenItEnded(t *testing.T) {
+	var log operationLog
+	now := time.Now()
+
+	ended := testOperation("op", api.Failure, 0)
+	ended.Ended = operationStart.Add(10 * time.Second)
+	log.record(ended, now)
+	log.record(testOperation("op", api.Failure, 0), now)
+
+	assert.Equal(t, 10*time.Second, log.list()[0].Took())
+}
+
 func TestOperationLogLeavesOutTokens(t *testing.T) {
 	var log operationLog
 

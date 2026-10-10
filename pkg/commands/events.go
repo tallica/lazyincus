@@ -147,6 +147,9 @@ func parseEvent(event api.Event, fallbackProject string) (Event, bool) {
 		parsed.Action = operation.Description
 		parsed.Operation = operation.ID
 		parsed.Details = &Operation{Operation: operation, Project: parsed.Project}
+		if operation.StatusCode.IsFinal() {
+			parsed.Details.Ended = event.Timestamp
+		}
 		parsed.Status = operation.StatusCode
 
 		for _, path := range operation.Resources["instances"] {

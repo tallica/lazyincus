@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - On a narrow terminal, the footer's key hints stop a space short of the status beside them instead of running into it.
 - An error, or an operation's or warning's details, offers `esc/enter: close` in the footer instead of a yes or no it isn't asking.
+- `W` shows how long an ended operation ran, instead of `0s` for one that reports no progress along the way, such as a command or a start.
 
 ## [0.15.0] - 2026-10-10
 

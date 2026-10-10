@@ -113,6 +113,24 @@ func TestParseEventReadsAnOperationsInstances(t *testing.T) {
 	}, event)
 }
 
+// The event saying an operation ended is when it ended: its UpdatedAt can
+// be its start.
+func TestParseEventTimesAnOperationsEnd(t *testing.T) {
+	sent := time.Date(2026, 10, 10, 12, 1, 54, 0, time.UTC)
+
+	running := incustest.Operation("prod", "op1", "Executing command", api.Running, "web")
+	running.Timestamp = sent
+	event, ok := parseEvent(running, "default")
+	require.True(t, ok)
+	assert.True(t, event.Details.Ended.IsZero())
+
+	failed := incustest.Operation("prod", "op1", "Executing command", api.Failure, "web")
+	failed.Timestamp = sent
+	event, ok = parseEvent(failed, "default")
+	require.True(t, ok)
+	assert.Equal(t, sent, event.Details.Ended)
+}
+
 func TestListenForEventsKeepsTheirOrder(t *testing.T) {
 	server := incustest.New(incustest.Server{})
 	events, _, _ := listenInBackground(t, newEventsCommand(server), server)

@@ -16,6 +16,9 @@ type Operation struct {
 	// Project is the operation's, which api.Operation doesn't carry: the
 	// event says, and a listing's resource URLs do.
 	Project string
+	// Ended is when the event saying it had ended was sent, by the daemon's
+	// clock: the daemon moves UpdatedAt for new metadata, not a new status.
+	Ended time.Time
 }
 
 // operationClassToken is a join or certificate token: running for as long as
@@ -41,13 +44,19 @@ func (o *Operation) Status() string {
 	return strings.ToLower(o.Operation.StatusCode.String())
 }
 
-// Took is how long an ended operation ran, zero for one still running.
+// Took is how long an ended operation ran, zero for one still running. One
+// only ever listed falls back on its last update.
 func (o *Operation) Took() time.Duration {
 	if !o.IsFinal() {
 		return 0
 	}
 
-	return o.Operation.UpdatedAt.Sub(o.Operation.CreatedAt)
+	end := o.Ended
+	if end.IsZero() {
+		end = o.Operation.UpdatedAt
+	}
+
+	return max(end.Sub(o.Operation.CreatedAt), 0)
 }
 
 // Progress is where a long operation has got to, as the daemon words it:
