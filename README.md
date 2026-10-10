@@ -191,7 +191,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `B` | Stacks and Services panels: go to the stack's Backups tab, switching to the stack's remote first if it's elsewhere, as `space` does |
 | `a` | Attach to the instance's console (`incus console`); on the Stacks panel, add a stack |
 | `E` | Exec a shell into the instance |
-| `F` | Edit a file inside the instance in `$EDITOR`, through `incus file edit`, asking for its path (on the Services panel, the replica's) |
+| `F` | Edit a file inside the instance in `$EDITOR`, through `incus file edit`, asking for its path (on the Services panel, the replica's) ([demo](https://asciinema.org/a/1268030)) |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image |
@@ -215,7 +215,7 @@ With no key of their own, in the command palette and the keybinding menu:
 |---|---|
 | rename | Instances panel: rename an instance; a running one is stopped first and started again, once confirmed |
 | rename | Snapshots panel: rename the snapshot, an instance's or a custom volume's |
-| new instance from snapshot | Snapshots panel: copy an instance's snapshot into a new instance in the same project (`incus copy`), named in a prompt, and focus it; not a compose instance's, whose copy would join its service |
+| new instance from snapshot | Snapshots panel: copy an instance's snapshot into a new instance in the same project (`incus copy`), named in a prompt, and focus it; not a compose instance's, whose copy would join its service ([demo](https://asciinema.org/a/1268029)) |
 | edit description | Instances and Services panels: edit the instance's description in a one-line prompt; saving it empty clears it |
 
 Config file: `config.yml` in `~/.config/lazyincus` (on macOS,
@@ -343,7 +343,7 @@ from a replica's row, that replica alone. **Logs**, **Env** and **Top**
 need one instance, so a service's row with replicas under it points at
 them instead.
 
-The **Backups** tab, beside Snapshots, lists the selected stack's
+The **Backups** tab ([demo](https://asciinema.org/a/1268031)), beside Snapshots, lists the selected stack's
 `incus-compose backup` runs, newest first. `n` takes one, named or not,
 asking whether to stop the stack for it — incus-compose's default, which
 it starts again after — or take it `--live`. `r` restores every volume, or
