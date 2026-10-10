@@ -183,6 +183,10 @@ type guiState struct {
 
 	Connection connectionState
 
+	// ConfirmationAsks is whether the confirmation popup asks yes or no,
+	// rather than showing a message.
+	ConfirmationAsks bool
+
 	// ComposeAvailable is whether incus-compose is on PATH, which the Stacks
 	// and Services panels need to be there at all. Resolved once at
 	// startup: panel visibility is fixed for the session.

@@ -117,10 +117,15 @@ func (gui *Gui) onNewPopupPanel() {
 // It is very important that within this function we never include the original prompt in any error messages.
 // nolint:unparam
 func (gui *Gui) createConfirmationPanel(title, prompt string, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error) error {
-	return gui.createPopupPanel(title, prompt, handleConfirm, handleClose)
+	return gui.createPopupPanel(title, prompt, handleConfirm, handleClose, true)
 }
 
-func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error) error {
+// createMessagePanel shows a message rather than asking: every key closes it.
+func (gui *Gui) createMessagePanel(title, message string, handleClose func(*gocui.Gui, *gocui.View) error) error {
+	return gui.createPopupPanel(title, message, handleClose, handleClose, false)
+}
+
+func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error, asks bool) error {
 	gui.onNewPopupPanel()
 	gui.g.Update(func(g *gocui.Gui) error {
 		if gui.currentViewName() == "confirmation" {
@@ -133,6 +138,7 @@ func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClos
 			return err
 		}
 		gui.Views.Confirmation.Editable = false
+		gui.State.ConfirmationAsks = asks
 		return gui.setKeyBindings(g, handleConfirm, handleClose)
 	})
 	return nil
@@ -164,7 +170,7 @@ func (gui *Gui) setKeyBindings(g *gocui.Gui, handleConfirm, handleClose func(*go
 func (gui *Gui) createErrorPanel(message string) error {
 	colorFunction := color.New(color.FgRed).SprintFunc()
 	coloredMessage := colorFunction(strings.TrimSpace(message))
-	return gui.createConfirmationPanel(gui.Tr.ErrorTitle, coloredMessage, nil, nil)
+	return gui.createMessagePanel(gui.Tr.ErrorTitle, coloredMessage, nil)
 }
 
 func (gui *Gui) renderConfirmationOptions() error {
@@ -175,6 +181,10 @@ func (gui *Gui) renderConfirmationOptions() error {
 	// A text prompt is this view too, where y and n are typed.
 	if gui.Views.Confirmation.Editable {
 		return gui.renderOptionsMap(map[string]string{"esc": gui.Tr.Close, "enter": gui.Tr.Submit})
+	}
+
+	if !gui.State.ConfirmationAsks {
+		return gui.renderOptionsMap(map[string]string{"esc/enter": gui.Tr.Close})
 	}
 
 	optionsMap := map[string]string{

@@ -174,7 +174,7 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 func (gui *Gui) showOperation(operation *commands.Operation) error {
 	back := func(*gocui.Gui, *gocui.View) error { return gui.openDaemon(daemonOperations, operation.Key()) }
 
-	return gui.createConfirmationPanel(gui.Tr.OperationTitle, strings.TrimRight(gui.operationInfoStr(operation), "\n"), back, back)
+	return gui.createMessagePanel(gui.Tr.OperationTitle, strings.TrimRight(gui.operationInfoStr(operation), "\n"), back)
 }
 
 func (gui *Gui) operationInfoStr(operation *commands.Operation) string {

@@ -141,7 +141,7 @@ func (gui *Gui) warningItems() ([]*types.MenuItem, []string) {
 func (gui *Gui) showWarning(warning *commands.Warning) error {
 	back := func(*gocui.Gui, *gocui.View) error { return gui.openDaemon(daemonWarnings, warning.Key()) }
 
-	return gui.createConfirmationPanel(gui.Tr.WarningTitle, gui.warningDetails(warning), back, back)
+	return gui.createMessagePanel(gui.Tr.WarningTitle, gui.warningDetails(warning), back)
 }
 
 func (gui *Gui) warningDetails(warning *commands.Warning) string {
