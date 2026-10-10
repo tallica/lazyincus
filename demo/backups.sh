@@ -14,11 +14,15 @@ P=lzi-notes
 compose() { (cd "$HERE/$P" && incus-compose "$@"); }
 
 down() {
-  local project f
+  local project f v
   compose backup delete --keep-last 0 >/dev/null 2>&1 || true
   compose down --volumes >/dev/null 2>&1 || true
-  # A project goes only once empty: down leaves the pulled image behind.
+  # A project goes only once empty: down leaves the pulled image behind, and
+  # deleting every backup leaves the volumes that held them.
   for project in "$P-backup" "$P"; do
+    for v in $(incus storage volume list default --project "$project" -f csv -c tn 2>/dev/null | sed -n 's/^custom,//p'); do
+      incus storage volume delete default "$v" --project "$project" || true
+    done
     for f in $(incus image list -f csv -c f --project "$project" 2>/dev/null); do
       incus image delete "$f" --project "$project" || true
     done
