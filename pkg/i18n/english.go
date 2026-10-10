@@ -53,6 +53,8 @@ type TranslationSet struct {
 	TypedCommand                 string
 	TypedCommandTitle            string
 	TypedCommandHint             string
+	TypedComposeCommand          string
+	TypedComposeCommandTitle     string
 	Rename                       string
 	RenameInstancePrompt         string
 	RenameHint                   string
@@ -410,6 +412,8 @@ func englishSet() TranslationSet {
 		TypedCommand:                 "run an incus command",
 		TypedCommandTitle:            "incus",
 		TypedCommandHint:             "enter to run · esc to cancel",
+		TypedComposeCommand:          "run an incus-compose command",
+		TypedComposeCommandTitle:     "incus-compose: %s",
 		Rename:                       "rename",
 		RenameInstancePrompt:         "Rename %s",
 		RenameHint:                   "enter to rename · esc to cancel",

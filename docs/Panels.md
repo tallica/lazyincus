@@ -65,6 +65,12 @@ goes through a shell: a prompt that runs what it's given unconfirmed
 takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
 dropped.
 
+`;` on Stacks and Services is the same prompt for `incus-compose`, run
+through `ComposeCmd` in the stack's directory and on its remote, as the
+compose verbs are. On a service the prompt holds ` <service>` with the
+cursor before it: most verbs take the service last, and the few that
+don't - `config` - lose it to a delete.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which

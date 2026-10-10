@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `:` on any panel runs an `incus` command you type, on the selected row's remote and starting from its `--project`.
+- `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
 
 ### Changed
 - `R` keeps the project you're scoped to when the new remote has one by that name, instead of listing all its projects.

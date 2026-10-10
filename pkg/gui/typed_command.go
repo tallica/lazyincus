@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"os/exec"
 
 	"github.com/jesseduffield/gocui"
@@ -23,35 +24,91 @@ func (gui *Gui) handleTypedCommand(view string) func(*gocui.Gui, *gocui.View) er
 		}
 
 		return gui.openTextPrompt(gui.onRemote(gui.Tr.TypedCommandTitle, remote), gui.Tr.TypedCommandHint, initial, func(line string) error {
-			cmd := gui.typedCommandCmd(line, remote)
-			if cmd == nil {
-				return nil
-			}
-
-			if err := gui.runSubprocess(cmd); err != nil {
-				return err
-			}
-
-			gui.refreshInBackground(lo.Flatten(gui.fetchGroups())...)
-
-			return nil
+			return gui.runTyped(gui.typedCommandCmd(line, remote))
 		})
 	}
 }
 
-// typedCommandCmd is line as an incus command on remote, a leading "incus"
-// typed out of habit dropped; nil for nothing to run.
-func (gui *Gui) typedCommandCmd(line, remote string) *exec.Cmd {
+// typedComposeCommand is ; on Stacks and Services: an incus-compose command
+// line for target's stack, run in its directory and on its remote. A
+// service's name is offered after the cursor, for the verb typed before it.
+func (gui *Gui) typedComposeCommand(target composeTarget) error {
+	initial := ""
+	if target.service != "" {
+		initial = " " + target.service
+	}
+
+	title := gui.onRemote(fmt.Sprintf(gui.Tr.TypedComposeCommandTitle, target.project), target.remote)
+	if err := gui.openTextPrompt(title, gui.Tr.TypedCommandHint, initial, func(line string) error {
+		return gui.runTyped(gui.typedComposeCmd(line, target))
+	}); err != nil {
+		return err
+	}
+
+	gui.Views.Confirmation.TextArea.GoToStartOfLine()
+	gui.Views.Confirmation.RenderTextArea()
+
+	return nil
+}
+
+// handleTypedComposeCommand is ; on Services: the selected service's stack,
+// a replica's row answering with its service.
+func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
+	service, ok := gui.selectedService()
+	if !ok {
+		return nil
+	}
+
+	return gui.typedComposeCommand(serviceTarget(service))
+}
+
+// runTyped runs a typed command, nil for nothing to run, and re-reads every
+// panel after: it can have changed anything.
+func (gui *Gui) runTyped(cmd *exec.Cmd) error {
+	if cmd == nil {
+		return nil
+	}
+
+	if err := gui.runSubprocess(cmd); err != nil {
+		return err
+	}
+
+	gui.refreshInBackground(lo.Flatten(gui.fetchGroups())...)
+
+	return nil
+}
+
+// typedArgs splits line on spaces outside quotes, dropping a leading binary
+// typed out of habit.
+func typedArgs(line, binary string) []string {
 	args := str.ToArgv(line)
-	if len(args) > 0 && args[0] == "incus" {
+	if len(args) > 0 && args[0] == binary {
 		args = args[1:]
 	}
 
+	return args
+}
+
+// typedCommandCmd is line as an incus command on remote; nil for nothing
+// to run.
+func (gui *Gui) typedCommandCmd(line, remote string) *exec.Cmd {
+	args := typedArgs(line, "incus")
 	if len(args) == 0 {
 		return nil
 	}
 
 	return commands.WithRemote(gui.OSCommand.NewCmd("incus", args...), remote)
+}
+
+// typedComposeCmd is line as an incus-compose command in target's stack;
+// nil for nothing to run.
+func (gui *Gui) typedComposeCmd(line string, target composeTarget) *exec.Cmd {
+	args := typedArgs(line, "incus-compose")
+	if len(args) == 0 {
+		return nil
+	}
+
+	return commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 }
 
 // typedCommandProject is the project of view's selected row, or the one the

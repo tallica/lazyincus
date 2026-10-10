@@ -163,30 +163,12 @@ Available since the move off lazydocker's 2024 pin; none of it wired up.
 
 ### Typed commands
 
-`incus-compose` has this already, as an extension rather than a compose
-verb: `incus-compose incus <args>` runs the real incus CLI in the compose
-project's context — `incus-compose incus list` in a stack's directory lists
-that project's instances, not the default project's. The value isn't a
-command list, it's the scoping: the wrapper injects the context so you
-don't type it. lazyincus knows the same context from whichever row the
-cursor is on, which is the argument for a typed passthrough over
-lazydocker's configured menu.
-
-`:` ([docs/Panels.md](docs/Panels.md#typed-commands)) is the incus half.
-What's left reuses its prompt and its splitting (`typedCommandCmd`), and
-is refused on a read-only remote the same way. Deliberately out of scope
-for both: command history, completion, and a menu of saved commands —
-each is state of its own, and none of it is needed to make typing a
-command useful.
-
-- [ ] **Typed incus-compose command (`;`)** — the same prompt against
-      `incus-compose`, on the Stacks and Services panels, run through
-      `ComposeCmd` in the selected stack's directory and on its remote, as
-      `composeRun` does. Nothing to prefill beyond the selected service's
-      name as a trailing argument.
-
-`;` is free and reads as `:`'s pair on one physical key, `!` being the
-alternative if `;` is too easy to hit by accident.
+`:` and `;` ([docs/Panels.md](docs/Panels.md#typed-commands)) are a
+typed `incus` or `incus-compose` command, scoped by the selected row the
+way `incus-compose incus` scopes the CLI to a stack - the argument for a
+typed passthrough over lazydocker's configured menu. Left out on purpose,
+each being state of its own: command history, completion, and a menu of
+saved commands.
 
 ## incus-compose integration
 

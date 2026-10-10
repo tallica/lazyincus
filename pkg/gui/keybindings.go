@@ -750,6 +750,16 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 
 	bindings = append(bindings, gui.stacksKeybindings()...)
 	bindings = append(bindings, gui.servicesKeybindings()...)
+	bindings = append(bindings,
+		&Binding{
+			ViewName: "stacks", Key: ';', Modifier: gocui.ModNone,
+			Handler: gui.onStackTarget(gui.typedComposeCommand), Description: gui.Tr.TypedComposeCommand, Mutates: true,
+		},
+		&Binding{
+			ViewName: "services", Key: ';', Modifier: gocui.ModNone,
+			Handler: gui.handleTypedComposeCommand, Description: gui.Tr.TypedComposeCommand, Mutates: true,
+		},
+	)
 
 	if gui.State.ComposeAvailable {
 		bindings = append(bindings, &Binding{

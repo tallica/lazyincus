@@ -77,7 +77,7 @@ pkg/gui/
   remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
   daemon_popup.go              the `W` popup: operations.go, the session's operation history, and warnings.go, its lists
   command_palette.go           `ctrl+p`: every panel's keys and every listed item, from paletteSources
-  typed_command.go             `:`: an incus command typed into a prompt, on the selected row's remote and project
+  typed_command.go             `:` and `;`: an incus or incus-compose command typed into a prompt, scoped by the selected row
   read_only.go, remote_color.go  the remote a key acts on: refusing it there when read-only, and its colour
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel and per `W` list, plus menu rows
