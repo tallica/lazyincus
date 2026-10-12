@@ -479,7 +479,7 @@ func (gui *Gui) instanceEditDescription(instance *commands.Instance) error {
 	current := strings.Join(strings.Fields(instance.Latest().Instance.Description), " ")
 	title := fmt.Sprintf(gui.Tr.EditDescriptionPrompt, instance.Name)
 
-	return gui.textPrompt(title, gui.Tr.EditDescriptionHint, current, true, func(description string) error {
+	return gui.textPrompt(title, gui.Tr.EditDescriptionHint, current, acceptEmpty, func(description string) error {
 		if description == current {
 			return nil
 		}
