@@ -54,18 +54,43 @@ func TestTypedCommandRefusesAnUnclosedQuote(t *testing.T) {
 func TestTypedCommandCmd(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 
-	cmd, err := s.gui.typedCommandCmd(`incus --project shop exec web -- sh -c "echo hi | wc -c"`, "pve01")
+	cmd, err := s.gui.typedCommandCmd(`incus --project shop exec web -- sh -c "echo hi | wc -c"`, "pve01", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"incus", "--project", "shop", "exec", "web", "--", "sh", "-c", "echo hi | wc -c"}, cmd.Args)
 	assert.Contains(t, cmd.Env, "INCUS_REMOTE=pve01")
 
-	cmd, err = s.gui.typedCommandCmd("incus", "pve01")
+	// The seed keeps its place, the binary typed behind it goes.
+	cmd, err = s.gui.typedCommandCmd("--project shop incus list", "pve01", projectCLIArgs("shop"))
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"incus", "--project", "shop", "list"}, cmd.Args)
+
+	cmd, err = s.gui.typedCommandCmd("incus", "pve01", nil)
 	assert.NoError(t, err)
 	assert.Nil(t, cmd)
 
-	cmd, err = s.gui.typedCommandCmd("   ", "pve01")
+	cmd, err = s.gui.typedCommandCmd("   ", "pve01", nil)
 	assert.NoError(t, err)
 	assert.Nil(t, cmd)
+}
+
+// The binary typed out of habit goes, with the seed in front of it or the line
+// cleared back to it; an incus that is an argument stays.
+func TestTypedArgsDropsTheBinary(t *testing.T) {
+	seed := projectCLIArgs("shop")
+
+	for line, want := range map[string][]string{
+		"--project shop incus list":           {"--project", "shop", "list"},
+		"--project shop list":                 {"--project", "shop", "list"},
+		"--project shop exec web -- incus ls": {"--project", "shop", "exec", "web", "--", "incus", "ls"},
+	} {
+		got, err := typedArgs(line, seed, "incus")
+		assert.NoError(t, err, line)
+		assert.Equal(t, want, got, line)
+	}
+
+	got, err := typedArgs("incus list", nil, "incus")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"list"}, got)
 }
 
 // enter asks the line first: the seed runs nothing, and a line that can't be

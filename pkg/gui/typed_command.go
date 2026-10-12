@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -18,9 +19,10 @@ func (gui *Gui) handleTypedCommand(view string) func(*gocui.Gui, *gocui.View) er
 	return func(*gocui.Gui, *gocui.View) error {
 		remote := gui.actionRemote(view)
 
+		seed := projectCLIArgs(gui.typedCommandProject(view))
 		initial := ""
-		if project := gui.typedCommandProject(view); project != "" {
-			initial = "--project " + project + " "
+		if len(seed) > 0 {
+			initial = strings.Join(seed, " ") + " "
 		}
 
 		return gui.textPrompt(
@@ -29,7 +31,7 @@ func (gui *Gui) handleTypedCommand(view string) func(*gocui.Gui, *gocui.View) er
 			initial,
 			typedLineCheck(initial),
 			func(line string) error {
-				cmd, err := gui.typedCommandCmd(line, remote)
+				cmd, err := gui.typedCommandCmd(line, remote, seed)
 				if err != nil {
 					return err
 				}
@@ -121,15 +123,22 @@ func typedLineCheck(initial string) func(string) error {
 	}
 }
 
-// typedArgs splits line, dropping a leading binary typed out of habit.
-func typedArgs(line, binary string) ([]string, error) {
+// typedArgs splits line, dropping the binary typed out of habit: the first
+// token after seed, which the prompt put in front of the line, or the first
+// one where the seed has been cleared.
+func typedArgs(line string, seed []string, binary string) ([]string, error) {
 	args, err := splitArgs(line)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(args) > 0 && args[0] == binary {
-		args = args[1:]
+	at := 0
+	if len(seed) > 0 && len(args) >= len(seed) && slices.Equal(args[:len(seed)], seed) {
+		at = len(seed)
+	}
+
+	if at < len(args) && args[at] == binary {
+		args = slices.Delete(args, at, at+1)
 	}
 
 	return args, nil
@@ -180,8 +189,8 @@ func splitArgs(line string) ([]string, error) {
 
 // typedCommandCmd is line as an incus command on remote; nil for nothing to
 // run.
-func (gui *Gui) typedCommandCmd(line, remote string) (*exec.Cmd, error) {
-	args, err := typedArgs(line, "incus")
+func (gui *Gui) typedCommandCmd(line, remote string, seed []string) (*exec.Cmd, error) {
+	args, err := typedArgs(line, seed, "incus")
 	if err != nil {
 		return nil, err
 	}
@@ -194,9 +203,10 @@ func (gui *Gui) typedCommandCmd(line, remote string) (*exec.Cmd, error) {
 }
 
 // typedComposeCmd is line as an incus-compose command in target's stack; nil
-// for nothing to run.
+// for nothing to run. No seed: a service's name is offered after the line, so
+// the binary typed out of habit is already first.
 func (gui *Gui) typedComposeCmd(line string, target composeTarget) (*exec.Cmd, error) {
-	args, err := typedArgs(line, "incus-compose")
+	args, err := typedArgs(line, nil, "incus-compose")
 	if err != nil {
 		return nil, err
 	}
