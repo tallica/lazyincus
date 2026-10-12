@@ -6,6 +6,7 @@ import (
 
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
+	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
 )
 
@@ -24,6 +25,10 @@ type sidePanelDef struct {
 	// panel returns the panel object for this definition, once setPanels has
 	// built them.
 	panel func() panels.ISideListPanel
+	// project is the project a typed command on this panel starts from: the
+	// one its selected row belongs to, "" where the panel's rows name none of
+	// their own.
+	project func() string
 	// hidden reports whether this panel is absent, for the session or - for
 	// Backups - while no stack is on its remote. Read while styling views and
 	// binding keys, both of which happen before setPanels, so it can't go
@@ -36,6 +41,25 @@ type sidePanelDef struct {
 	window     string
 	plainTitle string
 	shortTitle string
+}
+
+// projectOf is the project of the row selected on the panel held at panelPtr -
+// a pointer to the field, as viewPtr is, so a definition can be built before
+// setPanels fills it in.
+func projectOf[T comparable](panelPtr **panels.SideListPanel[T], pick func(T) string) func() string {
+	return func() string {
+		item, err := (*panelPtr).GetSelectedItem()
+		if err != nil {
+			return ""
+		}
+
+		return pick(item)
+	}
+}
+
+// sidePanelDefFor is the definition of the panel named view.
+func (gui *Gui) sidePanelDefFor(view string) (sidePanelDef, bool) {
+	return lo.Find(gui.sidePanelDefs(), func(def sidePanelDef) bool { return def.name == view })
 }
 
 func (def sidePanelDef) windowName() string {
@@ -53,6 +77,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:   gui.Tr.StacksTitle,
 			viewPtr: &gui.Views.Stacks,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Stacks },
+			project: projectOf(&gui.Panels.Stacks, func(stack *commands.ComposeStack) string { return stack.Name }),
 			hidden:  gui.composeUnavailable,
 		},
 		{
@@ -60,6 +85,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:   gui.servicesPanelTitle(),
 			viewPtr: &gui.Views.Services,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Services },
+			project: projectOf(&gui.Panels.Services, func(row *commands.ServiceRow) string { return row.Service.Project }),
 			hidden:  gui.composeUnavailable,
 		},
 		{
@@ -67,21 +93,31 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:   gui.instancesPanelTitle(),
 			viewPtr: &gui.Views.Instances,
 			panel:   func() panels.ISideListPanel { return gui.Panels.Instances },
+			project: projectOf(&gui.Panels.Instances, func(instance *commands.Instance) string { return instance.Project }),
 		},
 		{
 			name:       "snapshots",
 			title:      gui.snapshotsTabTitle(),
 			viewPtr:    &gui.Views.Snapshots,
 			panel:      func() panels.ISideListPanel { return gui.Panels.Snapshots },
+			project:    projectOf(&gui.Panels.Snapshots, func(snapshot *commands.Snapshot) string { return snapshot.Project }),
 			window:     snapshotsWindow,
 			plainTitle: gui.Tr.SnapshotsTitle,
 			shortTitle: gui.Tr.SnapshotsShort,
 		},
 		{
-			name:       "backups",
-			title:      gui.backupsPanelTitle(),
-			viewPtr:    &gui.Views.Backups,
-			panel:      func() panels.ISideListPanel { return gui.Panels.Backups },
+			name:    "backups",
+			title:   gui.backupsPanelTitle(),
+			viewPtr: &gui.Views.Backups,
+			panel:   func() panels.ISideListPanel { return gui.Panels.Backups },
+			// A backup's row is a run, not the stack it belongs to.
+			project: func() string {
+				if target, ok := gui.selectedStackTarget(); ok {
+					return target.project
+				}
+
+				return ""
+			},
 			hidden:     gui.backupsAway,
 			window:     snapshotsWindow,
 			plainTitle: gui.Tr.BackupsTitle,
@@ -92,6 +128,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:      gui.Tr.ImagesTitle,
 			viewPtr:    &gui.Views.Images,
 			panel:      func() panels.ISideListPanel { return gui.Panels.Images },
+			project:    projectOf(&gui.Panels.Images, func(image *commands.Image) string { return image.Image.Project }),
 			window:     resourcesWindow,
 			shortTitle: gui.Tr.ImagesShort,
 		},
@@ -100,6 +137,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:      gui.Tr.VolumesTitle,
 			viewPtr:    &gui.Views.Volumes,
 			panel:      func() panels.ISideListPanel { return gui.Panels.Volumes },
+			project:    projectOf(&gui.Panels.Volumes, func(volume *commands.Volume) string { return volume.Volume.Project }),
 			window:     resourcesWindow,
 			shortTitle: gui.Tr.VolumesShort,
 		},
@@ -108,6 +146,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:      gui.Tr.NetworksTitle,
 			viewPtr:    &gui.Views.Networks,
 			panel:      func() panels.ISideListPanel { return gui.Panels.Networks },
+			project:    projectOf(&gui.Panels.Networks, func(network *commands.Network) string { return network.Network.Project }),
 			window:     resourcesWindow,
 			shortTitle: gui.Tr.NetworksShort,
 		},
@@ -116,6 +155,7 @@ func (gui *Gui) sidePanelDefs() []sidePanelDef {
 			title:      gui.Tr.ProfilesTitle,
 			viewPtr:    &gui.Views.Profiles,
 			panel:      func() panels.ISideListPanel { return gui.Panels.Profiles },
+			project:    projectOf(&gui.Panels.Profiles, func(profile *commands.Profile) string { return profile.Profile.Project }),
 			window:     resourcesWindow,
 			shortTitle: gui.Tr.ProfilesShort,
 		},
@@ -138,8 +178,7 @@ func (gui *Gui) backupsAway() bool {
 // leaveHiddenView moves the focus off a side panel that has just been
 // hidden, to whatever its window shows instead. Main loop only.
 func (gui *Gui) leaveHiddenView() error {
-	name := gui.currentViewName()
-	def, ok := lo.Find(gui.sidePanelDefs(), func(def sidePanelDef) bool { return def.name == name })
+	def, ok := gui.sidePanelDefFor(gui.currentViewName())
 	if !ok || def.hidden == nil || !def.hidden() {
 		return nil
 	}

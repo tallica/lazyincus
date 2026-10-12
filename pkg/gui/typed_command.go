@@ -223,39 +223,8 @@ func (gui *Gui) typedComposeCmd(line string, target composeTarget) (*exec.Cmd, e
 func (gui *Gui) typedCommandProject(view string) string {
 	project := ""
 
-	switch view {
-	case "instances":
-		if instance, err := gui.Panels.Instances.GetSelectedItem(); err == nil {
-			project = instance.Project
-		}
-	case "services":
-		if row, err := gui.Panels.Services.GetSelectedItem(); err == nil {
-			project = row.Service.Project
-		}
-	case "stacks", "backups":
-		if stack := gui.selectedStack.Load(); stack != nil {
-			project = stack.Name
-		}
-	case "snapshots":
-		if snapshot, err := gui.Panels.Snapshots.GetSelectedItem(); err == nil {
-			project = snapshot.Project
-		}
-	case "images":
-		if image, err := gui.Panels.Images.GetSelectedItem(); err == nil {
-			project = image.Image.Project
-		}
-	case "volumes":
-		if volume, err := gui.Panels.Volumes.GetSelectedItem(); err == nil {
-			project = volume.Volume.Project
-		}
-	case "networks":
-		if network, err := gui.Panels.Networks.GetSelectedItem(); err == nil {
-			project = network.Network.Project
-		}
-	case "profiles":
-		if profile, err := gui.Panels.Profiles.GetSelectedItem(); err == nil {
-			project = profile.Profile.Project
-		}
+	if def, ok := gui.sidePanelDefFor(view); ok && def.project != nil {
+		project = def.project()
 	}
 
 	if project == "" && !gui.IncusCommand.IsAllProjects() {

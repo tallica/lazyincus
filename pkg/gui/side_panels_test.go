@@ -23,6 +23,9 @@ func TestEverySidePanelDefHasAPanel(t *testing.T) {
 		assert.NotNil(t, def.panel(), "no panel wired up for %q", def.name)
 		assert.NotNil(t, def.viewPtr, "no view pointer for %q", def.name)
 		assert.NotEmpty(t, def.title, "no title for %q", def.name)
+		// A typed command starts from the row's project: a definition without
+		// one would seed the session's scope for rows of another's.
+		assert.NotNil(t, def.project, "no project for %q", def.name)
 		assert.False(t, seen[def.name], "duplicate side panel name %q", def.name)
 		if def.window != "" {
 			assert.NotEmpty(t, def.shortTitle, "no short tab name for %q", def.name)
