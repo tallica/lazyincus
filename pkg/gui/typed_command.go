@@ -35,7 +35,7 @@ func (gui *Gui) handleTypedCommand(view string) func(*gocui.Gui, *gocui.View) er
 					return err
 				}
 
-				return gui.runTyped(cmd)
+				return gui.runTyped(cmd, "")
 			},
 		)
 	}
@@ -62,7 +62,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 				return err
 			}
 
-			return gui.runTyped(cmd)
+			return gui.runTyped(cmd, target.dir)
 		},
 	); err != nil {
 		return err
@@ -86,14 +86,20 @@ func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
 }
 
 // runTyped runs a typed command, nil for nothing to run, and re-reads the
-// panels after: it can have changed anything.
-func (gui *Gui) runTyped(cmd *exec.Cmd) error {
+// panels after: it can have changed anything. stackDir drops a stack's cached
+// parse first - an incus-compose command can have changed what it declares -
+// and is "" for the incus one.
+func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
 	if cmd == nil {
 		return nil
 	}
 
 	if err := gui.runSubprocess(cmd); err != nil {
 		return err
+	}
+
+	if stackDir != "" {
+		gui.stacks.forget(stackDir)
 	}
 
 	gui.refreshInBackground(lo.Flatten(gui.fetchGroups())...)
