@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
@@ -31,6 +32,34 @@ func TestTypedCommandRefusedOnAReadOnlyRemote(t *testing.T) {
 
 	s.press(t, ':')
 	s.settle(t, "fake is read-only")
+}
+
+// A row on another remote names no project of this session's, so the command
+// runs with none: the session's would name a project that needn't exist there.
+func TestTypedCommandSeedsNoProjectForAnotherRemotesRow(t *testing.T) {
+	// As a stack whose compose file couldn't be read is: no project of its own.
+	broken := &commands.ComposeStack{Dir: t.TempDir(), Remote: "elsewhere"}
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.IncusCommand.UseProject("shop")
+		withStacks(t, nil, broken)(s)
+	})
+	s.settle(t, "Stacks")
+
+	assert.Empty(t, onLoop(t, s, func() string { return s.gui.typedCommandProject("stacks") }))
+}
+
+// The same row on the session's own remote takes the session's project.
+func TestTypedCommandSeedsTheSessionsProjectForItsOwnRemote(t *testing.T) {
+	broken := &commands.ComposeStack{Dir: t.TempDir()}
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.IncusCommand.UseProject("shop")
+		withStacks(t, nil, broken)(s)
+	})
+	s.settle(t, "Stacks")
+
+	assert.Equal(t, "shop", onLoop(t, s, func() string { return s.gui.typedCommandProject("stacks") }))
 }
 
 // A line that doesn't split is refused where it stands, saying why: running

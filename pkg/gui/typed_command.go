@@ -219,17 +219,23 @@ func (gui *Gui) typedComposeCmd(line string, target composeTarget) (*exec.Cmd, e
 }
 
 // typedCommandProject is the project of view's selected row, or the one the
-// panels are scoped to when the row names none.
+// panels are scoped to when the row names none on the session's remote.
 func (gui *Gui) typedCommandProject(view string) string {
-	project := ""
-
 	if def, ok := gui.sidePanelDefFor(view); ok && def.project != nil {
-		project = def.project()
+		if project := def.project(); project != "" {
+			return project
+		}
 	}
 
-	if project == "" && !gui.IncusCommand.IsAllProjects() {
-		project = gui.IncusCommand.ProjectName()
+	if gui.IncusCommand.IsAllProjects() {
+		return ""
 	}
 
-	return project
+	// A row on another remote names no project of this session's, so seeding
+	// the session's would name one that needn't exist there.
+	if gui.actionRemote(view) != gui.IncusCommand.RemoteName() {
+		return ""
+	}
+
+	return gui.IncusCommand.ProjectName()
 }
