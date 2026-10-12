@@ -750,16 +750,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 
 	bindings = append(bindings, gui.stacksKeybindings()...)
 	bindings = append(bindings, gui.servicesKeybindings()...)
-	bindings = append(bindings,
-		&Binding{
-			ViewName: "stacks", Key: ';', Modifier: gocui.ModNone,
-			Handler: gui.onStackTarget(gui.typedComposeCommand), Description: gui.Tr.TypedComposeCommand, Mutates: true,
-		},
-		&Binding{
-			ViewName: "services", Key: ';', Modifier: gocui.ModNone,
-			Handler: gui.handleTypedComposeCommand, Description: gui.Tr.TypedComposeCommand, Mutates: true,
-		},
-	)
 
 	if gui.State.ComposeAvailable {
 		bindings = append(bindings, &Binding{
@@ -938,6 +928,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
 		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
 		binding('B', gui.handleGoToBackups, gui.focusPanelDescription(gui.Tr.BackupsTitle)),
+		mutating(';', gui.onStackTarget(gui.typedComposeCommand), gui.Tr.TypedComposeCommand),
 	}
 }
 
@@ -1094,6 +1085,14 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Handler:     gui.handleGoToBackups,
 			Description: gui.focusPanelDescription(gui.Tr.BackupsTitle),
 			NoSelection: true,
+		},
+		{
+			ViewName:    "services",
+			Key:         ';',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleTypedComposeCommand,
+			Description: gui.Tr.TypedComposeCommand,
+			Mutates:     true,
 		},
 	}
 
