@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	"github.com/jesseduffield/gocui"
-	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
@@ -102,7 +101,7 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
 		gui.stacks.forget(stackDir)
 	}
 
-	gui.refreshInBackground(lo.Flatten(gui.fetchGroups())...)
+	gui.refreshAllInBackground()
 
 	return nil
 }
