@@ -54,19 +54,22 @@ scrolling up does. Focus leaving the main panel ends the search.
 
 ## Typed commands
 
-`:` on any side panel opens a one-line prompt (`textPrompt`) and runs
-what's typed as `incus` with the terminal handed over, then re-reads
-every panel: a command can change anything. It runs on the remote the
-panel's keys act on (`actionRemote`), which is also the one the read-only
-check refuses it on, and starts from the selected row's `--project` -
-the scope's own when the row names none - so the common case is typing
-the verb alone. The line is split on whitespace outside quotes, the
-delimiters dropped and a backslash kept, and nothing goes through a
-shell: a prompt that runs what it's given unconfirmed takes no pipes or
-`$(...)`. A leading `incus`, typed out of habit, is dropped. Enter on the
-seed as it stands runs nothing, and a line that can't be split - an
-unclosed quote - is refused where it stands, saying why, rather than run
-as other arguments than the ones typed.
+`:` opens a one-line prompt (`textPrompt`) on any view and runs what's
+typed as `incus` with the terminal handed over, then re-reads every
+panel: a command can change anything, so this is one action rather than
+a panel's. It acts on the side panel in focus - or the last one to have
+had focus, pressed from the main panel - running on the remote that
+panel's keys act on (`actionRemote`), which is also the one the
+read-only check refuses it on, and starting from its selected row's
+`--project`, the scope's own where the row names none. The common case is
+typing the verb alone: `list` on Stacks lists the selected stack's
+project on the stack's own remote. The line is split on whitespace
+outside quotes, the delimiters dropped and a backslash kept, and nothing
+goes through a shell: a prompt that runs what it's given unconfirmed
+takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
+dropped. Enter on the seed as it stands runs nothing, and a line that
+can't be split - an unclosed quote - is refused where it stands, saying
+why, rather than run as other arguments than the ones typed.
 
 `;` on Stacks and Services is the same prompt for `incus-compose`, run
 through `ComposeCmd` in the stack's directory and on its remote, as the

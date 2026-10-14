@@ -142,6 +142,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.CommandPalette,
 		},
 		{
+			ViewName:    "",
+			Key:         ':',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleTypedCommand,
+			Description: gui.Tr.TypedCommand,
+			Mutates:     true,
+			NoSelection: true,
+		},
+		{
 			ViewName: "menu",
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
@@ -800,15 +809,6 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 				Modifier:    gocui.ModNone,
 				Handler:     wrappedHandler(panel.HandleNextMainTab),
 				Description: gui.Tr.NextContext,
-				NoSelection: true,
-			},
-			&Binding{
-				ViewName:    panel.GetView().Name(),
-				Key:         ':',
-				Modifier:    gocui.ModNone,
-				Handler:     gui.handleTypedCommand(panel.GetView().Name()),
-				Description: gui.Tr.TypedCommand,
-				Mutates:     true,
 				NoSelection: true,
 			},
 		)

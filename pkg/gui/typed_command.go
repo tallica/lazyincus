@@ -11,35 +11,40 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// handleTypedCommand asks for an incus command line, seeded with the project
-// of view's selected row, and runs it with the terminal handed over, on the
-// remote view's keys act on. Never through a shell: an unconfirmed prompt
-// takes no pipes or $(...).
-func (gui *Gui) handleTypedCommand(view string) func(*gocui.Gui, *gocui.View) error {
-	return func(*gocui.Gui, *gocui.View) error {
-		remote := gui.actionRemote(view)
-
-		seed := projectCLIArgs(gui.typedCommandProject(view))
-		initial := ""
-		if len(seed) > 0 {
-			initial = strings.Join(seed, " ") + " "
-		}
-
-		return gui.textPrompt(
-			gui.onRemote(gui.Tr.TypedCommandTitle, remote),
-			gui.Tr.TypedCommandHint,
-			initial,
-			typedLineCheck(initial),
-			func(line string) error {
-				cmd, err := gui.typedCommandCmd(line, remote, seed)
-				if err != nil {
-					return err
-				}
-
-				return gui.runTyped(cmd, "")
-			},
-		)
+// handleTypedCommand is : on any view: it asks for an incus command line,
+// seeded with the project of the focused side panel's selected row, and runs
+// it with the terminal handed over, on the remote that panel's keys act on.
+// Never through a shell: an unconfirmed prompt takes no pipes or $(...).
+func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
+	// A global rune key still reaches a popup that isn't editable, where the
+	// prompt would open over the menu.
+	if gui.isPopupPanel(v.Name()) {
+		return nil
 	}
+
+	view := gui.actionViewName(v)
+	remote := gui.actionRemote(view)
+
+	seed := projectCLIArgs(gui.typedCommandProject(view))
+	initial := ""
+	if len(seed) > 0 {
+		initial = strings.Join(seed, " ") + " "
+	}
+
+	return gui.textPrompt(
+		gui.onRemote(gui.Tr.TypedCommandTitle, remote),
+		gui.Tr.TypedCommandHint,
+		initial,
+		typedLineCheck(initial),
+		func(line string) error {
+			cmd, err := gui.typedCommandCmd(line, remote, seed)
+			if err != nil {
+				return err
+			}
+
+			return gui.runTyped(cmd, "")
+		},
+	)
 }
 
 // typedComposeCommand is ; on Stacks and Services: an incus-compose command

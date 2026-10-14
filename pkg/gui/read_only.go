@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/jesseduffield/gocui"
 )
@@ -15,12 +16,29 @@ func (gui *Gui) guardReadOnly(binding *Binding) {
 			return gui.createErrorPanel(gui.Tr.ReadOnlySession)
 		}
 
-		if remote := gui.actionRemote(binding.ViewName); gui.isReadOnly(remote) {
+		view := binding.ViewName
+		// A global key names no view: it acts on whichever has focus.
+		if view == "" {
+			view = gui.actionViewName(v)
+		}
+
+		if remote := gui.actionRemote(view); gui.isReadOnly(remote) {
 			return gui.createErrorPanel(fmt.Sprintf(gui.Tr.ReadOnlyRemote, remote))
 		}
 
 		return handler(g, v)
 	}
+}
+
+// actionViewName is the view a key acts on when its binding names none: the
+// focused view where it is a side panel, and otherwise the last side panel to
+// have had focus.
+func (gui *Gui) actionViewName(v *gocui.View) string {
+	if v != nil && slices.Contains(gui.sideViewNames(), v.Name()) {
+		return v.Name()
+	}
+
+	return gui.currentSideViewName()
 }
 
 // actionRemote is the remote a key on view acts on: the selected stack's on

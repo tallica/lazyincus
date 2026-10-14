@@ -18,10 +18,10 @@
 │                      │enter     focus main panel                 ▐                     │
 │                      │[         previous tab                     ▐                     │
 │                      │]         next tab                         ▐                     │
-│                      │:         run an incus command             ▐                     │
 │                      │/         filter list                      ▐                     │
 │                      │                                           ▐                     │
 │                      │ctrl+p    command palette                  ▐                     │
+│                      │:         run an incus command             ▐                     │
 │                      │o         open lazyincus config            ▐                     │
 ╰──────────────────────│O         edit lazyincus config            ▐                     │
 ╭─[3]─Img - Vol - Net -│P         switch project                   ▐                     │

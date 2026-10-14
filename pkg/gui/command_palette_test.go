@@ -2,6 +2,7 @@ package gui
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -83,6 +84,22 @@ func TestThePaletteHonoursReadOnly(t *testing.T) {
 	s.typeText(t, "stop")
 	s.pressKey(t, tcell.KeyEnter)
 	s.settle(t, "fake is read-only")
+}
+
+// : runs the whole incus CLI, so it is one action rather than one per panel:
+// the palette holds a single row, under global, with no target.
+func TestThePaletteListsTheTypedCommandOnce(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "incus command")
+
+	screen := s.settle(t, "run an incus command")
+	assert.Equal(t, 1, strings.Count(screen, "run an incus command"))
+	// Nothing after the description: the row acts on no item.
+	assert.Regexp(t, `: +global +run an incus command +│`, screen)
 }
 
 // With no image there's nothing to delete, but pruning and filtering still

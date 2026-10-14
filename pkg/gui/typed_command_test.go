@@ -2,9 +2,11 @@ package gui
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 )
@@ -77,6 +79,60 @@ func TestTypedCommandRefusesAnUnclosedQuote(t *testing.T) {
 
 	s.pressKey(t, tcell.KeyEnter)
 	s.settle(t, "unterminated")
+}
+
+// : is one key on any view, so the panel it acts on is the one in focus: a
+// stack pinned elsewhere keeps its own remote, and the project that remote
+// has for it.
+func TestTypedCommandKeepsTheStackOnAnotherRemote(t *testing.T) {
+	pinned := &commands.ComposeStack{Dir: t.TempDir(), Name: "shop", Remote: "site-a"}
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, nil, pinned))
+	s.settle(t, "Stacks")
+	landed(t, s, "stacks")
+	waitForStack(t, s)
+
+	s.press(t, ':')
+	s.settle(t, "incus on site-a")
+	s.settle(t, "--project shop ")
+}
+
+// The same stack on a read-only remote refuses : however writable the
+// session's own remote is: the check follows the panel's remote, as its other
+// keys do.
+func TestTypedCommandRefusedOnAReadOnlyStacksRemote(t *testing.T) {
+	pinned := &commands.ComposeStack{Dir: t.TempDir(), Name: "shop", Remote: "site-a"}
+	s := startScreenWith(t, 140, 40, func(c *config.UserConfig) {
+		c.Remotes = map[string]config.RemoteConfig{"site-a": {ReadOnly: true}}
+	}, withStacks(t, nil, pinned))
+	s.settle(t, "Stacks")
+	landed(t, s, "stacks")
+	waitForStack(t, s)
+
+	s.press(t, ':')
+	s.settle(t, "site-a is read-only")
+}
+
+// A global key reaches a popup that isn't editable too, where the prompt
+// would otherwise open over the menu.
+func TestTypedCommandDoesNothingInAPopup(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.press(t, 'x')
+	s.settle(t, "focus main panel")
+	s.press(t, ':')
+
+	assert.NotContains(t, s.settle(t, "focus main panel"), "enter to run")
+}
+
+// waitForStack is the Stacks panel having told the gui which stack it is on,
+// which is where : reads the remote from.
+func waitForStack(t *testing.T, s *screen) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() bool { return s.gui.selectedStack.Load() != nil })
+	}, 5*time.Second, 20*time.Millisecond)
 }
 
 // The command line becomes the arguments, on the remote.
