@@ -8,7 +8,6 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/rivo/uniseg"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // completer answers what can follow args at word, the word before the cursor.
@@ -72,7 +71,10 @@ func (gui *Gui) applyCompletion(view *gocui.View, head, word, after string, comp
 	}
 
 	if len(candidates) > 1 {
-		view.Subtitle = utils.Truncate(strings.Join(candidates, " "), max(0, view.Width()-utils.DisplayWidth(view.Title)-8))
+		// Fitted to the popup as it stands: a list long enough to widen it
+		// would have it jump on every tab.
+		x0, _, x1, _ := view.Dimensions()
+		view.Subtitle = fitBeside(strings.Join(candidates, " "), view.Title, x1-x0)
 	} else {
 		view.Subtitle = gui.Tr.TypedCommandHint
 	}

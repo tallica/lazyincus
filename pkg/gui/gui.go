@@ -90,6 +90,10 @@ type Gui struct {
 	runIncus func(cmd *exec.Cmd) (string, error)
 	stacks   stackCache
 
+	// subtitles are the popups' subtitles as last written, by view name,
+	// and what fitSubtitle made of each: see fitSubtitle.
+	subtitles map[string]fittedSubtitle
+
 	// remotes are the commands for stacks on other remotes than the
 	// session's, and stacksElsewhere whether any is listed: the stacks
 	// poller's copy of State.StacksElsewhere.

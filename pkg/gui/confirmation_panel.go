@@ -75,7 +75,47 @@ func popupFrameWidth(v *gocui.View) int {
 		return 0
 	}
 
-	return utils.DisplayWidth(v.Title) + utils.DisplayWidth(v.Subtitle) + 10
+	return utils.DisplayWidth(v.Title) + utils.DisplayWidth(v.Subtitle) + popupFrameMargin
+}
+
+// popupFrameMargin is the corner and rule popupFrameWidth adds around them.
+const popupFrameMargin = 10
+
+type fittedSubtitle struct{ full, fitted string }
+
+// fitSubtitle cuts v's subtitle to the room beside its title on a screen this
+// wide: gocui draws it right-aligned over whatever is there, and the title is
+// what names the remote a prompt acts on. The subtitle is written in many
+// places, so one that isn't what was last fitted is taken as the new full
+// text, which comes back whole once the screen has room for it.
+func (gui *Gui) fitSubtitle(v *gocui.View, screenWidth int) {
+	if gui.subtitles == nil {
+		gui.subtitles = map[string]fittedSubtitle{}
+	}
+
+	subtitle := gui.subtitles[v.Name()]
+	if v.Subtitle != subtitle.fitted {
+		subtitle.full = v.Subtitle
+	}
+
+	subtitle.fitted = fitBeside(subtitle.full, v.Title, screenWidth-1)
+	gui.subtitles[v.Name()] = subtitle
+	v.Subtitle = subtitle.fitted
+}
+
+// fitBeside is subtitle cut to what popupFrameWidth leaves beside title in a
+// popup this wide; nothing where there's no room to show anything of it.
+func fitBeside(subtitle, title string, width int) string {
+	room := width - utils.DisplayWidth(title) - popupFrameMargin
+	if utils.DisplayWidth(subtitle) <= room {
+		return subtitle
+	}
+
+	if room < 4 {
+		return ""
+	}
+
+	return utils.Truncate(subtitle, room)
 }
 
 // popupRows centres rows of content on the screen. A popup taller than the

@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -113,4 +114,88 @@ func TestCompletionWord(t *testing.T) {
 
 	_, _, ok = completionWord(`file push "my fi"`)
 	assert.False(t, ok, "a quoted word")
+}
+
+// On a narrow screen the candidates, and the hint before them, give way to
+// the title: it's what says which remote the command runs on.
+func TestCompletionLeavesTheTitleWholeOnANarrowScreen(t *testing.T) {
+	pinned := &commands.ComposeStack{Dir: t.TempDir(), Name: "shop", Remote: "site-a"}
+	s := startScreenWith(t, 60, 30, nil, func(s *screen) {
+		withStacks(t, nil, pinned)(s)
+		s.gui.completeIncus = func(string, []string, string) (commands.Completion, error) {
+			return commands.Completion{Candidates: []string{
+				"instance-one", "instance-two", "instance-three", "instance-four", "instance-five",
+			}}, nil
+		}
+	})
+	s.settle(t, "Stacks")
+	landed(t, s, "stacks")
+	waitForStack(t, s)
+
+	s.press(t, ':')
+	border := promptBorder(t, s.settle(t, "incus on site-a"))
+	assert.Contains(t, border, "─incus on site-a─", "the hint, cut, kept off the title")
+	assert.Contains(t, border, "…")
+
+	for _, key := range "start i" {
+		s.press(t, key)
+	}
+	s.pressKey(t, tcell.KeyTab)
+	border = promptBorder(t, s.settle(t, "instance-"))
+	assert.Contains(t, border, "─incus on site-a─")
+	assert.Contains(t, border, "instance-one")
+	assert.Contains(t, border, "…")
+}
+
+// promptBorder is the screen's line holding the prompt's top border.
+func promptBorder(t *testing.T, screen string) string {
+	t.Helper()
+
+	for _, line := range strings.Split(screen, "\n") {
+		if strings.Contains(line, "incus on") {
+			return line
+		}
+	}
+
+	t.Fatalf("no prompt on screen:\n%s", screen)
+
+	return ""
+}
+
+func TestFitBeside(t *testing.T) {
+	assert.Equal(t, "enter to run", fitBeside("enter to run", "incus", 79))
+	assert.Equal(t, "enter to…", fitBeside("enter to run", "incus", 24))
+	assert.Empty(t, fitBeside("enter to run", "incus on a-long-remote", 29))
+}
+
+// A long list is cut to the popup as it stands rather than widening it, which
+// would have the prompt jump on every tab.
+func TestCompletionKeepsThePromptsWidth(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.completeIncus = func(string, []string, string) (commands.Completion, error) {
+			var completion commands.Completion
+			for i := range 20 {
+				completion.Candidates = append(completion.Candidates, fmt.Sprintf("instance-%02d", i))
+			}
+
+			return completion, nil
+		}
+	})
+	s.ready(t)
+
+	width := func() int {
+		return onLoop(t, s, func() int {
+			x0, _, x1, _ := s.gui.Views.Confirmation.Dimensions()
+			return x1 - x0
+		})
+	}
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+	before := width()
+
+	s.pressKey(t, tcell.KeyTab)
+	s.settle(t, "instance-00")
+	s.settle(t, "…")
+	assert.Equal(t, before, width())
 }

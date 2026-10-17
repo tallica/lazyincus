@@ -152,6 +152,7 @@ func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 // break. Setting the width first is what makes the count right.
 func (gui *Gui) resizePopupPanel(v *gocui.View) error {
 	width, height := gui.g.Size()
+	gui.fitSubtitle(v, width)
 	minWidth := popupFrameWidth(v)
 	// The palette's rows have more to say than a menu's.
 	if v == gui.Views.Menu && (gui.paletteOpen() || gui.State.WideMenu) {
