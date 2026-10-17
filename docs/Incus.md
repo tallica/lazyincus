@@ -284,3 +284,14 @@ inferred.
   source's volatile keys by `instance.InstanceIncludeWhenCopying`, internal
   to Incus (`cmd/incus/copy.go`). It refuses `--instance-only` for a
   snapshot source, which never carries snapshots anyway.
+- **Completion**: `tab` in `:` runs `incus __complete <args> <word>`,
+  cobra's hidden command that shell completion scripts call, so it knows
+  the CLI's own grammar and reads the names off the daemon the way the CLI
+  would - `INCUS_REMOTE` picks which. It prints a candidate a line, a tab
+  before any description, and ends on `:<n>`, a bitmask: 1 is an error, 2
+  a candidate that goes on, as a remote's `name:` does. The "Completion
+  ended with directive" line is on stderr, so only stdout is read. A
+  completion function's answer isn't always filtered by the word, so it's
+  filtered again here. Seen against Incus 7.4. incus-compose 1.3.4 is
+  urfave/cli with completion off - neither `__complete` nor
+  `--generate-shell-completion` - so `;` has its verbs from a list.

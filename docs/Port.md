@@ -32,7 +32,7 @@ so an upstream bugfix wants checking against both before it's copied.
 ```
 main.go                        CLI entry point (flaggy flags, boots pkg/app)
 pkg/app/app.go                 wires config -> log -> i18n -> OSCommand -> IncusCommand -> Gui
-pkg/config/                    YAML user config, defaults, theme
+pkg/config/                    YAML user config, defaults, theme; the app's own state.yml and history.yml
 pkg/log/                       zerolog setup (console or JSON, file-based when --debug/DEBUG=TRUE)
 pkg/i18n/                      TranslationSet; English only
 pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
@@ -53,6 +53,7 @@ pkg/commands/
   image.go, network.go, volume.go, profile.go  the other resources the side panels list
   used_by.go                   which instances use a network, volume, image or profile
   operation.go, warning.go     the daemon's operations and warnings, for `W`'s popup
+  completion.go                `incus __complete` for `tab`, and incus-compose's verbs, which it can't be asked for
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
   errors.go, dummies.go        error wrapping; NewDummy* constructors for tests
 pkg/gui/
@@ -77,7 +78,8 @@ pkg/gui/
   remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
   daemon_popup.go              the `W` popup: operations.go, the session's operation history, and warnings.go, its lists
   command_palette.go           `ctrl+p`: every panel's keys and every listed item, from paletteSources
-  typed_command.go             `:` and `;`: an incus or incus-compose command typed into a prompt, scoped by the selected row
+  typed_command.go             `:` and `;`: an incus or incus-compose command typed into a prompt, scoped by the selected row, and its history
+  prompt_completion.go         `tab` in those prompts: the word before the cursor, completed off the main loop
   read_only.go, remote_color.go  the remote a key acts on: refusing it there when read-only, and its colour
   panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
   presentation/                table-cell rendering, one file per side panel and per `W` list, plus menu rows
@@ -88,4 +90,5 @@ Everything in `pkg/gui` not listed above (`confirmation_panel.go`,
 `app_status_manager.go`, `subprocess.go`, `theme.go`, `gocui.go`,
 `panels.go`) is generic gocui plumbing, ported near-verbatim;
 `connection.go` is the connection-lost modal, and `prompt_panel.go` the
-one-line text prompt Stacks' `a` and `e` ask for a directory with.
+one-line text prompt every single-line ask uses: a stack's directory, a
+name, a description, a typed command.
