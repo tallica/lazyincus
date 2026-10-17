@@ -79,7 +79,7 @@ don't - `config` - lose it to a delete.
 
 `↑` and `↓` in either prompt step through the lines it has run before,
 newest first, and `↓` past the newest gives back the line being typed.
-Each binary keeps its own hundred in `state.yml`, a line run again moving
+Each binary keeps its own hundred in `history.yml`, a line run again moving
 to the newest; a line is saved as typed, so one recalled names its
 `--project` or service, while the remote is still the panel's.
 

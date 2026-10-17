@@ -125,14 +125,13 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, sta
 // bindPromptHistory makes ↑ and ↓ in the open prompt step through history's
 // lines, newest first, ↓ past the newest giving back what was being typed.
 func (gui *Gui) bindPromptHistory(history config.History) error {
-	state, err := gui.Config.LoadAppState()
+	lines, err := gui.Config.LoadHistory(history)
 	if err != nil {
 		gui.Log.Warn().Err(err).Msg("reading command history")
 
 		return nil
 	}
 
-	lines := state.Lines(history)
 	at, draft := len(lines), ""
 	view := gui.Views.Confirmation
 

@@ -191,9 +191,10 @@ announces.
 
 ## Config
 
-`pkg/config/app_config.go` holds the schema, and `app_state.go` the app's
-own `state.yml` beside it; [docs/Config.md](docs/Config.md) documents both
-and the files' location precedence.
+`pkg/config/app_config.go` holds the schema, `app_state.go` the app's own
+`state.yml` beside it, and `history.go` the typed commands' `history.yml`;
+[docs/Config.md](docs/Config.md) documents all three and the files'
+location precedence.
 
 The config reloads at runtime, from `handleEditConfig` and from a
 modification-time poll (`gui.configReloader`). `gui.reloadConfig` re-applies

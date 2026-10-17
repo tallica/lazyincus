@@ -19,34 +19,6 @@ type AppState struct {
 	// Stacks panel, absolute and cleaned, each after `remote:` for the
 	// remote it's pinned to.
 	Stacks []string `yaml:"stacks,omitempty"`
-
-	// IncusHistory and ComposeHistory are the command lines run from : and
-	// ;, oldest first.
-	IncusHistory   []string `yaml:"incusHistory,omitempty"`
-	ComposeHistory []string `yaml:"composeHistory,omitempty"`
-}
-
-// History names one of the typed-command histories.
-type History int
-
-const (
-	IncusHistory History = iota
-	ComposeHistory
-)
-
-const historyLength = 100
-
-// Lines is history's lines, oldest first.
-func (s *AppState) Lines(history History) []string {
-	return *s.history(history)
-}
-
-func (s *AppState) history(history History) *[]string {
-	if history == ComposeHistory {
-		return &s.ComposeHistory
-	}
-
-	return &s.IncusHistory
 }
 
 // ErrStackListed is AddStack refusing a directory already saved.
@@ -196,20 +168,4 @@ func (c *AppConfig) PinStacks(remote string) error {
 // absolute, so nothing comes before its leading separator.
 func isPlainStack(stack string) bool {
 	return strings.HasPrefix(stack, string(filepath.Separator))
-}
-
-// RecordCommand saves line as history's newest, dropping an earlier copy of
-// it and the oldest past historyLength.
-func (c *AppConfig) RecordCommand(history History, line string) error {
-	return c.updateAppState(func(state *AppState) error {
-		lines := state.history(history)
-		*lines = slices.DeleteFunc(*lines, func(saved string) bool { return saved == line })
-		*lines = append(*lines, line)
-
-		if over := len(*lines) - historyLength; over > 0 {
-			*lines = slices.Delete(*lines, 0, over)
-		}
-
-		return nil
-	})
 }

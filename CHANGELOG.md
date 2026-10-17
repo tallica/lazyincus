@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project`.
 - `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
-- `↑`/`↓` in the `:` and `;` prompts recall the lines run before, kept across sessions in `state.yml`.
+- `↑`/`↓` in the `:` and `;` prompts recall the lines run before, kept across sessions in `history.yml`.
 
 ### Changed
 - `R` keeps the project you're scoped to when the new remote has one by that name, instead of listing all its projects.
