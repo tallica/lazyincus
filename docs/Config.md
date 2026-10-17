@@ -102,7 +102,10 @@ for (`pve01:/home/me/deployments/caddy`). One with no remote - from
 before stacks had one, or typed in by hand - is pinned to the remote
 lazyincus starts on, the next time it starts. lazyincus writes it, where
 `config.yml` is only ever yours to change. It's safe to edit by hand, and
-a missing file is an empty list.
+a missing file is an empty list. It also holds the lines run from the
+`:` and `;` prompts, as `incusHistory` and `composeHistory`, for
+[recall](Panels.md#typed-commands) - typed in full, so whatever a command
+line carries ends up there too.
 
 ## What's not here (yet)
 

@@ -268,3 +268,34 @@ func TestSplitArgsRefusesAnUnclosedQuote(t *testing.T) {
 	_, err = splitArgs(`exec web -- echo don't`)
 	assert.ErrorContains(t, err, "unterminated")
 }
+
+// ↑ steps back through the lines run before, newest first, and ↓ past the
+// newest gives back what was being typed.
+func TestTypedCommandRecallsItsHistory(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		require.NoError(t, s.gui.Config.RecordCommand(config.IncusHistory, "info web"))
+		require.NoError(t, s.gui.Config.RecordCommand(config.IncusHistory, "list"))
+		require.NoError(t, s.gui.Config.RecordCommand(config.ComposeHistory, "ps"))
+	})
+	s.ready(t)
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+	s.press(t, 'x')
+
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│list ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│info web ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│info web ")
+
+	s.pressKey(t, tcell.KeyDown)
+	s.settle(t, "│list ")
+	s.pressKey(t, tcell.KeyDown)
+	project := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Project
+	})
+	assert.NotContains(t, s.settle(t, "│--project "+project+" x"), "│list ")
+}

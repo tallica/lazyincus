@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -125,4 +126,30 @@ func TestReplacingAStack(t *testing.T) {
 	state, err := appConfig.LoadAppState()
 	require.NoError(t, err)
 	assert.Equal(t, []string{"web01:/srv/web", "pve01:/srv/db", "pve01:/srv/cache"}, state.Stacks)
+}
+
+// A line run again moves to the newest rather than being kept twice, each
+// history is its own, and the oldest go past historyLength.
+func TestRecordingCommands(t *testing.T) {
+	appConfig := &AppConfig{ConfigDir: t.TempDir()}
+
+	require.NoError(t, appConfig.RecordCommand(IncusHistory, "list"))
+	require.NoError(t, appConfig.RecordCommand(IncusHistory, "info web"))
+	require.NoError(t, appConfig.RecordCommand(IncusHistory, "list"))
+	require.NoError(t, appConfig.RecordCommand(ComposeHistory, "ps"))
+
+	state, err := appConfig.LoadAppState()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"info web", "list"}, state.Lines(IncusHistory))
+	assert.Equal(t, []string{"ps"}, state.Lines(ComposeHistory))
+
+	for i := range historyLength {
+		require.NoError(t, appConfig.RecordCommand(IncusHistory, fmt.Sprintf("info %d", i)))
+	}
+
+	state, err = appConfig.LoadAppState()
+	require.NoError(t, err)
+	lines := state.Lines(IncusHistory)
+	assert.Len(t, lines, historyLength)
+	assert.Equal(t, "info 0", lines[0])
 }

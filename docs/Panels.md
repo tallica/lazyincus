@@ -77,6 +77,12 @@ compose verbs are. On a service the prompt holds ` <service>` with the
 cursor before it: most verbs take the service last, and the few that
 don't - `config` - lose it to a delete.
 
+`↑` and `↓` in either prompt step through the lines it has run before,
+newest first, and `↓` past the newest gives back the line being typed.
+Each binary keeps its own hundred in `state.yml`, a line run again moving
+to the newest; a line is saved as typed, so one recalled names its
+`--project` or service, while the remote is still the panel's.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which

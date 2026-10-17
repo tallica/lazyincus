@@ -9,6 +9,7 @@ import (
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 // handleTypedCommand is : on any view: it asks for an incus command line,
@@ -31,7 +32,7 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 		initial = strings.Join(seed, " ") + " "
 	}
 
-	return gui.textPrompt(
+	if err := gui.textPrompt(
 		gui.onRemote(gui.Tr.TypedCommandTitle, remote),
 		gui.Tr.TypedCommandHint,
 		initial,
@@ -42,9 +43,13 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, "")
+			return gui.runTyped(cmd, line, config.IncusHistory, "")
 		},
-	)
+	); err != nil {
+		return err
+	}
+
+	return gui.bindPromptHistory(config.IncusHistory)
 }
 
 // typedComposeCommand is ; on Stacks and Services: an incus-compose command
@@ -68,7 +73,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, target.dir)
+			return gui.runTyped(cmd, line, config.ComposeHistory, target.dir)
 		},
 	); err != nil {
 		return err
@@ -77,7 +82,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 	gui.Views.Confirmation.TextArea.GoToStartOfLine()
 	gui.Views.Confirmation.RenderTextArea()
 
-	return nil
+	return gui.bindPromptHistory(config.ComposeHistory)
 }
 
 // handleTypedComposeCommand is ; on Services: the selected service's stack,
@@ -91,13 +96,17 @@ func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
 	return gui.typedComposeCommand(serviceTarget(service))
 }
 
-// runTyped runs a typed command, nil for nothing to run, and re-reads the
-// panels after: it can have changed anything. stackDir drops a stack's cached
-// parse first - an incus-compose command can have changed what it declares -
-// and is "" for the incus one.
-func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
+// runTyped runs a typed command, nil for nothing to run, saving its line to
+// history first, and re-reads the panels after: it can have changed anything.
+// stackDir drops a stack's cached parse first - an incus-compose command can
+// have changed what it declares - and is "" for the incus one.
+func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, stackDir string) error {
 	if cmd == nil {
 		return nil
+	}
+
+	if err := gui.Config.RecordCommand(history, line); err != nil {
+		gui.Log.Warn().Err(err).Msg("saving command history")
 	}
 
 	if err := gui.runSubprocess(cmd); err != nil {
@@ -111,6 +120,52 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
 	gui.refreshAllInBackground()
 
 	return nil
+}
+
+// bindPromptHistory makes ↑ and ↓ in the open prompt step through history's
+// lines, newest first, ↓ past the newest giving back what was being typed.
+func (gui *Gui) bindPromptHistory(history config.History) error {
+	state, err := gui.Config.LoadAppState()
+	if err != nil {
+		gui.Log.Warn().Err(err).Msg("reading command history")
+
+		return nil
+	}
+
+	lines := state.Lines(history)
+	at, draft := len(lines), ""
+	view := gui.Views.Confirmation
+
+	step := func(by int) func(*gocui.Gui, *gocui.View) error {
+		return func(*gocui.Gui, *gocui.View) error {
+			next := at + by
+			if next < 0 || next > len(lines) {
+				return nil
+			}
+
+			if at == len(lines) {
+				draft = view.TextArea.GetContent()
+			}
+
+			at = next
+			text := draft
+			if at < len(lines) {
+				text = lines[at]
+			}
+
+			view.ClearTextArea()
+			view.TextArea.TypeString(text)
+			view.RenderTextArea()
+
+			return nil
+		}
+	}
+
+	if err := gui.g.SetKeybinding("confirmation", gocui.KeyArrowUp, gocui.ModNone, step(-1)); err != nil {
+		return err
+	}
+
+	return gui.g.SetKeybinding("confirmation", gocui.KeyArrowDown, gocui.ModNone, step(1))
 }
 
 // typedLineCheck refuses enter on the seed the prompt started from, which is
