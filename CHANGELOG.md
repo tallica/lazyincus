@@ -10,15 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project`.
 - `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
-- `tab` in the `:` and `;` prompts completes the word before the cursor: verbs, flags and names from the daemon, or the stack's services.
-- `↑`/`↓` in the `:` and `;` prompts recall the lines run before, only those starting with what you've typed, kept across sessions in `history.yml`.
+- `tab` in the `:` and `;` prompts completes the word before the cursor: incus's verbs, flags and names from the daemon, or incus-compose's verbs and the stack's services.
+- `↑`/`↓` in the `:` and `;` prompts step through the lines you've run, matching what's typed so far; saved across sessions in `history.yml`.
 
 ### Changed
 - `R` keeps the project you're scoped to when the new remote has one by that name, instead of listing all its projects.
 
 ### Fixed
 - On a narrow terminal, the footer's key hints stop a space short of the status beside them instead of running into it.
-- On a narrow terminal, a popup's hint is cut short instead of being drawn over its title, which names the remote a prompt acts on.
+- On a narrow terminal, a popup's hint is cut short instead of running over its title.
 - An error, or an operation's or warning's details, offers `esc/enter: close` in the footer instead of a yes or no it isn't asking.
 - `W` shows how long an ended operation ran, instead of `0s` for one that reports no progress along the way, such as a command or a start.
 - On a remote with no stacks, a menu opened straight after startup, `P` say, hands the focus to Instances when it closes, not back to Stacks.
