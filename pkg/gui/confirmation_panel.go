@@ -155,6 +155,8 @@ func popupRows(screenHeight int, rows int) (int, int) {
 func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {
 	confirmationView := gui.Views.Confirmation
 	gui.openedPopup(confirmationView)
+	// A typed command's prompt wraps the editor (bindPromptCompletion).
+	confirmationView.Editor = gocui.DefaultEditor
 	confirmationView.SetOrigin(0, 0)
 	confirmationView.SetCursor(0, 0)
 	_ = gui.setViewContent(confirmationView, prompt)

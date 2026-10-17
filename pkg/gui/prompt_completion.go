@@ -20,6 +20,19 @@ type completer func(args []string, word string) (commands.Completion, error)
 func (gui *Gui) bindPromptCompletion(complete completer) error {
 	view := gui.Views.Confirmation
 
+	// The candidates are for the line tab was pressed on: an edit puts the
+	// hint back.
+	edit := view.Editor
+	view.Editor = gocui.EditorFunc(func(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) bool {
+		before := v.TextArea.GetUnwrappedContent()
+		handled := edit.Edit(v, key, ch, mod)
+		if v.TextArea.GetUnwrappedContent() != before {
+			v.Subtitle = gui.Tr.TypedCommandHint
+		}
+
+		return handled
+	})
+
 	return gui.g.SetKeybinding("confirmation", gocui.KeyTab, gocui.ModNone, func(*gocui.Gui, *gocui.View) error {
 		content := view.TextArea.GetUnwrappedContent()
 

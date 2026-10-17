@@ -171,6 +171,7 @@ func (gui *Gui) bindPromptHistory(history config.History, initial string) error 
 
 			view.ClearTextArea()
 			view.TextArea.TypeString(text)
+			view.Subtitle = gui.Tr.TypedCommandHint
 			// The draft's cursor where it was: before a service on ;.
 			if at == len(lines) {
 				for range uniseg.GraphemeClusterCount(tail) {

@@ -83,7 +83,7 @@ the flags, and the names the CLI reads off the daemon, as a shell's
 completion would have them. For `;` it's incus-compose's verbs, which it
 can't be asked for, and then the stack's services. One candidate finishes
 the word; several extend it as far as they agree and are listed in place
-of the hint.
+of the hint, until the line changes.
 
 `↑` and `↓` in either prompt step through the lines it has run before,
 newest first, and `↓` past the newest gives back the line being typed.

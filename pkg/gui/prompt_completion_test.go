@@ -228,3 +228,23 @@ func TestCompletionDoesntNarrowThePrompt(t *testing.T) {
 	s.settle(t, "start stop")
 	assert.Equal(t, before, width())
 }
+
+// The candidates are for the line tab was pressed on: typing on puts the hint
+// back rather than leaving them up for a line they no longer answer.
+func TestEditingAfterTabPutsTheHintBack(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		s.gui.completeIncus = func(string, []string, string) (commands.Completion, error) {
+			return commands.Completion{Candidates: []string{"start", "stop"}}, nil
+		}
+	})
+	s.ready(t)
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+	s.press(t, 's')
+	s.pressKey(t, tcell.KeyTab)
+	s.settle(t, "start stop")
+
+	s.press(t, 't')
+	assert.NotContains(t, s.settle(t, "tab to complete"), "start stop")
+}
