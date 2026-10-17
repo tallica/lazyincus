@@ -104,6 +104,12 @@ lazyincus starts on, the next time it starts. lazyincus writes it, where
 `config.yml` is only ever yours to change. It's safe to edit by hand, and
 a missing file is an empty list.
 
+`history.yml`, beside it, is the lines run from the `:` and `;` prompts,
+oldest first, as `incus` and `compose` lists, for
+[recall](Panels.md#typed-commands). A line is kept as typed, so whatever
+it carried is in the file too, which only its owner can read; delete it
+to forget them all.
+
 ## What's not here (yet)
 
 Ported from lazydocker's config so far: `gui`, `confirmOnQuit`, `oS`,

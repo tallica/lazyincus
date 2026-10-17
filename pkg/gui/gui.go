@@ -82,10 +82,17 @@ type Gui struct {
 	// loadBackups lists a stack's backups through command; tests stand in
 	// for incus-compose here too.
 	loadBackups func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
+	// completeIncus is the incus CLI's completion for :; tests stand in for
+	// it here.
+	completeIncus func(remote string, args []string, word string) (commands.Completion, error)
 	// runIncus runs an `incus` command off the main loop, failing with what
 	// it printed; tests stand in for the CLI here.
 	runIncus func(cmd *exec.Cmd) (string, error)
 	stacks   stackCache
+
+	// subtitles are the popups' subtitles as last written, by view name,
+	// and what fitSubtitle made of each: see fitSubtitle.
+	subtitles map[string]fittedSubtitle
 
 	// remotes are the commands for stacks on other remotes than the
 	// session's, and stacksElsewhere whether any is listed: the stacks
@@ -372,6 +379,7 @@ func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand 
 		loadStack:     incusCommand.LoadComposeStack,
 		loadBackups:   (*commands.IncusCommand).ComposeBackups,
 		runIncus:      oSCommand.RunExecutableWithOutput,
+		completeIncus: oSCommand.CompleteIncus,
 		Log:           log,
 		IncusCommand:  incusCommand,
 		OSCommand:     oSCommand,

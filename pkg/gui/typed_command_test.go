@@ -268,3 +268,99 @@ func TestSplitArgsRefusesAnUnclosedQuote(t *testing.T) {
 	_, err = splitArgs(`exec web -- echo don't`)
 	assert.ErrorContains(t, err, "unterminated")
 }
+
+// ↑ steps back through the lines run before, newest first, and ↓ past the
+// newest gives back what was being typed.
+func TestTypedCommandRecallsItsHistory(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		require.NoError(t, s.gui.Config.RecordCommand(config.IncusHistory, "info web"))
+		require.NoError(t, s.gui.Config.RecordCommand(config.IncusHistory, "list"))
+		require.NoError(t, s.gui.Config.RecordCommand(config.ComposeHistory, "ps"))
+	})
+	s.ready(t)
+
+	project := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Project
+	})
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│list ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│info web ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│info web ")
+
+	s.pressKey(t, tcell.KeyDown)
+	s.settle(t, "│list ")
+	s.pressKey(t, tcell.KeyDown)
+	assert.NotContains(t, s.settle(t, "│--project "+project+" "), "│list ")
+}
+
+// Typed beyond the seed, ↑ and ↓ step only through the lines starting with
+// what's before the cursor, and ↓ past the newest gives back what was typed.
+func TestTypedCommandRecallsOnlyWhatStartsWithTheLine(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, nil)
+	s.ready(t)
+	project := onLoop(t, s, func() string {
+		instance, _ := s.gui.Panels.Instances.GetSelectedItem()
+		return instance.Project
+	})
+
+	seed := "--project " + project + " "
+	for _, line := range []string{"start web", "list", "stop web", "start db"} {
+		require.NoError(t, s.gui.Config.RecordCommand(config.IncusHistory, seed+line))
+	}
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+	for _, key := range "sta" {
+		s.press(t, key)
+	}
+
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│"+seed+"start db ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│"+seed+"start web ")
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│"+seed+"start web ")
+
+	s.pressKey(t, tcell.KeyDown)
+	s.settle(t, "│"+seed+"start db ")
+	s.pressKey(t, tcell.KeyDown)
+	s.settle(t, "│"+seed+"sta ")
+}
+
+// On ;, what's before the cursor is the verb typed in front of the service,
+// and ↓ back to it leaves the cursor there.
+func TestTypedComposeCommandRecallsByTheVerb(t *testing.T) {
+	stack := testStack(t, t.TempDir(), "default", "web")
+	stack.Remote = "fake"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, nil, stack)(s)
+		labelled(s, map[string]string{"web": "web"})
+		for _, line := range []string{"logs web", "stop web", "ps"} {
+			require.NoError(t, s.gui.Config.RecordCommand(config.ComposeHistory, line))
+		}
+	})
+	s.settle(t, "Services (default)")
+
+	s.press(t, '2')
+	s.press(t, ';')
+	s.settle(t, "│ web")
+
+	s.press(t, 'l')
+	s.pressKey(t, tcell.KeyUp)
+	s.settle(t, "│logs web")
+
+	s.pressKey(t, tcell.KeyDown)
+	s.settle(t, "│l web")
+
+	// Back where it was typed, in front of the service.
+	s.press(t, 'o')
+	s.settle(t, "│lo web")
+}

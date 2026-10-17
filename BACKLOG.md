@@ -166,13 +166,9 @@ Available since the move off lazydocker's 2024 pin; none of it wired up.
 `:` and `;` ([docs/Panels.md](docs/Panels.md#typed-commands)) are a
 typed `incus` or `incus-compose` command, scoped by the selected row the
 way `incus-compose incus` scopes the CLI to a stack - the argument for a
-typed passthrough over lazydocker's configured menu. Three things left
-out of it, each state of its own:
+typed passthrough over lazydocker's configured menu. One thing left
+out of it, with state of its own:
 
-- [ ] **Command history** - `↑`/`↓` in the prompt stepping back through
-      what's been run, within the session or across them.
-- [ ] **Completion** - the verbs, and the names on the lists behind the
-      prompt, offered as the line is typed.
 - [ ] **A menu of saved commands** - lines kept back from what's been
       run, to pick from, as against the config-authored list lazydocker
       has, which stays [not planned](#per-instance-actions).

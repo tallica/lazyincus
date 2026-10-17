@@ -8,7 +8,9 @@ import (
 	"unicode"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/rivo/uniseg"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 // handleTypedCommand is : on any view: it asks for an incus command line,
@@ -31,7 +33,7 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 		initial = strings.Join(seed, " ") + " "
 	}
 
-	return gui.textPrompt(
+	if err := gui.textPrompt(
 		gui.onRemote(gui.Tr.TypedCommandTitle, remote),
 		gui.Tr.TypedCommandHint,
 		initial,
@@ -42,9 +44,17 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, "")
+			return gui.runTyped(cmd, line, config.IncusHistory, "")
 		},
-	)
+	); err != nil {
+		return err
+	}
+
+	if err := gui.bindPromptCompletion(gui.incusCompleter(remote, seed)); err != nil {
+		return err
+	}
+
+	return gui.bindPromptHistory(config.IncusHistory, initial)
 }
 
 // typedComposeCommand is ; on Stacks and Services: an incus-compose command
@@ -68,7 +78,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, target.dir)
+			return gui.runTyped(cmd, line, config.ComposeHistory, target.dir)
 		},
 	); err != nil {
 		return err
@@ -77,7 +87,11 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 	gui.Views.Confirmation.TextArea.GoToStartOfLine()
 	gui.Views.Confirmation.RenderTextArea()
 
-	return nil
+	if err := gui.bindPromptCompletion(gui.composeCompleter(target)); err != nil {
+		return err
+	}
+
+	return gui.bindPromptHistory(config.ComposeHistory, initial)
 }
 
 // handleTypedComposeCommand is ; on Services: the selected service's stack,
@@ -91,13 +105,17 @@ func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
 	return gui.typedComposeCommand(serviceTarget(service))
 }
 
-// runTyped runs a typed command, nil for nothing to run, and re-reads the
-// panels after: it can have changed anything. stackDir drops a stack's cached
-// parse first - an incus-compose command can have changed what it declares -
-// and is "" for the incus one.
-func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
+// runTyped runs a typed command, nil for nothing to run, saving its line to
+// history first, and re-reads the panels after: it can have changed anything.
+// stackDir drops a stack's cached parse first - an incus-compose command can
+// have changed what it declares - and is "" for the incus one.
+func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, stackDir string) error {
 	if cmd == nil {
 		return nil
+	}
+
+	if err := gui.Config.RecordCommand(history, line); err != nil {
+		gui.Log.Warn().Err(err).Msg("saving command history")
 	}
 
 	if err := gui.runSubprocess(cmd); err != nil {
@@ -111,6 +129,81 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, stackDir string) error {
 	gui.refreshAllInBackground()
 
 	return nil
+}
+
+// bindPromptHistory makes ↑ and ↓ in the open prompt step through history's
+// lines, newest first, ↓ past the newest giving back what was being typed.
+// Once something is typed beyond initial, the prompt's seed, they step only
+// through the lines that start with what's before the cursor, as zsh's
+// history-beginning-search does.
+func (gui *Gui) bindPromptHistory(history config.History, initial string) error {
+	lines, err := gui.Config.LoadHistory(history)
+	if err != nil {
+		gui.Log.Warn().Err(err).Msg("reading command history")
+
+		return nil
+	}
+
+	at, draft, prefix, tail := len(lines), "", "", ""
+	view := gui.Views.Confirmation
+
+	step := func(by int) func(*gocui.Gui, *gocui.View) error {
+		return func(*gocui.Gui, *gocui.View) error {
+			if at == len(lines) {
+				draft = view.TextArea.GetUnwrappedContent()
+				prefix, tail = historyPrefix(view.TextArea, draft, initial)
+			}
+
+			next := at + by
+			for next >= 0 && next < len(lines) && (!strings.HasPrefix(lines[next], prefix) || lines[next] == draft) {
+				next += by
+			}
+
+			if next < 0 || (next > len(lines) && at == len(lines)) {
+				return nil
+			}
+
+			at = min(next, len(lines))
+			text := draft
+			if at < len(lines) {
+				text = lines[at]
+			}
+
+			view.ClearTextArea()
+			view.TextArea.TypeString(text)
+			// The draft's cursor where it was: before a service on ;.
+			if at == len(lines) {
+				for range uniseg.GraphemeClusterCount(tail) {
+					view.TextArea.MoveCursorLeft()
+				}
+			}
+			view.RenderTextArea()
+
+			return nil
+		}
+	}
+
+	if err := gui.g.SetKeybinding("confirmation", gocui.KeyArrowUp, gocui.ModNone, step(-1)); err != nil {
+		return err
+	}
+
+	return gui.g.SetKeybinding("confirmation", gocui.KeyArrowDown, gocui.ModNone, step(1))
+}
+
+// historyPrefix is what a history line has to start with to be stepped to -
+// draft up to the cursor, or anything while that's still only the seed - and
+// the rest of draft after the cursor.
+func historyPrefix(textArea *gocui.TextArea, draft, initial string) (string, string) {
+	before, after, ok := splitAtCursor(textArea, draft)
+	if !ok {
+		before, after = draft, ""
+	}
+
+	if typed := strings.TrimSpace(before); typed == "" || typed == strings.TrimSpace(initial) {
+		return "", after
+	}
+
+	return before, after
 }
 
 // typedLineCheck refuses enter on the seed the prompt started from, which is
@@ -128,25 +221,30 @@ func typedLineCheck(initial string) func(string) error {
 	}
 }
 
-// typedArgs splits line, dropping the binary typed out of habit: the first
-// token after seed, which the prompt put in front of the line, or the first
-// one where the seed has been cleared.
+// typedArgs splits line, dropping the binary typed out of habit.
 func typedArgs(line string, seed []string, binary string) ([]string, error) {
 	args, err := splitArgs(line)
 	if err != nil {
 		return nil, err
 	}
 
+	return dropBinary(args, seed, binary), nil
+}
+
+// dropBinary is args without binary where it was typed out of habit: the first
+// token after seed, which the prompt put in front of the line, or the first
+// one where the seed has been cleared.
+func dropBinary(args, seed []string, binary string) []string {
 	at := 0
 	if len(seed) > 0 && len(args) >= len(seed) && slices.Equal(args[:len(seed)], seed) {
 		at = len(seed)
 	}
 
 	if at < len(args) && args[at] == binary {
-		args = slices.Delete(args, at, at+1)
+		args = slices.Delete(slices.Clone(args), at, at+1)
 	}
 
-	return args, nil
+	return args
 }
 
 // splitArgs splits line on whitespace outside quotes, dropping the quote

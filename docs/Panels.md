@@ -77,6 +77,25 @@ compose verbs are. On a service the prompt holds ` <service>` with the
 cursor before it: most verbs take the service last, and the few that
 don't - `config` - lose it to a delete.
 
+`tab` completes the word before the cursor. For `:` it asks the `incus`
+CLI, through cobra's `__complete`, on the panel's remote - so the verbs,
+the flags, and the names the CLI reads off the daemon, as a shell's
+completion would have them. For `;` it's incus-compose's verbs, which it
+can't be asked for, and then the stack's services. One candidate finishes
+the word; several extend it as far as they agree and are listed in place
+of the hint.
+
+`↑` and `↓` in either prompt step through the lines it has run before,
+newest first, and `↓` past the newest gives back the line being typed.
+Typed beyond the prompt's seed, they step only through the lines that
+start with what's before the cursor, as zsh's history-beginning-search
+does: the verb in front of a service on `;`. The match is on the line as
+saved, `--project` and all, so one run from another project's row isn't
+among them.
+Each binary keeps its own hundred in `history.yml`, a line run again moving
+to the newest; a line is saved as typed, so one recalled names its
+`--project` or service, while the remote is still the panel's.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which
