@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-17
+
 ### Added
 - `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project` ([demo](https://asciinema.org/a/1268864)).
 - `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
@@ -365,7 +367,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/tallica/lazyincus/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/tallica/lazyincus/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/tallica/lazyincus/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/tallica/lazyincus/compare/v0.13.0...v0.13.1
