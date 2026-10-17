@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project`.
+- `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project` ([demo](https://asciinema.org/a/1268864)).
 - `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
 - `tab` in the `:` and `;` prompts completes the word before the cursor: incus's verbs, flags and names from the daemon, or incus-compose's verbs and the stack's services.
 - `↑`/`↓` in the `:` and `;` prompts step through the lines you've run, matching what's typed so far; saved across sessions in `history.yml`.

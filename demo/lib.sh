@@ -77,7 +77,8 @@ caption() {
 
 pretty() {
   sed -e 's/BTab/shift+tab/g' -e 's/Tab/tab/g' -e 's/Escape/esc/g' -e 's/Enter/enter/g' \
-    -e 's/Space/space/g' -e 's/C-\(.\)/ctrl+\1/g' -e 's/Right/→/g' -e 's/Left/←/g'
+    -e 's/Space/space/g' -e 's/C-\(.\)/ctrl+\1/g' -e 's/Right/→/g' -e 's/Left/←/g' \
+    -e 's/Up/↑/g' -e 's/Down/↓/g'
 }
 
 # key <tmux key names> -- <caption>
@@ -87,7 +88,10 @@ key() {
   label=$1
   caption "$(echo "${keys[*]}" | pretty)" "$label"
   sleep 0.4                  # the caption lands before the key does
-  for k in "${keys[@]}"; do t send-keys -t app "$k"; sleep 0.2; done
+  for k in "${keys[@]}"; do
+    [[ $k == ';' ]] && k='\;'    # a bare ; ends the tmux command
+    t send-keys -t app "$k"; sleep 0.2
+  done
   sleep "$PAUSE"
 }
 

@@ -1,0 +1,6 @@
+name: lzi-feed
+services:
+  reader:
+    image: docker.io/library/nginx:alpine
+  poller:
+    image: docker.io/library/redis:alpine

@@ -12,8 +12,9 @@ feature each, to link from its CHANGELOG entry.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
-| `palette.sh`, `readonly.sh`, `operations.sh`, `snapshots.sh`, `inside.sh`, `backups.sh` | The short recordings, each with a fixture of its own |
+| `palette.sh`, `readonly.sh`, `operations.sh`, `snapshots.sh`, `inside.sh`, `backups.sh`, `typed.sh` | The short recordings, each with a fixture of its own |
 | `lzi-notes/` | The compose stack `backups.sh` backs up |
+| `lzi-feed/` | The compose stack `typed.sh` runs `;` on |
 | `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
@@ -123,6 +124,7 @@ One feature each, around a minute, paced to be read rather than skimmed:
 | `snapshots.sh` | A snapshot taken, renamed, and made into a described instance | `REMOTE_A` | `lzi-snap`: `blog` |
 | `inside.sh` | The Info tab's Ports, `F` editing a file, `/` searching the main panel | `REMOTE_A` | `lzi-web`: `front`, with a description and a proxy device |
 | `backups.sh` | `B`, a new backup, `verify`, and the volumes holding them | `REMOTE_A` | the `lzi-notes` stack, backed up once |
+| `typed.sh` | `:` and `;`: a snapshot taken with `tab`, recalled with `↑`, and a service restarted | `REMOTE_A` | `lzi-cli`: `ledger`, `ledger-replica`; and the `lzi-feed` stack |
 
 ```sh
 REMOTE_A=site-a demo/palette.sh
@@ -131,6 +133,7 @@ REMOTE_A=site-a demo/operations.sh
 REMOTE_A=site-a demo/snapshots.sh
 REMOTE_A=site-a demo/inside.sh
 REMOTE_A=site-a demo/backups.sh
+REMOTE_A=site-a demo/typed.sh
 ```
 
 Each writes `demo/<script>.cast`, `.gif` and `.mp4`, and takes the
