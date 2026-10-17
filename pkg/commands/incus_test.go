@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
+	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/cliconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Both dialers, since the client sets DialContext for a unix socket and
@@ -97,4 +99,48 @@ func TestConnectRemoteConcurrently(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+// Every listener's connect writes the client it's on, before it dials, and
+// UseProject reads that without a lock: the stream reconnecting while the
+// panels make project clients is a race the detector sees, on the real
+// client - incustest's has nothing to race on. A port nothing listens on
+// keeps the stream failing, and so connecting, for as long as the test runs.
+func TestEventStreamDoesntRaceProjectClients(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	addr := listener.Addr().String()
+	require.NoError(t, listener.Close())
+
+	client, err := incus.ConnectIncus("https://"+addr, &incus.ConnectionArgs{SkipGetServer: true, InsecureSkipVerify: true})
+	require.NoError(t, err)
+
+	command := NewIncusCommandWithClient(nil, nil, nil, nil, client, "closed")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	var wait sync.WaitGroup
+	wait.Add(2)
+
+	go func() {
+		defer wait.Done()
+
+		for ctx.Err() == nil {
+			_ = command.ListenForEvents(ctx, []string{"lifecycle"}, func() {}, func(Event) {})
+		}
+	}()
+
+	go func() {
+		defer wait.Done()
+
+		for ctx.Err() == nil {
+			command.clientIn("shop")
+			command.clientFor("shop")
+			command.UseProject("default")
+			command.UseAllProjects()
+		}
+	}()
+
+	wait.Wait()
 }

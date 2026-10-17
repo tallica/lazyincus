@@ -811,7 +811,7 @@ func TestCopyingFromAStack(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		withStacks(t, stack)(s)
-		s.server.URL = "https://192.0.2.5:8443"
+		s.server.SetURL("https://192.0.2.5:8443")
 
 		instances := fixtureServer().Instances
 		for i := range instances {

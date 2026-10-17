@@ -61,6 +61,17 @@ inferred.
   rather than a field, and every refresh builds its `Instance`s with a
   client of their own. `P` (`handleSwitchProject` in
   `pkg/gui/projects.go`) scopes to a single project.
+- **Clients**: the client's `UseProject` copies its `skipEvents` without
+  the lock that `getEvents` writes it under, and `getEvents` runs at every
+  event listener's connect: the stream's, reconnects included, and the
+  early listener an operation-creating call opens on whichever client it's
+  made on (`queryOperation`, in `client/incus.go`). So `UseProject` is only
+  called on `IncusCommand.base`, the connection's own client, which makes
+  no requests at all; every other client, the session's and the stream's
+  included, is made from it. The stream has one of its own, so its
+  reconnects write to nothing that's copied. What that can't reach is in
+  the client: `queryOperation` reads `skipEvents` unlocked too, so two
+  operations started at once on one client still race each other.
 - **All projects**: the default, and "all projects" in that menu returns
   to it. Lists every project at once through the `*AllProjects` endpoints.
   Each item then carries its own project-scoped client (`clientFor`), so
@@ -131,9 +142,7 @@ inferred.
   the daemon resolves one itself and deletes it 24 hours later. A warning
   about the server has no project, and `GET /1.0/warnings` without one
   lists every project's, so lazyincus lists them unscoped whatever `P`
-  says. Its client for that is made with the connection: `UseProject`
-  copies a client's `skipEvents` without the lock an event stream that is
-  connecting writes it under, which the race detector catches.
+  says.
 - **Operations**: the daemon drops an operation 5s after it ends
   (`done()` in `internal/server/operations/operations.go`), so
   `GetOperationsAllProjects` is what's under way and what just ended;

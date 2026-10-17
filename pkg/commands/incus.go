@@ -32,11 +32,12 @@ type IncusCommand struct {
 	// Guarded by clientMutex: they change when the user switches project,
 	// and all of them when the user switches remote.
 	clientMutex deadlock.Mutex
-	client      incus.InstanceServer
-	// unscoped is client for what belongs to no project - the warnings -
-	// made with the connection. UseProject copies a client without the lock
-	// an event stream that is connecting holds on it, so it isn't called on
-	// a live one for every listing.
+	// base is the connection's own client, which every other is made from
+	// and nothing uses for a request: UseProject is only safe on a client
+	// nothing listens on (docs/Incus.md, "Clients").
+	base   incus.InstanceServer
+	client incus.InstanceServer
+	// unscoped is the client for what belongs to no project: the warnings.
 	unscoped    incus.InstanceServer
 	projectName string
 	allProjects bool
@@ -151,7 +152,8 @@ func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, tr *i1
 		OSCommand:     osCommand,
 		Tr:            tr,
 		Config:        cfg,
-		client:        client,
+		base:          client,
+		client:        client.UseProject(clientProjectName(client)),
 		unscoped:      client.UseProject(""),
 		remoteName:    remote,
 		serverVersion: version,
@@ -306,12 +308,12 @@ func (c *IncusCommand) PublishHost() string {
 // the new server's projects have nothing to do with the old one's. c keeps
 // its identity, so whoever holds it follows.
 func (c *IncusCommand) UseRemote(other *IncusCommand) {
-	client, project, _ := other.scope()
+	scope := other.scope()
 	remote, version := other.RemoteName(), other.ServerVersion()
 	unscoped := other.unscopedClient()
 
 	c.clientMutex.Lock()
-	c.client, c.projectName, c.allProjects = client, project, true
+	c.base, c.client, c.projectName, c.allProjects = scope.base, scope.client, scope.project, true
 	c.unscoped = unscoped
 	c.remoteName, c.serverVersion = remote, version
 	c.clientMutex.Unlock()
@@ -372,13 +374,18 @@ func (c *IncusCommand) UseAllProjects() {
 // item from an all-projects listing goes to the project that item lives in
 // rather than whichever one the client happens to be scoped to.
 func (c *IncusCommand) clientFor(project string) incus.InstanceServer {
-	client := c.Client()
+	scope := c.scope()
 
-	if project == "" || !c.IsAllProjects() {
-		return client
+	if project == "" || !scope.allProjects {
+		return scope.client
 	}
 
-	return client.UseProject(project)
+	return scope.base.UseProject(project)
+}
+
+// clientIn is a client scoped to project, whichever the panels are on.
+func (c *IncusCommand) clientIn(project string) incus.InstanceServer {
+	return c.scope().base.UseProject(project)
 }
 
 // GetProjectNames lists the projects on the server.
@@ -392,7 +399,7 @@ func (c *IncusCommand) UseProject(name string) {
 	c.clientMutex.Lock()
 	defer c.clientMutex.Unlock()
 
-	c.client = c.client.UseProject(name)
+	c.client = c.base.UseProject(name)
 	c.projectName = name
 	c.allProjects = false
 }
@@ -421,7 +428,8 @@ func (c *IncusCommand) setConnected(connected bool) {
 // GetInstances lists every instance in scope, with its config, state and
 // snapshots: one request for what would otherwise be one per instance.
 func (c *IncusCommand) GetInstances() ([]*Instance, error) {
-	client, project, allProjects := c.scope()
+	scope := c.scope()
+	client, project, allProjects := scope.client, scope.project, scope.allProjects
 	listing := c.runtimes.beginListing()
 
 	fulls, err := listInstances(client, allProjects)
@@ -435,7 +443,7 @@ func (c *IncusCommand) GetInstances() ([]*Instance, error) {
 	for i := range fulls {
 		instanceClient := client
 		if allProjects {
-			instanceClient = client.UseProject(fulls[i].Project)
+			instanceClient = scope.base.UseProject(fulls[i].Project)
 		}
 
 		instances[i] = c.newInstance(fulls[i], project, instanceClient, listing)
@@ -470,13 +478,21 @@ func (c *IncusCommand) newInstance(full api.InstanceFull, fallbackProject string
 	return instance
 }
 
-// scope is the client, its project and whether the panels list every
-// project, read together so a project switch can't land between them.
-func (c *IncusCommand) scope() (incus.InstanceServer, string, bool) {
+// clientScope is the client, the base it was made from, its project and
+// whether the panels list every project.
+type clientScope struct {
+	client, base incus.InstanceServer
+	project      string
+	allProjects  bool
+}
+
+// scope reads them together, so a switch of project or remote can't land
+// between them.
+func (c *IncusCommand) scope() clientScope {
 	c.clientMutex.Lock()
 	defer c.clientMutex.Unlock()
 
-	return c.client, c.projectName, c.allProjects
+	return clientScope{client: c.client, base: c.base, project: c.projectName, allProjects: c.allProjects}
 }
 
 // GetImages lists the images stored on the server.
@@ -606,12 +622,10 @@ func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 		apiNetwork := apiNetworks[i]
 
 		ownNetworks[i] = &Network{
-			Name:    apiNetwork.Name,
-			Network: apiNetwork,
-			Client:  c.clientFor(apiNetwork.Project),
-			ClientFor: func(project string) incus.InstanceServer {
-				return c.Client().UseProject(project)
-			},
+			Name:      apiNetwork.Name,
+			Network:   apiNetwork,
+			Client:    c.clientFor(apiNetwork.Project),
+			ClientFor: c.clientIn,
 			OSCommand: c.OSCommand,
 			Log:       c.Log,
 			Tr:        c.Tr,

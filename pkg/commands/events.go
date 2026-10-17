@@ -61,7 +61,9 @@ func listen(client incus.InstanceServer, allProjects bool, types []string) (Even
 // they're flowing. It returns why it stopped: nil for ctx, the drop
 // otherwise.
 func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, opened func(), handle func(Event)) error {
-	client, project, allProjects := c.scope()
+	scope := c.scope()
+	// A client of its own, so its reconnects write to nothing UseProject copies.
+	client, project, allProjects := scope.base.UseProject(scope.project), scope.project, scope.allProjects
 
 	type dial struct {
 		listener EventListener

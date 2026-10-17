@@ -46,7 +46,7 @@ func (p *ComposeProject) HealthcheckScope() string {
 // GetProjectInstances lists one project's instances directly, regardless of
 // which project the panels are currently scoped to.
 func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) {
-	client := c.Client().UseProject(project)
+	client := c.clientIn(project)
 	listing := c.runtimes.beginListing()
 
 	fulls, err := client.GetInstancesFull(api.InstanceTypeAny)

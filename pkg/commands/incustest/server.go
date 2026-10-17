@@ -79,6 +79,8 @@ type state struct {
 	// IDs DeleteOperation was asked for.
 	operations []api.Operation
 	cancelled  []string
+	// url is SetURL's, in place of URL.
+	url string
 	// warnings are what GetWarnings returns, updated in place.
 	warnings []api.Warning
 }
@@ -92,6 +94,16 @@ func New(fixture Server) *Server {
 
 func (s *Server) shared() *state {
 	return s.state
+}
+
+// SetURL moves where GetConnectionInfo says the daemon is, while the app is
+// running: URL is copied into every client UseProject makes.
+func (s *Server) SetURL(url string) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	shared.url = url
 }
 
 // SetInstances replaces the instances while the app is running.
@@ -220,7 +232,16 @@ func (s *Server) UseProject(name string) incus.InstanceServer {
 }
 
 func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
-	return &incus.ConnectionInfo{Project: s.scope(), URL: s.URL}, nil
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	url := s.URL
+	if shared.url != "" {
+		url = shared.url
+	}
+
+	return &incus.ConnectionInfo{Project: s.scope(), URL: url}, nil
 }
 
 // GetServer reports Version.

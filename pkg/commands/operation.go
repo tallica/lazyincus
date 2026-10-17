@@ -154,7 +154,8 @@ func operationProject(operation api.Operation, fallback string) string {
 // GetOperations lists the operations the daemon holds for the panels'
 // scope: those running, and those that ended within the last 5s.
 func (c *IncusCommand) GetOperations() ([]*Operation, error) {
-	client, project, allProjects := c.scope()
+	scope := c.scope()
+	client, project, allProjects := scope.client, scope.project, scope.allProjects
 
 	var (
 		listed []api.Operation
@@ -192,5 +193,5 @@ func (c *IncusCommand) GetOperations() ([]*Operation, error) {
 // CancelOperation asks the daemon to cancel the operation, which it does
 // only for one that says it may.
 func (c *IncusCommand) CancelOperation(operation *Operation) error {
-	return c.Client().UseProject(operation.Project).DeleteOperation(operation.Operation.ID)
+	return c.clientIn(operation.Project).DeleteOperation(operation.Operation.ID)
 }
