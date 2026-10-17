@@ -81,7 +81,29 @@ func popupFrameWidth(v *gocui.View) int {
 // popupFrameMargin is the corner and rule popupFrameWidth adds around them.
 const popupFrameMargin = 10
 
-type fittedSubtitle struct{ full, fitted string }
+// fittedSubtitle is a popup's subtitle as written and as fitted, and the
+// widest the popup has been made for it since it opened.
+type fittedSubtitle struct {
+	full, fitted string
+	width        int
+}
+
+// openedPopup forgets what the last popup in v asked for: a new one is sized
+// afresh.
+func (gui *Gui) openedPopup(v *gocui.View) {
+	delete(gui.subtitles, v.Name())
+}
+
+// holdPopupWidth is minWidth, or the widest v has been since it opened: a
+// shorter subtitle, tab's candidates in place of the hint, would otherwise
+// narrow it under the cursor.
+func (gui *Gui) holdPopupWidth(v *gocui.View, minWidth int) int {
+	subtitle := gui.subtitles[v.Name()]
+	subtitle.width = max(subtitle.width, minWidth)
+	gui.subtitles[v.Name()] = subtitle
+
+	return subtitle.width
+}
 
 // fitSubtitle cuts v's subtitle to the room beside its title on a screen this
 // wide: gocui draws it right-aligned over whatever is there, and the title is
@@ -132,6 +154,7 @@ func popupRows(screenHeight int, rows int) (int, int) {
 // to it from the first frame.
 func (gui *Gui) prepareConfirmationPanel(title, prompt string) error {
 	confirmationView := gui.Views.Confirmation
+	gui.openedPopup(confirmationView)
 	confirmationView.SetOrigin(0, 0)
 	confirmationView.SetCursor(0, 0)
 	_ = gui.setViewContent(confirmationView, prompt)

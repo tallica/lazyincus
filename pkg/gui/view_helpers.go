@@ -153,7 +153,7 @@ func (gui *Gui) resizeCurrentPopupPanel(g *gocui.Gui) error {
 func (gui *Gui) resizePopupPanel(v *gocui.View) error {
 	width, height := gui.g.Size()
 	gui.fitSubtitle(v, width)
-	minWidth := popupFrameWidth(v)
+	minWidth := gui.holdPopupWidth(v, popupFrameWidth(v))
 	// The palette's rows have more to say than a menu's.
 	if v == gui.Views.Menu && (gui.paletteOpen() || gui.State.WideMenu) {
 		minWidth = width * 3 / 4

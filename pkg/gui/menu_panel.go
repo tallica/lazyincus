@@ -110,6 +110,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 	gui.Views.Menu.Tabs = opts.Tabs
 	gui.Views.Menu.TabIndex = opts.TabIndex
 	gui.Views.Menu.Subtitle = opts.Subtitle
+	gui.openedPopup(gui.Views.Menu)
 
 	gui.Panels.Menu.SetItems(opts.Items)
 	gui.Panels.Menu.SetSelectedLineIdx(opts.Selected)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
@@ -197,5 +198,33 @@ func TestCompletionKeepsThePromptsWidth(t *testing.T) {
 	s.pressKey(t, tcell.KeyTab)
 	s.settle(t, "instance-00")
 	s.settle(t, "…")
+	assert.Equal(t, before, width())
+}
+
+// Nor does it narrow: the hint widens the popup past half the screen, and the
+// shorter candidates in its place leave it where it was.
+func TestCompletionDoesntNarrowThePrompt(t *testing.T) {
+	s := startScreenWith(t, 100, 40, nil, func(s *screen) {
+		s.gui.completeIncus = func(string, []string, string) (commands.Completion, error) {
+			return commands.Completion{Candidates: []string{"start", "stop"}}, nil
+		}
+	})
+	s.ready(t)
+
+	width := func() int {
+		return onLoop(t, s, func() int {
+			x0, _, x1, _ := s.gui.Views.Confirmation.Dimensions()
+			return x1 - x0
+		})
+	}
+
+	s.press(t, ':')
+	s.settle(t, "enter to run")
+	before := width()
+	require.Greater(t, before, 50, "the hint should widen the popup for this to test anything")
+
+	s.press(t, 's')
+	s.pressKey(t, tcell.KeyTab)
+	s.settle(t, "start stop")
 	assert.Equal(t, before, width())
 }
