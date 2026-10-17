@@ -49,6 +49,10 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
+	if err := gui.bindPromptCompletion(gui.incusCompleter(remote, seed)); err != nil {
+		return err
+	}
+
 	return gui.bindPromptHistory(config.IncusHistory)
 }
 
@@ -81,6 +85,10 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 
 	gui.Views.Confirmation.TextArea.GoToStartOfLine()
 	gui.Views.Confirmation.RenderTextArea()
+
+	if err := gui.bindPromptCompletion(gui.composeCompleter(target)); err != nil {
+		return err
+	}
 
 	return gui.bindPromptHistory(config.ComposeHistory)
 }
@@ -143,7 +151,7 @@ func (gui *Gui) bindPromptHistory(history config.History) error {
 			}
 
 			if at == len(lines) {
-				draft = view.TextArea.GetContent()
+				draft = view.TextArea.GetUnwrappedContent()
 			}
 
 			at = next
@@ -182,25 +190,30 @@ func typedLineCheck(initial string) func(string) error {
 	}
 }
 
-// typedArgs splits line, dropping the binary typed out of habit: the first
-// token after seed, which the prompt put in front of the line, or the first
-// one where the seed has been cleared.
+// typedArgs splits line, dropping the binary typed out of habit.
 func typedArgs(line string, seed []string, binary string) ([]string, error) {
 	args, err := splitArgs(line)
 	if err != nil {
 		return nil, err
 	}
 
+	return dropBinary(args, seed, binary), nil
+}
+
+// dropBinary is args without binary where it was typed out of habit: the first
+// token after seed, which the prompt put in front of the line, or the first
+// one where the seed has been cleared.
+func dropBinary(args, seed []string, binary string) []string {
 	at := 0
 	if len(seed) > 0 && len(args) >= len(seed) && slices.Equal(args[:len(seed)], seed) {
 		at = len(seed)
 	}
 
 	if at < len(args) && args[at] == binary {
-		args = slices.Delete(args, at, at+1)
+		args = slices.Delete(slices.Clone(args), at, at+1)
 	}
 
-	return args, nil
+	return args
 }
 
 // splitArgs splits line on whitespace outside quotes, dropping the quote

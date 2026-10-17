@@ -77,6 +77,14 @@ compose verbs are. On a service the prompt holds ` <service>` with the
 cursor before it: most verbs take the service last, and the few that
 don't - `config` - lose it to a delete.
 
+`tab` completes the word before the cursor. For `:` it asks the `incus`
+CLI, through cobra's `__complete`, on the panel's remote - so the verbs,
+the flags, and the names the CLI reads off the daemon, as a shell's
+completion would have them. For `;` it's incus-compose's verbs, which it
+can't be asked for, and then the stack's services. One candidate finishes
+the word; several extend it as far as they agree and are listed in place
+of the hint.
+
 `↑` and `↓` in either prompt step through the lines it has run before,
 newest first, and `↓` past the newest gives back the line being typed.
 Each binary keeps its own hundred in `history.yml`, a line run again moving
