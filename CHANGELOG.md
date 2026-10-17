@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `W` shows how long an ended operation ran, instead of `0s` for one that reports no progress along the way, such as a command or a start.
 - On a remote with no stacks, a menu opened straight after startup, `P` say, hands the focus to Instances when it closes, not back to Stacks.
 - Starting, stopping, restarting, pausing or deleting a replica from Services updates its stack's status straight away, not on the next poll.
+- An `oS.openCommand`, `oS.openLinkCommand` or `oS.copyToClipboardCommand` that can't be split, an unclosed quote say, is reported instead of crashing lazyincus.
 
 ## [0.15.0] - 2026-10-10
 
