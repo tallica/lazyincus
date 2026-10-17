@@ -143,6 +143,13 @@ func (gui *Gui) refreshInstancesAndServices() error {
 	return gui.refresh(nil, gui.fetchInstances, gui.fetchServices)
 }
 
+// instanceFetches is what an instance starting, stopping or going away
+// re-lists: its stack's status is its instances' too, and the stacks lead,
+// as in fetchGroups.
+func (gui *Gui) instanceFetches() []fetch {
+	return []fetch{gui.fetchStacks, gui.fetchInstances, gui.fetchServices}
+}
+
 // refreshEnding refreshes, then calls every end and redraws the rows they
 // marked: once the listing has landed, or without it when a fetch fails or
 // applying one does. refresh's then runs in neither case, and a mark that

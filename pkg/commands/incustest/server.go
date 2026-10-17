@@ -6,6 +6,7 @@ package incustest
 import (
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"slices"
@@ -578,6 +579,42 @@ func (s *Server) GetInstance(name string) (*api.Instance, string, error) {
 // ignores.
 func (s *Server) UpdateInstance(name string, put api.InstancePut, _ string) (incus.Operation, error) {
 	return s.updateInstance(name, func(instance *api.InstanceFull) { instance.Description = put.Description })
+}
+
+// RawQuery takes the one-key config PATCH a compose instance's stop or
+// start sends, merging it into the instance's config; any other query it
+// refuses.
+func (s *Server) RawQuery(method, path string, data any, _ string) (*api.Response, string, error) {
+	target, err := url.Parse(path)
+	if err != nil {
+		return nil, "", err
+	}
+
+	name, ok := strings.CutPrefix(target.Path, "/1.0/instances/")
+	patch, isPatch := data.(map[string]any)
+	config, hasConfig := patch["config"].(map[string]string)
+
+	if method != http.MethodPatch || !ok || !isPatch || !hasConfig {
+		return nil, "", api.StatusErrorf(http.StatusNotImplemented, "%s %s not implemented", method, path)
+	}
+
+	_, err = s.updateInstance(name, func(instance *api.InstanceFull) {
+		instance.Config = maps.Clone(instance.Config)
+		instance.ExpandedConfig = maps.Clone(instance.ExpandedConfig)
+
+		if instance.Config == nil {
+			instance.Config = map[string]string{}
+		}
+
+		if instance.ExpandedConfig == nil {
+			instance.ExpandedConfig = map[string]string{}
+		}
+
+		maps.Copy(instance.Config, config)
+		maps.Copy(instance.ExpandedConfig, config)
+	})
+
+	return &api.Response{}, "", err
 }
 
 // UpdateInstanceState starts or stops the instance in what the listings

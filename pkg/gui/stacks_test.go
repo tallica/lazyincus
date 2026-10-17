@@ -883,3 +883,46 @@ func TestPopupColumns(t *testing.T) {
 	x0, x1 = popupColumns(40, 66)
 	assert.Equal(t, [2]int{0, 39}, [2]int{x0, x1})
 }
+
+// Stopping one replica from the services panel turns its stack partial
+// straight away, not on the stacks' next poll.
+func TestStoppingAReplicaShowsOnItsStack(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, testStack(t, t.TempDir(), "default", "web"))(s)
+		labelled(s, map[string]string{"web": "web", "a-name-long-enough-to-be-cut-off": "web"})
+
+		// No stream, so no event refreshing the stacks instead.
+		t.Cleanup(s.server.HoldListen())
+	})
+
+	stackStatus := func() string {
+		return onLoop(t, s, func() string {
+			stack, err := s.gui.Panels.Stacks.GetSelectedItem()
+			if err != nil {
+				return ""
+			}
+
+			return stack.Status()
+		})
+	}
+	require.Eventually(t, func() bool { return stackStatus() == "Running" }, 5*time.Second, 20*time.Millisecond)
+
+	s.do(t, func() error {
+		for _, row := range s.gui.Panels.Services.List.GetAllItems() {
+			if row.Instance != nil && row.Instance.Name == "web" {
+				s.gui.Panels.Services.Select(row)
+				return s.gui.switchFocus(s.gui.Views.Services)
+			}
+		}
+
+		t.Fatal("no replica row for web")
+
+		return nil
+	})
+
+	s.press(t, 's')
+	s.settle(t, "stop instance web?")
+	s.press(t, 'y')
+
+	require.Eventually(t, func() bool { return stackStatus() == commands.ServicePartial }, 2*time.Second, 20*time.Millisecond)
+}

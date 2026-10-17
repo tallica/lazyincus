@@ -304,7 +304,7 @@ func (gui *Gui) inTransition(instance *commands.Instance, status string, action 
 		return err
 	}
 
-	return gui.refreshEnding([]func(){end}, gui.fetchInstances, gui.fetchServices)
+	return gui.refreshEnding([]func(){end}, gui.instanceFetches()...)
 }
 
 // instancePauseResume is `incus pause` or `incus resume`, whichever the
@@ -336,7 +336,7 @@ func (gui *Gui) instanceDelete(instance *commands.Instance) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstancesAndServices()
+			return gui.refresh(nil, gui.instanceFetches()...)
 		})
 	}, nil)
 }
@@ -352,7 +352,7 @@ func (gui *Gui) promptToForceDeleteInstance(instance *commands.Instance) error {
 				return gui.createErrorPanel(err.Error())
 			}
 
-			return gui.refreshInstancesAndServices()
+			return gui.refresh(nil, gui.instanceFetches()...)
 		})
 	}, nil)
 }
@@ -470,7 +470,7 @@ func (gui *Gui) renameInstance(instance *commands.Instance, name string, start b
 		}
 
 		return gui.Panels.Instances.HandleSelect()
-	}, gui.fetchInstances, gui.fetchServices)
+	}, gui.instanceFetches()...)
 }
 
 // instanceEditDescription edits the description in a one-line prompt, the
