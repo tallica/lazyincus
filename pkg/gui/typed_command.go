@@ -53,7 +53,7 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 		return err
 	}
 
-	return gui.bindPromptHistory(config.IncusHistory)
+	return gui.bindPromptHistory(config.IncusHistory, initial)
 }
 
 // typedComposeCommand is ; on Stacks and Services: an incus-compose command
@@ -90,7 +90,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 		return err
 	}
 
-	return gui.bindPromptHistory(config.ComposeHistory)
+	return gui.bindPromptHistory(config.ComposeHistory, initial)
 }
 
 // handleTypedComposeCommand is ; on Services: the selected service's stack,
@@ -132,7 +132,10 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, sta
 
 // bindPromptHistory makes ↑ and ↓ in the open prompt step through history's
 // lines, newest first, ↓ past the newest giving back what was being typed.
-func (gui *Gui) bindPromptHistory(history config.History) error {
+// Once something is typed beyond initial, the prompt's seed, they step only
+// through the lines that start with what's before the cursor, as zsh's
+// history-beginning-search does.
+func (gui *Gui) bindPromptHistory(history config.History, initial string) error {
 	lines, err := gui.Config.LoadHistory(history)
 	if err != nil {
 		gui.Log.Warn().Err(err).Msg("reading command history")
@@ -140,21 +143,26 @@ func (gui *Gui) bindPromptHistory(history config.History) error {
 		return nil
 	}
 
-	at, draft := len(lines), ""
+	at, draft, prefix := len(lines), "", ""
 	view := gui.Views.Confirmation
 
 	step := func(by int) func(*gocui.Gui, *gocui.View) error {
 		return func(*gocui.Gui, *gocui.View) error {
+			if at == len(lines) {
+				draft = view.TextArea.GetUnwrappedContent()
+				prefix = historyPrefix(view.TextArea, draft, initial)
+			}
+
 			next := at + by
-			if next < 0 || next > len(lines) {
+			for next >= 0 && next < len(lines) && (!strings.HasPrefix(lines[next], prefix) || lines[next] == draft) {
+				next += by
+			}
+
+			if next < 0 || (next > len(lines) && at == len(lines)) {
 				return nil
 			}
 
-			if at == len(lines) {
-				draft = view.TextArea.GetUnwrappedContent()
-			}
-
-			at = next
+			at = min(next, len(lines))
 			text := draft
 			if at < len(lines) {
 				text = lines[at]
@@ -173,6 +181,21 @@ func (gui *Gui) bindPromptHistory(history config.History) error {
 	}
 
 	return gui.g.SetKeybinding("confirmation", gocui.KeyArrowDown, gocui.ModNone, step(1))
+}
+
+// historyPrefix is what a history line has to start with to be stepped to:
+// draft up to the cursor, or anything while that's still only the seed.
+func historyPrefix(textArea *gocui.TextArea, draft, initial string) string {
+	before, _, ok := splitAtCursor(textArea, draft)
+	if !ok {
+		before = draft
+	}
+
+	if typed := strings.TrimSpace(before); typed == "" || typed == strings.TrimSpace(initial) {
+		return ""
+	}
+
+	return before
 }
 
 // typedLineCheck refuses enter on the seed the prompt started from, which is

@@ -87,6 +87,11 @@ of the hint.
 
 `↑` and `↓` in either prompt step through the lines it has run before,
 newest first, and `↓` past the newest gives back the line being typed.
+Typed beyond the prompt's seed, they step only through the lines that
+start with what's before the cursor, as zsh's history-beginning-search
+does: the verb in front of a service on `;`. The match is on the line as
+saved, `--project` and all, so one run from another project's row isn't
+among them.
 Each binary keeps its own hundred in `history.yml`, a line run again moving
 to the newest; a line is saved as typed, so one recalled names its
 `--project` or service, while the remote is still the panel's.
