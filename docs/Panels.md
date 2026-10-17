@@ -52,6 +52,31 @@ a list filter still applied is cleared by it, as the command palette
 clears one. Starting a search stops the panel following new output, as
 scrolling up does. Focus leaving the main panel ends the search.
 
+## Typed commands
+
+`:` opens a one-line prompt (`textPrompt`) on any view and runs what's
+typed as `incus` with the terminal handed over, then re-reads every
+panel: a command can change anything, so this is one action rather than
+a panel's. It acts on the side panel in focus - or the last one to have
+had focus, pressed from the main panel - running on the remote that
+panel's keys act on (`actionRemote`), which is also the one the
+read-only check refuses it on, and starting from its selected row's
+`--project`, the scope's own where the row names none. The common case is
+typing the verb alone: `list` on Stacks lists the selected stack's
+project on the stack's own remote. The line is split on whitespace
+outside quotes, the delimiters dropped and a backslash kept, and nothing
+goes through a shell: a prompt that runs what it's given unconfirmed
+takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
+dropped. Enter on the seed as it stands runs nothing, and a line that
+can't be split - an unclosed quote - is refused where it stands, saying
+why, rather than run as other arguments than the ones typed.
+
+`;` on Stacks and Services is the same prompt for `incus-compose`, run
+through `ComposeCmd` in the stack's directory and on its remote, as the
+compose verbs are. On a service the prompt holds ` <service>` with the
+cursor before it: most verbs take the service last, and the few that
+don't - `config` - lose it to a delete.
+
 ## What keeps them current
 
 Two things keep the screen current: the daemon's event stream, which

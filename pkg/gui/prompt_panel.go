@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/jesseduffield/gocui"
@@ -11,16 +12,37 @@ import (
 // prompt down and hands submit what was typed, initial to start from; esc
 // drops it.
 func (gui *Gui) openTextPrompt(title, hint, initial string, submit func(string) error) error {
-	return gui.textPrompt(title, hint, initial, false, submit)
+	return gui.textPrompt(title, hint, initial, refuseEmpty, submit)
 }
 
 // openOptionalTextPrompt is openTextPrompt where enter on nothing typed
 // submits that.
 func (gui *Gui) openOptionalTextPrompt(title, hint string, submit func(string) error) error {
-	return gui.textPrompt(title, hint, "", true, submit)
+	return gui.textPrompt(title, hint, "", acceptEmpty, submit)
 }
 
-func (gui *Gui) textPrompt(title, hint, initial string, allowEmpty bool, submit func(string) error) error {
+// errKeepPrompt is a check's answer that enter should leave the prompt up and
+// do nothing.
+var errKeepPrompt = errors.New("keep prompt")
+
+// refuseEmpty is the check for a prompt that has to be answered.
+func refuseEmpty(text string) error {
+	if text == "" {
+		return errKeepPrompt
+	}
+
+	return nil
+}
+
+// acceptEmpty is the check for a prompt where enter on nothing typed is an
+// answer in itself.
+func acceptEmpty(string) error { return nil }
+
+// textPrompt is openTextPrompt with the check it puts to the line spelled
+// out, for a prompt that starts from a seed: nil submits what was typed,
+// errKeepPrompt leaves the prompt up as it is, any other error leaves it up
+// saying why in place of the hint.
+func (gui *Gui) textPrompt(title, hint, initial string, check func(string) error, submit func(string) error) error {
 	gui.onNewPopupPanel()
 
 	if err := gui.prepareConfirmationPanel(title, ""); err != nil {
@@ -45,7 +67,12 @@ func (gui *Gui) textPrompt(title, hint, initial string, allowEmpty bool, submit 
 	bindings := map[gocui.Key]func(*gocui.Gui, *gocui.View) error{
 		gocui.KeyEnter: func(*gocui.Gui, *gocui.View) error {
 			text := strings.TrimSpace(view.Buffer())
-			if text == "" && !allowEmpty {
+
+			if err := check(text); err != nil {
+				if !errors.Is(err, errKeepPrompt) {
+					view.Subtitle = err.Error()
+				}
+
 				return nil
 			}
 

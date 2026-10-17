@@ -110,6 +110,17 @@ func (gui *Gui) refreshAll() []error {
 	return lo.Compact(errs)
 }
 
+// refreshAllInBackground is refreshAll on a goroutine of its own, its errors
+// logged: for a change made on the main loop, which mustn't wait the reads
+// out.
+func (gui *Gui) refreshAllInBackground() {
+	go func() {
+		for _, err := range gui.refreshAll() {
+			gui.Log.Error().Err(err).Send()
+		}
+	}()
+}
+
 // stopAwaiting has a panel no read answered say it's empty, not loading.
 func (gui *Gui) stopAwaiting() error {
 	for _, panel := range gui.allSidePanels() {

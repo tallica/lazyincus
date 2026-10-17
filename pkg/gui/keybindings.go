@@ -142,6 +142,15 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Description: gui.Tr.CommandPalette,
 		},
 		{
+			ViewName:    "",
+			Key:         ':',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleTypedCommand,
+			Description: gui.Tr.TypedCommand,
+			Mutates:     true,
+			NoSelection: true,
+		},
+		{
 			ViewName: "menu",
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
@@ -919,6 +928,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
 		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
 		binding('B', gui.handleGoToBackups, gui.focusPanelDescription(gui.Tr.BackupsTitle)),
+		mutating(';', gui.onStackTarget(gui.typedComposeCommand), gui.Tr.TypedComposeCommand),
 	}
 }
 
@@ -1075,6 +1085,14 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Handler:     gui.handleGoToBackups,
 			Description: gui.focusPanelDescription(gui.Tr.BackupsTitle),
 			NoSelection: true,
+		},
+		{
+			ViewName:    "services",
+			Key:         ';',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleTypedComposeCommand,
+			Description: gui.Tr.TypedComposeCommand,
+			Mutates:     true,
 		},
 	}
 

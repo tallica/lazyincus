@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -46,10 +47,15 @@ func NewOSCommand(log *zerolog.Logger, config *config.AppConfig) *OSCommand {
 
 // RunCommandWithOutput wrapper around commands returning their output and error
 func (c *OSCommand) RunCommandWithOutput(command string) (string, error) {
-	cmd := c.ExecutableFromString(command)
+	cmd, err := c.ExecutableFromString(command)
+	if err != nil {
+		return "", err
+	}
+
 	before := time.Now()
 	output, err := sanitisedCommandOutput(cmd.Output())
 	c.Log.Warn().Msgf("'%s': %s", command, time.Since(before))
+
 	return output, err
 }
 
@@ -58,10 +64,36 @@ func (c *OSCommand) RunExecutableWithOutput(cmd *exec.Cmd) (string, error) {
 	return sanitisedCommandOutput(cmd.CombinedOutput())
 }
 
-// ExecutableFromString takes a string like `incus list` and returns an executable command for it
-func (c *OSCommand) ExecutableFromString(commandStr string) *exec.Cmd {
-	splitCmd := str.ToArgv(commandStr)
-	return c.NewCmd(splitCmd[0], splitCmd[1:]...)
+// ExecutableFromString takes a string like `incus list` and returns an
+// executable command for it. The line is the user's own - an open command, a
+// clipboard command - so one str.ToArgv can't read is an error to report
+// rather than the panic it answers with.
+func (c *OSCommand) ExecutableFromString(commandStr string) (*exec.Cmd, error) {
+	args, err := toArgv(commandStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.NewCmd(args[0], args[1:]...), nil
+}
+
+// toArgv is str.ToArgv with the two ways a line leaves it with nothing to run
+// turned into errors: the panic it raises on a quote it can't close or a
+// backslash it ends on, and the nothing it returns for a line of whitespace.
+// Quote escapes for this parser, so its output goes through it untouched.
+func toArgv(line string) (args []string, err error) {
+	defer func() {
+		if reason := recover(); reason != nil {
+			err = errors.New(fmt.Sprint(reason))
+		}
+	}()
+
+	args = str.ToArgv(line)
+	if len(args) == 0 {
+		return nil, errors.New("no command to run")
+	}
+
+	return args, nil
 }
 
 func (c *OSCommand) NewCmd(cmdName string, commandArgs ...string) *exec.Cmd {
@@ -142,7 +174,11 @@ func (c *OSCommand) CopyToClipboard(text string) error {
 		return errors.New("No clipboard command found. Install one of pbcopy, wl-copy, xclip or xsel, or set os.copyToClipboardCommand in your config")
 	}
 
-	cmd := c.ExecutableFromString(commandStr)
+	cmd, err := c.ExecutableFromString(commandStr)
+	if err != nil {
+		return err
+	}
+
 	cmd.Stdin = strings.NewReader(text)
 
 	return c.RunPreparedCommand(cmd)
@@ -152,7 +188,12 @@ func (c *OSCommand) CopyToClipboard(text string) error {
 // or an empty string if none of them are.
 func (c *OSCommand) defaultClipboardCommand() string {
 	for _, candidate := range clipboardCommandCandidates {
-		if _, err := exec.LookPath(str.ToArgv(candidate)[0]); err == nil {
+		args, err := toArgv(candidate)
+		if err != nil {
+			continue
+		}
+
+		if _, err := exec.LookPath(args[0]); err == nil {
 			return candidate
 		}
 	}
