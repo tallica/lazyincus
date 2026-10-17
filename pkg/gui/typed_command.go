@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/rivo/uniseg"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 )
@@ -143,14 +144,14 @@ func (gui *Gui) bindPromptHistory(history config.History, initial string) error 
 		return nil
 	}
 
-	at, draft, prefix := len(lines), "", ""
+	at, draft, prefix, tail := len(lines), "", "", ""
 	view := gui.Views.Confirmation
 
 	step := func(by int) func(*gocui.Gui, *gocui.View) error {
 		return func(*gocui.Gui, *gocui.View) error {
 			if at == len(lines) {
 				draft = view.TextArea.GetUnwrappedContent()
-				prefix = historyPrefix(view.TextArea, draft, initial)
+				prefix, tail = historyPrefix(view.TextArea, draft, initial)
 			}
 
 			next := at + by
@@ -170,6 +171,12 @@ func (gui *Gui) bindPromptHistory(history config.History, initial string) error 
 
 			view.ClearTextArea()
 			view.TextArea.TypeString(text)
+			// The draft's cursor where it was: before a service on ;.
+			if at == len(lines) {
+				for range uniseg.GraphemeClusterCount(tail) {
+					view.TextArea.MoveCursorLeft()
+				}
+			}
 			view.RenderTextArea()
 
 			return nil
@@ -183,19 +190,20 @@ func (gui *Gui) bindPromptHistory(history config.History, initial string) error 
 	return gui.g.SetKeybinding("confirmation", gocui.KeyArrowDown, gocui.ModNone, step(1))
 }
 
-// historyPrefix is what a history line has to start with to be stepped to:
-// draft up to the cursor, or anything while that's still only the seed.
-func historyPrefix(textArea *gocui.TextArea, draft, initial string) string {
-	before, _, ok := splitAtCursor(textArea, draft)
+// historyPrefix is what a history line has to start with to be stepped to -
+// draft up to the cursor, or anything while that's still only the seed - and
+// the rest of draft after the cursor.
+func historyPrefix(textArea *gocui.TextArea, draft, initial string) (string, string) {
+	before, after, ok := splitAtCursor(textArea, draft)
 	if !ok {
-		before = draft
+		before, after = draft, ""
 	}
 
 	if typed := strings.TrimSpace(before); typed == "" || typed == strings.TrimSpace(initial) {
-		return ""
+		return "", after
 	}
 
-	return before
+	return before, after
 }
 
 // typedLineCheck refuses enter on the seed the prompt started from, which is

@@ -334,7 +334,8 @@ func TestTypedCommandRecallsOnlyWhatStartsWithTheLine(t *testing.T) {
 	s.settle(t, "│"+seed+"sta ")
 }
 
-// On ;, what's before the cursor is the verb typed in front of the service.
+// On ;, what's before the cursor is the verb typed in front of the service,
+// and ↓ back to it leaves the cursor there.
 func TestTypedComposeCommandRecallsByTheVerb(t *testing.T) {
 	stack := testStack(t, t.TempDir(), "default", "web")
 	stack.Remote = "fake"
@@ -358,4 +359,8 @@ func TestTypedComposeCommandRecallsByTheVerb(t *testing.T) {
 
 	s.pressKey(t, tcell.KeyDown)
 	s.settle(t, "│l web")
+
+	// Back where it was typed, in front of the service.
+	s.press(t, 'o')
+	s.settle(t, "│lo web")
 }
