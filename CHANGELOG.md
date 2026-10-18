@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-10-18
+
 ### Fixed
 - A snapshot created with expiry "never" no longer picks up the daemon's default expiry; a new "default" choice, selected first, leaves it to the daemon.
 
@@ -370,7 +372,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.16.1...HEAD
+[0.16.1]: https://github.com/tallica/lazyincus/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/tallica/lazyincus/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/tallica/lazyincus/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/tallica/lazyincus/compare/v0.13.1...v0.14.0
