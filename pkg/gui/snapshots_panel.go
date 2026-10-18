@@ -294,11 +294,13 @@ type snapshotPrompt struct {
 var snapshotExpiries = []struct {
 	label string
 	value time.Duration
+	never bool
 }{
-	{"never", 0},
-	{"1 day", 24 * time.Hour},
-	{"7 days", 7 * 24 * time.Hour},
-	{"30 days", 30 * 24 * time.Hour},
+	{"default", 0, false},
+	{"never", 0, true},
+	{"1 day", 24 * time.Hour, false},
+	{"7 days", 7 * 24 * time.Hour, false},
+	{"30 days", 30 * 24 * time.Hour, false},
 }
 
 const (
@@ -333,6 +335,7 @@ func (p *snapshotPrompt) options() commands.SnapshotOptions {
 	return commands.SnapshotOptions{
 		Stateful:  p.stateful,
 		ExpiresIn: snapshotExpiries[p.expiry].value,
+		NoExpiry:  snapshotExpiries[p.expiry].never,
 	}
 }
 

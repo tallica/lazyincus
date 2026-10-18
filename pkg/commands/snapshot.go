@@ -207,10 +207,7 @@ func (v *Volume) Snapshots() []*Snapshot {
 func (v *Volume) CreateSnapshot(name string, opts SnapshotOptions) error {
 	post := api.StorageVolumeSnapshotsPost{Name: name}
 
-	if opts.ExpiresIn > 0 {
-		expiresAt := time.Now().Add(opts.ExpiresIn)
-		post.ExpiresAt = &expiresAt
-	}
+	post.ExpiresAt = opts.expiresAt()
 
 	op, err := v.Client.CreateStoragePoolVolumeSnapshot(v.Pool, v.Volume.Type, v.Name, post)
 	if err != nil {
@@ -227,9 +224,28 @@ type SnapshotOptions struct {
 	// the host and a running instance. Incus rejects it otherwise.
 	Stateful bool
 
-	// ExpiresIn deletes the snapshot after this long. Zero keeps it until
-	// something deletes it.
+	// ExpiresIn deletes the snapshot after this long. Zero leaves it to
+	// the daemon's default, unless NoExpiry is set.
 	ExpiresIn time.Duration
+
+	// NoExpiry keeps the snapshot until something deletes it.
+	NoExpiry bool
+}
+
+// expiresAt is nil for the daemon's default, its snapshots.expiry. "Never"
+// has to be sent as a zero time, since an unset one gets that default.
+func (o SnapshotOptions) expiresAt() *time.Time {
+	if o.NoExpiry {
+		return &time.Time{}
+	}
+
+	if o.ExpiresIn <= 0 {
+		return nil
+	}
+
+	t := time.Now().Add(o.ExpiresIn)
+
+	return &t
 }
 
 // CreateSnapshot takes a snapshot of the instance.
@@ -239,10 +255,7 @@ func (i *Instance) CreateSnapshot(name string, opts SnapshotOptions) error {
 		Stateful: opts.Stateful,
 	}
 
-	if opts.ExpiresIn > 0 {
-		expiresAt := time.Now().Add(opts.ExpiresIn)
-		post.ExpiresAt = &expiresAt
-	}
+	post.ExpiresAt = opts.expiresAt()
 
 	op, err := i.Client.CreateInstanceSnapshot(i.Name, post)
 	if err != nil {

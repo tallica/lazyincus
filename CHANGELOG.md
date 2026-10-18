@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A snapshot created with expiry "never" no longer picks up the daemon's default expiry; a new "default" choice, selected first, leaves it to the daemon.
+
 ## [0.16.0] - 2026-10-17
 
 ### Added
