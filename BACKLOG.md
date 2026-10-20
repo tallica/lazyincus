@@ -124,6 +124,15 @@ own merits.
   cursor for a row to be chosen with.
 - **Switching remote is for the session**: `R` and `--remote` write
   nothing, leaving `incus remote switch` as the persistent path.
+- [ ] **`--server-url` without a configured remote** — incus-compose
+      connects with `--server-url`, `--client-cert-file`, `--client-key-file`
+      and `--server-fingerprint` (each also an `INCUS_*` variable), no
+      `incus remote add` needed. lazyincus takes remotes only from the CLI's
+      config. Take the same four, register an in-memory remote for them in
+      the loaded config so `R`, stacks and the `incus` shell-outs keep
+      resolving by name, and hand the values on to incus-compose. That
+      remote is unknown to the `incus` CLI, so the shell-outs need the
+      values too. Read-only and docs/Remotes.md follow it.
 
 Deliberately deferred (don't re-pitch unprompted):
 
