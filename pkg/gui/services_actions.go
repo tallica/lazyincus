@@ -3,7 +3,6 @@ package gui
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -107,21 +106,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	// The remote by name alone: the verb connects for itself.
 	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 
-	if gui.onSessionRemote(target.remote) {
-		gui.composeFailures.watch(target.project)
-	} else if stopListening, ok := gui.listenForFailures(target.remote); ok {
-		defer stopListening()
-		gui.composeFailures.watch(target.project)
-	}
-
-	runErr, err := gui.runCompose(cmd)
-
-	var grace time.Duration
-	if runErr != nil {
-		grace = composeFailureGrace
-	}
-
-	failures := gui.composeFailures.stop(grace)
+	failures, err := gui.runComposeWatched(cmd, target)
 	if err != nil {
 		return err
 	}
@@ -129,16 +114,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	gui.stacks.forget(target.dir)
 	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 
-	if runErr != nil && len(failures) > 0 {
-		messages := make([]string, len(failures))
-		for i, failure := range failures {
-			messages[i] = gui.onRemote(failure.what, target.remote) + ": " + failure.err
-		}
-
-		return gui.createErrorPanel(strings.Join(messages, "\n\n"))
-	}
-
-	return nil
+	return gui.showComposeFailures(failures, target.remote)
 }
 
 // composeTargetName names what a confirmation prompt is about - the service,

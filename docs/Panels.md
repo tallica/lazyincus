@@ -73,7 +73,8 @@ why, rather than run as other arguments than the ones typed.
 
 `;` on Stacks and Services is the same prompt for `incus-compose`, run
 through `ComposeCmd` in the stack's directory and on its remote, as the
-compose verbs are. On a service the prompt holds ` <service>` with the
+compose verbs are, down to the Error popup when one fails on the daemon
+([Services](#services)). On a service the prompt holds ` <service>` with the
 cursor before it: most verbs take the service last, and the few that
 don't - `config` - lose it to a delete.
 

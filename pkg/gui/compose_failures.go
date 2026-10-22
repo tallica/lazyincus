@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"os/exec"
 	"slices"
 	"strings"
 	"sync"
@@ -129,4 +130,45 @@ func (gui *Gui) listenForFailures(remote string) (func(), bool) {
 	}
 
 	return cancel, true
+}
+
+// runComposeWatched runs cmd, an incus-compose command on target's stack, on
+// the terminal, and returns the operations that failed in its project if it
+// failed too.
+func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]composeFailure, error) {
+	if gui.onSessionRemote(target.remote) {
+		gui.composeFailures.watch(target.project)
+	} else if stopListening, ok := gui.listenForFailures(target.remote); ok {
+		defer stopListening()
+		gui.composeFailures.watch(target.project)
+	}
+
+	runErr, err := gui.runCompose(cmd)
+
+	var grace time.Duration
+	if runErr != nil {
+		grace = composeFailureGrace
+	}
+
+	failures := gui.composeFailures.stop(grace)
+	if err != nil || runErr == nil {
+		return nil, err
+	}
+
+	return failures, nil
+}
+
+// showComposeFailures puts failures from a stack on remote in an Error
+// popup, if there are any.
+func (gui *Gui) showComposeFailures(failures []composeFailure, remote string) error {
+	if len(failures) == 0 {
+		return nil
+	}
+
+	messages := make([]string, len(failures))
+	for i, failure := range failures {
+		messages[i] = gui.onRemote(failure.what, remote) + ": " + failure.err
+	}
+
+	return gui.createErrorPanel(strings.Join(messages, "\n\n"))
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,22 +42,26 @@ func TestComposeFailuresKeepTheWatchedProjectsFailures(t *testing.T) {
 	assert.Empty(t, failures.stop(0))
 }
 
-// A start from either panel that fails on the daemon says why once the
-// terminal hands the screen back, the failure arriving before the verb
-// exits or just after, and from a stack on another remote too.
+// A start from either panel, by its key or typed at ;, that fails on the
+// daemon says why once the terminal hands the screen back, the failure
+// arriving before the verb exits or just after, and from a stack on another
+// remote too.
 func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
-	for _, remote := range []string{"", "pve01"} {
-		for _, view := range []string{"stacks", "services"} {
-			for name, late := range map[string]bool{"during": false, "after exit": true} {
-				t.Run(cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
-					failedStart(t, remote, view, late)
-				})
+	for _, typed := range []bool{false, true} {
+		for _, remote := range []string{"", "pve01"} {
+			for _, view := range []string{"stacks", "services"} {
+				for name, late := range map[string]bool{"during": false, "after exit": true} {
+					how := map[bool]string{false: "key", true: "typed"}[typed]
+					t.Run(how+"/"+cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
+						failedStart(t, remote, view, late, typed)
+					})
+				}
 			}
 		}
 	}
 }
 
-func failedStart(t *testing.T, remote, view string, late bool) {
+func failedStart(t *testing.T, remote, view string, late, typed bool) {
 	t.Helper()
 
 	stack := testStack(t, t.TempDir(), "default", "web")
@@ -114,6 +119,18 @@ func failedStart(t *testing.T, remote, view string, late bool) {
 		want = "Starting instance web on " + remote + ": port 53 is taken"
 	}
 
-	s.press(t, 'S')
+	if typed {
+		s.press(t, ';')
+		s.settle(t, "incus-compose: default")
+
+		for _, key := range "start" {
+			s.press(t, key)
+		}
+
+		s.pressKey(t, tcell.KeyEnter)
+	} else {
+		s.press(t, 'S')
+	}
+
 	s.settle(t, want)
 }

@@ -44,7 +44,7 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, line, config.IncusHistory, "")
+			return gui.runTyped(cmd, line, config.IncusHistory, nil)
 		},
 	); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, line, config.ComposeHistory, target.dir)
+			return gui.runTyped(cmd, line, config.ComposeHistory, &target)
 		},
 	); err != nil {
 		return err
@@ -107,9 +107,10 @@ func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
 
 // runTyped runs a typed command, nil for nothing to run, saving its line to
 // history first, and re-reads the panels after: it can have changed anything.
-// stackDir drops a stack's cached parse first - an incus-compose command can
-// have changed what it declares - and is "" for the incus one.
-func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, stackDir string) error {
+// stack is the incus-compose command's, nil for the incus one: it's run the
+// way the compose verbs are, and its cached parse dropped after - the
+// command can have changed what the stack declares.
+func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, stack *composeTarget) error {
 	if cmd == nil {
 		return nil
 	}
@@ -118,17 +119,25 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, sta
 		gui.Log.Warn().Err(err).Msg("saving command history")
 	}
 
-	if err := gui.runSubprocess(cmd); err != nil {
+	if stack == nil {
+		if err := gui.runSubprocess(cmd); err != nil {
+			return err
+		}
+
+		gui.refreshAllInBackground()
+
+		return nil
+	}
+
+	failures, err := gui.runComposeWatched(cmd, *stack)
+	if err != nil {
 		return err
 	}
 
-	if stackDir != "" {
-		gui.stacks.forget(stackDir)
-	}
-
+	gui.stacks.forget(stack.dir)
 	gui.refreshAllInBackground()
 
-	return nil
+	return gui.showComposeFailures(failures, stack.remote)
 }
 
 // bindPromptHistory makes ↑ and ↓ in the open prompt step through history's
