@@ -3,6 +3,7 @@ package gui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -111,8 +112,14 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 		gui.composeFailures.watch(target.project)
 	}
 
-	runErr, err := gui.runSubprocessReturning(cmd, "")
-	failures := gui.composeFailures.stop()
+	runErr, err := gui.runCompose(cmd)
+
+	var grace time.Duration
+	if runErr != nil {
+		grace = composeFailureGrace
+	}
+
+	failures := gui.composeFailures.stop(grace)
 	if err != nil {
 		return err
 	}

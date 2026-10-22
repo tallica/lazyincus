@@ -88,7 +88,10 @@ type Gui struct {
 	// runIncus runs an `incus` command off the main loop, failing with what
 	// it printed; tests stand in for the CLI here.
 	runIncus func(cmd *exec.Cmd) (string, error)
-	stacks   stackCache
+	// runCompose runs a compose verb on the terminal, returning how it
+	// ended; tests stand in for incus-compose here.
+	runCompose func(cmd *exec.Cmd) (runErr, err error)
+	stacks     stackCache
 
 	// subtitles are the popups' subtitles as last written, by view name,
 	// and what fitSubtitle made of each: see fitSubtitle.
@@ -408,6 +411,7 @@ func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand 
 	})
 
 	gui.remotes.connected = gui.refreshForRemote
+	gui.runCompose = func(cmd *exec.Cmd) (error, error) { return gui.runSubprocessReturning(cmd, "") }
 
 	return gui, nil
 }
