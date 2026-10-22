@@ -106,12 +106,23 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	// The remote by name alone: the verb connects for itself.
 	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 
-	if err := gui.runSubprocess(cmd); err != nil {
+	// Only the session's remote has an event stream to watch.
+	if gui.onSessionRemote(target.remote) {
+		gui.composeFailures.watch(target.project)
+	}
+
+	runErr, err := gui.runSubprocessReturning(cmd, "")
+	failures := gui.composeFailures.stop()
+	if err != nil {
 		return err
 	}
 
 	gui.stacks.forget(target.dir)
 	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
+
+	if runErr != nil && len(failures) > 0 {
+		return gui.createErrorPanel(strings.Join(failures, "\n\n"))
+	}
 
 	return nil
 }

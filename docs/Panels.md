@@ -403,7 +403,14 @@ stacks](../README.md#compose-stacks) section, alongside the rest of what a
 user sees. `composeRun` is all of them, run in the service's stack
 directory (`ComposeCmd`) with `INCUS_REMOTE` naming the stack's remote,
 and refreshes the instances, stacks and services panels once the
-subprocess returns rather than waiting for the poll. `s`, `d` and `f`
+subprocess returns rather than waiting for the poll. A verb that exits
+non-zero gets an Error popup with the error of each operation that failed
+in the stack's project meanwhile, as the event stream reported it
+(`composeFailures`): with a terminal on stdout, incus-compose writes its
+own errors there among its progress, out of lazyincus's reach. So a stack
+on another remote, which has no stream, or a failure that never reached
+the daemon - `up` waiting on ic-healthd - leaves only the terminal's
+account. `s`, `d` and `f`
 confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see

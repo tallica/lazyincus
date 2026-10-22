@@ -106,6 +106,9 @@ type Gui struct {
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
 
+	// composeFailures is what failed while a compose verb ran.
+	composeFailures composeFailures
+
 	events        eventBatch
 	eventsRescope chan struct{}
 	// eventsLive is whether an event stream is open.

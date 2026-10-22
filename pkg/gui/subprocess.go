@@ -17,27 +17,35 @@ func (gui *Gui) runSubprocess(cmd *exec.Cmd) error {
 }
 
 func (gui *Gui) runSubprocessWithMessage(cmd *exec.Cmd, msg string) error {
+	_, err := gui.runSubprocessReturning(cmd, msg)
+
+	return err
+}
+
+// runSubprocessReturning is runSubprocessWithMessage that also hands back
+// how the command itself ended, which only the terminal has shown.
+func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string) (runErr, err error) {
 	gui.SubprocessMutex.Lock()
 	defer gui.SubprocessMutex.Unlock()
 
 	if err := gui.g.Suspend(); err != nil {
-		return gui.createErrorPanel(err.Error())
+		return nil, gui.createErrorPanel(err.Error())
 	}
 
 	gui.PauseBackgroundThreads.Store(true)
 
-	gui.runCommand(cmd, msg)
+	runErr = gui.runCommand(cmd, msg)
 
 	if err := gui.g.Resume(); err != nil {
-		return gui.createErrorPanel(err.Error())
+		return runErr, gui.createErrorPanel(err.Error())
 	}
 
 	gui.PauseBackgroundThreads.Store(false)
 
-	return nil
+	return runErr, nil
 }
 
-func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
+func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	cmd.Stdin = os.Stdin
@@ -65,7 +73,8 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 	if msg != "" {
 		fmt.Fprintf(os.Stdout, "\n%s\n\n", utils.ColoredString(msg, color.FgGreen))
 	}
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+	if err != nil {
 		gui.Log.Error().Err(err).Send()
 	}
 
@@ -74,4 +83,6 @@ func (gui *Gui) runCommand(cmd *exec.Cmd, msg string) {
 	cmd.Stderr = io.Discard
 
 	gui.promptToReturn()
+
+	return err
 }
