@@ -107,8 +107,10 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	// The remote by name alone: the verb connects for itself.
 	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 
-	// Only the session's remote has an event stream to watch.
 	if gui.onSessionRemote(target.remote) {
+		gui.composeFailures.watch(target.project)
+	} else if stopListening, ok := gui.listenForFailures(target.remote); ok {
+		defer stopListening()
 		gui.composeFailures.watch(target.project)
 	}
 
@@ -128,7 +130,12 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 
 	if runErr != nil && len(failures) > 0 {
-		return gui.createErrorPanel(strings.Join(failures, "\n\n"))
+		messages := make([]string, len(failures))
+		for i, failure := range failures {
+			messages[i] = gui.onRemote(failure.what, target.remote) + ": " + failure.err
+		}
+
+		return gui.createErrorPanel(strings.Join(messages, "\n\n"))
 	}
 
 	return nil

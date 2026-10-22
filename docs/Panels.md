@@ -407,10 +407,11 @@ subprocess returns rather than waiting for the poll. A verb that exits
 non-zero gets an Error popup with the error of each operation that failed
 in the stack's project meanwhile, as the event stream reported it
 (`composeFailures`): with a terminal on stdout, incus-compose writes its
-own errors there among its progress, out of lazyincus's reach. So a stack
-on another remote, which has no stream, or a failure that never reached
-the daemon - `up` waiting on ic-healthd - leaves only the terminal's
-account. `s`, `d` and `f`
+own errors there among its progress, out of lazyincus's reach. A stack on
+another remote gets a stream of its own on that remote for as long as the
+verb runs, if lazyincus is connected to it by then. A failure that never
+reached the daemon - `up` waiting on ic-healthd - leaves only the
+terminal's account. `s`, `d` and `f`
 confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
