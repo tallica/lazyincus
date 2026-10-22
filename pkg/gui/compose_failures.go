@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -56,7 +57,8 @@ func (f *composeFailures) stop(grace time.Duration) []string {
 }
 
 // note takes in an operation event, keeping it if it's a failure in the
-// project being watched.
+// project being watched that it hasn't kept already: something retrying a
+// start would otherwise fill the popup with the same line.
 func (f *composeFailures) note(event commands.Event) {
 	if event.Status != api.Failure || event.Details == nil || event.Details.Operation.Err == "" {
 		return
@@ -70,7 +72,13 @@ func (f *composeFailures) note(event commands.Event) {
 	}
 
 	what := strings.TrimSpace(event.Action + " " + strings.Join(event.Instances, ", "))
-	f.errs = append(f.errs, what+": "+event.Details.Operation.Err)
+	message := what + ": " + event.Details.Operation.Err
+
+	if slices.Contains(f.errs, message) {
+		return
+	}
+
+	f.errs = append(f.errs, message)
 
 	if len(f.errs) == 1 {
 		close(f.failed)

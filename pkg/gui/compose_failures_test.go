@@ -27,6 +27,7 @@ func TestComposeFailuresKeepTheWatchedProjectsFailures(t *testing.T) {
 	failures.watch("dns")
 	failures.note(failedOperation("other", "another project's"))
 	failures.note(failedOperation("dns", "Failed to listen on 0.0.0.0:53"))
+	failures.note(failedOperation("dns", "Failed to listen on 0.0.0.0:53"))
 
 	succeeded := failedOperation("dns", "")
 	succeeded.Status = api.Success
