@@ -1,6 +1,6 @@
 module github.com/tallica/lazyincus
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/OpenPeeDeeP/xdg v1.0.0
