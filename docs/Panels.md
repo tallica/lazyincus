@@ -69,11 +69,13 @@ goes through a shell: a prompt that runs what it's given unconfirmed
 takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
 dropped. A line that fails gets the compose verbs' Error popup
 ([Services](#services)), watching the project it names with `--project`,
-or every project when it names none; an error the CLI gets straight back,
-with no operation behind it - an instance that doesn't exist - stays on
-the terminal. Enter on the seed as it stands runs nothing, and a line that
-can't be split - an unclosed quote - is refused where it stands, saying
-why, rather than run as other arguments than the ones typed.
+or every project when it names none, and leaving `exec`, `console` and
+`monitor` unwatched for the reason `logs` is; an error the CLI gets
+straight back, with no operation behind it - an instance that doesn't
+exist - stays on the terminal. Enter on the seed as it stands runs
+nothing, and a line that can't be split - an unclosed quote - is refused
+where it stands, saying why, rather than run as other arguments than the
+ones typed.
 
 `;` on Stacks and Services is the same prompt for `incus-compose`, run
 through `ComposeCmd` in the stack's directory and on its remote, as the
@@ -417,9 +419,8 @@ its progress, out of lazyincus's reach. A stack on another remote, in a
 project other than the one `P` narrowed to, or watched while the session's
 stream is down, gets a stream of its own on its project for as long as the
 verb runs - on another remote, if lazyincus is connected to it by then.
-`logs`, `exec`, `console` and `monitor` are excepted, by key or typed:
-they can run until interrupted, so a failure meanwhile is some other
-client's. A failure that never reached the daemon - `up` waiting on
+`logs` and `exec` are excepted, by key or typed: they can run until
+interrupted, so a failure meanwhile is some other client's. A failure that never reached the daemon - `up` waiting on
 ic-healthd - leaves only the terminal's account. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
 don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail

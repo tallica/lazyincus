@@ -205,7 +205,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `+` / `_` | Next / previous screen mode |
 | `=` | Expand / collapse the focused side panel |
 | `/` | Filter; in the main panel, search it: `n` / `N` step through the matches, `esc` clears them |
-| `:` | Run an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project`; split on spaces outside quotes, never through a shell; `tab` completes, `↑` / `↓` recall earlier lines ([demo](https://asciinema.org/a/1268864)) |
+| `:` | Run an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project`; split on spaces outside quotes, never through a shell; `tab` completes, `↑` / `↓` recall earlier lines, and a failure on the daemon pops up its error ([demo](https://asciinema.org/a/1268864)) |
 | `;` | Stacks and Services panels: run an `incus-compose` command you type in the stack's directory, on its remote; on a service, its name waits after the cursor; `tab` completes, `↑` / `↓` recall earlier lines |
 | `x` / `?` | Keybinding menu |
 | `ctrl+p` | Command palette: every panel's actions, filtered as you type, each with the item it acts on; one on another panel focuses it first. Typing also lists every item the panels list: `enter` goes to it, `tab` lists its actions ([demo](https://asciinema.org/a/1268020)) |
@@ -323,6 +323,11 @@ What the keys run on a service's own row, each of them `incus-compose
   compose: the selected replica's, or the only one there is, and they ask
   which from a service's own row. There's no `a`: a compose service runs an
   OCI image, which has no console to attach to
+
+A verb that fails on the daemon — a start whose published port is taken,
+say — leaves incus-compose's account on the terminal, and once you're back
+an Error popup gives the daemon's reason. `M` gets none: anything failing
+while it follows is someone else's.
 
 On a **replica's** row, the keys that can mean one instance do: `S`, `s`,
 `r` and `p` start, stop, restart and freeze that replica, `d` deletes it —
