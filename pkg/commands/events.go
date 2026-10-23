@@ -63,8 +63,16 @@ func listen(client incus.InstanceServer, allProjects bool, types []string) (Even
 func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, opened func(), handle func(Event)) error {
 	scope := c.scope()
 	// A client of its own, so its reconnects write to nothing UseProject copies.
-	client, project, allProjects := scope.base.UseProject(scope.project), scope.project, scope.allProjects
+	return listenOn(ctx, scope.base.UseProject(scope.project), scope.project, scope.allProjects, types, opened, handle)
+}
 
+// ListenForEventsIn is ListenForEvents for project's events, whichever
+// scope the panels list.
+func (c *IncusCommand) ListenForEventsIn(ctx context.Context, project string, types []string, opened func(), handle func(Event)) error {
+	return listenOn(ctx, c.scope().base.UseProject(project), project, false, types, opened, handle)
+}
+
+func listenOn(ctx context.Context, client incus.InstanceServer, project string, allProjects bool, types []string, opened func(), handle func(Event)) error {
 	type dial struct {
 		listener EventListener
 		err      error

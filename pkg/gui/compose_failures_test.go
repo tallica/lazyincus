@@ -53,7 +53,7 @@ func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
 				for name, late := range map[string]bool{"during": false, "after exit": true} {
 					how := map[bool]string{false: "key", true: "typed"}[typed]
 					t.Run(how+"/"+cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
-						failedStart(t, remote, view, late, typed)
+						failedStart(t, remote, view, late, typed, "")
 					})
 				}
 			}
@@ -61,7 +61,15 @@ func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
 	}
 }
 
-func failedStart(t *testing.T, remote, view string, late, typed bool) {
+// A session narrowed with P to another project still hears the stack's.
+func TestAFailedStartShowsTheDaemonsErrorUnderAnotherProject(t *testing.T) {
+	for _, view := range []string{"stacks", "services"} {
+		t.Run(view, func(t *testing.T) { failedStart(t, "", view, false, false, "shop") })
+	}
+}
+
+// failedStart has the session narrowed to project, if it's not "".
+func failedStart(t *testing.T, remote, view string, late, typed bool, project string) {
 	t.Helper()
 
 	stack := testStack(t, t.TempDir(), "default", "web")
@@ -69,6 +77,10 @@ func failedStart(t *testing.T, remote, view string, late, typed bool) {
 	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("default", "web", "web")}})
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		if project != "" {
+			s.gui.IncusCommand.UseProject(project)
+		}
+
 		if remote == "" {
 			withStacks(t, stack)(s)
 		} else {

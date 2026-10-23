@@ -96,17 +96,24 @@ func (f *composeFailures) note(event commands.Event) {
 	}
 }
 
-// remoteStreamWait is how long a verb on another remote waits for that
-// remote's event stream to open before it runs anyway.
-const remoteStreamWait = time.Second
+// streamWait is how long a verb waits for a stream of its own to open
+// before it runs anyway.
+const streamWait = time.Second
 
-// listenForFailures opens an event stream on remote for composeFailures,
-// the session's own being its remote's alone, and returns what closes it.
-// A remote not connected yet goes unwatched rather than hold the verb up.
-func (gui *Gui) listenForFailures(remote string) (func(), bool) {
-	command, err := gui.remotes.get(remote)
-	if err != nil {
-		return nil, false
+// listenForFailures has composeFailures hear target's project, opening a
+// stream on its remote unless the session's already carries the project,
+// and returns what closes it. A remote not connected yet goes unwatched
+// rather than hold the verb up.
+func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
+	command := gui.IncusCommand
+
+	if !gui.onSessionRemote(target.remote) {
+		var err error
+		if command, err = gui.remotes.get(target.remote); err != nil {
+			return nil, false
+		}
+	} else if scope := command.ProjectName(); scope == "" || scope == target.project {
+		return func() {}, true
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -115,9 +122,9 @@ func (gui *Gui) listenForFailures(remote string) (func(), bool) {
 	go func() {
 		defer close(done)
 
-		err := command.ListenForEvents(ctx, []string{api.EventTypeOperation}, func() { close(opened) }, gui.composeFailures.note)
+		err := command.ListenForEventsIn(ctx, target.project, []string{api.EventTypeOperation}, func() { close(opened) }, gui.composeFailures.note)
 		if err != nil {
-			gui.Log.Warn().Err(err).Str("remote", remote).Msg("compose failures stream")
+			gui.Log.Warn().Err(err).Str("remote", target.remote).Msg("compose failures stream")
 		}
 	}()
 
@@ -126,7 +133,7 @@ func (gui *Gui) listenForFailures(remote string) (func(), bool) {
 	case <-done:
 		cancel()
 		return nil, false
-	case <-time.After(remoteStreamWait):
+	case <-time.After(streamWait):
 	}
 
 	return cancel, true
@@ -136,9 +143,7 @@ func (gui *Gui) listenForFailures(remote string) (func(), bool) {
 // the terminal, and returns the operations that failed in its project if it
 // failed too.
 func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]composeFailure, error) {
-	if gui.onSessionRemote(target.remote) {
-		gui.composeFailures.watch(target.project)
-	} else if stopListening, ok := gui.listenForFailures(target.remote); ok {
+	if stopListening, ok := gui.listenForFailures(target); ok {
 		defer stopListening()
 		gui.composeFailures.watch(target.project)
 	}

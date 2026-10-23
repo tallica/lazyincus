@@ -409,8 +409,9 @@ non-zero gets an Error popup with the error of each operation that failed
 in the stack's project meanwhile, as the event stream reported it
 (`composeFailures`): with a terminal on stdout, incus-compose writes its
 own errors there among its progress, out of lazyincus's reach. A stack on
-another remote gets a stream of its own on that remote for as long as the
-verb runs, if lazyincus is connected to it by then. A failure that never
+another remote, or in a project other than the one `P` narrowed to, gets a
+stream of its own on its project for as long as the verb runs - on another
+remote, if lazyincus is connected to it by then. A failure that never
 reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account. `s`, `d` and `f`
 confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
