@@ -88,7 +88,11 @@ type Gui struct {
 	// runIncus runs an `incus` command off the main loop, failing with what
 	// it printed; tests stand in for the CLI here.
 	runIncus func(cmd *exec.Cmd) (string, error)
-	stacks   stackCache
+	// runCompose runs a compose verb on the terminal, returning how it
+	// ended; after runs before the screen comes back. Tests stand in for
+	// incus-compose here.
+	runCompose func(cmd *exec.Cmd, after func(runErr error)) (runErr, err error)
+	stacks     stackCache
 
 	// subtitles are the popups' subtitles as last written, by view name,
 	// and what fitSubtitle made of each: see fitSubtitle.
@@ -106,10 +110,15 @@ type Gui struct {
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
 
+	// composeFailures is what failed while a compose verb ran.
+	composeFailures composeFailures
+
 	events        eventBatch
 	eventsRescope chan struct{}
-	// eventsLive is whether an event stream is open.
-	eventsLive atomic.Bool
+	// eventsLive is whether an event stream is open, eventsScope the
+	// operationsScope it was opened for.
+	eventsLive  atomic.Bool
+	eventsScope atomic.Uint64
 	// watching is watchEvents, which run waits out.
 	watching sync.WaitGroup
 	// operations is the session's operation history, main loop only, and
@@ -405,6 +414,9 @@ func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand 
 	})
 
 	gui.remotes.connected = gui.refreshForRemote
+	gui.runCompose = func(cmd *exec.Cmd, after func(error)) (error, error) {
+		return gui.runSubprocessReturning(cmd, "", after)
+	}
 
 	return gui, nil
 }

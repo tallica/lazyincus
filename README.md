@@ -354,16 +354,15 @@ checks its restore points are all there. A restore asks for itself and
 refuses while the services are running, so stop the stack first. See
 [docs/Panels.md](docs/Panels.md#backups).
 
-Two gotchas that aren't ours. On a stack with a bind mount or device
+A gotcha that isn't ours. On a stack with a bind mount or device
 passthrough, `U` and `n` on the Backups tab fail whenever the daemon isn't
 on the same host — `failed to add a bind-mount for service <name>: not on
 the same host` — because both have incus-compose resolve those sources,
-which it refuses to do from another machine. And a `U` that fails
-anywhere is rolled back by incus-compose deleting what it just created,
-so the stack ends up empty rather than back where it started — the error
-on screen is then the rollback's, not the cause. Re-run the command
-outside lazyincus with `--debug` to see that. Plain `u` doesn't re-create
-an existing instance, so it hits neither.
+which it refuses to do from another machine. Plain `u` doesn't re-create
+an existing instance, so it doesn't hit this. A `U` whose recreated
+instance then can't start — a published port already taken, say — leaves
+it stopped, and the Error popup once you're back from the terminal is the
+daemon's reason.
 
 ## Supporting upstream
 

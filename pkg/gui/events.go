@@ -160,7 +160,7 @@ func (gui *Gui) watchEvents() {
 
 		opened := time.Now()
 		scope := gui.operationsScope.Load()
-		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, gui.eventsOpened, func(event commands.Event) {
+		err := gui.IncusCommand.ListenForEvents(ctx, eventTypes, func() { gui.eventsOpened(scope) }, func(event commands.Event) {
 			gui.onEventIn(scope, event)
 		})
 		gui.eventsLive.Store(false)
@@ -208,20 +208,33 @@ func nextRetry(previous, lasted time.Duration) time.Duration {
 
 // eventsOpened catches up on whatever changed while no stream was open to
 // say so, and tells the slowed pollers they can stay slow.
-func (gui *Gui) eventsOpened() {
+func (gui *Gui) eventsOpened(scope uint64) {
 	if gui.isStopped() {
 		return
 	}
 
 	gui.eventsLive.Store(true)
+	gui.eventsScope.Store(scope)
 	gui.queueRefresh(usedBy | refreshOperations)
 
-	scope := gui.IncusCommand.ProjectName()
-	if scope == "" {
-		scope = "all projects"
+	scopeName := gui.IncusCommand.ProjectName()
+	if scopeName == "" {
+		scopeName = "all projects"
 	}
 
-	gui.Log.Debug().Str("scope", scope).Msg("event stream open")
+	gui.Log.Debug().Str("scope", scopeName).Msg("event stream open")
+}
+
+// eventsCover is whether the session's open stream hears project, opened
+// for the scope the panels list now.
+func (gui *Gui) eventsCover(project string) bool {
+	if !gui.eventsLive.Load() || gui.eventsScope.Load() != gui.operationsScope.Load() {
+		return false
+	}
+
+	scope := gui.IncusCommand.ProjectName()
+
+	return scope == "" || scope == project
 }
 
 // logEvent records every event the stream delivers, those that change
@@ -271,6 +284,7 @@ func (gui *Gui) onEventIn(scope uint64, event commands.Event) {
 			gui.recordOperation(scope, event.Details)
 		}
 
+		gui.composeFailures.note(event)
 		gui.onOperation(event)
 
 		return

@@ -73,7 +73,8 @@ why, rather than run as other arguments than the ones typed.
 
 `;` on Stacks and Services is the same prompt for `incus-compose`, run
 through `ComposeCmd` in the stack's directory and on its remote, as the
-compose verbs are. On a service the prompt holds ` <service>` with the
+compose verbs are, down to the Error popup when one fails on the daemon
+([Services](#services)). On a service the prompt holds ` <service>` with the
 cursor before it: most verbs take the service last, and the few that
 don't - `config` - lose it to a delete.
 
@@ -403,8 +404,20 @@ stacks](../README.md#compose-stacks) section, alongside the rest of what a
 user sees. `composeRun` is all of them, run in the service's stack
 directory (`ComposeCmd`) with `INCUS_REMOTE` naming the stack's remote,
 and refreshes the instances, stacks and services panels once the
-subprocess returns rather than waiting for the poll. `s`, `d` and `f`
-confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
+subprocess returns rather than waiting for the poll. A verb that exits
+non-zero gets an Error popup with the error of each operation that failed
+in the stack's project meanwhile, as the event stream reported it
+(`composeFailures`), after a moment for one that trails the verb's exit:
+with a terminal on stdout, incus-compose writes its own errors there among
+its progress, out of lazyincus's reach. A stack on another remote, in a
+project other than the one `P` narrowed to, or watched while the session's
+stream is down, gets a stream of its own on its project for as long as the
+verb runs - on another remote, if lazyincus is connected to it by then.
+`logs` excepted, `M`'s or typed at `;`: it can follow until interrupted,
+so a failure meanwhile is some other client's. A failure that never
+reached the daemon - `up` waiting on ic-healthd - leaves only the
+terminal's account. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
+don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
