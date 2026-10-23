@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 func failedOperation(project, err string) commands.Event {
@@ -241,4 +242,54 @@ func failedStart(t *testing.T, c failedStartCase) {
 	}
 
 	s.settle(t, want)
+}
+
+// A command that fails with nothing failing on the daemon - an instance
+// that doesn't exist - says so in a popup under gui.returnImmediately, where
+// nothing else would; with the prompt to return, the terminal already has.
+func TestAFailureOffTheDaemonPopsUpOnlyWhenReturningImmediately(t *testing.T) {
+	for _, immediately := range []bool{true, false} {
+		t.Run(map[bool]string{true: "immediately", false: "prompted"}[immediately], func(t *testing.T) {
+			stack := testStack(t, t.TempDir(), "default", "web")
+
+			s := startScreenWith(t, 140, 40, func(c *config.UserConfig) {
+				c.Gui.ReturnImmediately = immediately
+			}, func(s *screen) {
+				withStacks(t, stack)(s)
+				labelled(s, map[string]string{"web": "web"})
+			})
+
+			ran := make(chan struct{})
+			s.gui.runOnTerminal = func(_ *exec.Cmd, after func(error)) (error, error) {
+				defer close(ran)
+
+				runErr := errors.New("exit status 1")
+				if after != nil {
+					after(runErr)
+				}
+
+				return runErr, nil
+			}
+
+			landed(t, s, "services")
+			s.settle(t, "Services (default")
+			s.press(t, ':')
+			s.settle(t, "--project default")
+			s.typeText(t, "start nosuch")
+			s.pressKey(t, tcell.KeyEnter)
+
+			select {
+			case <-ran:
+			case <-time.After(5 * time.Second):
+				t.Fatal("the command never ran")
+			}
+
+			if immediately {
+				shown := s.settle(t, "went by on the terminal")
+				assert.Contains(t, shown, "incus --project default start nosuch: exit status 1")
+			} else {
+				assert.NotContains(t, s.snapshot(t), "went by on the terminal")
+			}
+		})
+	}
 }

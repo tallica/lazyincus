@@ -2,6 +2,7 @@ package gui
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"slices"
 	"strings"
@@ -190,7 +191,8 @@ func cliProject(args []string) string {
 
 // runWatched runs cmd on the terminal and returns the operations that
 // failed in project on remote meanwhile, every project's for "", if cmd
-// failed too.
+// failed too - or, under gui.returnImmediately, cmd's own failure when
+// none did.
 func (gui *Gui) runWatched(cmd *exec.Cmd, remote, project string) ([]daemonFailure, error) {
 	if len(cmd.Args) > 0 && slices.Contains(followingVerbs, cliVerb(cmd.Args[1:])) {
 		_, err := gui.runOnTerminal(cmd, nil)
@@ -223,6 +225,14 @@ func (gui *Gui) runWatched(cmd *exec.Cmd, remote, project string) ([]daemonFailu
 
 	if err != nil || runErr == nil {
 		return nil, err
+	}
+
+	// With no prompt to return, nothing else says the command failed.
+	if len(failures) == 0 && gui.Config.UserConfig.Gui.ReturnImmediately {
+		failures = []daemonFailure{{
+			what: strings.Join(cmd.Args, " "),
+			err:  fmt.Sprintf(gui.Tr.FailedOnTerminal, runErr),
+		}}
 	}
 
 	return failures, nil

@@ -222,6 +222,7 @@ type TranslationSet struct {
 	InfoTitle                     string
 	ComposeTargetService          string
 	OnRemote                      string
+	FailedOnTerminal              string
 	ComposeTargetProject          string
 	ComposeUp                     string
 	ComposeUpPullRecreate         string
@@ -575,6 +576,7 @@ func englishSet() TranslationSet {
 		InfoTitle:                     "Info",
 		ComposeTargetService:          "service %s",
 		OnRemote:                      "%s on %s",
+		FailedOnTerminal:              "%s - what it printed went by on the terminal",
 		ComposeTargetProject:          "project %s",
 		ComposeServiceScoped:          "%s service",
 		ComposeUp:                     "bring up",
