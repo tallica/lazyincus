@@ -35,6 +35,7 @@ func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string, after func(run
 	}
 
 	gui.PauseBackgroundThreads.Store(true)
+	defer gui.PauseBackgroundThreads.Store(false)
 
 	runErr = gui.runCommand(cmd, msg)
 
@@ -45,8 +46,6 @@ func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string, after func(run
 	if err := gui.g.Resume(); err != nil {
 		return runErr, gui.createErrorPanel(err.Error())
 	}
-
-	gui.PauseBackgroundThreads.Store(false)
 
 	return runErr, nil
 }
