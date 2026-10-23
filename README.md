@@ -360,14 +360,20 @@ refuses while the services are running, so stop the stack first. See
 [docs/Panels.md](docs/Panels.md#backups).
 
 A gotcha that isn't ours. On a stack with a bind mount or device
-passthrough, `U` and `n` on the Backups tab fail whenever the daemon isn't
-on the same host — `failed to add a bind-mount for service <name>: not on
-the same host` — because both have incus-compose resolve those sources,
-which it refuses to do from another machine. Plain `u` doesn't re-create
-an existing instance, so it doesn't hit this. A `U` whose recreated
-instance then can't start — a published port already taken, say — leaves
-it stopped, and the Error popup once you're back from the terminal is the
-daemon's reason.
+passthrough, whatever has incus-compose resolve those sources fails
+whenever the daemon isn't on the same host — `U`, `d`, the Backups tab's
+`n`, and a `u` that has to create an instance — with `failed to add a
+bind-mount for service <name>: not on the same host`, which incus-compose
+refuses from another machine. Plain `u` on an instance that's already
+there doesn't hit this. Setting `INCUS_COMPOSE_ALLOW_REMOTE_MOUNTS=1` before starting
+lazyincus (incus-compose's `--allow-remote-mounts`) has it take the sources
+as paths on the daemon's host instead; a relative path is still resolved
+against the directory here, so that path has to exist there too.
+
+A `U` whose recreated instance then can't start — a published port already
+taken, say — leaves it stopped, and the Error popup once you're back from
+the terminal is the daemon's reason. One that fails creating the instance,
+after the old one is deleted, leaves the service with none.
 
 ## Supporting upstream
 
