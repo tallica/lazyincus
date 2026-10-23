@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - A Stacks or Services verb that fails on the daemon now shows the daemon's error in a popup once the terminal returns.
+- The lists keep refreshing after the screen fails to come back from a subprocess, instead of freezing for the rest of the session.
 
 ### Security
 - Built with Go 1.27.3, fixing GO-2026-6809: `crypto/x509` trusted compromised intermediate certificates when verifying a server.
