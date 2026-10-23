@@ -16,7 +16,8 @@ session's names that remote too - see [Stacks on other
 remotes](#stacks-on-other-remotes). A delete the daemon would refuse (see
 [docs/Incus.md](Incus.md)) is said instead of asked; in-use goes by the
 listing's `used_by`, which events and the polls keep current, and the
-daemon has the last word either way.
+daemon has the last word either way. The recreate confirmations (`U`) also
+take `a`, "yes, don't ask again", kept in [`state.yml`](Config.md#state).
 
 ## Where an item lives
 
@@ -424,7 +425,8 @@ interrupted, so a failure meanwhile is some other client's. A failure that
 never reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account, unless `gui.returnImmediately` skips the prompt that
 keeps it on screen: then the popup names the command and how it exited.
-`s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the
+`s`, `d` and `f` confirm, `U` asks which kind of recreate and then confirms,
+`S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the
 instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
