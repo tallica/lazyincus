@@ -146,6 +146,13 @@ func TestAFailedStartShowsTheDaemonsErrorUnderAnotherProject(t *testing.T) {
 	}
 }
 
+// A session whose stream hasn't opened still hears it: the verb opens its own.
+func TestAFailedStartShowsTheDaemonsErrorWhileTheStreamIsDown(t *testing.T) {
+	for _, view := range []string{"stacks", "services"} {
+		t.Run(view, func(t *testing.T) { failedStart(t, failedStartCase{view: view, streamDown: true}) })
+	}
+}
+
 // failedStartCase is where failedStart's verb runs and how it fails.
 type failedStartCase struct {
 	// remote is the stack's, "" for the session's.
@@ -157,6 +164,8 @@ type failedStartCase struct {
 	how string
 	// project narrows the session to it, if it's not "".
 	project string
+	// streamDown holds the session's event stream unopened throughout.
+	streamDown bool
 }
 
 func failedStart(t *testing.T, c failedStartCase) {
@@ -169,6 +178,10 @@ func failedStart(t *testing.T, c failedStartCase) {
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		if c.project != "" {
 			s.gui.IncusCommand.UseProject(c.project)
+		}
+
+		if c.streamDown {
+			t.Cleanup(s.server.HoldListen())
 		}
 
 		if c.remote == "" {
@@ -214,7 +227,9 @@ func failedStart(t *testing.T, c failedStartCase) {
 		return runErr, nil
 	}
 
-	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+	if !c.streamDown {
+		require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
+	}
 	landed(t, s, c.view)
 	s.settle(t, "Services (default")
 	require.Eventually(t, func() bool {
