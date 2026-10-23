@@ -115,8 +115,10 @@ type Gui struct {
 
 	events        eventBatch
 	eventsRescope chan struct{}
-	// eventsLive is whether an event stream is open.
-	eventsLive atomic.Bool
+	// eventsLive is whether an event stream is open, eventsScope the
+	// operationsScope it was opened for.
+	eventsLive  atomic.Bool
+	eventsScope atomic.Uint64
 	// watching is watchEvents, which run waits out.
 	watching sync.WaitGroup
 	// operations is the session's operation history, main loop only, and

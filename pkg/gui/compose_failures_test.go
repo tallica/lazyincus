@@ -61,6 +61,18 @@ func TestStopWaitsOutEveryFailureInABatch(t *testing.T) {
 	assert.Equal(t, "second", kept[1].err)
 }
 
+// The Operations tab leaves token operations out, and so does the popup.
+func TestComposeFailuresIgnoreTokenOperations(t *testing.T) {
+	var failures composeFailures
+	failures.watch("dns")
+
+	token := failedOperation("dns", "console refused")
+	token.Details.Operation.Class = "token"
+	failures.note(token)
+
+	assert.Empty(t, failures.stop(0))
+}
+
 // Something else failing over and over in the project can't hold the
 // screen: the wait has a limit however many failures arrive.
 func TestStopWaitsNoLongerThanItsLimit(t *testing.T) {
@@ -81,6 +93,11 @@ func TestStopWaitsNoLongerThanItsLimit(t *testing.T) {
 	failures.stop(200 * time.Millisecond)
 
 	assert.Less(t, time.Since(began), composeFailureWaitLimit+500*time.Millisecond)
+}
+
+func TestFollowingVerbsAreNotWatched(t *testing.T) {
+	assert.True(t, followingVerb(exec.Command("incus-compose", "logs", "--follow")))
+	assert.False(t, followingVerb(exec.Command("incus-compose", "up", "web")))
 }
 
 // A start from either panel, by its key or typed at ;, that fails on the

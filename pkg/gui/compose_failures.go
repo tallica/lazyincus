@@ -80,7 +80,7 @@ func (f *composeFailures) stop(grace time.Duration) []composeFailure {
 // project being watched that it hasn't kept already: something retrying a
 // start would otherwise fill the popup with the same line.
 func (f *composeFailures) note(event commands.Event) {
-	if event.Status != api.Failure || event.Details == nil || event.Details.Operation.Err == "" {
+	if event.Status != api.Failure || event.Details == nil || event.Details.Operation.Err == "" || event.Details.IsToken() {
 		return
 	}
 
@@ -113,18 +113,18 @@ func (f *composeFailures) note(event commands.Event) {
 const streamWait = time.Second
 
 // listenForFailures has composeFailures hear target's project, opening a
-// stream on its remote unless the session's already carries the project,
-// and returns what closes it. A remote not connected yet goes unwatched
-// rather than hold the verb up.
+// stream on its remote unless the session's open stream already carries the
+// project, and returns what closes it. A remote not connected yet goes
+// unwatched rather than hold the verb up.
 func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 	command := gui.IncusCommand
 
 	if !gui.onSessionRemote(target.remote) {
 		var err error
-		if command, err = gui.remotes.get(target.remote); err != nil {
+		if command, err = gui.commandFor(target.remote); err != nil {
 			return nil, false
 		}
-	} else if scope := command.ProjectName(); scope == "" || scope == target.project {
+	} else if gui.eventsCover(target.project) {
 		return func() {}, true
 	}
 
@@ -152,10 +152,22 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 	return cancel, true
 }
 
+// followingVerb is whether cmd runs until the user stops it, so that a
+// failure in its project meanwhile is some other client's.
+func followingVerb(cmd *exec.Cmd) bool {
+	return len(cmd.Args) > 1 && cmd.Args[1] == "logs"
+}
+
 // runComposeWatched runs cmd, an incus-compose command on target's stack, on
 // the terminal, and returns the operations that failed in its project if it
 // failed too.
 func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]composeFailure, error) {
+	if followingVerb(cmd) {
+		_, err := gui.runCompose(cmd, nil)
+
+		return nil, err
+	}
+
 	gui.composeFailures.watch(target.project)
 
 	stopListening, ok := gui.listenForFailures(target)
