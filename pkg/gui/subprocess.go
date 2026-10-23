@@ -17,14 +17,16 @@ func (gui *Gui) runSubprocess(cmd *exec.Cmd) error {
 }
 
 func (gui *Gui) runSubprocessWithMessage(cmd *exec.Cmd, msg string) error {
-	_, err := gui.runSubprocessReturning(cmd, msg)
+	_, err := gui.runSubprocessReturning(cmd, msg, nil)
 
 	return err
 }
 
 // runSubprocessReturning is runSubprocessWithMessage that also hands back
-// how the command itself ended, which only the terminal has shown.
-func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string) (runErr, err error) {
+// how the command itself ended, which only the terminal has shown. after
+// runs before the screen comes back, so waiting for what trails the command
+// doesn't hold the TUI.
+func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string, after func(runErr error)) (runErr, err error) {
 	gui.SubprocessMutex.Lock()
 	defer gui.SubprocessMutex.Unlock()
 
@@ -35,6 +37,10 @@ func (gui *Gui) runSubprocessReturning(cmd *exec.Cmd, msg string) (runErr, err e
 	gui.PauseBackgroundThreads.Store(true)
 
 	runErr = gui.runCommand(cmd, msg)
+
+	if after != nil {
+		after(runErr)
+	}
 
 	if err := gui.g.Resume(); err != nil {
 		return runErr, gui.createErrorPanel(err.Error())

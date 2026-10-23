@@ -19,8 +19,8 @@ type composeFailures struct {
 	watching bool
 	project  string
 	kept     []composeFailure
-	// failed closes with the first failure the watch keeps.
-	failed chan struct{}
+	// heard signals each failure the watch keeps.
+	heard chan struct{}
 }
 
 // composeFailure is a failed operation: what it was doing and the daemon's error.
@@ -34,24 +34,36 @@ type composeFailure struct {
 // different connections.
 const composeFailureGrace = 200 * time.Millisecond
 
+// composeFailureWaitLimit bounds the whole wait, which each failure extends:
+// something else failing over and over in the project would never let up.
+const composeFailureWaitLimit = time.Second
+
 func (f *composeFailures) watch(project string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	f.watching, f.project, f.kept, f.failed = true, project, nil, make(chan struct{})
+	f.watching, f.project, f.kept, f.heard = true, project, nil, make(chan struct{}, 1)
 }
 
-// stop ends the watch and returns what failed during it, waiting up to
-// grace for a first failure if none has arrived.
+// stop ends the watch and returns what failed during it, waiting grace for
+// a failure to arrive and again after each one, up to
+// composeFailureWaitLimit: a verb can fail several operations at once.
 func (f *composeFailures) stop(grace time.Duration) []composeFailure {
 	f.mutex.Lock()
-	watching, failed := f.watching, f.failed
+	watching, heard := f.watching, f.heard
 	f.mutex.Unlock()
 
 	if watching && grace > 0 {
-		select {
-		case <-failed:
-		case <-time.After(grace):
+		limit := time.After(composeFailureWaitLimit)
+
+		for waiting := true; waiting; {
+			select {
+			case <-heard:
+			case <-time.After(grace):
+				waiting = false
+			case <-limit:
+				waiting = false
+			}
 		}
 	}
 
@@ -59,7 +71,7 @@ func (f *composeFailures) stop(grace time.Duration) []composeFailure {
 	defer f.mutex.Unlock()
 
 	kept := f.kept
-	f.watching, f.project, f.kept, f.failed = false, "", nil, nil
+	f.watching, f.project, f.kept, f.heard = false, "", nil, nil
 
 	return kept
 }
@@ -90,8 +102,9 @@ func (f *composeFailures) note(event commands.Event) {
 
 	f.kept = append(f.kept, failure)
 
-	if len(f.kept) == 1 {
-		close(f.failed)
+	select {
+	case f.heard <- struct{}{}:
+	default:
 	}
 }
 
@@ -127,6 +140,7 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 		}
 	}()
 
+	// Open before the verb runs, or a failure quicker than the dial is missed.
 	select {
 	case <-opened:
 	case <-done:
@@ -142,19 +156,29 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 // the terminal, and returns the operations that failed in its project if it
 // failed too.
 func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]composeFailure, error) {
-	if stopListening, ok := gui.listenForFailures(target); ok {
+	gui.composeFailures.watch(target.project)
+
+	stopListening, ok := gui.listenForFailures(target)
+	if ok {
 		defer stopListening()
-		gui.composeFailures.watch(target.project)
+	} else {
+		gui.composeFailures.stop(0)
 	}
 
-	runErr, err := gui.runCompose(cmd)
+	var failures []composeFailure
 
-	var grace time.Duration
-	if runErr != nil {
-		grace = composeFailureGrace
-	}
+	runErr, err := gui.runCompose(cmd, func(runErr error) {
+		var grace time.Duration
+		if runErr != nil {
+			grace = composeFailureGrace
+		}
 
-	failures := gui.composeFailures.stop(grace)
+		failures = gui.composeFailures.stop(grace)
+	})
+
+	// Suspend may have failed before the callback ran.
+	gui.composeFailures.stop(0)
+
 	if err != nil || runErr == nil {
 		return nil, err
 	}

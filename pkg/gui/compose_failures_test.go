@@ -2,7 +2,9 @@ package gui
 
 import (
 	"cmp"
+	"context"
 	"errors"
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
@@ -40,6 +42,45 @@ func TestComposeFailuresKeepTheWatchedProjectsFailures(t *testing.T) {
 
 	failures.note(failedOperation("dns", "after the watch"))
 	assert.Empty(t, failures.stop(0))
+}
+
+// A verb can fail several operations: stop waits out the last, not the first.
+func TestStopWaitsOutEveryFailureInABatch(t *testing.T) {
+	var failures composeFailures
+	failures.watch("dns")
+
+	go func() {
+		failures.note(failedOperation("dns", "first"))
+		time.Sleep(20 * time.Millisecond)
+		failures.note(failedOperation("dns", "second"))
+	}()
+
+	kept := failures.stop(200 * time.Millisecond)
+
+	require.Len(t, kept, 2)
+	assert.Equal(t, "second", kept[1].err)
+}
+
+// Something else failing over and over in the project can't hold the
+// screen: the wait has a limit however many failures arrive.
+func TestStopWaitsNoLongerThanItsLimit(t *testing.T) {
+	var failures composeFailures
+	failures.watch("dns")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for i := 0; ctx.Err() == nil; i++ {
+			failures.note(failedOperation("dns", fmt.Sprintf("attempt %d", i)))
+			time.Sleep(20 * time.Millisecond)
+		}
+	}()
+
+	began := time.Now()
+	failures.stop(200 * time.Millisecond)
+
+	assert.Less(t, time.Since(began), composeFailureWaitLimit+500*time.Millisecond)
 }
 
 // A start from either panel, by its key or typed at ;, that fails on the
@@ -114,7 +155,7 @@ func failedStart(t *testing.T, c failedStartCase) {
 		Resources: map[string][]string{"instances": {"/1.0/instances/web"}},
 	})
 
-	s.gui.runCompose = func(*exec.Cmd) (error, error) {
+	s.gui.runCompose = func(_ *exec.Cmd, after func(error)) (error, error) {
 		if c.late {
 			time.AfterFunc(20*time.Millisecond, func() { daemon.Emit(failure) })
 		} else {
@@ -128,7 +169,12 @@ func failedStart(t *testing.T, c failedStartCase) {
 			}, 5*time.Second, 10*time.Millisecond)
 		}
 
-		return errors.New("exit status 1"), nil
+		runErr := errors.New("exit status 1")
+		if after != nil {
+			after(runErr)
+		}
+
+		return runErr, nil
 	}
 
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
