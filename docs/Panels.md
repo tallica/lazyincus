@@ -67,7 +67,11 @@ project on the stack's own remote. The line is split on whitespace
 outside quotes, the delimiters dropped and a backslash kept, and nothing
 goes through a shell: a prompt that runs what it's given unconfirmed
 takes no pipes or `$(...)`. A leading `incus`, typed out of habit, is
-dropped. Enter on the seed as it stands runs nothing, and a line that
+dropped. A line that fails gets the compose verbs' Error popup
+([Services](#services)), watching the project it names with `--project`,
+or every project when it names none; an error the CLI gets straight back,
+with no operation behind it - an instance that doesn't exist - stays on
+the terminal. Enter on the seed as it stands runs nothing, and a line that
 can't be split - an unclosed quote - is refused where it stands, saying
 why, rather than run as other arguments than the ones typed.
 
@@ -407,16 +411,16 @@ and refreshes the instances, stacks and services panels once the
 subprocess returns rather than waiting for the poll. A verb that exits
 non-zero gets an Error popup with the error of each operation that failed
 in the stack's project meanwhile, as the event stream reported it
-(`composeFailures`), after a moment for one that trails the verb's exit:
+(`failureWatch`), after a moment for one that trails the verb's exit:
 with a terminal on stdout, incus-compose writes its own errors there among
 its progress, out of lazyincus's reach. A stack on another remote, in a
 project other than the one `P` narrowed to, or watched while the session's
 stream is down, gets a stream of its own on its project for as long as the
 verb runs - on another remote, if lazyincus is connected to it by then.
-`logs` excepted, `M`'s or typed at `;`: it can follow until interrupted,
-so a failure meanwhile is some other client's. A failure that never
-reached the daemon - `up` waiting on ic-healthd - leaves only the
-terminal's account. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
+`logs`, `exec`, `console` and `monitor` are excepted, by key or typed:
+they can run until interrupted, so a failure meanwhile is some other
+client's. A failure that never reached the daemon - `up` waiting on
+ic-healthd - leaves only the terminal's account. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
 don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see

@@ -106,7 +106,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	// The remote by name alone: the verb connects for itself.
 	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 
-	failures, err := gui.runComposeWatched(cmd, target)
+	failures, err := gui.runWatched(cmd, target.remote, target.project)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	gui.stacks.forget(target.dir)
 	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 
-	return gui.showComposeFailures(failures, target.remote)
+	return gui.showFailures(failures, target.remote)
 }
 
 // composeTargetName names what a confirmation prompt is about - the service,

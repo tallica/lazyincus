@@ -284,7 +284,7 @@ func (gui *Gui) onEventIn(scope uint64, event commands.Event) {
 			gui.recordOperation(scope, event.Details)
 		}
 
-		gui.composeFailures.note(event)
+		gui.failureWatch.note(event)
 		gui.onOperation(event)
 
 		return
