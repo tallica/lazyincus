@@ -359,16 +359,16 @@ checks its restore points are all there. A restore asks for itself and
 refuses while the services are running, so stop the stack first. See
 [docs/Panels.md](docs/Panels.md#backups).
 
-A gotcha that isn't ours. On a stack with a bind mount or device
-passthrough, whatever has incus-compose resolve those sources fails
-whenever the daemon isn't on the same host — `U`, `d`, the Backups tab's
-`n`, and a `u` that has to create an instance — with `failed to add a
-bind-mount for service <name>: not on the same host`, which incus-compose
-refuses from another machine. Plain `u` on an instance that's already
-there doesn't hit this. Setting `INCUS_COMPOSE_ALLOW_REMOTE_MOUNTS=1` before starting
-lazyincus (incus-compose's `--allow-remote-mounts`) has it take the sources
-as paths on the daemon's host instead; a relative path is still resolved
-against the directory here, so that path has to exist there too.
+A gotcha that isn't ours. On a stack with a bind mount, incus-compose
+refuses nearly every verb whenever the daemon isn't on the same host —
+`u`, `U`, `S`, `s`, `r`, `p`, `f`, `g`, `d` and the Backups tab's `n`
+alike — with `failed to add a bind-mount for service <name>: not on the
+same host`, leaving the instance as it was. `M` and what lazyincus reads
+for its panels get through. Setting `INCUS_COMPOSE_ALLOW_REMOTE_MOUNTS=1`
+before starting lazyincus (incus-compose's `--allow-remote-mounts`) has it
+take the sources as paths on the daemon's host instead; a relative path is
+still resolved against the directory here, so that path has to exist there
+too.
 
 A `U` whose recreated instance then can't start — a published port already
 taken, say — leaves it stopped, and the Error popup once you're back from
