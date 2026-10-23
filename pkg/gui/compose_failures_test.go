@@ -53,7 +53,7 @@ func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
 				for name, late := range map[string]bool{"during": false, "after exit": true} {
 					how := map[bool]string{false: "key", true: "typed"}[typed]
 					t.Run(how+"/"+cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
-						failedStart(t, remote, view, late, typed, "")
+						failedStart(t, failedStartCase{remote: remote, view: view, late: late, typed: typed})
 					})
 				}
 			}
@@ -64,24 +64,36 @@ func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
 // A session narrowed with P to another project still hears the stack's.
 func TestAFailedStartShowsTheDaemonsErrorUnderAnotherProject(t *testing.T) {
 	for _, view := range []string{"stacks", "services"} {
-		t.Run(view, func(t *testing.T) { failedStart(t, "", view, false, false, "shop") })
+		t.Run(view, func(t *testing.T) { failedStart(t, failedStartCase{view: view, project: "shop"}) })
 	}
 }
 
-// failedStart has the session narrowed to project, if it's not "".
-func failedStart(t *testing.T, remote, view string, late, typed bool, project string) {
+// failedStartCase is where failedStart's verb runs and how it fails.
+type failedStartCase struct {
+	// remote is the stack's, "" for the session's.
+	remote string
+	view   string
+	// late has the failure arrive after the verb exits.
+	late bool
+	// typed runs the verb typed at ; rather than by its key.
+	typed bool
+	// project narrows the session to it, if it's not "".
+	project string
+}
+
+func failedStart(t *testing.T, c failedStartCase) {
 	t.Helper()
 
 	stack := testStack(t, t.TempDir(), "default", "web")
-	stack.Remote = remote
+	stack.Remote = c.remote
 	pve01 := incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("default", "web", "web")}})
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
-		if project != "" {
-			s.gui.IncusCommand.UseProject(project)
+		if c.project != "" {
+			s.gui.IncusCommand.UseProject(c.project)
 		}
 
-		if remote == "" {
+		if c.remote == "" {
 			withStacks(t, stack)(s)
 		} else {
 			// The local stack is the session remote's; one elsewhere is saved.
@@ -92,7 +104,7 @@ func failedStart(t *testing.T, remote, view string, late, typed bool, project st
 	})
 
 	daemon := s.server
-	if remote != "" {
+	if c.remote != "" {
 		daemon = pve01
 	}
 
@@ -103,7 +115,7 @@ func failedStart(t *testing.T, remote, view string, late, typed bool, project st
 	})
 
 	s.gui.runCompose = func(*exec.Cmd) (error, error) {
-		if late {
+		if c.late {
 			time.AfterFunc(20*time.Millisecond, func() { daemon.Emit(failure) })
 		} else {
 			daemon.Emit(failure)
@@ -120,18 +132,18 @@ func failedStart(t *testing.T, remote, view string, late, typed bool, project st
 	}
 
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
-	landed(t, s, view)
+	landed(t, s, c.view)
 	s.settle(t, "Services (default")
 	require.Eventually(t, func() bool {
 		return len(onLoop(t, s, s.gui.Panels.Services.List.GetAllItems)) > 0
 	}, 5*time.Second, 20*time.Millisecond)
 
 	want := "Starting instance web: port 53 is taken"
-	if remote != "" {
-		want = "Starting instance web on " + remote + ": port 53 is taken"
+	if c.remote != "" {
+		want = "Starting instance web on " + c.remote + ": port 53 is taken"
 	}
 
-	if typed {
+	if c.typed {
 		s.press(t, ';')
 		s.settle(t, "incus-compose: default")
 
