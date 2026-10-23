@@ -23,8 +23,7 @@ type composeFailures struct {
 	failed chan struct{}
 }
 
-// composeFailure is a failed operation: what it was doing, which the popup
-// names the remote after, and the daemon's error.
+// composeFailure is a failed operation: what it was doing and the daemon's error.
 type composeFailure struct {
 	what string
 	err  string

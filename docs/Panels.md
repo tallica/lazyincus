@@ -413,8 +413,8 @@ another remote, or in a project other than the one `P` narrowed to, gets a
 stream of its own on its project for as long as the verb runs - on another
 remote, if lazyincus is connected to it by then. A failure that never
 reached the daemon - `up` waiting on ic-healthd - leaves only the
-terminal's account. `s`, `d` and `f`
-confirm, `S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the instances panel.
+terminal's account. `s`, `d` and `f` confirm, `S`/`r`/`u`/`p`/`b`/`g`
+don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
