@@ -19,6 +19,9 @@ type AppState struct {
 	// Stacks panel, absolute and cleaned, each after `remote:` for the
 	// remote it's pinned to.
 	Stacks []string `yaml:"stacks,omitempty"`
+
+	// SkipConfirm names the confirmations answered "yes, don't ask again".
+	SkipConfirm []string `yaml:"skipConfirm,omitempty"`
 }
 
 // ErrStackListed is AddStack refusing a directory already saved.
@@ -93,6 +96,25 @@ func writeFileAtomically(path string, content []byte) error {
 	}
 
 	return os.Rename(file.Name(), path)
+}
+
+// SkipsConfirm is whether the confirmation named id was answered "don't ask
+// again". An unreadable state asks, the safe way round.
+func (c *AppConfig) SkipsConfirm(id string) bool {
+	state, err := c.LoadAppState()
+
+	return err == nil && slices.Contains(state.SkipConfirm, id)
+}
+
+// SkipConfirm remembers that the confirmation named id is no longer asked.
+func (c *AppConfig) SkipConfirm(id string) error {
+	return c.updateAppState(func(state *AppState) error {
+		if !slices.Contains(state.SkipConfirm, id) {
+			state.SkipConfirm = append(state.SkipConfirm, id)
+		}
+
+		return nil
+	})
 }
 
 // AddStack saves a stack, refusing one already saved.

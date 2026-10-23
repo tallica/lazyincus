@@ -185,12 +185,35 @@ func (gui *Gui) createConfirmationPanel(title, prompt string, handleConfirm, han
 	return gui.createPopupPanel(title, prompt, handleConfirm, handleClose, true)
 }
 
+// createSkippableConfirmationPanel is createConfirmationPanel for a prompt
+// that `a` answers yes to for good: id is kept in state.yml and the prompt
+// is no longer shown, handleConfirm just running.
+func (gui *Gui) createSkippableConfirmationPanel(id, title, prompt string, handleConfirm func(*gocui.Gui, *gocui.View) error) error {
+	if gui.Config.SkipsConfirm(id) {
+		return handleConfirm(gui.g, nil)
+	}
+
+	remember := func(g *gocui.Gui, v *gocui.View) error {
+		if err := gui.Config.SkipConfirm(id); err != nil {
+			return gui.createErrorPanel(err.Error())
+		}
+
+		return handleConfirm(g, v)
+	}
+
+	return gui.createPopupPanelWith(title, prompt, handleConfirm, nil, true, id, remember)
+}
+
 // createMessagePanel shows a message rather than asking: every key closes it.
 func (gui *Gui) createMessagePanel(title, message string, handleClose func(*gocui.Gui, *gocui.View) error) error {
 	return gui.createPopupPanel(title, message, handleClose, handleClose, false)
 }
 
 func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error, asks bool) error {
+	return gui.createPopupPanelWith(title, prompt, handleConfirm, handleClose, asks, "", nil)
+}
+
+func (gui *Gui) createPopupPanelWith(title, prompt string, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error, asks bool, skipID string, handleSkip func(*gocui.Gui, *gocui.View) error) error {
 	gui.onNewPopupPanel()
 	gui.g.Update(func(g *gocui.Gui) error {
 		if gui.currentViewName() == "confirmation" {
@@ -204,12 +227,13 @@ func (gui *Gui) createPopupPanel(title, prompt string, handleConfirm, handleClos
 		}
 		gui.Views.Confirmation.Editable = false
 		gui.State.ConfirmationAsks = asks
-		return gui.setKeyBindings(g, handleConfirm, handleClose)
+		gui.State.ConfirmationSkipID = skipID
+		return gui.setKeyBindings(g, handleConfirm, handleClose, handleSkip)
 	})
 	return nil
 }
 
-func (gui *Gui) setKeyBindings(g *gocui.Gui, handleConfirm, handleClose func(*gocui.Gui, *gocui.View) error) error {
+func (gui *Gui) setKeyBindings(g *gocui.Gui, handleConfirm, handleClose, handleSkip func(*gocui.Gui, *gocui.View) error) error {
 	confirm := gui.wrappedConfirmationFunction(handleConfirm)
 	closeIt := gui.wrappedConfirmationFunction(handleClose)
 
@@ -221,6 +245,13 @@ func (gui *Gui) setKeyBindings(g *gocui.Gui, handleConfirm, handleClose func(*go
 		{'y', confirm},
 		{gocui.KeyEsc, closeIt},
 		{'n', closeIt},
+	}
+
+	if handleSkip != nil {
+		bindings = append(bindings, struct {
+			key     interface{}
+			handler func(*gocui.Gui, *gocui.View) error
+		}{'a', gui.wrappedConfirmationFunction(handleSkip)})
 	}
 
 	for _, binding := range bindings {
@@ -255,6 +286,9 @@ func (gui *Gui) renderConfirmationOptions() error {
 	optionsMap := map[string]string{
 		"n/esc":   gui.Tr.No,
 		"y/enter": gui.Tr.Yes,
+	}
+	if gui.State.ConfirmationSkipID != "" {
+		optionsMap["a"] = gui.Tr.YesAlways
 	}
 	return gui.renderOptionsMap(optionsMap)
 }

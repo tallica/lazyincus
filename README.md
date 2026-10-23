@@ -180,7 +180,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Services panel: pull the latest image and recreate the service (confirms first) |
+| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -306,8 +306,9 @@ always meant.
 What the keys run on a service's own row, each of them `incus-compose
 <verb> <service>`:
 
-- `u` — `up --detach`; `U` adds `--pull always --recreate`, to pick up an
-  image the compose file's tag now resolves to (it confirms first)
+- `u` — `up --detach`; `U` asks for `up --recreate` with
+  `--pull never` or `--pull always`, to apply an edited compose file or pick
+  up an image its tag now resolves to (it confirms first)
 - `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms. When a
   service it depends on is stopped, `S` asks whether to start it along with
   them (`start --with-deps`) or alone — incus-compose's `start` leaves

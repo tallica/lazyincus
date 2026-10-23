@@ -203,6 +203,10 @@ type guiState struct {
 	// rather than showing a message.
 	ConfirmationAsks bool
 
+	// ConfirmationSkipID is the confirmation on screen being one `a` can
+	// stop asking, by this name in state.yml; empty for one that always asks.
+	ConfirmationSkipID string
+
 	// ComposeAvailable is whether incus-compose is on PATH, which the Stacks
 	// and Services panels need to be there at all. Resolved once at
 	// startup: panel visibility is fixed for the session.

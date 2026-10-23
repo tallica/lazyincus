@@ -394,3 +394,13 @@ func TestThePaletteFromTheMainPanel(t *testing.T) {
 	require.Eventually(t, func() bool { return onLoop(t, s, s.gui.currentViewName) == "instances" }, 5*time.Second, 10*time.Millisecond)
 	assert.False(t, onLoop(t, s, s.gui.paletteOpen))
 }
+
+func TestThePaletteListsRecreateOnStacks(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))
+	s.settle(t, "Services (default)")
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "recreate")
+	assert.Regexp(t, `U +Stacks +recreate`, s.settle(t, "run: recreate"))
+}

@@ -926,3 +926,43 @@ func TestStoppingAReplicaShowsOnItsStack(t *testing.T) {
 
 	require.Eventually(t, func() bool { return stackStatus() == commands.ServicePartial }, 2*time.Second, 20*time.Millisecond)
 }
+
+// U is a menu rather than a bare confirmation: recreate as is, or pull first.
+func TestRecreateOffersToPullFirst(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))
+	s.settle(t, "Services (default)")
+
+	s.press(t, 'U')
+	menu := s.settle(t, "Recreate")
+	assert.Contains(t, menu, "pull & recreate")
+
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "Are you sure you want to recreate")
+	s.press(t, 'n')
+
+	s.press(t, 'U')
+	s.settle(t, "Recreate")
+	s.press(t, 'j')
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "pull the latest images and recreate")
+}
+
+func TestRecreateStopsAskingOnA(t *testing.T) {
+	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))
+	s.settle(t, "Services (default)")
+	assert.False(t, s.gui.Config.SkipsConfirm("recreate"))
+
+	s.press(t, 'U')
+	s.settle(t, "Recreate")
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "yes, don't ask again")
+	s.press(t, 'a')
+
+	require.Eventually(t, func() bool { return s.gui.Config.SkipsConfirm("recreate") }, 5*time.Second, 20*time.Millisecond)
+	assert.False(t, s.gui.Config.SkipsConfirm("recreate-pull"))
+}
+
+func TestComposeRecreateArgs(t *testing.T) {
+	assert.Equal(t, []string{"up", "--recreate", "--pull", "never", "--detach"}, composeRecreateArgs("never"))
+	assert.Equal(t, []string{"up", "--recreate", "--pull", "always", "--detach"}, composeRecreateArgs("always"))
+}

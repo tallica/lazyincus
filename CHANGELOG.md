@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
+
 ### Fixed
 - A Stacks or Services verb that fails on the daemon now shows the daemon's error in a popup once the terminal returns.
 - A command typed at `:` that fails on the daemon shows its error in a popup too.

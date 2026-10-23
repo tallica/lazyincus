@@ -225,7 +225,9 @@ type TranslationSet struct {
 	FailedOnTerminal              string
 	ComposeTargetProject          string
 	ComposeUp                     string
-	ComposeUpPullRecreate         string
+	ComposeRecreate               string
+	ComposeRecreateMenuTitle      string
+	ComposeRecreatePullOption     string
 	ComposeDown                   string
 	ComposeKill                   string
 	ComposeBuild                  string
@@ -240,7 +242,8 @@ type TranslationSet struct {
 	ComposeDownWithVolumesOption  string
 	ConfirmComposeDown            string
 	ConfirmComposeDownWithVolumes string
-	ConfirmComposeUpPullRecreate  string
+	ConfirmComposeRecreate        string
+	ConfirmComposeRecreatePull    string
 	ConfirmComposeStop            string
 	ConfirmComposeKill            string
 
@@ -260,8 +263,9 @@ type TranslationSet struct {
 	CannotListProcesses                string
 	CannotListProcessesStoppedInstance string
 
-	No  string
-	Yes string
+	No        string
+	YesAlways string
+	Yes       string
 
 	LcNextScreenMode        string
 	LcPrevScreenMode        string
@@ -580,7 +584,9 @@ func englishSet() TranslationSet {
 		ComposeTargetProject:          "project %s",
 		ComposeServiceScoped:          "%s service",
 		ComposeUp:                     "bring up",
-		ComposeUpPullRecreate:         "pull & recreate",
+		ComposeRecreate:               "recreate",
+		ComposeRecreateMenuTitle:      "Recreate",
+		ComposeRecreatePullOption:     "pull & recreate",
 		ComposeDown:                   "bring down",
 		ComposeKill:                   "kill",
 		ComposeBuild:                  "build",
@@ -594,7 +600,8 @@ func englishSet() TranslationSet {
 		ComposeDownWithVolumesOption:  "down --volumes",
 		ConfirmComposeDown:            "Are you sure you want to bring down %s?",
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down %s and delete its volumes?",
-		ConfirmComposeUpPullRecreate:  "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
+		ConfirmComposeRecreate:        "Are you sure you want to recreate %s? Running instances will be replaced.",
+		ConfirmComposeRecreatePull:    "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 
@@ -616,8 +623,9 @@ func englishSet() TranslationSet {
 		PressEnterToReturn: "Press enter to return to lazyincus (this prompt can be disabled in your config by setting `gui.returnImmediately: true`)",
 		ExitShellToReturn:  "Exit the shell to return to lazyincus",
 
-		No:  "no",
-		Yes: "yes",
+		No:        "no",
+		YesAlways: "yes, don't ask again",
+		Yes:       "yes",
 
 		LcNextScreenMode:        "next screen mode (normal/half/fullscreen)",
 		LcPrevScreenMode:        "prev screen mode",

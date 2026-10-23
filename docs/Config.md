@@ -100,8 +100,10 @@ what you configure: the stacks added to the Stacks panel with `a`, as a
 `stacks` list of absolute directories, each after the remote it was added
 for (`pve01:/home/me/deployments/caddy`). One with no remote - from
 before stacks had one, or typed in by hand - is pinned to the remote
-lazyincus starts on, the next time it starts. lazyincus writes it, where
-`config.yml` is only ever yours to change. It's safe to edit by hand, and
+lazyincus starts on, the next time it starts. A `skipConfirm`
+list holds the confirmations answered with `a`, "yes, don't ask again"
+(`recreate`, `recreate-pull`); delete a name to be asked again. lazyincus
+writes it, where `config.yml` is only ever yours to change. It's safe to edit by hand, and
 a missing file is an empty list.
 
 `history.yml`, beside it, is the lines run from the `:` and `;` prompts,

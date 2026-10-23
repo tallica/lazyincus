@@ -137,6 +137,16 @@ func (gui *Gui) composeConfirm(prompt string, target composeTarget, args ...stri
 	}, nil)
 }
 
+// composeConfirmOnce is composeConfirm with `a` to stop asking, the answer
+// kept in state.yml under id.
+func (gui *Gui) composeConfirmOnce(id, prompt string, target composeTarget, args ...string) error {
+	message := fmt.Sprintf(prompt, gui.composeTargetName(target))
+
+	return gui.createSkippableConfirmationPanel(id, gui.Tr.Confirm, message, func(g *gocui.Gui, v *gocui.View) error {
+		return gui.composeRun(target, args...)
+	})
+}
+
 // composeUp is `up --detach`: without it, `up` stays attached tailing every
 // service's logs, which would leave the keypress looking hung until the
 // user Ctrl-C's it.
@@ -144,11 +154,34 @@ func (gui *Gui) composeUp(target composeTarget) error {
 	return gui.composeRun(target, "up", "--detach")
 }
 
-// composeUpPullRecreate is `U`: `up --pull always --recreate`, replacing an
-// instance already running an older image.
-func (gui *Gui) composeUpPullRecreate(target composeTarget) error {
-	return gui.composeConfirm(gui.Tr.ConfirmComposeUpPullRecreate, target,
-		"up", "--pull", "always", "--recreate", "--detach")
+// composeRecreateArgs is `up --recreate` with the pull policy chosen:
+// --detach for the reason composeUp has it.
+func composeRecreateArgs(pull string) []string {
+	return []string{"up", "--recreate", "--pull", pull, "--detach"}
+}
+
+// composeRecreateMenu is `U`: `up --recreate`, replacing instances so an
+// edited compose file applies, with or without pulling their images first.
+func (gui *Gui) composeRecreateMenu(target composeTarget) error {
+	return gui.Menu(CreateMenuOptions{
+		Title: gui.Tr.ComposeRecreateMenuTitle,
+		Items: []*types.MenuItem{
+			{
+				Label: gui.Tr.ComposeRecreate,
+				OnPress: func() error {
+					return gui.composeConfirmOnce("recreate", gui.Tr.ConfirmComposeRecreate, target,
+						composeRecreateArgs("never")...)
+				},
+			},
+			{
+				Label: gui.Tr.ComposeRecreatePullOption,
+				OnPress: func() error {
+					return gui.composeConfirmOnce("recreate-pull", gui.Tr.ConfirmComposeRecreatePull, target,
+						composeRecreateArgs("always")...)
+				},
+			},
+		},
+	})
 }
 
 func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
@@ -160,13 +193,13 @@ func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {
 	return gui.composeUp(serviceTarget(service))
 }
 
-func (gui *Gui) handleComposeUpPullRecreate(g *gocui.Gui, v *gocui.View) error {
+func (gui *Gui) handleComposeRecreate(g *gocui.Gui, v *gocui.View) error {
 	service, ok := gui.selectedService()
 	if !ok {
 		return nil
 	}
 
-	return gui.composeUpPullRecreate(serviceTarget(service))
+	return gui.composeRecreateMenu(serviceTarget(service))
 }
 
 // handleComposeStart runs `incus-compose start` - already-created instances
