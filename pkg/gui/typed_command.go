@@ -137,7 +137,7 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, sta
 	gui.stacks.forget(stack.dir)
 	gui.refreshAllInBackground()
 
-	return gui.showComposeFailures(failures, stack.remote)
+	return gui.showFailures(failures, stack.remote)
 }
 
 // bindPromptHistory makes ↑ and ↓ in the open prompt step through history's

@@ -114,7 +114,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	gui.stacks.forget(target.dir)
 	gui.refreshInBackground(gui.fetchInstances, gui.fetchStacks, gui.fetchServices)
 
-	return gui.showComposeFailures(failures, target.remote)
+	return gui.showFailures(failures, target.remote)
 }
 
 // composeTargetName names what a confirmation prompt is about - the service,

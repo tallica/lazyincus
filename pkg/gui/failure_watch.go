@@ -12,33 +12,33 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// composeFailures collects the operations that fail in a stack's project
+// failureWatch collects the operations that fail in a stack's project
 // while a compose verb has the terminal (docs/Panels.md, "Services").
-type composeFailures struct {
+type failureWatch struct {
 	mutex    sync.Mutex
 	watching bool
 	project  string
-	kept     []composeFailure
+	kept     []daemonFailure
 	// heard signals each failure the watch keeps.
 	heard chan struct{}
 }
 
-// composeFailure is a failed operation: what it was doing and the daemon's error.
-type composeFailure struct {
+// daemonFailure is a failed operation: what it was doing and the daemon's error.
+type daemonFailure struct {
 	what string
 	err  string
 }
 
-// composeFailureGrace is how long a failed verb's failure may trail its
+// failureGrace is how long a failed verb's failure may trail its
 // exit: the daemon's event and its answer to incus-compose come down
 // different connections.
-const composeFailureGrace = 200 * time.Millisecond
+const failureGrace = 200 * time.Millisecond
 
-// composeFailureWaitLimit bounds the whole wait, which each failure extends:
+// failureWaitLimit bounds the whole wait, which each failure extends:
 // something else failing over and over in the project would never let up.
-const composeFailureWaitLimit = time.Second
+const failureWaitLimit = time.Second
 
-func (f *composeFailures) watch(project string) {
+func (f *failureWatch) watch(project string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -47,14 +47,14 @@ func (f *composeFailures) watch(project string) {
 
 // stop ends the watch and returns what failed during it, waiting grace for
 // a failure to arrive and again after each one, up to
-// composeFailureWaitLimit: a verb can fail several operations at once.
-func (f *composeFailures) stop(grace time.Duration) []composeFailure {
+// failureWaitLimit: a verb can fail several operations at once.
+func (f *failureWatch) stop(grace time.Duration) []daemonFailure {
 	f.mutex.Lock()
 	watching, heard := f.watching, f.heard
 	f.mutex.Unlock()
 
 	if watching && grace > 0 {
-		limit := time.After(composeFailureWaitLimit)
+		limit := time.After(failureWaitLimit)
 
 		for waiting := true; waiting; {
 			select {
@@ -79,7 +79,7 @@ func (f *composeFailures) stop(grace time.Duration) []composeFailure {
 // note takes in an operation event, keeping it if it's a failure in the
 // project being watched that it hasn't kept already: something retrying a
 // start would otherwise fill the popup with the same line.
-func (f *composeFailures) note(event commands.Event) {
+func (f *failureWatch) note(event commands.Event) {
 	if event.Status != api.Failure || event.Details == nil || event.Details.Operation.Err == "" || event.Details.IsToken() {
 		return
 	}
@@ -91,7 +91,7 @@ func (f *composeFailures) note(event commands.Event) {
 		return
 	}
 
-	failure := composeFailure{
+	failure := daemonFailure{
 		what: strings.TrimSpace(event.Action + " " + strings.Join(event.Instances, ", ")),
 		err:  event.Details.Operation.Err,
 	}
@@ -112,7 +112,7 @@ func (f *composeFailures) note(event commands.Event) {
 // before it runs anyway.
 const streamWait = time.Second
 
-// listenForFailures has composeFailures hear target's project, opening a
+// listenForFailures has failureWatch hear target's project, opening a
 // stream on its remote unless the session's open stream already carries the
 // project, and returns what closes it. A remote not connected yet goes
 // unwatched rather than hold the verb up.
@@ -134,7 +134,7 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 	go func() {
 		defer close(done)
 
-		err := command.ListenForEventsIn(ctx, target.project, []string{api.EventTypeOperation}, func() { close(opened) }, gui.composeFailures.note)
+		err := command.ListenForEventsIn(ctx, target.project, []string{api.EventTypeOperation}, func() { close(opened) }, gui.failureWatch.note)
 		if err != nil {
 			gui.Log.Warn().Err(err).Str("remote", target.remote).Msg("compose failures stream")
 		}
@@ -161,35 +161,35 @@ func followingVerb(cmd *exec.Cmd) bool {
 // runComposeWatched runs cmd, an incus-compose command on target's stack, on
 // the terminal, and returns the operations that failed in its project if it
 // failed too.
-func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]composeFailure, error) {
+func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]daemonFailure, error) {
 	if followingVerb(cmd) {
-		_, err := gui.runCompose(cmd, nil)
+		_, err := gui.runOnTerminal(cmd, nil)
 
 		return nil, err
 	}
 
-	gui.composeFailures.watch(target.project)
+	gui.failureWatch.watch(target.project)
 
 	stopListening, ok := gui.listenForFailures(target)
 	if ok {
 		defer stopListening()
 	} else {
-		gui.composeFailures.stop(0)
+		gui.failureWatch.stop(0)
 	}
 
-	var failures []composeFailure
+	var failures []daemonFailure
 
-	runErr, err := gui.runCompose(cmd, func(runErr error) {
+	runErr, err := gui.runOnTerminal(cmd, func(runErr error) {
 		var grace time.Duration
 		if runErr != nil {
-			grace = composeFailureGrace
+			grace = failureGrace
 		}
 
-		failures = gui.composeFailures.stop(grace)
+		failures = gui.failureWatch.stop(grace)
 	})
 
 	// Suspend may have failed before the callback ran.
-	gui.composeFailures.stop(0)
+	gui.failureWatch.stop(0)
 
 	if err != nil || runErr == nil {
 		return nil, err
@@ -198,9 +198,9 @@ func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]compos
 	return failures, nil
 }
 
-// showComposeFailures puts failures from a stack on remote in an Error
+// showFailures puts failures from a stack on remote in an Error
 // popup, if there are any.
-func (gui *Gui) showComposeFailures(failures []composeFailure, remote string) error {
+func (gui *Gui) showFailures(failures []daemonFailure, remote string) error {
 	if len(failures) == 0 {
 		return nil
 	}
