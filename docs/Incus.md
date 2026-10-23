@@ -92,10 +92,10 @@ inferred.
   change, whoever changed them. lazyincus keeps one open for the scope the
   panels list, reopening it after a project switch and, backing off, after
   a drop, and refreshes the lists an event touches once a 200ms burst has
-  passed. A compose verb on a stack the open stream doesn't cover - another
-  remote's, one outside the project `P` narrowed to, or any while the
-  stream is down - opens a second, on the stack's project, for as long as it
-  runs ([Services](Panels.md#services)).
+  passed. A compose verb or typed command whose project the open stream
+  doesn't cover - on another remote, outside the project `P` narrowed to,
+  or any while the stream is down - opens a second, on that project, for as
+  long as it runs ([Services](Panels.md#services)).
   Only events that change a list count, named one by one: the
   daemon also sends them for reads, an `instance-exec` for every `ps` the
   Top tab runs, so matching by prefix would have each refresh set off the

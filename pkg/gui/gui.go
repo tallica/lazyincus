@@ -88,9 +88,9 @@ type Gui struct {
 	// runIncus runs an `incus` command off the main loop, failing with what
 	// it printed; tests stand in for the CLI here.
 	runIncus func(cmd *exec.Cmd) (string, error)
-	// runOnTerminal runs a compose verb on the terminal, returning how it
-	// ended; after runs before the screen comes back. Tests stand in for
-	// incus-compose here.
+	// runOnTerminal runs a typed command or compose verb on the terminal,
+	// returning how it ended; after runs before the screen comes back.
+	// Tests stand in for the CLIs here.
 	runOnTerminal func(cmd *exec.Cmd, after func(runErr error)) (runErr, err error)
 	stacks        stackCache
 
@@ -110,7 +110,7 @@ type Gui struct {
 	// stopped closes when run returns, stopping the pollers.
 	stopped chan struct{}
 
-	// failureWatch is what failed while a compose verb ran.
+	// failureWatch is what failed while a command had the terminal.
 	failureWatch failureWatch
 
 	events        eventBatch

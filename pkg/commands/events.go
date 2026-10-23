@@ -66,10 +66,10 @@ func (c *IncusCommand) ListenForEvents(ctx context.Context, types []string, open
 	return listenOn(ctx, scope.base.UseProject(scope.project), scope.project, scope.allProjects, types, opened, handle)
 }
 
-// ListenForEventsIn is ListenForEvents for project's events, whichever
-// scope the panels list.
+// ListenForEventsIn is ListenForEvents for project's events, every
+// project's for "", whichever scope the panels list.
 func (c *IncusCommand) ListenForEventsIn(ctx context.Context, project string, types []string, opened func(), handle func(Event)) error {
-	return listenOn(ctx, c.scope().base.UseProject(project), project, false, types, opened, handle)
+	return listenOn(ctx, c.scope().base.UseProject(project), project, project == "", types, opened, handle)
 }
 
 func listenOn(ctx context.Context, client incus.InstanceServer, project string, allProjects bool, types []string, opened func(), handle func(Event)) error {

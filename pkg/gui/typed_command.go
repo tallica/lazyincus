@@ -44,7 +44,7 @@ func (gui *Gui) handleTypedCommand(_ *gocui.Gui, v *gocui.View) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, line, config.IncusHistory, nil)
+			return gui.runTyped(cmd, line, config.IncusHistory, remote, nil)
 		},
 	); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (gui *Gui) typedComposeCommand(target composeTarget) error {
 				return err
 			}
 
-			return gui.runTyped(cmd, line, config.ComposeHistory, &target)
+			return gui.runTyped(cmd, line, config.ComposeHistory, target.remote, &target)
 		},
 	); err != nil {
 		return err
@@ -105,12 +105,13 @@ func (gui *Gui) handleTypedComposeCommand(*gocui.Gui, *gocui.View) error {
 	return gui.typedComposeCommand(serviceTarget(service))
 }
 
-// runTyped runs a typed command, nil for nothing to run, saving its line to
-// history first, and re-reads the panels after: it can have changed anything.
-// stack is the incus-compose command's, nil for the incus one: it's run the
-// way the compose verbs are, and its cached parse dropped after - the
-// command can have changed what the stack declares.
-func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, stack *composeTarget) error {
+// runTyped runs a typed command on remote, nil for nothing to run, saving
+// its line to history first, and re-reads the panels after: it can have
+// changed anything. Either says what failed on the daemon, as the compose
+// verbs do: the incus one in the project it names, or any. stack is the
+// incus-compose command's, nil for the incus one, its cached parse dropped
+// after - the command can have changed what the stack declares.
+func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, remote string, stack *composeTarget) error {
 	if cmd == nil {
 		return nil
 	}
@@ -119,25 +120,23 @@ func (gui *Gui) runTyped(cmd *exec.Cmd, line string, history config.History, sta
 		gui.Log.Warn().Err(err).Msg("saving command history")
 	}
 
-	if stack == nil {
-		if err := gui.runSubprocess(cmd); err != nil {
-			return err
-		}
-
-		gui.refreshAllInBackground()
-
-		return nil
+	project := cliProject(cmd.Args[1:])
+	if stack != nil {
+		project = stack.project
 	}
 
-	failures, err := gui.runComposeWatched(cmd, *stack)
+	failures, err := gui.runWatched(cmd, remote, project)
 	if err != nil {
 		return err
 	}
 
-	gui.stacks.forget(stack.dir)
+	if stack != nil {
+		gui.stacks.forget(stack.dir)
+	}
+
 	gui.refreshAllInBackground()
 
-	return gui.showFailures(failures, stack.remote)
+	return gui.showFailures(failures, remote)
 }
 
 // bindPromptHistory makes ↑ and ↓ in the open prompt step through history's

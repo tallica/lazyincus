@@ -95,23 +95,42 @@ func TestStopWaitsNoLongerThanItsLimit(t *testing.T) {
 	assert.Less(t, time.Since(began), failureWaitLimit+500*time.Millisecond)
 }
 
-func TestFollowingVerbsAreNotWatched(t *testing.T) {
-	assert.True(t, followingVerb(exec.Command("incus-compose", "logs", "--follow")))
-	assert.False(t, followingVerb(exec.Command("incus-compose", "up", "web")))
+// A watch on no project in particular keeps every project's failures.
+func TestFailureWatchOnEveryProject(t *testing.T) {
+	var failures failureWatch
+	failures.watch("")
+
+	failures.note(failedOperation("dns", "one"))
+	failures.note(failedOperation("shop", "other"))
+
+	assert.Len(t, failures.stop(0), 2)
 }
 
-// A start from either panel, by its key or typed at ;, that fails on the
-// daemon says why once the terminal hands the screen back, the failure
-// arriving before the verb exits or just after, and from a stack on another
-// remote too.
+func TestCLIVerbAndProject(t *testing.T) {
+	for _, args := range [][]string{
+		{"--project", "dns", "exec", "web", "--", "sh"},
+		{"--project=dns", "exec", "web"},
+		{"-q", "exec", "--project", "dns", "web"},
+	} {
+		assert.Equal(t, "exec", cliVerb(args), args)
+		assert.Equal(t, "dns", cliProject(args), args)
+	}
+
+	assert.Equal(t, "logs", cliVerb([]string{"logs", "--follow"}))
+	assert.Empty(t, cliProject([]string{"start", "web"}))
+}
+
+// A start from either panel, by its key, typed at ; or typed at :, that
+// fails on the daemon says why once the terminal hands the screen back, the
+// failure arriving before the verb exits or just after, and from a stack on
+// another remote too.
 func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
-	for _, typed := range []bool{false, true} {
+	for _, how := range []string{"key", ";", ":"} {
 		for _, remote := range []string{"", "pve01"} {
 			for _, view := range []string{"stacks", "services"} {
 				for name, late := range map[string]bool{"during": false, "after exit": true} {
-					how := map[bool]string{false: "key", true: "typed"}[typed]
 					t.Run(how+"/"+cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
-						failedStart(t, failedStartCase{remote: remote, view: view, late: late, typed: typed})
+						failedStart(t, failedStartCase{remote: remote, view: view, late: late, how: how})
 					})
 				}
 			}
@@ -133,8 +152,8 @@ type failedStartCase struct {
 	view   string
 	// late has the failure arrive after the verb exits.
 	late bool
-	// typed runs the verb typed at ; rather than by its key.
-	typed bool
+	// how starts it: "key", or typed at ";" or ":"; "" is "key".
+	how string
 	// project narrows the session to it, if it's not "".
 	project string
 }
@@ -206,16 +225,18 @@ func failedStart(t *testing.T, c failedStartCase) {
 		want = "Starting instance web on " + c.remote + ": port 53 is taken"
 	}
 
-	if c.typed {
+	switch c.how {
+	case ";":
 		s.press(t, ';')
 		s.settle(t, "incus-compose: default")
-
-		for _, key := range "start" {
-			s.press(t, key)
-		}
-
+		s.typeText(t, "start")
 		s.pressKey(t, tcell.KeyEnter)
-	} else {
+	case ":":
+		s.press(t, ':')
+		s.settle(t, "--project default")
+		s.typeText(t, "start web")
+		s.pressKey(t, tcell.KeyEnter)
+	default:
 		s.press(t, 'S')
 	}
 

@@ -106,7 +106,7 @@ func (gui *Gui) composeRun(target composeTarget, args ...string) error {
 	// The remote by name alone: the verb connects for itself.
 	cmd := commands.WithRemote(gui.IncusCommand.ComposeCmd(target.dir, args...), target.remote)
 
-	failures, err := gui.runComposeWatched(cmd, target)
+	failures, err := gui.runWatched(cmd, target.remote, target.project)
 	if err != nil {
 		return err
 	}

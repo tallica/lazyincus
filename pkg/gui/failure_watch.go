@@ -12,8 +12,8 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// failureWatch collects the operations that fail in a stack's project
-// while a compose verb has the terminal (docs/Panels.md, "Services").
+// failureWatch collects the operations that fail in a project while a
+// command has the terminal (docs/Panels.md, "Services").
 type failureWatch struct {
 	mutex    sync.Mutex
 	watching bool
@@ -38,6 +38,7 @@ const failureGrace = 200 * time.Millisecond
 // something else failing over and over in the project would never let up.
 const failureWaitLimit = time.Second
 
+// watch starts a watch on project, every project for "".
 func (f *failureWatch) watch(project string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
@@ -87,7 +88,7 @@ func (f *failureWatch) note(event commands.Event) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	if !f.watching || event.Project != f.project {
+	if !f.watching || (f.project != "" && event.Project != f.project) {
 		return
 	}
 
@@ -112,19 +113,19 @@ func (f *failureWatch) note(event commands.Event) {
 // before it runs anyway.
 const streamWait = time.Second
 
-// listenForFailures has failureWatch hear target's project, opening a
-// stream on its remote unless the session's open stream already carries the
+// listenForFailures has failureWatch hear project on remote, opening a
+// stream there unless the session's open stream already carries the
 // project, and returns what closes it. A remote not connected yet goes
-// unwatched rather than hold the verb up.
-func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
+// unwatched rather than hold the command up.
+func (gui *Gui) listenForFailures(remote, project string) (func(), bool) {
 	command := gui.IncusCommand
 
-	if !gui.onSessionRemote(target.remote) {
+	if !gui.onSessionRemote(remote) {
 		var err error
-		if command, err = gui.commandFor(target.remote); err != nil {
+		if command, err = gui.commandFor(remote); err != nil {
 			return nil, false
 		}
-	} else if gui.eventsCover(target.project) {
+	} else if gui.eventsCover(project) {
 		return func() {}, true
 	}
 
@@ -134,13 +135,13 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 	go func() {
 		defer close(done)
 
-		err := command.ListenForEventsIn(ctx, target.project, []string{api.EventTypeOperation}, func() { close(opened) }, gui.failureWatch.note)
+		err := command.ListenForEventsIn(ctx, project, []string{api.EventTypeOperation}, func() { close(opened) }, gui.failureWatch.note)
 		if err != nil {
-			gui.Log.Warn().Err(err).Str("remote", target.remote).Msg("compose failures stream")
+			gui.Log.Warn().Err(err).Str("remote", remote).Msg("failures stream")
 		}
 	}()
 
-	// Open before the verb runs, or a failure quicker than the dial is missed.
+	// Open before the command runs, or a failure quicker than the dial is missed.
 	select {
 	case <-opened:
 	case <-done:
@@ -152,25 +153,54 @@ func (gui *Gui) listenForFailures(target composeTarget) (func(), bool) {
 	return cancel, true
 }
 
-// followingVerb is whether cmd runs until the user stops it, so that a
-// failure in its project meanwhile is some other client's.
-func followingVerb(cmd *exec.Cmd) bool {
-	return len(cmd.Args) > 1 && cmd.Args[1] == "logs"
+// followingVerbs run until the user stops them, so a failure meanwhile is
+// some other client's: incus-compose's and incus's alike.
+var followingVerbs = []string{"logs", "exec", "console", "monitor"}
+
+// cliVerb is the first of args, an incus or incus-compose command line
+// without its binary, that is neither a flag nor --project's value.
+func cliVerb(args []string) string {
+	for i := 0; i < len(args); i++ {
+		switch arg := args[i]; {
+		case arg == "--project":
+			i++
+		case strings.HasPrefix(arg, "-"):
+		default:
+			return arg
+		}
+	}
+
+	return ""
 }
 
-// runComposeWatched runs cmd, an incus-compose command on target's stack, on
-// the terminal, and returns the operations that failed in its project if it
+// cliProject is the project args name with --project, "" for none.
+func cliProject(args []string) string {
+	project := ""
+
+	for i, arg := range args {
+		if arg == "--project" && i+1 < len(args) {
+			project = args[i+1]
+		} else if value, ok := strings.CutPrefix(arg, "--project="); ok {
+			project = value
+		}
+	}
+
+	return project
+}
+
+// runWatched runs cmd on the terminal and returns the operations that
+// failed in project on remote meanwhile, every project's for "", if cmd
 // failed too.
-func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]daemonFailure, error) {
-	if followingVerb(cmd) {
+func (gui *Gui) runWatched(cmd *exec.Cmd, remote, project string) ([]daemonFailure, error) {
+	if len(cmd.Args) > 0 && slices.Contains(followingVerbs, cliVerb(cmd.Args[1:])) {
 		_, err := gui.runOnTerminal(cmd, nil)
 
 		return nil, err
 	}
 
-	gui.failureWatch.watch(target.project)
+	gui.failureWatch.watch(project)
 
-	stopListening, ok := gui.listenForFailures(target)
+	stopListening, ok := gui.listenForFailures(remote, project)
 	if ok {
 		defer stopListening()
 	} else {
@@ -198,8 +228,7 @@ func (gui *Gui) runComposeWatched(cmd *exec.Cmd, target composeTarget) ([]daemon
 	return failures, nil
 }
 
-// showFailures puts failures from a stack on remote in an Error
-// popup, if there are any.
+// showFailures puts failures on remote in an Error popup, if there are any.
 func (gui *Gui) showFailures(failures []daemonFailure, remote string) error {
 	if len(failures) == 0 {
 		return nil
