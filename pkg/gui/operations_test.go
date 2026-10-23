@@ -161,13 +161,15 @@ func TestScreenOperations(t *testing.T) {
 	}
 	s.server.Emit(operationEvent(t, failed))
 
-	// Seen from anywhere: the footer counts both.
-	screen := s.settle(t, "1 failed")
-	assert.Contains(t, screen, "1 running")
+	// Seen from anywhere: the footer counts both, which needn't arrive together.
+	require.Eventually(t, func() bool {
+		footer := s.snapshot(t)
+		return strings.Contains(footer, "1 failed") && strings.Contains(footer, "1 running")
+	}, 5*time.Second, 50*time.Millisecond)
 
 	// W opens on the operations, under way first.
 	s.press(t, 'W')
-	screen = s.settle(t, "Operations - Warnings")
+	screen := s.settle(t, "Operations - Warnings")
 	assert.Contains(t, screen, "✗ failure")
 	assert.Regexp(t, `● running\s+Downloading image[^\n]*\n[^\n]*✗ failure`, screen)
 
