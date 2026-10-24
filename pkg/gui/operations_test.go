@@ -122,9 +122,28 @@ func TestOperationLogCountsFailuresSince(t *testing.T) {
 	log.record(testOperation("new-failure", api.Failure, 0), now)
 	log.record(testOperation("success", api.Success, 0), now)
 
-	running, failed := log.counts(now.Add(-time.Second))
+	running, failed, due := log.counts(now.Add(-time.Second), now.Add(operationsShownAfter))
 	assert.Equal(t, 1, running)
 	assert.Equal(t, 1, failed)
+	assert.True(t, due.IsZero())
+}
+
+func TestOperationLogCountsRunningOnceItHasLasted(t *testing.T) {
+	var log operationLog
+	now := time.Now()
+
+	log.record(testOperation("running", api.Running, 0), now)
+
+	running, _, due := log.counts(now, now.Add(operationsShownAfter/2))
+	assert.Equal(t, 0, running)
+	assert.Equal(t, now.Add(operationsShownAfter), due)
+
+	// an update doesn't restart the wait
+	log.record(testOperation("running", api.Running, 0), now.Add(operationsShownAfter/2))
+
+	running, _, due = log.counts(now, now.Add(operationsShownAfter))
+	assert.Equal(t, 1, running)
+	assert.True(t, due.IsZero())
 }
 
 // operationEvent is an operation event carrying what incustest.Operation

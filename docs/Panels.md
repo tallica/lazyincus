@@ -911,8 +911,9 @@ long it took or how far it's got. `enter` adds the error, the resources
 and, for a task, its metadata; a websocket's metadata is its connection
 secrets, and a token - a join or certificate token, its secret in its
 metadata - isn't listed at all. `d` cancels one the daemon says may be
-cancelled, after a confirmation. The footer says how many are under way,
-and in red how many have failed since the list was last on screen.
+cancelled, after a confirmation. The footer says how many have been under way
+for a second or more, and in red how many have failed since the list was last
+on screen.
 
 ### Warnings
 

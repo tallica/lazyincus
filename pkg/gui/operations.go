@@ -31,7 +31,13 @@ type loggedOperation struct {
 	// seen is when lazyincus last heard of it, by its own clock: the
 	// daemon's can be off.
 	seen time.Time
+	// first is when it was first heard of, which the footer waits on.
+	first time.Time
 }
+
+// operationsShownAfter is how long an operation runs before the footer
+// counts it: most end in less, and a count that blinks says nothing.
+const operationsShownAfter = time.Second
 
 // operationRank orders the statuses an operation goes through, so an event
 // that arrives late can't take one back: the daemon can report Running
@@ -73,7 +79,12 @@ func (l *operationLog) record(operation *commands.Operation, at time.Time) {
 		}
 	}
 
-	l.entries[operation.Key()] = &loggedOperation{operation: operation, seen: at}
+	first := at
+	if logged, ok := l.entries[operation.Key()]; ok {
+		first = logged.first
+	}
+
+	l.entries[operation.Key()] = &loggedOperation{operation: operation, seen: at, first: first}
 	l.prune()
 }
 
@@ -119,11 +130,16 @@ func (l *operationLog) list() []*commands.Operation {
 	return lo.Map(lo.Values(l.entries), func(logged *loggedOperation, _ int) *commands.Operation { return logged.operation })
 }
 
-// counts is how many operations are under way, and how many failed after
-// since.
-func (l *operationLog) counts(since time.Time) (running, failed int) {
+// counts is how many operations have been under way for operationsShownAfter,
+// and how many failed after since; due is when the next younger one is old
+// enough to count, zero if none is waiting.
+func (l *operationLog) counts(since, now time.Time) (running, failed int, due time.Time) {
 	for _, logged := range l.entries {
 		switch {
+		case !logged.operation.IsFinal() && now.Sub(logged.first) < operationsShownAfter:
+			if at := logged.first.Add(operationsShownAfter); due.IsZero() || at.Before(due) {
+				due = at
+			}
 		case !logged.operation.IsFinal():
 			running++
 		case logged.operation.Operation.StatusCode == api.Failure && logged.seen.After(since):
@@ -131,7 +147,7 @@ func (l *operationLog) counts(since time.Time) (running, failed int) {
 		}
 	}
 
-	return running, failed
+	return running, failed, due
 }
 
 func (l *operationLog) clear() {
@@ -301,8 +317,23 @@ func (gui *Gui) showOperations(selected string) error {
 // countOperations hands the footer its counts, which it reads off the main
 // loop, and redraws it.
 func (gui *Gui) countOperations() error {
-	running, failed := gui.operations.counts(gui.State.OperationsSeenAt)
+	now := time.Now()
+	running, failed, due := gui.operations.counts(gui.State.OperationsSeenAt, now)
 	gui.operationCounts.Store(int64(running)<<32 | int64(failed))
+
+	if !due.IsZero() && !gui.operationsRecount {
+		gui.operationsRecount = true
+		time.AfterFunc(due.Sub(now), func() {
+			if gui.isStopped() {
+				return
+			}
+
+			gui.g.Update(func(*gocui.Gui) error {
+				gui.operationsRecount = false
+				return gui.countOperations()
+			})
+		})
+	}
 
 	return gui.renderString(gui.g, "information", gui.getInformationContent())
 }

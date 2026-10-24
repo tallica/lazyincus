@@ -126,6 +126,8 @@ type Gui struct {
 	// footer, which is drawn off it too.
 	operations      operationLog
 	operationCounts atomic.Int64
+	// operationsRecount is whether a recount is scheduled, main loop only.
+	operationsRecount bool
 	// operationsScope counts the scope changes, which clear the log; each
 	// event stream knows the one it was opened for.
 	operationsScope atomic.Uint64

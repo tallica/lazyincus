@@ -181,8 +181,10 @@ func (gui *Gui) setInitialViewContent() error {
 }
 
 // The padding leads, so the options cut short beside it stop a space before it.
+// The footer is right-aligned, so what comes and goes - operations, quickest -
+// goes leftmost, and the rest stays put when it does.
 func (gui *Gui) getInformationContent() string {
-	return INFO_SECTION_PADDING + gui.warningsStatusContent() + gui.operationsStatusContent() + gui.incusStatusContent() + gui.Config.Version
+	return INFO_SECTION_PADDING + gui.operationsStatusContent() + gui.warningsStatusContent() + gui.incusStatusContent() + gui.Config.Version
 }
 
 // incusStatusContent renders the server version, the remote and project the
