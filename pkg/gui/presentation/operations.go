@@ -62,9 +62,13 @@ func operationProgress(operation *commands.Operation) string {
 	return operation.Progress()
 }
 
-// OperationDuration rounds to what's worth reading: tenths under a minute,
-// seconds above.
+// OperationDuration rounds to what's worth reading: milliseconds under a
+// second, tenths under a minute, seconds above.
 func OperationDuration(took time.Duration) string {
+	if took < time.Second {
+		return took.Round(time.Millisecond).String()
+	}
+
 	if took < time.Minute {
 		return took.Round(100 * time.Millisecond).String()
 	}
