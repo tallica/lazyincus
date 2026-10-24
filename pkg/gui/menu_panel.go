@@ -24,8 +24,7 @@ type CreateMenuOptions struct {
 	TabIndex int
 	// Wide is for rows with more to say than a menu's.
 	Wide bool
-	// OnConfirm makes the menu a checklist: space ticks a row, a every
-	// row, and enter closes it and hands this the rows ticked.
+	// OnConfirm makes the menu a checklist, handed the rows ticked on enter.
 	OnConfirm func(picked []*types.MenuItem) error
 }
 
@@ -84,8 +83,7 @@ func (gui *Gui) handleMenuPress() error {
 	return gui.onMenuPress(selectedMenuItem)
 }
 
-// handleMenuToggle is space: ticking the row in a checklist, pressing it
-// in any other menu.
+// handleMenuToggle is space: tick in a checklist, press in any other menu.
 func (gui *Gui) handleMenuToggle() error {
 	if gui.State.MenuConfirm == nil {
 		return gui.handleMenuPress()
@@ -101,8 +99,7 @@ func (gui *Gui) handleMenuToggle() error {
 	return gui.Panels.Menu.RerenderList()
 }
 
-// handleMenuToggleAll is a checklist's `a`: every row ticked, or none when
-// they all were.
+// handleMenuToggleAll ticks every row, or none when they all were.
 func (gui *Gui) handleMenuToggleAll() error {
 	items := gui.Panels.Menu.List.GetAllItems()
 	all := lo.EveryBy(items, func(item *types.MenuItem) bool { return item.Checked })

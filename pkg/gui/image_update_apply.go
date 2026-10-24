@@ -20,8 +20,7 @@ type serviceUpdate struct {
 	status  commands.UpstreamStatus
 }
 
-// servicesWithUpdates are the services whose instances run an image with a
-// newer build, in the order given.
+// servicesWithUpdates are the services running an image with a newer build.
 func servicesWithUpdates(services []*commands.ComposeService, updates map[string]commands.UpstreamStatus) []serviceUpdate {
 	var found []serviceUpdate
 
@@ -35,8 +34,7 @@ func servicesWithUpdates(services []*commands.ComposeService, updates map[string
 	return found
 }
 
-// buildChangeStr is a newer build's from → to, a side the registry didn't
-// say left as ?, and empty when it said nothing of either.
+// buildChangeStr is a newer build's from → to, ? for a side unknown.
 func buildChangeStr(status commands.UpstreamStatus) string {
 	variable, from, to := commands.BuildChange(status.Ref, status.From, status.To)
 	if from == "" && to == "" {
@@ -51,10 +49,8 @@ func buildChangeStr(status commands.UpstreamStatus) string {
 	return change
 }
 
-// handleUpdateImages is `G` on Stacks and Services: the stack's services
-// with a newer image build, to tick and recreate on it - checking the
-// registries first if none of the stack's images has been, as one on a
-// remote still connecting at the last check wasn't.
+// handleUpdateImages is `G`, checking first when none of the stack's images
+// has been: its remote may have still been connecting at the last check.
 func (gui *Gui) handleUpdateImages(g *gocui.Gui, v *gocui.View) error {
 	stack := gui.selectedStack.Load()
 	if stack == nil || stack.Name == "" {
@@ -134,10 +130,8 @@ func (gui *Gui) updateImagesMenu(stack *commands.ComposeStack) error {
 	})
 }
 
-// composeUpdateImages recreates the services named on a fresh pull of
-// their images, --no-deps keeping it to them: up would otherwise recreate
-// what they depend on too. The registries are asked again after, for the
-// images the services now run.
+// composeUpdateImages recreates the services on a pull; without --no-deps,
+// `up --recreate` would recreate what they depend on too.
 func (gui *Gui) composeUpdateImages(target composeTarget, services []string) error {
 	message := fmt.Sprintf(gui.Tr.ConfirmComposeUpdateImages,
 		gui.onRemote(strings.Join(services, ", "), target.remote))

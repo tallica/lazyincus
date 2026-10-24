@@ -25,8 +25,7 @@ type UpstreamTarget struct {
 	Fingerprint  string
 	Ref          string
 	Architecture string
-	// Pinned is the platform manifest's digest the tag resolved to when
-	// pulled, empty when the pull didn't record one.
+	// Pinned is the platform manifest's digest the tag resolved to when pulled.
 	Pinned string
 }
 
@@ -46,8 +45,7 @@ type UpstreamStatus struct {
 	Digest    string
 	Err       error
 	CheckedAt time.Time
-	// From and To are the build running and the tag's, read for a newer
-	// build only; nil when the registry wouldn't say.
+	// From and To are the running and the tag's builds, for a newer build only.
 	From, To *BuildInfo
 }
 
@@ -162,8 +160,7 @@ type RegistryChecker struct {
 	// seen is the fingerprint each tag's digest was found to hold, by ref
 	// and architecture.
 	seen map[string]seenTag
-	// builds are the configs read, by repository and digest: neither moves.
-	// One the registry no longer has is nil, so it isn't asked for again.
+	// builds are the configs read by digest, nil for one the registry let go.
 	builds map[string]*BuildInfo
 }
 
@@ -233,8 +230,7 @@ func (c *RegistryChecker) Check(ctx context.Context, target UpstreamTarget) Upst
 	return status
 }
 
-// build is the config of the target's repository's build at digest, nil
-// when it can't be read - a registry may have let an old build go.
+// build is the config of the target's repository's build at digest, if any.
 func (c *RegistryChecker) build(ctx context.Context, target UpstreamTarget, digest string) *BuildInfo {
 	ref, err := name.ParseReference(target.Ref)
 	if err != nil {

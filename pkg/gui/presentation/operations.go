@@ -21,7 +21,7 @@ const (
 const MinOperationDescriptionWidth = 18
 
 // GetOperationDisplayStrings leads with the status, which is what the list
-// is read for; retried is a failure tried again since, and gone through.
+// is read for.
 func GetOperationDisplayStrings(operation *commands.Operation, showProject, retried bool) []string {
 	cells := []string{
 		OperationStatus(operation, retried),
@@ -38,8 +38,7 @@ func GetOperationDisplayStrings(operation *commands.Operation, showProject, retr
 	return cells
 }
 
-// OperationStatus is the status with a mark that reads at a glance, a
-// failure retried since greyed out: nothing is left failed.
+// OperationStatus is the status with a mark that reads at a glance.
 func OperationStatus(operation *commands.Operation, retried bool) string {
 	switch {
 	case retried:

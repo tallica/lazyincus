@@ -17,9 +17,8 @@ const MinImageLabelWidth = 28
 
 // GetImageDisplayStrings renders one row of the images panel. The users
 // count comes straight after the label, where a narrow panel still shows
-// it: it's what says whether the image can go. newer is the registry having
-// a newer build of the image's tag, marked ahead of the label, which a
-// narrow panel cuts from the end.
+// it: it's what says whether the image can go. newer is marked ahead of the
+// label, which a narrow panel cuts from the end.
 func GetImageDisplayStrings(image *commands.Image, showProject bool, newer bool) []string {
 	label := image.Label()
 	if newer {

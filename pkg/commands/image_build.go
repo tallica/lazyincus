@@ -11,16 +11,13 @@ import (
 	"github.com/samber/lo"
 )
 
-// The OCI annotations a build says what it is with, when it says at all.
 const (
 	labelVersion  = "org.opencontainers.image.version"
 	labelSource   = "org.opencontainers.image.source"
 	labelRevision = "org.opencontainers.image.revision"
 )
 
-// BuildInfo is what an image's config says of the build: what the OCI
-// labels name, the `*_VERSION` variables the official images set instead,
-// and when it was built.
+// BuildInfo is what an image's config says of its build.
 type BuildInfo struct {
 	Version  string
 	Source   string
@@ -53,11 +50,8 @@ func buildInfo(image v1.Image) (*BuildInfo, error) {
 	return info, nil
 }
 
-// BuildChange is how two builds of ref's tag differ, best said: by version
-// label, else by a `*_VERSION` variable that changed - the image's own, named
-// for its repository, ahead of any other - else by build date. variable
-// names the one compared when it isn't the image's own; either side empty
-// is unknown.
+// BuildChange is how two builds of ref's tag differ; variable names the
+// `*_VERSION` compared unless it's the image's own. An empty side is unknown.
 func BuildChange(ref string, from, to *BuildInfo) (variable, before, after string) {
 	if to == nil {
 		return "", "", ""
@@ -88,8 +82,7 @@ func BuildChange(ref string, from, to *BuildInfo) (variable, before, after strin
 	return "", buildDate(from.Created, to.Created), buildDate(to.Created, from.Created)
 }
 
-// ownVersion is whether key is the version of what ref's repository is
-// named for: NGINX_VERSION for nginx, SQLITE_VERSION for sqlite3.
+// ownVersion is whether key is ref's repository's: NGINX_VERSION for nginx.
 func ownVersion(ref, key string) bool {
 	repository, _, _ := strings.Cut(ref, "@")
 	repository = repository[strings.LastIndex(repository, "/")+1:]
@@ -100,8 +93,7 @@ func ownVersion(ref, key string) bool {
 	return key == strings.TrimRight(name, "0123456789")+"_VERSION"
 }
 
-// buildDate is a build's date, with the time when the other build's is the
-// same day.
+// buildDate adds the time when the other build is from the same day.
 func buildDate(created, other time.Time) string {
 	if created.IsZero() {
 		return ""
@@ -115,9 +107,7 @@ func buildDate(created, other time.Time) string {
 	return created.Format(time.DateOnly)
 }
 
-// BuildLink is where to read what changed between two builds: on GitHub, a
-// comparison of their revisions, or the releases; elsewhere the source
-// itself. Empty when the new build doesn't name its source.
+// BuildLink is where to read what changed between two builds, if they say.
 func BuildLink(from, to *BuildInfo) string {
 	if to == nil || to.Source == "" {
 		return ""
