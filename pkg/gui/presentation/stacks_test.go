@@ -23,3 +23,19 @@ func TestStackImageMarker(t *testing.T) {
 	stack.Images = []string{"current"}
 	assert.Equal(t, "web", utils.Decolorise(GetStackDisplayStrings(&config.GuiConfig{}, stack, "", nil, updates)[0]))
 }
+
+// A stack with an instance from an older config says so after its status.
+func TestGetStackDisplayStringsChanged(t *testing.T) {
+	stack := &commands.ComposeStack{
+		Dir:      "/srv/web",
+		Name:     "web",
+		Services: []commands.ComposeService{{Name: "web", Hash: "v1:new"}},
+		Statuses: map[string][]string{"web": {"Running"}},
+		Hashes:   map[string][]string{"web": {"v1:new"}},
+	}
+
+	assert.Equal(t, []string{"web", "running", "/srv/web"}, GetStackDisplayStrings(&config.GuiConfig{}, stack, "/home", nil, nil))
+
+	stack.Hashes["web"] = []string{"v1:old"}
+	assert.Equal(t, []string{"web", "running changed", "/srv/web"}, GetStackDisplayStrings(&config.GuiConfig{}, stack, "/home", nil, nil))
+}

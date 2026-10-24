@@ -42,6 +42,9 @@ type ComposeStack struct {
 	Statuses map[string][]string
 	Images   []string
 
+	// Hashes are the config hashes those instances were created from.
+	Hashes map[string][]string
+
 	// StatusErr is why the stack's remote gave no statuses, and
 	// StatusPending that it hasn't yet: it's still being connected to.
 	StatusErr     error
@@ -126,6 +129,24 @@ func (s *ComposeStack) ServiceStatuses() []string {
 	return statuses
 }
 
+// Changed names the services with an instance from an older config.
+func (s *ComposeStack) Changed() []string {
+	var changed []string
+
+	for _, service := range s.Services {
+		for _, hash := range s.Hashes[service.Name] {
+			if configChanged(service.Hash, hash) {
+				changed = append(changed, service.Name)
+				break
+			}
+		}
+	}
+
+	sort.Strings(changed)
+
+	return changed
+}
+
 func (s *ComposeStack) serviceNames() []string {
 	names := make([]string, 0, len(s.Services))
 	for _, service := range s.Services {
@@ -161,6 +182,8 @@ type ComposeProjectState struct {
 	// Images are the fingerprints of the images they were created from,
 	// sorted.
 	Images []string
+	// Hashes are the config hashes they were created from, by service.
+	Hashes map[string][]string
 }
 
 // GetComposeStatuses is every compose-labelled instance on the server, by
@@ -185,6 +208,14 @@ func (c *IncusCommand) GetComposeStatuses() (map[string]ComposeProjectState, err
 		}
 
 		project.Statuses[service] = append(project.Statuses[service], instance.Status)
+
+		if hash := instance.ExpandedConfig[composeHashKey]; hash != "" {
+			if project.Hashes == nil {
+				project.Hashes = map[string][]string{}
+			}
+
+			project.Hashes[service] = append(project.Hashes[service], hash)
+		}
 
 		image := instance.Config[baseImageKey]
 		if image != "" && !slices.Contains(project.Images, image) {
@@ -238,6 +269,24 @@ func ComposeFile(dir string) (string, error) {
 			return "", fmt.Errorf("%s: no compose file", dir)
 		}
 	}
+}
+
+// StackFilesStamp changes with a stack's compose file or its .env.
+func StackFilesStamp(dir string) string {
+	stamp := ""
+
+	files := []string{filepath.Join(dir, ".env")}
+	if file, err := ComposeFile(dir); err == nil {
+		files = append(files, file)
+	}
+
+	for _, file := range files {
+		if info, err := os.Stat(file); err == nil {
+			stamp += fmt.Sprintf("%s:%d:%d;", file, info.ModTime().UnixNano(), info.Size())
+		}
+	}
+
+	return stamp
 }
 
 // CheckStackDir refuses a path that isn't an existing directory; whether it

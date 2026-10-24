@@ -120,6 +120,38 @@ func landed(t *testing.T, s *screen, view string) {
 	})
 }
 
+// A service whose instance was created from another config than the file
+// declares is marked changed on its row, its stack's, and both Info tabs,
+// and `U` offers to recreate just those.
+func TestScreenStackChanged(t *testing.T) {
+	root := t.TempDir()
+	local := testStack(t, root, "default", "web", "db")
+	local.Services[0].Hash = "v1:new"
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withStacks(t, local)(s)
+
+		instances := fixtureServer().Instances
+		for i := range instances {
+			if instances[i].Name == "web" {
+				instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
+				if instances[i].ExpandedConfig == nil {
+					instances[i].ExpandedConfig = map[string]string{}
+				}
+
+				instances[i].ExpandedConfig["user.label.incus-compose.service"] = "web"
+				instances[i].ExpandedConfig["user.label.incus-compose.config-hash"] = "v1:old"
+			}
+		}
+
+		s.server.SetInstances(instances)
+	})
+
+	screen := s.settle(t, "1 instance from an older config, recreate with u")
+	assert.Contains(t, screen, "│default running changed")
+	assert.Contains(t, screen, "│web running changed")
+}
+
 func serviceNames(t *testing.T, s *screen) []string {
 	t.Helper()
 
@@ -697,13 +729,18 @@ func composeInstance(name, service, status string, devices map[string]map[string
 	}}}
 }
 
-// Drift is an orphan the file has dropped, and a declared service with
-// nothing behind it; a service that matches has none.
+// Drift is an orphan the file has dropped, a declared service with nothing
+// behind it, and instances created from an older config; a service that
+// matches has none.
 func TestStackDrift(t *testing.T) {
+	old := composeInstance("api", "api", "Running", nil)
+	old.Instance.ExpandedConfig["user.label.incus-compose.config-hash"] = "v1:old"
+
 	state := &stackInstances{
 		services: []*commands.ComposeService{
 			{Name: "web", Instances: []*commands.Instance{composeInstance("web", "web", "Running", nil)}},
 			{Name: "cache"},
+			{Name: "api", Hash: "v1:new", Instances: []*commands.Instance{old}},
 		},
 		orphans: []*commands.Instance{
 			composeInstance("worker-1", "worker", "Running", nil),
@@ -712,7 +749,8 @@ func TestStackDrift(t *testing.T) {
 	}
 
 	assert.Equal(t,
-		"cache:        declared, not created\n"+
+		"api:          1 instance from an older config, recreate with u\n"+
+			"cache:        declared, not created\n"+
 			"worker:       2 instances, partial, not in the compose file\n",
 		stackDriftStr(state))
 
@@ -927,7 +965,8 @@ func TestStoppingAReplicaShowsOnItsStack(t *testing.T) {
 	require.Eventually(t, func() bool { return stackStatus() == commands.ServicePartial }, 2*time.Second, 20*time.Millisecond)
 }
 
-// U is a menu rather than a bare confirmation: recreate as is, or pull first.
+// U is a menu rather than a bare confirmation: recreate as is, or pull
+// first.
 func TestRecreateOffersToPullFirst(t *testing.T) {
 	s := startScreenWith(t, 140, 40, nil, withStacks(t, testStack(t, t.TempDir(), "default", "web")))
 	s.settle(t, "Services (default)")
@@ -965,4 +1004,33 @@ func TestRecreateStopsAskingOnA(t *testing.T) {
 func TestComposeRecreateArgs(t *testing.T) {
 	assert.Equal(t, []string{"up", "--recreate", "--pull", "never", "--detach"}, composeRecreateArgs("never"))
 	assert.Equal(t, []string{"up", "--recreate", "--pull", "always", "--detach"}, composeRecreateArgs("always"))
+}
+
+// A cached stack is read again once its compose file changes on disk, and
+// not before.
+func TestStackCacheReloadsAnEditedFile(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "compose.yaml")
+	require.NoError(t, os.WriteFile(file, []byte("services: {}\n"), 0o644))
+
+	loads := 0
+	load := func(dir string) *commands.ComposeStack {
+		loads++
+		return &commands.ComposeStack{Dir: dir}
+	}
+
+	var cache stackCache
+
+	cache.get(dir, false, load)
+	cache.get(dir, false, load)
+	assert.Equal(t, 1, loads)
+
+	assert.False(t, cache.edited([]string{dir, t.TempDir()}))
+
+	require.NoError(t, os.WriteFile(file, []byte("services: {web: {}}\n"), 0o644))
+	assert.True(t, cache.edited([]string{dir}))
+
+	cache.get(dir, false, load)
+	assert.Equal(t, 2, loads)
+	assert.False(t, cache.edited([]string{dir}))
 }

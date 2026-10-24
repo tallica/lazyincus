@@ -92,7 +92,9 @@ func stackTarget(stack *commands.ComposeStack) composeTarget {
 }
 
 func serviceTarget(service *commands.ComposeService) composeTarget {
-	return composeTarget{remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name}
+	return composeTarget{
+		remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name,
+	}
 }
 
 // composeRun is every compose verb: the arguments, then the service to
@@ -163,25 +165,24 @@ func composeRecreateArgs(pull string) []string {
 // composeRecreateMenu is `U`: `up --recreate`, replacing instances so an
 // edited compose file applies, with or without pulling their images first.
 func (gui *Gui) composeRecreateMenu(target composeTarget) error {
-	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.ComposeRecreateMenuTitle,
-		Items: []*types.MenuItem{
-			{
-				Label: gui.Tr.ComposeRecreate,
-				OnPress: func() error {
-					return gui.composeConfirmOnce("recreate", gui.Tr.ConfirmComposeRecreate, target,
-						composeRecreateArgs("never")...)
-				},
-			},
-			{
-				Label: gui.Tr.ComposeRecreatePullOption,
-				OnPress: func() error {
-					return gui.composeConfirmOnce("recreate-pull", gui.Tr.ConfirmComposeRecreatePull, target,
-						composeRecreateArgs("always")...)
-				},
+	items := []*types.MenuItem{
+		{
+			Label: gui.Tr.ComposeRecreate,
+			OnPress: func() error {
+				return gui.composeConfirmOnce("recreate", gui.Tr.ConfirmComposeRecreate, target,
+					composeRecreateArgs("never")...)
 			},
 		},
-	})
+		{
+			Label: gui.Tr.ComposeRecreatePullOption,
+			OnPress: func() error {
+				return gui.composeConfirmOnce("recreate-pull", gui.Tr.ConfirmComposeRecreatePull, target,
+					composeRecreateArgs("always")...)
+			},
+		},
+	}
+
+	return gui.Menu(CreateMenuOptions{Title: gui.Tr.ComposeRecreateMenuTitle, Items: items})
 }
 
 func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {

@@ -60,7 +60,40 @@ func (c *IncusCommand) LoadComposeStack(dir string) *ComposeStack {
 
 	stack.Err = err
 
+	if err == nil {
+		c.setComposeHashes(stack)
+	}
+
 	return stack
+}
+
+// setComposeHashes leaves the hashes empty if `config --hash` fails.
+func (c *IncusCommand) setComposeHashes(stack *ComposeStack) {
+	// An argument, not a shell word: nothing expands the `*`.
+	output, err := c.OSCommand.RunExecutableWithOutput(c.ComposeCmd(stack.Dir, "config", "--hash", "*"))
+	if err != nil {
+		c.Log.Debug().Err(err).Str("dir", stack.Dir).Msg("no compose config hashes")
+		return
+	}
+
+	hashes := parseComposeHashes(output)
+	for i := range stack.Services {
+		stack.Services[i].Hash = hashes[stack.Services[i].Name]
+	}
+}
+
+// parseComposeHashes reads `config --hash`'s `<service> <hash>` lines.
+func parseComposeHashes(output string) map[string]string {
+	hashes := map[string]string{}
+
+	for line := range strings.Lines(output) {
+		fields := strings.Fields(line)
+		if len(fields) == 2 {
+			hashes[fields[0]] = fields[1]
+		}
+	}
+
+	return hashes
 }
 
 // ComposeStackConfig is the whole of `incus-compose config` for the stack

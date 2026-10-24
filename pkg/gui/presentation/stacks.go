@@ -63,6 +63,8 @@ func displayStackStatus(guiConfig *config.GuiConfig, stack *commands.ComposeStac
 		return styledStackState(guiConfig, "unreachable", stackUnreachableStyles, color.FgRed)
 	case stack.StatusPending:
 		return styledStackState(guiConfig, "connecting", stackConnectingStyles, color.FgYellow)
+	case len(stack.Changed()) > 0:
+		return DisplayRolledUpStatus(guiConfig, stack.Status()) + " " + DisplayChanged(guiConfig, true)
 	default:
 		return DisplayRolledUpStatus(guiConfig, stack.Status())
 	}

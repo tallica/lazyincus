@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -48,7 +49,7 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 			GetItemContextCacheKey: func(stack *commands.ComposeStack) string {
 				// fmt prints a map's keys sorted, so the same statuses give
 				// the same key.
-				return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses) +
+				return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses, stack.Changed()) +
 					"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 			},
 		},
@@ -126,36 +127,63 @@ func localStackDir() (string, bool) {
 // stack forgets its entry, so an edited compose file shows after the next.
 type stackCache struct {
 	mutex  sync.Mutex
-	stacks map[string]*commands.ComposeStack
+	stacks map[string]cachedStack
+}
+
+type cachedStack struct {
+	stack *commands.ComposeStack
+	stamp string
 }
 
 // get is dir's config, loading it if it isn't held - or, with retry, if
 // what's held is a failure, which a stack that has since gained its compose
-// file would otherwise keep.
+// file would otherwise keep. Changed files load it again too.
 func (c *stackCache) get(dir string, retry bool, load func(string) *commands.ComposeStack) *commands.ComposeStack {
+	// Before the load, so an edit made during it is seen next time.
+	stamp := commands.StackFilesStamp(dir)
+
 	c.mutex.Lock()
-	stack, ok := c.stacks[dir]
+	cached, ok := c.stacks[dir]
 	c.mutex.Unlock()
 
-	if ok && (stack.Err == nil || !retry) {
-		return stack
+	if ok && cached.stamp == stamp && (cached.stack.Err == nil || !retry) {
+		return cached.stack
 	}
 
-	stack = load(dir)
-	c.put(stack)
+	stack := load(dir)
+	c.store(stack, stamp)
 
 	return stack
 }
 
+// edited is whether any of dirs' files changed since they were read.
+func (c *stackCache) edited(dirs []string) bool {
+	for _, dir := range dirs {
+		c.mutex.Lock()
+		cached, ok := c.stacks[dir]
+		c.mutex.Unlock()
+
+		if ok && cached.stamp != commands.StackFilesStamp(dir) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *stackCache) put(stack *commands.ComposeStack) {
+	c.store(stack, commands.StackFilesStamp(stack.Dir))
+}
+
+func (c *stackCache) store(stack *commands.ComposeStack, stamp string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	if c.stacks == nil {
-		c.stacks = map[string]*commands.ComposeStack{}
+		c.stacks = map[string]cachedStack{}
 	}
 
-	c.stacks[stack.Dir] = stack
+	c.stacks[stack.Dir] = cachedStack{stack: stack, stamp: stamp}
 }
 
 func (c *stackCache) forget(dir string) {
@@ -357,7 +385,7 @@ func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 
 			if stack.Name != "" {
 				project := statuses.byProject[stack.Name]
-				stack.Statuses, stack.Images = project.Statuses, project.Images
+				stack.Statuses, stack.Images, stack.Hashes = project.Statuses, project.Images, project.Hashes
 			}
 		}
 	}
@@ -411,6 +439,16 @@ func (gui *Gui) setStackServices(stacks []*commands.ComposeStack) error {
 	return gui.Panels.Instances.RerenderList()
 }
 
+// refreshStacksIfEdited catches compose edits, which no event announces.
+func (gui *Gui) refreshStacksIfEdited() error {
+	dirs := gui.stackDirs.Load()
+	if dirs == nil || !gui.stacks.edited(slices.Collect(maps.Values(*dirs))) {
+		return nil
+	}
+
+	return gui.refreshStacksQuiet()
+}
+
 func (gui *Gui) refreshStacksQuiet() error {
 	if err := gui.refresh(nil, gui.fetchStacks); err != nil {
 		gui.Log.Warn().Err(err).Send()
@@ -428,6 +466,11 @@ func (gui *Gui) followStack(stack *commands.ComposeStack) error {
 	// has to find the new stack.
 	previous := gui.selectedStack.Swap(stack)
 	if stackIdentity(previous) == stackIdentity(stack) {
+		// A reloaded compose file would otherwise wait for the services poll.
+		if previous != nil && !reflect.DeepEqual(previous.Services, stack.Services) {
+			gui.refreshInBackground(gui.fetchServices)
+		}
+
 		return nil
 	}
 
