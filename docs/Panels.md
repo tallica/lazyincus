@@ -942,10 +942,10 @@ secrets, and a token - a join or certificate token, its secret in its
 metadata - isn't listed at all. `d` cancels one the daemon says may be
 cancelled, after a confirmation. The footer says how many have been under way
 for a second or more, and in red how many have failed since the list was last
-on screen. A failure followed by the same action on the same resources
-going through is greyed out as `retried` and not counted: incus-compose
-retries a delete the daemon refused while ic-healthd was writing the
-instance's health into its config.
+on screen. A failure followed within a minute by the same action on the
+same resources going through is greyed out as `retried` and not counted:
+incus-compose retries a delete the daemon refused while ic-healthd was
+writing the instance's health into its config.
 
 ### Warnings
 

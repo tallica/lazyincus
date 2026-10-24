@@ -130,7 +130,8 @@ func TestOperationLogCountsFailuresSince(t *testing.T) {
 
 // A failure tried again since, and gone through, leaves nothing failed:
 // incus-compose retrying a delete the daemon refused while the instance was
-// busy. Only the same action, on the same instance, started later, counts.
+// busy. Only the same action, on the same instance, started soon after,
+// counts.
 func TestOperationLogLeavesOutRetriedFailures(t *testing.T) {
 	var log operationLog
 	now := time.Now()
@@ -149,9 +150,11 @@ func TestOperationLogLeavesOutRetriedFailures(t *testing.T) {
 	log.record(at(testOperation("refused-elsewhere", api.Failure, 0), 0, "web-2"), now)
 	log.record(at(testOperation("deleted-before", api.Success, 0), -time.Second, "web-3"), now)
 	log.record(at(testOperation("refused-after", api.Failure, 0), 0, "web-3"), now)
+	log.record(at(testOperation("refused-long-ago", api.Failure, 0), 0, "web-4"), now)
+	log.record(at(testOperation("deleted-by-hand", api.Success, 0), retriedWithin+time.Second, "web-4"), now)
 
 	_, failed, _ := log.counts(now.Add(-time.Second), now)
-	assert.Equal(t, 2, failed)
+	assert.Equal(t, 3, failed)
 
 	retried := lo.FilterMap(log.list(), func(op *commands.Operation, _ int) (string, bool) {
 		return op.Key(), log.retried(op)

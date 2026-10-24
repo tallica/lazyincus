@@ -152,8 +152,12 @@ func (l *operationLog) counts(since, now time.Time) (running, failed int, due ti
 	return running, failed, due
 }
 
+// retriedWithin is how soon after a failure a success counts as its retry,
+// rather than the same thing done again later by hand.
+const retriedWithin = time.Minute
+
 // retried is whether a failure was tried again, and that went through: the
-// same action on the same resources, started later. incus-compose retries
+// same action on the same resources, started soon after. incus-compose retries
 // a delete the daemon refused while ic-healthd was writing the instance's
 // health into its config, leaving the refusal behind as a failure.
 func (l *operationLog) retried(failure *commands.Operation) bool {
@@ -166,6 +170,7 @@ func (l *operationLog) retried(failure *commands.Operation) bool {
 		if other.Operation.StatusCode == api.Success && other.Project == failure.Project &&
 			other.Operation.Description == failure.Operation.Description &&
 			other.Operation.CreatedAt.After(failure.Operation.CreatedAt) &&
+			other.Operation.CreatedAt.Sub(failure.Operation.CreatedAt) <= retriedWithin &&
 			maps.EqualFunc(other.Operation.Resources, failure.Operation.Resources, slices.Equal) {
 			return true
 		}
