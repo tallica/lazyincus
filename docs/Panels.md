@@ -564,9 +564,10 @@ runs from this machine, not the daemon, with the credentials in your
 error on the Config tab. A tag that hasn't moved costs a HEAD, which
 Docker Hub doesn't count against its pull limit.
 `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag, `2.1`
-to `2.2`, is the compose file's business, and is left to
+to `2.2`, isn't looked for - see
+[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
-on the repository the file lives in.
+on the compose file's repository is one way to catch those.
 
 Which columns show, and in what order, is user-configurable via
 `gui.instanceColumns`. `service`, `health` and `image` read incus-compose

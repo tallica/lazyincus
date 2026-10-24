@@ -144,11 +144,7 @@ Deliberately deferred (don't re-pitch unprompted):
 
 - **Newer image tags** — `g` on Images says only whether a tag has a newer
   build. Whether `2.2` has followed `2.1` is the compose file's question,
-  and Renovate answers it in CI and opens the pull request; reinventing
-  its docker versioning here would end at an edit to that file anyway.
-  Running the Renovate CLI from lazyincus was weighed too: it reads only
-  the compose file, can't see the build that's running, needs Node, takes
-  tens of seconds a run, and its report format is experimental.
+  and answering it here would end at an edit to that file anyway.
 - **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
   new build for a stack's services. An instance launched from an OCI
   image by hand gets the `↑` but no key: `incus rebuild` discards its
