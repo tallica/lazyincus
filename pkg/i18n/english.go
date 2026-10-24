@@ -228,6 +228,7 @@ type TranslationSet struct {
 	ComposeRecreate               string
 	ComposeRecreateMenuTitle      string
 	ComposeRecreatePullOption     string
+	ComposeRecreateChangedOption  string
 	ComposeDown                   string
 	ComposeKill                   string
 	ComposeBuild                  string
@@ -244,6 +245,7 @@ type TranslationSet struct {
 	ConfirmComposeDownWithVolumes string
 	ConfirmComposeRecreate        string
 	ConfirmComposeRecreatePull    string
+	ConfirmComposeRecreateChanged string
 	ConfirmComposeStop            string
 	ConfirmComposeKill            string
 
@@ -587,6 +589,7 @@ func englishSet() TranslationSet {
 		ComposeRecreate:               "recreate",
 		ComposeRecreateMenuTitle:      "Recreate",
 		ComposeRecreatePullOption:     "pull & recreate",
+		ComposeRecreateChangedOption:  "recreate changed",
 		ComposeDown:                   "bring down",
 		ComposeKill:                   "kill",
 		ComposeBuild:                  "build",
@@ -602,6 +605,7 @@ func englishSet() TranslationSet {
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down %s and delete its volumes?",
 		ConfirmComposeRecreate:        "Are you sure you want to recreate %s? Running instances will be replaced.",
 		ConfirmComposeRecreatePull:    "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
+		ConfirmComposeRecreateChanged: "Are you sure you want to recreate the instances of %s whose compose config changed? They will be replaced.",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 

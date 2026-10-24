@@ -13,7 +13,7 @@ func TestGetServiceRowDisplayStrings(t *testing.T) {
 	row := &commands.ServiceRow{Service: service}
 
 	assert.Equal(t,
-		[]string{"web", "none", "0/2", "", "", "0"},
+		[]string{"web", "none", "", "0/2", "", "", "0"},
 		GetServiceRowDisplayStrings(&config.GuiConfig{}, row))
 
 	// The replica count is blank when it matches what was declared, and the
@@ -67,4 +67,26 @@ func TestGetServiceRowDisplayStringsReplica(t *testing.T) {
 		[]string{"  web-2", "running", ""},
 		GetServiceRowDisplayStrings(
 			&config.GuiConfig{ServiceColumns: []string{"name", "status", "replicas"}}, row))
+}
+
+// A service is changed while any instance is, and each replica row says
+// whether it is itself.
+func TestGetServiceRowDisplayStringsChanged(t *testing.T) {
+	instance := func(name, hash string) *commands.Instance {
+		instance := &commands.Instance{Name: name}
+		instance.Instance.ExpandedConfig = map[string]string{"user.label.incus-compose.config-hash": hash}
+
+		return instance
+	}
+
+	current, old := instance("web-1", "v1:new"), instance("web-2", "v1:old")
+	service := &commands.ComposeService{Name: "web", Hash: "v1:new", Replicas: 2, Instances: []*commands.Instance{current, old}}
+	columns := &config.GuiConfig{ServiceColumns: []string{"name", "changed"}}
+
+	assert.Equal(t, []string{"web", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service}))
+	assert.Equal(t, []string{"  web-1", ""}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: current}))
+	assert.Equal(t, []string{"  web-2", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: old}))
+
+	icons := &config.GuiConfig{InstanceStatusStyle: "icon", ServiceColumns: []string{"changed"}}
+	assert.Equal(t, []string{"↻"}, GetServiceRowDisplayStrings(icons, &commands.ServiceRow{Service: service}))
 }

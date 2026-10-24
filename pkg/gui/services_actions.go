@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/jesseduffield/gocui"
@@ -85,14 +86,22 @@ type composeTarget struct {
 	dir     string
 	project string
 	service string
+
+	// hashed is whether this incus-compose has `up --recreate-changed`.
+	hashed bool
 }
 
 func stackTarget(stack *commands.ComposeStack) composeTarget {
-	return composeTarget{remote: stack.Remote, dir: stack.Dir, project: stack.Name}
+	hashed := slices.ContainsFunc(stack.Services, func(service commands.ComposeService) bool { return service.Hash != "" })
+
+	return composeTarget{remote: stack.Remote, dir: stack.Dir, project: stack.Name, hashed: hashed}
 }
 
 func serviceTarget(service *commands.ComposeService) composeTarget {
-	return composeTarget{remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name}
+	return composeTarget{
+		remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name,
+		hashed: service.Hash != "",
+	}
 }
 
 // composeRun is every compose verb: the arguments, then the service to
@@ -163,25 +172,35 @@ func composeRecreateArgs(pull string) []string {
 // composeRecreateMenu is `U`: `up --recreate`, replacing instances so an
 // edited compose file applies, with or without pulling their images first.
 func (gui *Gui) composeRecreateMenu(target composeTarget) error {
-	return gui.Menu(CreateMenuOptions{
-		Title: gui.Tr.ComposeRecreateMenuTitle,
-		Items: []*types.MenuItem{
-			{
-				Label: gui.Tr.ComposeRecreate,
-				OnPress: func() error {
-					return gui.composeConfirmOnce("recreate", gui.Tr.ConfirmComposeRecreate, target,
-						composeRecreateArgs("never")...)
-				},
-			},
-			{
-				Label: gui.Tr.ComposeRecreatePullOption,
-				OnPress: func() error {
-					return gui.composeConfirmOnce("recreate-pull", gui.Tr.ConfirmComposeRecreatePull, target,
-						composeRecreateArgs("always")...)
-				},
+	items := []*types.MenuItem{
+		{
+			Label: gui.Tr.ComposeRecreate,
+			OnPress: func() error {
+				return gui.composeConfirmOnce("recreate", gui.Tr.ConfirmComposeRecreate, target,
+					composeRecreateArgs("never")...)
 			},
 		},
-	})
+		{
+			Label: gui.Tr.ComposeRecreatePullOption,
+			OnPress: func() error {
+				return gui.composeConfirmOnce("recreate-pull", gui.Tr.ConfirmComposeRecreatePull, target,
+					composeRecreateArgs("always")...)
+			},
+		},
+	}
+
+	if target.hashed {
+		changed := &types.MenuItem{
+			Label: gui.Tr.ComposeRecreateChangedOption,
+			OnPress: func() error {
+				return gui.composeConfirmOnce("recreate-changed", gui.Tr.ConfirmComposeRecreateChanged, target,
+					"up", "--recreate-changed", "--pull", "never", "--detach")
+			},
+		}
+		items = append([]*types.MenuItem{changed}, items...)
+	}
+
+	return gui.Menu(CreateMenuOptions{Title: gui.Tr.ComposeRecreateMenuTitle, Items: items})
 }
 
 func (gui *Gui) handleComposeUp(g *gocui.Gui, v *gocui.View) error {

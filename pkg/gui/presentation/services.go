@@ -38,6 +38,9 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	"snapshots": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return displayServiceSnapshotCount(service)
 	},
+	"changed": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
+		return DisplayChanged(guiConfig, len(service.ChangedInstances()) > 0)
+	},
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return utils.ColoredString(displayServiceAddresses(service, "inet"), color.FgYellow)
 	},
@@ -77,6 +80,12 @@ func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.Serv
 
 		if row.Instance == nil {
 			cells = append(cells, render(guiConfig, row.Service))
+			continue
+		}
+
+		// Only the service knows the file's hash.
+		if column == "changed" {
+			cells = append(cells, DisplayChanged(guiConfig, row.Service.ConfigChanged(row.Instance)))
 			continue
 		}
 
@@ -146,6 +155,18 @@ func ServiceReplicas(service *commands.ComposeService) string {
 	}
 
 	return strconv.Itoa(len(service.Instances)) + "/" + strconv.Itoa(service.Replicas)
+}
+
+// changedStyles spells an instance created from an older compose config.
+var changedStyles = map[string]string{"short": "C", "icon": "↻"}
+
+// DisplayChanged marks what `up --recreate-changed` would recreate.
+func DisplayChanged(guiConfig *config.GuiConfig, changed bool) string {
+	if !changed {
+		return ""
+	}
+
+	return styledStackState(guiConfig, "changed", changedStyles, color.FgYellow)
 }
 
 // serviceStatusStyles covers the two states no instance is ever in; the

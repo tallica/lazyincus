@@ -52,8 +52,8 @@ type remoteFailure struct {
 }
 
 type remoteStatuses struct {
-	byProject map[string]map[string][]string
-	err       error
+	listing commands.ComposeListing
+	err     error
 }
 
 // commandFor is the command a stack pinned to remote goes through: the
@@ -210,7 +210,7 @@ func (r *remoteCommands) store(remote string, command *commands.IncusCommand, er
 // cachedStatuses is remote's compose statuses as last read, false when
 // none has been yet, and starts another read unless one is under way.
 // changed is told when that read finds something different.
-func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]map[string][]string, error), changed func()) (remoteStatuses, bool) {
+func (r *remoteCommands) cachedStatuses(remote string, read func() (commands.ComposeListing, error), changed func()) (remoteStatuses, bool) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -224,7 +224,7 @@ func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]m
 		r.readingStatuses[remote] = true
 
 		go func() {
-			byProject, err := read()
+			listing, err := read()
 
 			r.mutex.Lock()
 			previous, had := r.statuses[remote]
@@ -237,14 +237,14 @@ func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]m
 			// otherwise refresh, and so read again, without end. The next
 			// poll shows the new wording.
 			read := !errors.Is(err, errConnecting)
-			changes := read && (!had || !reflect.DeepEqual(previous.byProject, byProject) || (previous.err == nil) != (err == nil))
+			changes := read && (!had || !reflect.DeepEqual(previous.listing, listing) || (previous.err == nil) != (err == nil))
 
 			if read {
 				if r.statuses == nil {
 					r.statuses = map[string]remoteStatuses{}
 				}
 
-				r.statuses[remote] = remoteStatuses{byProject: byProject, err: err}
+				r.statuses[remote] = remoteStatuses{listing: listing, err: err}
 			}
 			r.mutex.Unlock()
 

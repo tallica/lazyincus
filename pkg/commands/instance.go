@@ -358,6 +358,14 @@ func (i *Instance) ComposeService() string {
 	return i.config(composeServiceKey)
 }
 
+// composeHashKey is client.ConfigHashKey in lxc/incus-compose.
+const composeHashKey = "user.label.incus-compose.config-hash"
+
+// ComposeHash is the instance's composeHashKey, empty when it has none.
+func (i *Instance) ComposeHash() string {
+	return i.config(composeHashKey)
+}
+
 // healthStatusKey is where ic-healthd writes its verdict; the opt-in key can
 // sit on the project, which ExpandedConfig doesn't expand.
 const healthStatusKey = "user.healthcheck.status"
