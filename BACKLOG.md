@@ -124,6 +124,12 @@ own merits.
   cursor for a row to be chosen with.
 - **Switching remote is for the session**: `R` and `--remote` write
   nothing, leaving `incus remote switch` as the persistent path.
+- [ ] **Health checks crowd out the operations history** — ic-healthd
+      execs its check in every replica on a timer, each an `Executing
+      command` operation, so `W`'s 100 ended operations cover minutes on a
+      stack with healthchecks, and a failure worth reading sinks under
+      them. Keeping successful execs out of the kept history, while still
+      listing them under way, would fix it.
 - [ ] **`--server-url` without a configured remote** — incus-compose
       connects with `--server-url`, `--client-cert-file`, `--client-key-file`
       and `--server-fingerprint` (each also an `INCUS_*` variable), no

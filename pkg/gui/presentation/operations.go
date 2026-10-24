@@ -21,10 +21,10 @@ const (
 const MinOperationDescriptionWidth = 18
 
 // GetOperationDisplayStrings leads with the status, which is what the list
-// is read for.
-func GetOperationDisplayStrings(operation *commands.Operation, showProject bool) []string {
+// is read for; retried is a failure tried again since, and gone through.
+func GetOperationDisplayStrings(operation *commands.Operation, showProject, retried bool) []string {
 	cells := []string{
-		OperationStatus(operation),
+		OperationStatus(operation, retried),
 		operation.Operation.Description,
 		utils.ColoredString(operation.Target(), color.FgCyan),
 		utils.ColoredString(operation.Operation.CreatedAt.Local().Format(TimeFormat), color.FgYellow),
@@ -38,14 +38,17 @@ func GetOperationDisplayStrings(operation *commands.Operation, showProject bool)
 	return cells
 }
 
-// OperationStatus is the status with a mark that reads at a glance.
-func OperationStatus(operation *commands.Operation) string {
-	switch operation.Operation.StatusCode {
-	case api.Success:
+// OperationStatus is the status with a mark that reads at a glance, a
+// failure retried since greyed out: nothing is left failed.
+func OperationStatus(operation *commands.Operation, retried bool) string {
+	switch {
+	case retried:
+		return utils.ColoredString("✗ "+operation.Status()+", retried", color.FgHiBlack)
+	case operation.Operation.StatusCode == api.Success:
 		return utils.ColoredString("✓ "+operation.Status(), color.FgGreen)
-	case api.Failure:
+	case operation.Operation.StatusCode == api.Failure:
 		return utils.ColoredString("✗ "+operation.Status(), color.FgRed)
-	case api.Cancelled:
+	case operation.Operation.StatusCode == api.Cancelled:
 		return utils.ColoredString("✗ "+operation.Status(), color.FgMagenta)
 	default:
 		return utils.ColoredString("● "+operation.Status(), color.FgYellow)
