@@ -552,8 +552,8 @@ the daemon, with the credentials in your `~/.docker/config.json`; a
 registry only the daemon can reach shows its error on the Config tab. A
 tag that hasn't moved costs a HEAD, which Docker Hub doesn't count
 against its pull limit. `gui.checkImageUpdatesOnStart` checks at startup
-too. A newer tag
-- `2.1` to `2.2` - is the compose file's business, and is left to
+too. A newer tag, `2.1` to `2.2`, is the compose file's business, and is
+left to
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
 on the repository the file lives in.
 
