@@ -54,8 +54,8 @@ func TestCheckImageUpdates(t *testing.T) {
 
 	screen := s.settle(t, "the tag has a newer build")
 	assert.Contains(t, screen, "Upstream:     docker.io/library/alpine:3.22")
-	assert.Contains(t, rowWith(screen, "│Alpine 3.22 amd64"), "update")
-	assert.NotContains(t, rowWith(screen, "│Debian 13 amd64"), "update")
+	assert.NotEmpty(t, rowWith(screen, "│↑ Alpine 3.22 amd64"))
+	assert.NotEmpty(t, rowWith(screen, "│Debian 13 amd64"))
 	assert.Contains(t, rowWith(screen, "│web "), "↑")
 
 	mutex.Lock()

@@ -541,9 +541,10 @@ selection to whatever took its place.
 
 `g` checks the OCI images instances were created from for a newer build
 of the tag they were pulled by, on the session's remote and every other
-one a listed stack is on and that's connected. The image is marked
-`update`. What runs it gets a `↑` - an instance, a service or replica, a
-stack - in its `image` column, or by its name where that isn't shown, and
+one a listed stack is on and that's connected. The image gets a `↑`
+ahead of its label, where a narrow panel doesn't cut it off. What runs
+it gets one too - an instance, a service or replica, a stack - in its
+`image` column, or by its name where that isn't shown, and
 a service's Info tab says what the registry said. Recreating with a pull,
 `U`, takes the new build. `G` on Stacks or Services does it for the
 services of the stack you tick, in one `up`; `--no-deps` keeps it to
