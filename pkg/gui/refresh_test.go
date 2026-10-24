@@ -3,6 +3,7 @@ package gui
 import (
 	"errors"
 	"maps"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -151,6 +152,27 @@ func TestUnreachableDaemonIsReportedAndRecovers(t *testing.T) {
 
 	screen = s.settle(t, "●")
 	assert.NotContains(t, screen, s.gui.Tr.ConnectionLostTitle)
+}
+
+// A poll that failed while the daemon was down can have its verdict land
+// after the daemon is back: updates run in no particular order. It mustn't
+// put the popup back up.
+func TestALateLostVerdictLeavesARecoveredConnection(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.do(t, func() error {
+		s.gui.IncusCommand.NoteError(&url.Error{Op: "Get", URL: "https://incus", Err: errors.New("connection refused")})
+		s.gui.syncConnection()
+		s.gui.IncusCommand.NoteError(nil)
+
+		return nil
+	})
+
+	// The next poll takes a stray popup down again, so it's caught as it shows.
+	assert.Never(t, func() bool {
+		return onLoop(t, s, func() bool { return s.gui.connectionPopupShowing() && s.gui.IncusCommand.IsConnected() })
+	}, 300*time.Millisecond, 5*time.Millisecond)
 }
 
 // The stack's instances have rows only in the services panel, so the

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed.
 
 ### Fixed
+- The "Connection lost" popup no longer comes back for a moment after the daemon answers again.
 - The footer no longer counts a failure that was retried and went through, such as incus-compose's delete refused while ic-healthd updated the instance; `W` greys it out as `retried`.
 - An operation's duration in `W`'s popup shows milliseconds under a second, where it was rounded to a tenth, often to `0s`.
 - The footer counts a running operation only once it has lasted a second, so the warning count beside it no longer jumps.

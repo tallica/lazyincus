@@ -15,12 +15,11 @@ type connectionState struct {
 // syncConnection pops a modal when the daemon stops answering and takes it
 // down once it answers again. There's nothing to re-establish - the client
 // dials per request - so the modal only reports what the poll finds. Called
-// from that poll, hence the Update: the views are the main loop's.
+// from that poll, hence the Update: the views are the main loop's. Read
+// there, as gocui runs updates in no order and an older verdict can land last.
 func (gui *Gui) syncConnection() {
-	connected := gui.IncusCommand.IsConnected()
-
 	gui.g.Update(func(*gocui.Gui) error {
-		if connected {
+		if gui.IncusCommand.IsConnected() {
 			gui.State.Connection.lost = false
 
 			// Closed whenever it's up rather than on the transition
