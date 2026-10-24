@@ -555,11 +555,11 @@ image first, any other shown by name - else the build date; `o` opens the
 GitHub comparison of the two builds' revisions, or the releases, when the
 image's labels name its source. Reading both builds' configs costs a
 newer build a manifest GET or two, which Docker Hub counts as pulls. It
-checks first when nothing has been checked yet, and checks again after,
-for the images the services now run. The tag comes from the copy Incus
-pulled, so an image incus-compose built has none and isn't checked, and
-neither is a service with no instances yet. The check runs from this
-machine, not the daemon, with the credentials in your
+checks first when none of the stack's images has been checked yet, and
+checks again after, for the images the services now run. The tag comes
+from the copy Incus pulled, so an image incus-compose built has none and
+isn't checked, and neither is a service with no instances yet. The check
+runs from this machine, not the daemon, with the credentials in your
 `~/.docker/config.json`; a registry only the daemon can reach shows its
 error on the Config tab. A tag that hasn't moved costs a HEAD, which
 Docker Hub doesn't count against its pull limit.

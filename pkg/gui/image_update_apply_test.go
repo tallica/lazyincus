@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -94,6 +95,36 @@ func TestUpdateImagesRecreatesTheTicked(t *testing.T) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	assert.Equal(t, []string{"up", "--recreate", "--pull", "always", "--no-deps", "--detach", "web"}, ran)
+}
+
+// Checks of other images, a remote's that answered at the last check, say
+// nothing of this stack's: G checks again rather than find nothing newer.
+func TestUpdateImagesChecksAStackNotYetChecked(t *testing.T) {
+	var asked atomic.Int32
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withImageUpdates(t, map[string]commands.UpstreamState{"web": commands.UpstreamNewer})(s)
+
+		check := s.gui.checkUpstreams
+		s.gui.checkUpstreams = func(ctx context.Context, targets []commands.UpstreamTarget) map[string]commands.UpstreamStatus {
+			asked.Add(1)
+			return check(ctx, targets)
+		}
+
+		elsewhere := map[string]commands.UpstreamStatus{"elsewhere-image": {State: commands.UpstreamCurrent}}
+		s.gui.imageUpdates.Store(&elsewhere)
+	})
+	landed(t, s, "stacks")
+	require.Eventually(t, func() bool { return len(serviceNames(t, s)) == 3 }, 5*time.Second, 20*time.Millisecond)
+
+	s.press(t, 'G')
+	s.settle(t, "[x] web")
+	assert.Equal(t, int32(1), asked.Load())
+
+	s.pressKey(t, tcell.KeyEsc)
+	s.press(t, 'G')
+	s.settle(t, "[x] web")
+	assert.Equal(t, int32(1), asked.Load(), "checked already")
 }
 
 func TestUpdateImagesWithNothingNewer(t *testing.T) {

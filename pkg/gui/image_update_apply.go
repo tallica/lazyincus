@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
@@ -52,7 +53,8 @@ func buildChangeStr(status commands.UpstreamStatus) string {
 
 // handleUpdateImages is `G` on Stacks and Services: the stack's services
 // with a newer image build, to tick and recreate on it - checking the
-// registries first if nothing has yet.
+// registries first if none of the stack's images has been, as one on a
+// remote still connecting at the last check wasn't.
 func (gui *Gui) handleUpdateImages(g *gocui.Gui, v *gocui.View) error {
 	stack := gui.selectedStack.Load()
 	if stack == nil || stack.Name == "" {
@@ -60,7 +62,15 @@ func (gui *Gui) handleUpdateImages(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	return gui.withStack(stack, func(stack *commands.ComposeStack) error {
-		if gui.upstreams() != nil {
+		updates := gui.upstreams()
+		checked := lo.SomeBy(gui.stackServices(stack), func(service *commands.ComposeService) bool {
+			return lo.SomeBy(presentation.BaseImages(service.SortedInstances()), func(fingerprint string) bool {
+				_, ok := updates[fingerprint]
+				return ok
+			})
+		})
+
+		if checked {
 			return gui.updateImagesMenu(stack)
 		}
 
@@ -70,19 +80,19 @@ func (gui *Gui) handleUpdateImages(g *gocui.Gui, v *gocui.View) error {
 	})
 }
 
-func (gui *Gui) updateImagesMenu(stack *commands.ComposeStack) error {
-	var services []*commands.ComposeService
-
-	for _, service := range gui.composeServices() {
-		if service.Dir == stack.Dir && service.Remote == stack.Remote {
-			services = append(services, service)
-		}
-	}
-
-	// By name, as the services panel sorts them.
+// stackServices are the stack's services the services panel has, by name
+// as it sorts them: it may still be listing the stack selected before.
+func (gui *Gui) stackServices(stack *commands.ComposeStack) []*commands.ComposeService {
+	services := lo.Filter(gui.composeServices(), func(service *commands.ComposeService, _ int) bool {
+		return service.Dir == stack.Dir && service.Remote == stack.Remote
+	})
 	slices.SortFunc(services, func(a, b *commands.ComposeService) int { return cmp.Compare(a.Name, b.Name) })
 
-	found := servicesWithUpdates(services, gui.upstreams())
+	return services
+}
+
+func (gui *Gui) updateImagesMenu(stack *commands.ComposeStack) error {
+	found := servicesWithUpdates(gui.stackServices(stack), gui.upstreams())
 	if len(found) == 0 {
 		gui.WithTransientStatus(fmt.Sprintf(gui.Tr.NoNewerImages, stack.Name), 3*time.Second)
 
