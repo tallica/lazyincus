@@ -61,7 +61,7 @@ func TestCheckImageUpdates(t *testing.T) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	assert.Equal(t, []commands.UpstreamTarget{{
-		Fingerprint: "0123456789abcdef0123456789abcdef", Ref: "docker.io/library/alpine:3.22",
+		Fingerprint: "0123456789abcdef0123456789abcdef", Ref: "docker.io/library/alpine:3.22", Pinned: "sha256:dc92",
 	}}, asked)
 }
 

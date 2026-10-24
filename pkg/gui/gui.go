@@ -268,6 +268,8 @@ type guiState struct {
 	DaemonTab    daemonTab
 	DaemonOpened bool
 	WideMenu     bool
+	// MenuConfirm is the open menu's OnConfirm, nil unless it's a checklist.
+	MenuConfirm func([]*types.MenuItem) error
 
 	// OperationsSeenAt is when the operations were last on screen: the
 	// footer counts the failures since.

@@ -168,7 +168,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName: "menu",
 			Key:      gocui.KeySpace,
 			Modifier: gocui.ModNone,
-			Handler:  wrappedHandler(gui.handleMenuPress),
+			Handler:  wrappedHandler(gui.handleMenuToggle),
 		},
 		{
 			ViewName: "menu",
@@ -186,13 +186,25 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName: "menu",
 			Key:      'a',
 			Modifier: gocui.ModNone,
-			Handler:  gui.handleMenuKey('a'),
+			Handler: func(g *gocui.Gui, v *gocui.View) error {
+				if gui.State.MenuConfirm != nil {
+					return gui.handleMenuToggleAll()
+				}
+
+				return gui.handleMenuKey('a')(g, v)
+			},
 		},
 		{
 			ViewName: "menu",
 			Key:      'd',
 			Modifier: gocui.ModNone,
 			Handler:  gui.handleMenuKey('d'),
+		},
+		{
+			ViewName: "menu",
+			Key:      'o',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleMenuKey('o'),
 		},
 		{
 			ViewName: "menu",
@@ -932,6 +944,7 @@ func (gui *Gui) stacksKeybindings() []*Binding {
 		mutating('f', gui.onStackTarget(gui.composeVerb(gui.Tr.ConfirmComposeKill, "kill")), gui.Tr.ComposeKill),
 		mutating('b', gui.onStackTarget(gui.composeVerb("", "build")), gui.Tr.ComposeBuild),
 		mutating('g', gui.onStackTarget(gui.composeVerb("", "pull")), gui.Tr.ComposePull),
+		mutating('G', gui.handleUpdateImages, gui.Tr.ComposeUpdateImages),
 		binding('m', gui.handleStackViewLogs, gui.Tr.ViewLogs),
 		binding('M', gui.onStackTarget(gui.composeVerb("", "logs", "--follow")), gui.Tr.ComposeLogs),
 		binding('y', onSelected(gui.Panels.Stacks, gui.stackCopy), gui.Tr.Copy),
@@ -1078,6 +1091,16 @@ func (gui *Gui) servicesKeybindings() []*Binding {
 			Handler:     gui.handleComposePull,
 			Description: gui.serviceScopedDescription(gui.Tr.ComposePull),
 			Mutates:     true,
+		},
+		{
+			// The stack's, whichever row is selected.
+			ViewName:    "services",
+			Key:         'G',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleUpdateImages,
+			Description: gui.Tr.ComposeUpdateImages,
+			Mutates:     true,
+			NoSelection: true,
 		},
 		{
 			ViewName:    "services",

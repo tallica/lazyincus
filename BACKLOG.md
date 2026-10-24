@@ -143,8 +143,8 @@ Deliberately deferred (don't re-pitch unprompted):
   Running the Renovate CLI from lazyincus was weighed too: it reads only
   the compose file, can't see the build that's running, needs Node, takes
   tens of seconds a run, and its report format is experimental.
-- **Updating a plain OCI instance** — `U` with a pull takes a new build
-  for a stack's services. An instance launched from an OCI image by hand
+- **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
+  new build for a stack's services. An instance launched from an OCI image by hand
   gets the `↑` but no key: `incus rebuild` discards its root disk, which
   is no thing to put behind one keypress.
 - **A background image check** — lazyincus is opened for minutes at a

@@ -22,6 +22,9 @@ type UpstreamTarget struct {
 	Fingerprint  string
 	Ref          string
 	Architecture string
+	// Pinned is the platform manifest's digest the tag resolved to when
+	// pulled, empty when the pull didn't record one.
+	Pinned string
 }
 
 type UpstreamState int
@@ -40,6 +43,9 @@ type UpstreamStatus struct {
 	Digest    string
 	Err       error
 	CheckedAt time.Time
+	// From and To are the build running and the tag's, read for a newer
+	// build only; nil when the registry wouldn't say.
+	From, To *BuildInfo
 }
 
 // MostTelling is the check that says most about several images taken
@@ -81,11 +87,11 @@ func (c *IncusCommand) UpstreamTargets() ([]UpstreamTarget, error) {
 		}
 	}
 
-	refs := map[string]string{}
+	refs := map[string]*api.ImageSource{}
 
 	for _, source := range sources {
-		if ref := ociRef(source.UpdateSource); ref != "" {
-			refs[source.Fingerprint] = ref
+		if ociRef(source.UpdateSource) != "" {
+			refs[source.Fingerprint] = source.UpdateSource
 		}
 	}
 
@@ -93,16 +99,19 @@ func (c *IncusCommand) UpstreamTargets() ([]UpstreamTarget, error) {
 	targets := []UpstreamTarget{}
 
 	for _, image := range images {
-		ref := refs[image.Fingerprint]
-		if ref == "" || image.IsUnused() || seen[image.Fingerprint] {
+		source := refs[image.Fingerprint]
+		if source == nil || image.IsUnused() || seen[image.Fingerprint] {
 			continue
 		}
+
+		_, pinned, _ := strings.Cut(source.Alias, "@")
 
 		seen[image.Fingerprint] = true
 		targets = append(targets, UpstreamTarget{
 			Fingerprint:  image.Fingerprint,
-			Ref:          ref,
+			Ref:          ociRef(source),
 			Architecture: image.Image.Architecture,
+			Pinned:       pinned,
 		})
 	}
 
@@ -150,6 +159,8 @@ type RegistryChecker struct {
 	// seen is the fingerprint each tag's digest was found to hold, by ref
 	// and architecture.
 	seen map[string]seenTag
+	// builds are the configs read, by repository and digest: neither moves.
+	builds map[string]*BuildInfo
 }
 
 type seenTag struct {
@@ -164,6 +175,7 @@ func NewRegistryChecker(options ...remote.Option) *RegistryChecker {
 	return &RegistryChecker{
 		options: append([]remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}, options...),
 		seen:    map[string]seenTag{},
+		builds:  map[string]*BuildInfo{},
 	}
 }
 
@@ -204,11 +216,56 @@ func (c *RegistryChecker) Check(ctx context.Context, target UpstreamTarget) Upst
 	status.Digest = digest
 	if fingerprint == target.Fingerprint {
 		status.State = UpstreamCurrent
-	} else {
-		status.State = UpstreamNewer
+		return status
+	}
+
+	status.State = UpstreamNewer
+	status.To = c.build(ctx, target, digest)
+
+	if target.Pinned != "" {
+		status.From = c.build(ctx, target, target.Pinned)
 	}
 
 	return status
+}
+
+// build is the config of the target's repository's build at digest, nil
+// when it can't be read - a registry may have let an old build go.
+func (c *RegistryChecker) build(ctx context.Context, target UpstreamTarget, digest string) *BuildInfo {
+	ref, err := name.ParseReference(target.Ref)
+	if err != nil {
+		return nil
+	}
+
+	at := ref.Context().Digest(digest)
+	key := buildKey(at, target.Architecture)
+
+	c.mu.Lock()
+	info, ok := c.builds[key]
+	c.mu.Unlock()
+
+	if ok {
+		return info
+	}
+
+	options := append([]remote.Option{
+		remote.WithContext(ctx), remote.WithPlatform(ociPlatforms[target.Architecture]),
+	}, c.options...)
+
+	image, err := remote.Image(at, options...)
+	if err == nil {
+		info, err = buildInfo(image)
+	}
+
+	if err != nil {
+		return nil
+	}
+
+	c.mu.Lock()
+	c.builds[key] = info
+	c.mu.Unlock()
+
+	return info
 }
 
 // tagFingerprint is the fingerprint Incus would give what the tag points at
@@ -258,12 +315,21 @@ func (c *RegistryChecker) tagFingerprint(ctx context.Context, target UpstreamTar
 	}
 
 	fingerprint := ociFingerprint(layers)
+	// A blob, which unlike a manifest Docker Hub doesn't count as a pull.
+	info, infoErr := buildInfo(image)
 
 	c.mu.Lock()
 	c.seen[key] = seenTag{digest: digest, fingerprint: fingerprint}
+	if infoErr == nil {
+		c.builds[buildKey(ref.Context().Digest(digest), target.Architecture)] = info
+	}
 	c.mu.Unlock()
 
 	return fingerprint, digest, nil
+}
+
+func buildKey(at name.Digest, architecture string) string {
+	return at.String() + " " + architecture
 }
 
 // ociFingerprint is how Incus fingerprints an OCI image: the SHA-256 of its

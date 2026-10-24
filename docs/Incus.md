@@ -304,7 +304,9 @@ inferred.
   reference it was pulled by is the `update_source` of the copy Incus
   pulled, `incus-compose-cache`'s for incus-compose: the server URL for
   the registry and the alias for the repository and tag, pinned with
-  `@sha256:` to the platform manifest. A project's copy points its
+  `@sha256:` to the platform manifest, which is how the running build's
+  config is read back to say what a newer one changed - unless the
+  registry has dropped it since. A project's copy points its
   `update_source` at the Incus server instead. The client's own
   `ConnectOCI` shells out to `skopeo`, so lazyincus asks the registry
   itself.

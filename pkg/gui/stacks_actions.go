@@ -13,16 +13,21 @@ import (
 // config, says why instead, before any confirmation asks.
 func (gui *Gui) onStack(action func(*commands.ComposeStack) error) func(*gocui.Gui, *gocui.View) error {
 	return onSelected(gui.Panels.Stacks, func(stack *commands.ComposeStack) error {
-		if stack.Err != nil {
-			return gui.createErrorPanel(stack.Err.Error())
-		}
-
-		if !gui.onSessionRemote(stack.Remote) && !gui.remotes.known(stack.Remote) {
-			return gui.createErrorPanel(gui.unknownRemote(stack.Remote).Error())
-		}
-
-		return action(stack)
+		return gui.withStack(stack, action)
 	})
+}
+
+// withStack is onStack's checks on any stack.
+func (gui *Gui) withStack(stack *commands.ComposeStack, action func(*commands.ComposeStack) error) error {
+	if stack.Err != nil {
+		return gui.createErrorPanel(stack.Err.Error())
+	}
+
+	if !gui.onSessionRemote(stack.Remote) && !gui.remotes.known(stack.Remote) {
+		return gui.createErrorPanel(gui.unknownRemote(stack.Remote).Error())
+	}
+
+	return action(stack)
 }
 
 // onStackTarget is onStack for a verb that needs only the target.

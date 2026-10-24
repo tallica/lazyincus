@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry"
@@ -54,7 +55,19 @@ func newTestRegistry(t *testing.T) *testRegistry {
 func (reg *testRegistry) push(t *testing.T, tag string) string {
 	t.Helper()
 
+	fingerprint, _ := reg.pushWith(t, tag, v1.Config{})
+
+	return fingerprint
+}
+
+// pushWith is push with the amd64 image's config, returning its manifest's
+// digest too: what Incus pins.
+func (reg *testRegistry) pushWith(t *testing.T, tag string, config v1.Config) (string, string) {
+	t.Helper()
+
 	amd64, err := random.Image(64, 2)
+	require.NoError(t, err)
+	amd64, err = mutate.Config(amd64, config)
 	require.NoError(t, err)
 	arm64, err := random.Image(64, 2)
 	require.NoError(t, err)
@@ -76,7 +89,10 @@ func (reg *testRegistry) push(t *testing.T, tag string) string {
 		layers[i] = layer.Digest.String()
 	}
 
-	return ociFingerprint(layers)
+	digest, err := amd64.Digest()
+	require.NoError(t, err)
+
+	return ociFingerprint(layers), digest.String()
 }
 
 func TestRegistryCheckerFollowsTheTag(t *testing.T) {
@@ -96,6 +112,74 @@ func TestRegistryCheckerFollowsTheTag(t *testing.T) {
 
 	reg.push(t, "library/app:latest")
 	assert.Equal(t, UpstreamNewer, checker.Check(context.Background(), target).State)
+}
+
+// A newer build says what it is, and what the running one was, from their
+// configs.
+func TestRegistryCheckerReadsBothBuilds(t *testing.T) {
+	reg := newTestRegistry(t)
+	fingerprint, pinned := reg.pushWith(t, "library/app:1", v1.Config{
+		Labels: map[string]string{labelRevision: "aaa"}, Env: []string{"PATH=/bin", "APP_VERSION=1.0.1"},
+	})
+	reg.pushWith(t, "library/app:1", v1.Config{
+		Labels: map[string]string{labelRevision: "bbb", labelSource: "https://github.com/acme/app"},
+		Env:    []string{"PATH=/bin", "APP_VERSION=1.0.2"},
+	})
+
+	status := NewRegistryChecker().Check(context.Background(), UpstreamTarget{
+		Fingerprint: fingerprint, Ref: reg.host + "/library/app:1", Architecture: "x86_64", Pinned: pinned,
+	})
+	require.Equal(t, UpstreamNewer, status.State)
+	require.NotNil(t, status.From)
+	require.NotNil(t, status.To)
+
+	from, to := BuildChange(status.From, status.To)
+	assert.Equal(t, []string{"1.0.1", "1.0.2"}, []string{from, to})
+	assert.Equal(t, "https://github.com/acme/app/compare/aaa...bbb", BuildLink(status.From, status.To))
+}
+
+func TestBuildChange(t *testing.T) {
+	day := time.Date(2026, 10, 1, 9, 30, 0, 0, time.Local)
+	cases := map[string]struct {
+		from, to *BuildInfo
+		want     []string
+	}{
+		"by label": {
+			&BuildInfo{Version: "11.2.0", Versions: map[string]string{"GO_VERSION": "1.27"}},
+			&BuildInfo{Version: "11.2.1", Versions: map[string]string{"GO_VERSION": "1.28"}},
+			[]string{"11.2.0", "11.2.1"},
+		},
+		"by variable": {
+			&BuildInfo{Versions: map[string]string{"NGINX_VERSION": "1.27.3", "NJS_VERSION": "0.8"}},
+			&BuildInfo{Versions: map[string]string{"NGINX_VERSION": "1.27.4", "NJS_VERSION": "0.8"}},
+			[]string{"1.27.3", "1.27.4"},
+		},
+		"rebuilt the same": {
+			&BuildInfo{Version: "7", Created: day},
+			&BuildInfo{Version: "7", Created: day.AddDate(0, 0, 9)},
+			[]string{"2026-10-01", "2026-10-10"},
+		},
+		"rebuilt the same day": {
+			&BuildInfo{Created: day}, &BuildInfo{Created: day.Add(time.Hour)},
+			[]string{"2026-10-01 09:30", "2026-10-01 10:30"},
+		},
+		"the old build gone": {nil, &BuildInfo{Version: "2"}, []string{"", "2"}},
+		"nothing read":       {nil, nil, []string{"", ""}},
+	}
+
+	for label, c := range cases {
+		from, to := BuildChange(c.from, c.to)
+		assert.Equal(t, c.want, []string{from, to}, label)
+	}
+}
+
+func TestBuildLink(t *testing.T) {
+	assert.Equal(t, "https://github.com/acme/app/releases",
+		BuildLink(nil, &BuildInfo{Source: "https://github.com/acme/app.git"}))
+	assert.Equal(t, "https://gitlab.com/acme/app",
+		BuildLink(&BuildInfo{Revision: "a"}, &BuildInfo{Source: "https://gitlab.com/acme/app", Revision: "b"}))
+	assert.Empty(t, BuildLink(nil, &BuildInfo{Source: "git@github.com:acme/app"}))
+	assert.Empty(t, BuildLink(nil, &BuildInfo{}))
 }
 
 func TestRegistryCheckerReportsFailures(t *testing.T) {
@@ -161,5 +245,5 @@ func TestUpstreamTargets(t *testing.T) {
 
 	targets, err := command.UpstreamTargets()
 	require.NoError(t, err)
-	assert.Equal(t, []UpstreamTarget{{Fingerprint: "nginx", Ref: "docker.io/library/nginx:alpine"}}, targets)
+	assert.Equal(t, []UpstreamTarget{{Fingerprint: "nginx", Ref: "docker.io/library/nginx:alpine", Pinned: "sha256:138a"}}, targets)
 }
