@@ -166,3 +166,47 @@ func TestHealthOnlySpeaksForARunningInstance(t *testing.T) {
 	service := &ComposeService{Instances: []*Instance{instance("Running", HealthHealthy), instance("Frozen", HealthUnhealthy)}}
 	assert.Equal(t, HealthHealthy, service.Health())
 }
+
+// Changed is up --recreate-changed's rule: a hash other than the file's,
+// never a missing one on either side.
+func TestComposeServiceConfigChanged(t *testing.T) {
+	instance := func(name, hash string) *Instance {
+		config := map[string]string{}
+		if hash != "" {
+			config[composeHashKey] = hash
+		}
+
+		return &Instance{Name: name, Instance: api.InstanceFull{Instance: api.Instance{ExpandedConfig: config}}}
+	}
+
+	tests := []struct {
+		name    string
+		current string
+		created string
+		want    bool
+	}{
+		{"same", "v1:a", "v1:a", false},
+		{"different", "v1:b", "v1:a", true},
+		{"created before hashes", "v1:a", "", false},
+		{"incus-compose without --hash", "", "v1:a", false},
+	}
+
+	for _, tt := range tests {
+		service := &ComposeService{Hash: tt.current}
+		assert.Equal(t, tt.want, service.ConfigChanged(instance("web", tt.created)), tt.name)
+	}
+
+	service := &ComposeService{Hash: "v1:new", Instances: []*Instance{
+		instance("web-3", "v1:old"), instance("web-1", "v1:new"), instance("web-2", "v1:old"), instance("web-4", ""),
+	}}
+	assert.Equal(t, []string{"web-2", "web-3"}, names(service.ChangedInstances()))
+}
+
+func names(instances []*Instance) []string {
+	out := make([]string, 0, len(instances))
+	for _, instance := range instances {
+		out = append(out, instance.Name)
+	}
+
+	return out
+}

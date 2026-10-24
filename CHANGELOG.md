@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
+- Stacks, services and replicas created from an older compose file read `changed`, and `U` can recreate only those. Needs an incus-compose with `up --recreate-changed`.
 
 ### Fixed
 - An operation's duration in `W`'s popup shows milliseconds under a second, where it was rounded to a tenth, often to `0s`.

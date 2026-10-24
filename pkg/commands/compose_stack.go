@@ -39,6 +39,9 @@ type ComposeStack struct {
 	// by service.
 	Statuses map[string][]string
 
+	// Hashes are the config hashes those instances were created from.
+	Hashes map[string][]string
+
 	// StatusErr is why the stack's remote gave no statuses, and
 	// StatusPending that it hasn't yet: it's still being connected to.
 	StatusErr     error
@@ -123,6 +126,24 @@ func (s *ComposeStack) ServiceStatuses() []string {
 	return statuses
 }
 
+// Changed names the services with an instance from an older config.
+func (s *ComposeStack) Changed() []string {
+	var changed []string
+
+	for _, service := range s.Services {
+		for _, hash := range s.Hashes[service.Name] {
+			if configChanged(service.Hash, hash) {
+				changed = append(changed, service.Name)
+				break
+			}
+		}
+	}
+
+	sort.Strings(changed)
+
+	return changed
+}
+
 func (s *ComposeStack) serviceNames() []string {
 	names := make([]string, 0, len(s.Services))
 	for _, service := range s.Services {
@@ -150,16 +171,29 @@ func RollUpStatus(statuses []string) string {
 	return statuses[0]
 }
 
-// GetComposeStatuses is the status of every compose-labelled instance on the
-// server, by project and then service: one listing for every stack on c's
-// remote.
-func (c *IncusCommand) GetComposeStatuses() (map[string]map[string][]string, error) {
+// ComposeListing is compose instances' statuses and hashes, by project.
+type ComposeListing struct {
+	Statuses map[string]map[string][]string
+	Hashes   map[string]map[string][]string
+}
+
+// GetComposeStatuses lists every compose-labelled instance on c's remote:
+// one listing for every stack there.
+func (c *IncusCommand) GetComposeStatuses() (ComposeListing, error) {
 	instances, err := c.Client().GetInstancesAllProjects(api.InstanceTypeAny)
 	if err != nil {
-		return nil, err
+		return ComposeListing{}, err
 	}
 
-	statuses := map[string]map[string][]string{}
+	listing := ComposeListing{Statuses: map[string]map[string][]string{}, Hashes: map[string]map[string][]string{}}
+
+	add := func(byProject map[string]map[string][]string, project, service, value string) {
+		if byProject[project] == nil {
+			byProject[project] = map[string][]string{}
+		}
+
+		byProject[project][service] = append(byProject[project][service], value)
+	}
 
 	for _, instance := range instances {
 		service := instance.ExpandedConfig[composeServiceKey]
@@ -167,14 +201,14 @@ func (c *IncusCommand) GetComposeStatuses() (map[string]map[string][]string, err
 			continue
 		}
 
-		if statuses[instance.Project] == nil {
-			statuses[instance.Project] = map[string][]string{}
-		}
+		add(listing.Statuses, instance.Project, service, instance.Status)
 
-		statuses[instance.Project][service] = append(statuses[instance.Project][service], instance.Status)
+		if hash := instance.ExpandedConfig[composeHashKey]; hash != "" {
+			add(listing.Hashes, instance.Project, service, hash)
+		}
 	}
 
-	return statuses, nil
+	return listing, nil
 }
 
 // ResolveStackDir turns what was typed for a stack into the absolute,
@@ -217,6 +251,24 @@ func ComposeFile(dir string) (string, error) {
 			return "", fmt.Errorf("%s: no compose file", dir)
 		}
 	}
+}
+
+// StackFilesStamp changes with a stack's compose file or its .env.
+func StackFilesStamp(dir string) string {
+	stamp := ""
+
+	files := []string{filepath.Join(dir, ".env")}
+	if file, err := ComposeFile(dir); err == nil {
+		files = append(files, file)
+	}
+
+	for _, file := range files {
+		if info, err := os.Stat(file); err == nil {
+			stamp += fmt.Sprintf("%s:%d:%d;", file, info.ModTime().UnixNano(), info.Size())
+		}
+	}
+
+	return stamp
 }
 
 // CheckStackDir refuses a path that isn't an existing directory; whether it

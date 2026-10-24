@@ -58,7 +58,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 				// own status, the way the instances panel does, so a restart
 				// re-reads the log.
 				key := "services-" + row.Key() + "-" + row.Service.Status() +
-					"-" + strconv.Itoa(len(row.Service.Instances))
+					"-" + strconv.Itoa(len(row.Service.Instances)) + "-" + strconv.Itoa(len(row.Service.ChangedInstances()))
 
 				if row.Instance != nil {
 					key += "-" + row.Instance.Instance.Status
@@ -175,6 +175,7 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 	output += line("Volumes", strings.Join(service.Volumes, ", "))
 	output += line("Devices", strings.Join(service.Devices, ", "))
 	output += line("Depends on", strings.Join(service.DependsOn, ", "))
+	output += line("Changed", serviceChangedStr(service))
 
 	if len(service.Instances) == 0 {
 		return output + "\n" + gui.Tr.ServiceNotRunning

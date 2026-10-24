@@ -180,7 +180,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation) |
+| `U` | Stacks and Services panels: recreate only what the compose file changed, all of it, or all of it after pulling the latest image (a menu, then a confirmation) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -290,12 +290,14 @@ The Services rows come from the compose file rather than the daemon, so a
 service the file declares but nothing is running still gets one, in state
 `none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
-disagree. The service instances of every listed stack on the active
-remote move out of the instances panel, which becomes **Standalone
-Instances** (`3`); a project no stack lists keeps its instances there, as
-does an instance of a service the compose file no longer declares. `C`
-there puts the stacks' instances back for a while, in one list with
-everything else.
+disagree. A service, replica or stack created from an older version of the
+compose file reads `changed` until `U` recreates it ([needs a newer
+incus-compose](docs/Panels.md#changed-config)). The service instances of
+every listed stack on the active remote move out of the instances panel,
+which becomes **Standalone Instances** (`3`); a project no stack lists
+keeps its instances there, as does an instance of a service the compose
+file no longer declares. `C` there puts the stacks' instances back for a
+while, in one list with everything else.
 
 A service with replicas lists them under it, one indented row each,
 rendered in the same columns as the service. Selecting a replica points
@@ -306,9 +308,10 @@ always meant.
 What the keys run on a service's own row, each of them `incus-compose
 <verb> <service>`:
 
-- `u` — `up --detach`; `U` asks for `up --recreate` with
-  `--pull never` or `--pull always`, to apply an edited compose file or pick
-  up an image its tag now resolves to (it confirms first)
+- `u` — `up --detach`; `U` asks for `up --recreate-changed`, recreating
+  only what's marked `changed`, or `up --recreate` with `--pull never` or
+  `--pull always`, to apply an edited compose file or pick up an image its
+  tag now resolves to (it confirms first)
 - `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms. When a
   service it depends on is stopped, `S` asks whether to start it along with
   them (`start --with-deps`) or alone — incus-compose's `start` leaves

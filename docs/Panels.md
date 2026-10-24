@@ -278,10 +278,11 @@ Main panel tabs:
   where its URL doesn't give one: a unix socket, or loopback, which an SSH
   tunnel to the API is); **Usage**, the instance counters summed, a custom
   volume shared by replicas counted once; and **Drift**, compose instances
-  whose service the file no longer declares and declared services with
-  none. Everything past the services count comes from
-  `gui.composeInstances` and `gui.composeProject`, which `fetchServices`
-  fills for the selected stack, so the tab ticks until they arrive.
+  whose service the file no longer declares, declared services with none,
+  and services with instances [from an older config](#changed-config).
+  Everything past the services count comes from `gui.composeInstances` and
+  `gui.composeProject`, which `fetchServices` fills for the selected stack,
+  so the tab ticks until they arrive.
 - **Logs** — every instance's console log, services in name order, each
   under a heading naming its replica, or its service when it has only the
   one instance. `m` jumps here, as it does on the other panels.
@@ -525,6 +526,22 @@ Main panel tabs:
 
 The credits tab and the interleaved logs tab from lazydocker's Project
 panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
+
+### Changed config
+
+`changed` marks the instances `up --recreate-changed` would recreate, and a
+service or stack with any. incus-compose labels each instance with its
+service's config hash (`user.label.incus-compose.config-hash`);
+`LoadComposeStack` asks `config --hash '*'` for the file's, cached with the
+rest of the config. The comparison is incus-compose's own: an instance
+created before it hashed has no label and never reads changed, and an
+incus-compose without `--hash` leaves the column blank and `U` without its
+"recreate changed" item. What the hash covers is incus-compose's to say
+([lxc/incus-compose#234](https://github.com/lxc/incus-compose/pull/234)). A
+compose file edited outside lazyincus shows within two seconds, no daemon
+event saying so: `refreshStacksIfEdited` stats each listed stack's compose
+file and `.env` (`StackFilesStamp`), and `stackCache` reloads the one that
+moved.
 
 ## Instances
 

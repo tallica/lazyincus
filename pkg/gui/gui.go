@@ -595,6 +595,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.goEvery(time.Second*30, gui.refreshWarningsQuiet)
 		// The session's stream says nothing of another remote's stacks.
 		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
+		gui.goEvery(time.Second*2, gui.refreshStacksIfEdited)
 	}()
 
 	err := g.MainLoop()

@@ -128,6 +128,10 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 			config[composeServiceKey] = service
 		}
 
+		if name == "web-1" {
+			config[composeHashKey] = "v1:old"
+		}
+
 		return api.InstanceFull{Instance: api.Instance{
 			Name: name, Project: project, Status: status, ExpandedConfig: config,
 		}}
@@ -144,12 +148,55 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 
 	command := NewIncusCommandWithClient(NewDummyLog(), nil, nil, nil, server, "fake")
 
-	statuses, err := command.GetComposeStatuses()
+	listing, err := command.GetComposeStatuses()
 	require.NoError(t, err)
 	assert.Equal(t, map[string]map[string][]string{
 		"web":   {"web": {"Running", "Stopped"}, "db": {"Running"}},
 		"other": {"api": {"Frozen"}},
-	}, statuses)
+	}, listing.Statuses)
+	assert.Equal(t, map[string]map[string][]string{"web": {"web": {"v1:old"}}}, listing.Hashes)
+}
+
+// A service has changed when one of its instances carries a hash other
+// than the file's; an instance with none, or a file with none, never has.
+func TestComposeStackChanged(t *testing.T) {
+	stack := &ComposeStack{
+		Services: []ComposeService{
+			{Name: "web", Hash: "v1:new"},
+			{Name: "db", Hash: "v1:db"},
+			{Name: "cache"},
+			{Name: "api", Hash: "v1:api"},
+		},
+		Hashes: map[string][]string{
+			"web":   {"v1:new", "v1:old"},
+			"db":    {"v1:db"},
+			"cache": {"v1:anything"},
+		},
+	}
+
+	assert.Equal(t, []string{"web"}, stack.Changed())
+	assert.Empty(t, (&ComposeStack{Services: stack.Services}).Changed())
+}
+
+// Only the files a stack is read from move its stamp.
+func TestStackFilesStamp(t *testing.T) {
+	dir := t.TempDir()
+	assert.Empty(t, StackFilesStamp(dir))
+
+	file := filepath.Join(dir, "compose.yaml")
+	require.NoError(t, os.WriteFile(file, []byte("services: {}\n"), 0o644))
+	written := StackFilesStamp(dir)
+	assert.NotEmpty(t, written)
+
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "other.txt"), []byte("x"), 0o644))
+	assert.Equal(t, written, StackFilesStamp(dir))
+
+	require.NoError(t, os.WriteFile(file, []byte("services: {web: {}}\n"), 0o644))
+	edited := StackFilesStamp(dir)
+	assert.NotEqual(t, written, edited)
+
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env"), []byte("TAG=2\n"), 0o644))
+	assert.NotEqual(t, edited, StackFilesStamp(dir))
 }
 
 // The file incus-compose would read: compose-go's preferred name, here or
