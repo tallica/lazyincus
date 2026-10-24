@@ -242,6 +242,9 @@ type refreshSeqs struct {
 	backups    refreshSeq
 	operations refreshSeq
 	warnings   refreshSeq
+	// imageUpdates isn't invalidated with the rest: a check's results hold
+	// on any scope.
+	imageUpdates refreshSeq
 }
 
 func (s *refreshSeqs) invalidateAll() {

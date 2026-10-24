@@ -30,7 +30,8 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 				}
 			},
 			GetItemContextCacheKey: func(image *commands.Image) string {
-				return "images-" + image.Key() + "-" + utils.Fingerprint(image.Image, image.UsedBy)
+				return "images-" + image.Key() + "-" +
+					utils.Fingerprint(image.Image, image.UsedBy, gui.imageUpstreamStr(gui.State.ImageUpdates[image.Fingerprint]))
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Image]{
@@ -46,7 +47,9 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 			return a.Key() == b.Key()
 		},
 		GetTableCells: func(item *commands.Image) []string {
-			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images)
+			newer := gui.State.ImageUpdates[item.Fingerprint].State == commands.UpstreamNewer
+
+			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images, newer)
 		},
 		FlexColumns: func() []utils.FlexColumn {
 			return []utils.FlexColumn{{
@@ -68,11 +71,15 @@ func sortImages(a *commands.Image, b *commands.Image) bool {
 	return a.Fingerprint < b.Fingerprint
 }
 
+// renderImageConfig reads the registry check here, on the main loop, for the
+// task that renders off it.
 func (gui *Gui) renderImageConfig(image *commands.Image) tasks.TaskFunc {
-	return gui.NewSimpleRenderStringTask(func() string { return gui.imageConfigStr(image) })
+	upstream := gui.imageUpstreamStr(gui.State.ImageUpdates[image.Fingerprint])
+
+	return gui.NewSimpleRenderStringTask(func() string { return gui.imageConfigStr(image, upstream) })
 }
 
-func (gui *Gui) imageConfigStr(image *commands.Image) string {
+func (gui *Gui) imageConfigStr(image *commands.Image, upstream string) string {
 	padding := identityPadding
 	output := gui.locationStr(gui.sessionLocation(image.Image.Project))
 	output += utils.WithPadding("Alias: ", padding) + image.Alias() + "\n"
@@ -83,6 +90,7 @@ func (gui *Gui) imageConfigStr(image *commands.Image) string {
 	output += utils.WithPadding("Last used: ", padding) + image.Image.LastUsedAt.String() + "\n"
 	output += utils.WithPadding("Cached: ", padding) + fmt.Sprint(image.Image.Cached) + "\n"
 	output += utils.WithPadding("Used by: ", padding) + gui.imageUsersStr(image) + "\n"
+	output += upstream
 
 	data, err := utils.MarshalIntoYaml(image.Image)
 	if err != nil {

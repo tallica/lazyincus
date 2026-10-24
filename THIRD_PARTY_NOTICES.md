@@ -235,6 +235,35 @@ the official Go client library used to talk to the Incus daemon.
 No separate `NOTICE` file ships with the Incus repository, so there are no
 additional attribution notices to reproduce beyond the license text above.
 
+## go-containerregistry and Docker CLI (Apache License 2.0)
+
+`github.com/google/go-containerregistry` asks OCI registries whether an
+image's tag has a newer build, and reads registry credentials through the
+config packages of `github.com/docker/cli`. Both are under the Apache
+License 2.0, reproduced above. The Docker CLI's NOTICE file reads:
+
+```
+Docker
+Copyright 2012-2017 Docker, Inc.
+
+This product includes software developed at Docker, Inc. (https://www.docker.com).
+
+This product contains software (https://github.com/creack/pty) developed
+by Keith Rarick, licensed under the MIT License.
+
+The following is courtesy of our legal counsel:
+
+
+Use and transfer of Docker may be subject to certain restrictions by the
+United States and other governments.
+It is your responsibility to ensure that your use and/or transfer does not
+violate applicable laws.
+
+For more information, see https://www.bis.doc.gov
+
+See also https://www.apache.org/dev/crypto.html and/or seek legal counsel.
+```
+
 ## Other Go module dependencies
 
 lazyincus also pulls in a number of smaller Go libraries (logging, YAML

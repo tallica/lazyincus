@@ -114,7 +114,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 			return a.Key() == b.Key()
 		},
 		GetTableCells: func(row *commands.ServiceRow) []string {
-			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row)
+			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row, gui.State.ImageUpdates)
 		},
 		FlexColumns: func() []utils.FlexColumn {
 			return []utils.FlexColumn{{

@@ -12,7 +12,7 @@ yet.
 ### Reloading
 
 Changes take effect without restarting lazyincus: an edit made with `O` as
-soon as the editor exits, any other edit within about two seconds. Four
+soon as the editor exits, any other edit within about two seconds. Five
 options are the exception and still need a restart:
 
 - `gui.screenMode` — it only seeds the initial screen mode, which `+`/`_`
@@ -20,6 +20,7 @@ options are the exception and still need a restart:
 - `gui.expandFocusedSidePanel` — likewise, it only seeds the startup state;
   `=` owns it from then on.
 - `gui.showAllSnapshots` — the same, with `e` on the Snapshots panel.
+- `gui.checkImageUpdatesOnStart` — it acts at startup alone.
 - `gui.language` — English is the only supported language anyway.
 
 A YAML error leaves the config in effect alone. An edit made with `O`
@@ -79,6 +80,7 @@ your file either).
 | `instanceStatusStyle` | string | `"long"` | Instance status display: `long` (full words), `short` (one/two characters), or `icon`. Applies to the Services and Stacks panels' rolled-up statuses too, and a stack's `error`, `unreachable` and `connecting`. |
 | `border` | string | `"rounded"` | Panel border style: `rounded`, `single`, `double`, or `hidden`. |
 | `instanceColumns` | []string | `[name, status, health, type, ipv4, snapshots]` | Which columns the Instances panel shows, and in what order. Valid values: `name`, `status`, `type`, `ipv4`, `ipv6`, `project`, `service`, `health`, `image`, `snapshots`. `project` is added automatically whenever the list spans more than one project. Unknown values are ignored; list any subset to hide the rest. `service`, `health` and `image` read [incus-compose](https://github.com/lxc/incus-compose) config keys, so all three are blank for instances created any other way: the service an instance came from, its `ic-healthd` health (`starting`, `healthy`, `unhealthy`, `stopped`, or `unknown` for a service that declared no healthcheck), and the image reference the compose file named. |
+| `checkImageUpdatesOnStart` | bool | `false` | Check the OCI images in use for a newer build of their tag at startup, as `g` on Images does. See [Panels.md](Panels.md#images). |
 | `serviceColumns` | []string | `[name, status, replicas, health, ipv4, snapshots]` | Which columns the Services panel shows, and in what order. Valid values: `name`, `status`, `replicas`, `type`, `ipv4`, `ipv6`, `health`, `image`, `snapshots` — the same renderers `instanceColumns` uses, over the service's instances rolled up, plus `replicas` (how many instances the service has against how many the compose file declared, blank when they agree — the figure before the slash is the number of replica rows underneath). The project is in the panel title rather than a column, every row sharing it, followed by the stack's remote when that isn't the session's. Only read when the Services panel is there at all. |
 
 ### Top level

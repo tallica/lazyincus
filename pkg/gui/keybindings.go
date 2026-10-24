@@ -477,6 +477,14 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			NoSelection: true,
 		},
 		{
+			ViewName:    "images",
+			Key:         'g',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.handleCheckImageUpdates,
+			Description: gui.Tr.CheckImageUpdates,
+			NoSelection: true,
+		},
+		{
 			ViewName:    "networks",
 			Key:         'e',
 			Modifier:    gocui.ModNone,

@@ -55,6 +55,10 @@ gui:
   # titles and start the focus on Instances.
   collapseStacksElsewhere: true
 
+  # Check the OCI images in use for a newer build of their tag at startup,
+  # as 'g' on Images does.
+  checkImageUpdatesOnStart: false
+
   # Word-wrap the main panel's content.
   wrapMainPanel: true
 

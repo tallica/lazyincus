@@ -128,6 +128,11 @@ type GuiConfig struct {
 	// "ipv6", "health", "image", "snapshots". Everything but "replicas" rolls
 	// the service's instances up the way the Instances panel renders one.
 	ServiceColumns []string `yaml:"serviceColumns,omitempty"`
+
+	// CheckImageUpdatesOnStart checks the OCI images instances were created
+	// from against their registries at startup, as `g` on the Images tab
+	// does.
+	CheckImageUpdatesOnStart bool `yaml:"checkImageUpdatesOnStart,omitempty"`
 }
 
 // DefaultInstanceColumns is the Instances panel's column set/order when the

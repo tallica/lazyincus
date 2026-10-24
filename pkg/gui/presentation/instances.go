@@ -44,15 +44,36 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	},
 }
 
-func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool) []string {
+// GetInstanceDisplayStrings renders one row; updates are the registry
+// checks, by image fingerprint.
+func GetInstanceDisplayStrings(
+	guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool, updates map[string]commands.UpstreamStatus,
+) []string {
 	columns := instanceColumns(guiConfig, showProject)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		cells = append(cells, instanceColumnRenderers[column](guiConfig, instance))
+		cells = append(cells, withImageMarker(column, instanceColumnRenderers[column](guiConfig, instance), updates, instance))
 	}
 
 	return cells
+}
+
+// withImageMarker flags the image column of a row whose instances came from
+// an image whose tag has a newer build upstream.
+func withImageMarker(column string, cell string, updates map[string]commands.UpstreamStatus, instances ...*commands.Instance) string {
+	if column != "image" {
+		return cell
+	}
+
+	newer := lo.ContainsBy(instances, func(instance *commands.Instance) bool {
+		return updates[instance.BaseImage()].State == commands.UpstreamNewer
+	})
+	if !newer {
+		return cell
+	}
+
+	return strings.TrimSpace(cell + " " + utils.ColoredString("↑", color.FgYellow))
 }
 
 // InstanceImageColumn is where the image column lands among the ones

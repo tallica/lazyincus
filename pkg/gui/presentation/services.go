@@ -68,7 +68,9 @@ func serviceColumns(guiConfig *config.GuiConfig) []string {
 // rows being one list rather than two panels.
 const replicaIndent = "  "
 
-func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.ServiceRow) []string {
+func GetServiceRowDisplayStrings(
+	guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus,
+) []string {
 	columns := serviceColumns(guiConfig)
 
 	cells := make([]string, 0, len(columns))
@@ -76,11 +78,11 @@ func GetServiceRowDisplayStrings(guiConfig *config.GuiConfig, row *commands.Serv
 		render := serviceColumnRenderers[column]
 
 		if row.Instance == nil {
-			cells = append(cells, render(guiConfig, row.Service))
+			cells = append(cells, withImageMarker(column, render(guiConfig, row.Service), updates, row.Service.Instances...))
 			continue
 		}
 
-		cells = append(cells, replicaCell(guiConfig, column, row.Instance))
+		cells = append(cells, withImageMarker(column, replicaCell(guiConfig, column, row.Instance), updates, row.Instance))
 	}
 
 	return cells

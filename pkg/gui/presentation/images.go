@@ -17,15 +17,16 @@ const MinImageLabelWidth = 28
 
 // GetImageDisplayStrings renders one row of the images panel. The users
 // count comes straight after the label, where a narrow panel still shows
-// it: it's what says whether the image can go.
-func GetImageDisplayStrings(image *commands.Image, showProject bool) []string {
+// it: it's what says whether the image can go. newer is the registry having
+// a newer build of the image's tag.
+func GetImageDisplayStrings(image *commands.Image, showProject bool, newer bool) []string {
 	cells := []string{
 		image.Label(),
 		displayImageUsers(image),
 		utils.ColoredString(image.ShortFingerprint(), color.FgCyan),
 		utils.ColoredString(displayImageSize(image), color.FgYellow),
 		displayImageLastUsed(image),
-		utils.ColoredString(displayImageFlags(image), color.FgMagenta),
+		displayImageFlags(image, newer),
 	}
 
 	if showProject {
@@ -62,8 +63,8 @@ func displayImageLastUsed(image *commands.Image) string {
 
 // displayImageFlags keeps to what sets an image apart, a container image
 // being the norm: a VM image, and one Incus cached on a launch and will
-// expire by itself.
-func displayImageFlags(image *commands.Image) string {
+// expire by itself - and one whose tag has moved on upstream.
+func displayImageFlags(image *commands.Image, newer bool) string {
 	flags := []string{}
 	if image.IsVM() {
 		flags = append(flags, "vm")
@@ -73,7 +74,16 @@ func displayImageFlags(image *commands.Image) string {
 		flags = append(flags, "cached")
 	}
 
-	return strings.Join(flags, " ")
+	display := []string{}
+	if len(flags) > 0 {
+		display = append(display, utils.ColoredString(strings.Join(flags, " "), color.FgMagenta))
+	}
+
+	if newer {
+		display = append(display, utils.ColoredString("update", color.FgYellow))
+	}
+
+	return strings.Join(display, " ")
 }
 
 func displayImageSize(image *commands.Image) string {

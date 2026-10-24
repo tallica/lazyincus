@@ -43,6 +43,12 @@ type TranslationSet struct {
 	VolumeSizeUnknown            string
 	UsedByNothing                string
 	ImageUsersUnknown            string
+	CheckImageUpdates            string
+	CheckingImagesStatus         string
+	NoImagesToCheck              string
+	ImageUpdatesSummary          string
+	UpstreamNewer                string
+	UpstreamCurrent              string
 	ShowUsers                    string
 	InstancesUsing               string
 	NothingUses                  string
@@ -408,6 +414,12 @@ func englishSet() TranslationSet {
 		VolumeSizeUnknown:            "unknown - the pool's driver doesn't report it",
 		UsedByNothing:                "nothing",
 		ImageUsersUnknown:            "unknown - the instances couldn't be listed",
+		CheckImageUpdates:            "check OCI images for a newer build of their tag",
+		CheckingImagesStatus:         "checking registries",
+		NoImagesToCheck:              "No OCI image in use was pulled from a registry.",
+		ImageUpdatesSummary:          "%d with a newer build, %d current, %d couldn't be checked",
+		UpstreamNewer:                "the tag has a newer build",
+		UpstreamCurrent:              "current",
 		ShowUsers:                    "show the instances using it",
 		InstancesUsing:               "Instances using %s",
 		NothingUses:                  "No instance uses %s.",
