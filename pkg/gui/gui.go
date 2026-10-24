@@ -98,7 +98,15 @@ type Gui struct {
 	checkUpstreams func(ctx context.Context, targets []commands.UpstreamTarget) map[string]commands.UpstreamStatus
 	// checkImagesOnStart is checkImageUpdatesOnStart as the session started.
 	checkImagesOnStart bool
-	stacks             stackCache
+	// imageUpdates are the registry checks, by image fingerprint: a
+	// fingerprint is the image's content, so they hold on any remote. A
+	// check stores a new map rather than writing to this one, which the
+	// tabs read off the main loop.
+	imageUpdates atomic.Pointer[map[string]commands.UpstreamStatus]
+	// stackRemotes are the remotes the listed stacks are on, for the check
+	// off the main loop.
+	stackRemotes atomic.Pointer[[]string]
+	stacks       stackCache
 
 	// subtitles are the popups' subtitles as last written, by view name,
 	// and what fitSubtitle made of each: see fitSubtitle.
@@ -253,10 +261,6 @@ type guiState struct {
 
 	// Warnings are the remote's, as the last listing had them.
 	Warnings []*commands.Warning
-
-	// ImageUpdates are the registry checks, by image fingerprint: a
-	// fingerprint is the image's content, so they hold on any remote.
-	ImageUpdates map[string]commands.UpstreamStatus
 
 	// DaemonPopup is whether the popup open is `W`'s, DaemonTab the list it
 	// shows, or showed last, and DaemonOpened whether it has been open.

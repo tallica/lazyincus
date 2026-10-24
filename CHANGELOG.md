@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
-- `g` on Images checks the OCI images in use for a newer build of their tag; `gui.checkImageUpdatesOnStart` checks at startup too.
+- `g` on Images checks the OCI images in use for a newer build of their tag, marking what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.
 
 ### Fixed
 - An operation's duration in `W`'s popup shows milliseconds under a second, where it was rounded to a tenth, often to `0s`.

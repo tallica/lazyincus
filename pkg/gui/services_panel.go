@@ -114,7 +114,7 @@ func (gui *Gui) getServicesPanel() *panels.SideListPanel[*commands.ServiceRow] {
 			return a.Key() == b.Key()
 		},
 		GetTableCells: func(row *commands.ServiceRow) []string {
-			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row, gui.State.ImageUpdates)
+			return presentation.GetServiceRowDisplayStrings(&gui.Config.UserConfig.Gui, row, gui.upstreams())
 		},
 		FlexColumns: func() []utils.FlexColumn {
 			return []utils.FlexColumn{{
@@ -162,6 +162,7 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 	output := gui.locationStr(location{remote: remote, project: service.Project, stack: gui.stackLabel(remote, service.Project)})
 	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
+	output += line("Registry", gui.upstreamVerdict(commands.MostTelling(gui.upstreams(), presentation.BaseImages(row.Instances())...)))
 	output += line("Replicas", presentation.ServiceReplicas(service))
 	output += line("Health", service.Health())
 

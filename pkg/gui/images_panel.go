@@ -31,7 +31,7 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 			},
 			GetItemContextCacheKey: func(image *commands.Image) string {
 				return "images-" + image.Key() + "-" +
-					utils.Fingerprint(image.Image, image.UsedBy, gui.imageUpstreamStr(gui.State.ImageUpdates[image.Fingerprint]))
+					utils.Fingerprint(image.Image, image.UsedBy, gui.imageUpstreamStr(gui.upstreams()[image.Fingerprint]))
 			},
 		},
 		ListPanel: panels.ListPanel[*commands.Image]{
@@ -47,7 +47,7 @@ func (gui *Gui) getImagesPanel() *panels.SideListPanel[*commands.Image] {
 			return a.Key() == b.Key()
 		},
 		GetTableCells: func(item *commands.Image) []string {
-			newer := gui.State.ImageUpdates[item.Fingerprint].State == commands.UpstreamNewer
+			newer := gui.upstreams()[item.Fingerprint].State == commands.UpstreamNewer
 
 			return presentation.GetImageDisplayStrings(item, gui.State.SpansProjects.Images, newer)
 		},
@@ -74,7 +74,7 @@ func sortImages(a *commands.Image, b *commands.Image) bool {
 // renderImageConfig reads the registry check here, on the main loop, for the
 // task that renders off it.
 func (gui *Gui) renderImageConfig(image *commands.Image) tasks.TaskFunc {
-	upstream := gui.imageUpstreamStr(gui.State.ImageUpdates[image.Fingerprint])
+	upstream := gui.imageUpstreamStr(gui.upstreams()[image.Fingerprint])
 
 	return gui.NewSimpleRenderStringTask(func() string { return gui.imageConfigStr(image, upstream) })
 }

@@ -50,30 +50,49 @@ func GetInstanceDisplayStrings(
 	guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool, updates map[string]commands.UpstreamStatus,
 ) []string {
 	columns := instanceColumns(guiConfig, showProject)
+	marked := markedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		cells = append(cells, withImageMarker(column, instanceColumnRenderers[column](guiConfig, instance), updates, instance))
+		cell := instanceColumnRenderers[column](guiConfig, instance)
+		if column == marked {
+			cell = WithImageMarker(cell, updates, instance.BaseImage())
+		}
+
+		cells = append(cells, cell)
 	}
 
 	return cells
 }
 
-// withImageMarker flags the image column of a row whose instances came from
-// an image whose tag has a newer build upstream.
-func withImageMarker(column string, cell string, updates map[string]commands.UpstreamStatus, instances ...*commands.Instance) string {
-	if column != "image" {
+// markedColumn is where a row says its image has a newer build: the image
+// column, or the name when that isn't shown.
+func markedColumn(columns []string) string {
+	if lo.Contains(columns, "image") {
+		return "image"
+	}
+
+	return "name"
+}
+
+// WithImageMarker adds ↑ to a cell of a row whose images include one whose
+// tag has a newer build upstream.
+func WithImageMarker(cell string, updates map[string]commands.UpstreamStatus, fingerprints ...string) string {
+	if commands.MostTelling(updates, fingerprints...).State != commands.UpstreamNewer {
 		return cell
 	}
 
-	newer := lo.ContainsBy(instances, func(instance *commands.Instance) bool {
-		return updates[instance.BaseImage()].State == commands.UpstreamNewer
-	})
-	if !newer {
-		return cell
+	marker := utils.ColoredString("↑", color.FgYellow)
+	if cell == "" {
+		return marker
 	}
 
-	return strings.TrimSpace(cell + " " + utils.ColoredString("↑", color.FgYellow))
+	return cell + " " + marker
+}
+
+// BaseImages are the fingerprints the instances were created from.
+func BaseImages(instances []*commands.Instance) []string {
+	return lo.Map(instances, func(instance *commands.Instance, _ int) string { return instance.BaseImage() })
 }
 
 // InstanceImageColumn is where the image column lands among the ones

@@ -72,17 +72,22 @@ func GetServiceRowDisplayStrings(
 	guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus,
 ) []string {
 	columns := serviceColumns(guiConfig)
+	marked := markedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		render := serviceColumnRenderers[column]
-
+		var cell string
 		if row.Instance == nil {
-			cells = append(cells, withImageMarker(column, render(guiConfig, row.Service), updates, row.Service.Instances...))
-			continue
+			cell = serviceColumnRenderers[column](guiConfig, row.Service)
+		} else {
+			cell = replicaCell(guiConfig, column, row.Instance)
 		}
 
-		cells = append(cells, withImageMarker(column, replicaCell(guiConfig, column, row.Instance), updates, row.Instance))
+		if column == marked {
+			cell = WithImageMarker(cell, updates, BaseImages(row.Instances())...)
+		}
+
+		cells = append(cells, cell)
 	}
 
 	return cells

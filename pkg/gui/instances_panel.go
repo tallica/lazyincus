@@ -86,7 +86,7 @@ func (gui *Gui) getInstancesPanel() *panels.SideListPanel[*commands.Instance] {
 		},
 		GetTableCells: func(instance *commands.Instance) []string {
 			return presentation.GetInstanceDisplayStrings(
-				&gui.Config.UserConfig.Gui, instance, gui.State.SpansProjects.Instances, gui.State.ImageUpdates)
+				&gui.Config.UserConfig.Gui, instance, gui.State.SpansProjects.Instances, gui.upstreams())
 		},
 		FlexColumns: func() []utils.FlexColumn {
 			return []utils.FlexColumn{{

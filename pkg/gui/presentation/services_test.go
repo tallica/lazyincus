@@ -90,6 +90,14 @@ func TestServiceImageMarker(t *testing.T) {
 	assert.Equal(t, []string{"  web-1", "↑"},
 		plain(GetServiceRowDisplayStrings(guiConfig, &commands.ServiceRow{Service: service, Instance: instance}, updates)))
 
+	// Without an image column, the name carries it.
+	assert.Equal(t, "web ↑",
+		plain(GetServiceRowDisplayStrings(&config.GuiConfig{ServiceColumns: []string{"name", "status"}},
+			&commands.ServiceRow{Service: service}, updates))[0])
+	assert.Equal(t, "  web-1 ↑",
+		plain(GetServiceRowDisplayStrings(&config.GuiConfig{ServiceColumns: []string{"name"}},
+			&commands.ServiceRow{Service: service, Instance: instance}, updates))[0])
+
 	updates["old"] = commands.UpstreamStatus{State: commands.UpstreamCurrent}
 	assert.Equal(t, []string{"web", "nginx:alpine"},
 		plain(GetServiceRowDisplayStrings(guiConfig, &commands.ServiceRow{Service: service}, updates)))

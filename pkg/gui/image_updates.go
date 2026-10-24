@@ -20,7 +20,7 @@ func (gui *Gui) imageUpdatesFetch(report bool) fetch {
 	return func() (func() error, error) {
 		ticket := gui.refreshes.imageUpdates.issue()
 
-		targets, err := gui.IncusCommand.UpstreamTargets()
+		targets, err := gui.upstreamTargets()
 		if err != nil {
 			return nil, err
 		}
@@ -35,11 +35,13 @@ func (gui *Gui) imageUpdatesFetch(report bool) fetch {
 				return nil
 			}
 
-			if gui.State.ImageUpdates == nil {
-				gui.State.ImageUpdates = map[string]commands.UpstreamStatus{}
+			updates := maps.Clone(gui.upstreams())
+			if updates == nil {
+				updates = map[string]commands.UpstreamStatus{}
 			}
 
-			maps.Copy(gui.State.ImageUpdates, results)
+			maps.Copy(updates, results)
+			gui.imageUpdates.Store(&updates)
 
 			if report {
 				gui.WithTransientStatus(gui.imageUpdatesSummary(results), 3*time.Second)
@@ -49,9 +51,71 @@ func (gui *Gui) imageUpdatesFetch(report bool) fetch {
 				return err
 			}
 
+			if !gui.composeUnavailable() {
+				if err := gui.Panels.Stacks.RerenderList(); err != nil {
+					return err
+				}
+			}
+
 			return gui.rerenderInstanceLists()
 		}, nil
 	}
+}
+
+// upstreams are the registry checks so far, nil before the first.
+func (gui *Gui) upstreams() map[string]commands.UpstreamStatus {
+	if updates := gui.imageUpdates.Load(); updates != nil {
+		return *updates
+	}
+
+	return nil
+}
+
+// upstreamTargets are the session's remote's images to check, and those of
+// every other remote a listed stack is on that's connected; one that isn't
+// yet is left for the next check.
+func (gui *Gui) upstreamTargets() ([]commands.UpstreamTarget, error) {
+	targets, err := gui.IncusCommand.UpstreamTargets()
+	if err != nil {
+		return nil, err
+	}
+
+	seen := map[string]bool{}
+	for _, target := range targets {
+		seen[target.Fingerprint] = true
+	}
+
+	remotes := gui.stackRemotes.Load()
+	if remotes == nil {
+		return targets, nil
+	}
+
+	for _, remote := range *remotes {
+		if remote == gui.IncusCommand.RemoteName() {
+			continue
+		}
+
+		command, err := gui.commandFor(remote)
+		if err != nil {
+			gui.Log.Warn().Err(err).Str("remote", remote).Msg("no image check")
+			continue
+		}
+
+		others, err := command.UpstreamTargets()
+		if err != nil {
+			gui.Log.Warn().Err(err).Str("remote", remote).Msg("no image check")
+			continue
+		}
+
+		for _, target := range others {
+			if !seen[target.Fingerprint] {
+				seen[target.Fingerprint] = true
+				targets = append(targets, target)
+			}
+		}
+	}
+
+	return targets, nil
 }
 
 func (gui *Gui) imageUpdatesSummary(results map[string]commands.UpstreamStatus) string {
@@ -81,18 +145,21 @@ func (gui *Gui) imageUpstreamStr(status commands.UpstreamStatus) string {
 		return ""
 	}
 
-	var verdict string
+	return utils.WithPadding("Upstream: ", identityPadding) + status.Ref + "\n" +
+		utils.WithPadding("Registry: ", identityPadding) + gui.upstreamVerdict(status) + "\n" +
+		utils.WithPadding("Checked: ", identityPadding) + status.CheckedAt.Local().Format(time.DateTime) + "\n"
+}
 
+// upstreamVerdict is what a check found, empty for none.
+func (gui *Gui) upstreamVerdict(status commands.UpstreamStatus) string {
 	switch status.State {
 	case commands.UpstreamNewer:
-		verdict = gui.Tr.UpstreamNewer
+		return gui.Tr.UpstreamNewer
 	case commands.UpstreamCurrent:
-		verdict = gui.Tr.UpstreamCurrent
+		return gui.Tr.UpstreamCurrent
 	case commands.UpstreamFailed:
-		verdict = status.Err.Error()
+		return status.Err.Error()
 	}
 
-	return utils.WithPadding("Upstream: ", identityPadding) + status.Ref + "\n" +
-		utils.WithPadding("Registry: ", identityPadding) + verdict + "\n" +
-		utils.WithPadding("Checked: ", identityPadding) + status.CheckedAt.Local().Format(time.DateTime) + "\n"
+	return ""
 }

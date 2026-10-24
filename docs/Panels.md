@@ -540,15 +540,19 @@ index — otherwise stopping an instance moves it down the list and hands the
 selection to whatever took its place.
 
 `g` checks the OCI images instances were created from for a newer build
-of the tag they were pulled by: the image is marked `update`, and an
-`image` column shows `↑` for what was made from it. Recreating with a
+of the tag they were pulled by, on the session's remote and every other
+one a listed stack is on and that's connected. The image is marked
+`update`. What runs it gets a `↑` - an instance, a service or replica, a
+stack - in its `image` column, or by its name where that isn't shown,
+and a service's Info tab says what the registry said. Recreating with a
 pull, `U`, takes the new build. The tag comes from the copy Incus pulled,
-so an image incus-compose built has none and isn't checked. The check
-runs from this machine, not the daemon, with the credentials in your
-`~/.docker/config.json`; a registry only the daemon can reach shows its
-error on the Config tab. A tag that hasn't moved costs a HEAD, which
-Docker Hub doesn't count against its pull limit.
-`gui.checkImageUpdatesOnStart` checks at startup too. A newer tag
+so an image incus-compose built has none and isn't checked, and neither
+is a service with no instances yet. The check runs from this machine, not
+the daemon, with the credentials in your `~/.docker/config.json`; a
+registry only the daemon can reach shows its error on the Config tab. A
+tag that hasn't moved costs a HEAD, which Docker Hub doesn't count
+against its pull limit. `gui.checkImageUpdatesOnStart` checks at startup
+too. A newer tag
 - `2.1` to `2.2` - is the compose file's business, and is left to
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
 on the repository the file lives in.

@@ -341,8 +341,8 @@ func TestAChangingErrorRefreshesOnce(t *testing.T) {
 
 	var reads, changes atomic.Int32
 
-	read := func() (map[string]map[string][]string, error) {
-		return map[string]map[string][]string{}, fmt.Errorf("refused, attempt %d", reads.Add(1))
+	read := func() (map[string]commands.ComposeProjectState, error) {
+		return map[string]commands.ComposeProjectState{}, fmt.Errorf("refused, attempt %d", reads.Add(1))
 	}
 
 	var changed func()

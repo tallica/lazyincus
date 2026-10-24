@@ -42,6 +42,23 @@ type UpstreamStatus struct {
 	CheckedAt time.Time
 }
 
+// MostTelling is the check that says most about several images taken
+// together: a newer build if any has one, else a failure, else current.
+func MostTelling(updates map[string]UpstreamStatus, fingerprints ...string) UpstreamStatus {
+	var best UpstreamStatus
+
+	rank := map[UpstreamState]int{UpstreamCurrent: 1, UpstreamFailed: 2, UpstreamNewer: 3}
+
+	for _, fingerprint := range fingerprints {
+		status, ok := updates[fingerprint]
+		if ok && rank[status.State] > rank[best.State] {
+			best = status
+		}
+	}
+
+	return best
+}
+
 // UpstreamTargets are the OCI images instances were created from, each with
 // the reference Incus pulled it by. That reference is on the image's
 // update_source, but only on the copy Incus pulled (incus-compose's lives in
