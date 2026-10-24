@@ -44,15 +44,55 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	},
 }
 
-func GetInstanceDisplayStrings(guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool) []string {
+// GetInstanceDisplayStrings renders one row; updates are the registry
+// checks, by image fingerprint.
+func GetInstanceDisplayStrings(
+	guiConfig *config.GuiConfig, instance *commands.Instance, showProject bool, updates map[string]commands.UpstreamStatus,
+) []string {
 	columns := instanceColumns(guiConfig, showProject)
+	marked := markedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		cells = append(cells, instanceColumnRenderers[column](guiConfig, instance))
+		cell := instanceColumnRenderers[column](guiConfig, instance)
+		if column == marked {
+			cell = WithImageMarker(cell, updates, instance.BaseImage())
+		}
+
+		cells = append(cells, cell)
 	}
 
 	return cells
+}
+
+// markedColumn is where a row says its image has a newer build: the image
+// column, or the name when that isn't shown.
+func markedColumn(columns []string) string {
+	if lo.Contains(columns, "image") {
+		return "image"
+	}
+
+	return "name"
+}
+
+// WithImageMarker adds ↑ to a cell of a row whose images include one whose
+// tag has a newer build upstream.
+func WithImageMarker(cell string, updates map[string]commands.UpstreamStatus, fingerprints ...string) string {
+	if commands.MostTelling(updates, fingerprints...).State != commands.UpstreamNewer {
+		return cell
+	}
+
+	marker := utils.ColoredString("↑", color.FgYellow)
+	if cell == "" {
+		return marker
+	}
+
+	return cell + " " + marker
+}
+
+// BaseImages are the fingerprints the instances were created from.
+func BaseImages(instances []*commands.Instance) []string {
+	return lo.Map(instances, func(instance *commands.Instance, _ int) string { return instance.BaseImage() })
 }
 
 // InstanceImageColumn is where the image column lands among the ones

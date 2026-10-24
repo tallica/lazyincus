@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"slices"
+
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -82,12 +84,18 @@ func stackDirKey(remote, project string) string {
 	return remote + "\x00" + project
 }
 
-// setStackDirs records where each listed stack's directory is, for the
-// tabs, which render off the main loop and so can't read the Stacks panel.
+// setStackDirs records where each listed stack's directory is, and which
+// remotes they're on, for the tabs and the image check, which run off the
+// main loop and so can't read the Stacks panel.
 func (gui *Gui) setStackDirs(stacks []*commands.ComposeStack) {
 	dirs := map[string]string{}
+	remotes := []string{}
 
 	for _, stack := range stacks {
+		if remote := gui.stackRemote(stack); !slices.Contains(remotes, remote) {
+			remotes = append(remotes, remote)
+		}
+
 		if stack.Name == "" {
 			continue
 		}
@@ -99,4 +107,5 @@ func (gui *Gui) setStackDirs(stacks []*commands.ComposeStack) {
 	}
 
 	gui.stackDirs.Store(&dirs)
+	gui.stackRemotes.Store(&remotes)
 }

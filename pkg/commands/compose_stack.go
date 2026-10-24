@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -36,8 +37,10 @@ type ComposeStack struct {
 	Saved bool
 
 	// Statuses are the daemon's statuses of the stack's compose instances,
-	// by service.
+	// by service, and Images the fingerprints of what they were created
+	// from.
 	Statuses map[string][]string
+	Images   []string
 
 	// StatusErr is why the stack's remote gave no statuses, and
 	// StatusPending that it hasn't yet: it's still being connected to.
@@ -150,16 +153,25 @@ func RollUpStatus(statuses []string) string {
 	return statuses[0]
 }
 
-// GetComposeStatuses is the status of every compose-labelled instance on the
-// server, by project and then service: one listing for every stack on c's
-// remote.
-func (c *IncusCommand) GetComposeStatuses() (map[string]map[string][]string, error) {
+// ComposeProjectState is one compose project's instances as the daemon has
+// them.
+type ComposeProjectState struct {
+	// Statuses are the instances' statuses, by service.
+	Statuses map[string][]string
+	// Images are the fingerprints of the images they were created from,
+	// sorted.
+	Images []string
+}
+
+// GetComposeStatuses is every compose-labelled instance on the server, by
+// project: one listing for every stack on c's remote.
+func (c *IncusCommand) GetComposeStatuses() (map[string]ComposeProjectState, error) {
 	instances, err := c.Client().GetInstancesAllProjects(api.InstanceTypeAny)
 	if err != nil {
 		return nil, err
 	}
 
-	statuses := map[string]map[string][]string{}
+	projects := map[string]ComposeProjectState{}
 
 	for _, instance := range instances {
 		service := instance.ExpandedConfig[composeServiceKey]
@@ -167,14 +179,23 @@ func (c *IncusCommand) GetComposeStatuses() (map[string]map[string][]string, err
 			continue
 		}
 
-		if statuses[instance.Project] == nil {
-			statuses[instance.Project] = map[string][]string{}
+		project, ok := projects[instance.Project]
+		if !ok {
+			project = ComposeProjectState{Statuses: map[string][]string{}}
 		}
 
-		statuses[instance.Project][service] = append(statuses[instance.Project][service], instance.Status)
+		project.Statuses[service] = append(project.Statuses[service], instance.Status)
+
+		image := instance.Config[baseImageKey]
+		if image != "" && !slices.Contains(project.Images, image) {
+			project.Images = append(project.Images, image)
+			slices.Sort(project.Images)
+		}
+
+		projects[instance.Project] = project
 	}
 
-	return statuses, nil
+	return projects, nil
 }
 
 // ResolveStackDir turns what was typed for a stack into the absolute,

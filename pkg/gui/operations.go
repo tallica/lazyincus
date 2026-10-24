@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -142,12 +143,37 @@ func (l *operationLog) counts(since, now time.Time) (running, failed int, due ti
 			}
 		case !logged.operation.IsFinal():
 			running++
-		case logged.operation.Operation.StatusCode == api.Failure && logged.seen.After(since):
+		case logged.operation.Operation.StatusCode == api.Failure && logged.seen.After(since) &&
+			!l.retried(logged.operation):
 			failed++
 		}
 	}
 
 	return running, failed, due
+}
+
+// retriedWithin is how soon after a failure a success counts as its retry.
+const retriedWithin = time.Minute
+
+// retried is whether the same action on the same resources went through
+// soon after: incus-compose retries a delete refused while ic-healthd writes.
+func (l *operationLog) retried(failure *commands.Operation) bool {
+	if failure.Operation.StatusCode != api.Failure {
+		return false
+	}
+
+	for _, logged := range l.entries {
+		other := logged.operation
+		if other.Operation.StatusCode == api.Success && other.Project == failure.Project &&
+			other.Operation.Description == failure.Operation.Description &&
+			other.Operation.CreatedAt.After(failure.Operation.CreatedAt) &&
+			other.Operation.CreatedAt.Sub(failure.Operation.CreatedAt) <= retriedWithin &&
+			maps.EqualFunc(other.Operation.Resources, failure.Operation.Resources, slices.Equal) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (l *operationLog) clear() {
@@ -175,8 +201,10 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 
 	for _, operation := range operations {
 		keys = append(keys, operation.Key())
+		columns := presentation.GetOperationDisplayStrings(
+			operation, gui.State.SpansProjects.Operations, gui.operations.retried(operation))
 		items = append(items, &types.MenuItem{
-			LabelColumns: presentation.GetOperationDisplayStrings(operation, gui.State.SpansProjects.Operations),
+			LabelColumns: columns,
 			FilterText:   operationLabel(operation),
 			OnPress:      func() error { return gui.showOperation(operation) },
 			Keys: map[rune]types.MenuKey{
@@ -212,7 +240,7 @@ func (gui *Gui) operationInfoStr(operation *commands.Operation) string {
 
 	output := gui.locationStr(gui.sessionLocation(operation.Project))
 	output += line("Description", op.Description)
-	output += line("Status", presentation.OperationStatus(operation))
+	output += line("Status", presentation.OperationStatus(operation, gui.operations.retried(operation)))
 	if op.Err != "" {
 		output += line("Error", utils.ColoredString(op.Err, color.FgRed))
 	}

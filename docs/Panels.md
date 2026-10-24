@@ -426,8 +426,8 @@ never reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account, unless `gui.returnImmediately` skips the prompt that
 keeps it on screen: then the popup names the command and how it exited.
 `s`, `d` and `f` confirm, `U` asks which kind of recreate and then confirms,
-`S`/`r`/`u`/`p`/`b`/`g` don't — same rule as the
-instances panel.
+`G` its checklist and then confirms, `S`/`r`/`u`/`p`/`b`/`g` don't — same
+rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
@@ -538,6 +538,36 @@ Rows sort by name, with stopped instances last (`sortInstances`), and the
 cursor follows the selected item across a re-sort rather than holding its
 index — otherwise stopping an instance moves it down the list and hands the
 selection to whatever took its place.
+
+`g` checks the OCI images instances were created from for a newer build
+of the tag they were pulled by, on the session's remote and every other
+one a listed stack is on and that's connected. The image gets a `↑` ahead
+of its label, where a narrow panel doesn't cut it off. What runs it gets
+one too - an instance, a service or replica, a stack - in its `image`
+column, or by its name where that isn't shown, and a service's Info tab
+says what the registry said. Recreating with a pull, `U`, takes the new
+build. `G` on Stacks or Services does it for the services of the stack
+you tick, in one `up`; `--no-deps` keeps it to them, since with
+`--recreate` `up` would recreate what they depend on too. Each row says
+from → to: the `org.opencontainers.image.version` label, else a changed
+`*_VERSION` variable, as the official images set - the one named for the
+image first, any other shown by name - else the build date; `o` opens the
+GitHub comparison of the two builds' revisions, or the releases, when the
+image's labels name its source. Reading both builds' configs costs a
+newer build a manifest GET or two, which Docker Hub counts as pulls. It
+checks first when none of the stack's images has been checked yet, and
+checks again after, for the images the services now run. The tag comes
+from the copy Incus pulled, so an image incus-compose built has none and
+isn't checked, and neither is a service with no instances yet. The check
+runs from this machine, not the daemon, with the credentials in your
+`~/.docker/config.json`; a registry only the daemon can reach shows its
+error on the Config tab. A tag that hasn't moved costs a HEAD, which
+Docker Hub doesn't count against its pull limit.
+`gui.checkImageUpdatesOnStart` checks at startup too. A newer tag, `2.1`
+to `2.2`, isn't looked for - see
+[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);
+[Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
+on the compose file's repository is one way to catch those.
 
 Which columns show, and in what order, is user-configurable via
 `gui.instanceColumns`. `service`, `health` and `image` read incus-compose
@@ -913,7 +943,10 @@ secrets, and a token - a join or certificate token, its secret in its
 metadata - isn't listed at all. `d` cancels one the daemon says may be
 cancelled, after a confirmation. The footer says how many have been under way
 for a second or more, and in red how many have failed since the list was last
-on screen.
+on screen. A failure followed within a minute by the same action on the
+same resources going through is greyed out as `retried` and not counted:
+incus-compose retries a delete the daemon refused while ic-healthd was
+writing the instance's health into its config.
 
 ### Warnings
 

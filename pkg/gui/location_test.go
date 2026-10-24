@@ -136,7 +136,7 @@ func TestEveryConfigHeaderSaysWhereItsResourceLives(t *testing.T) {
 	want := []string{"Remote: fake", "Project: default"}
 
 	image := onLoop(t, s, func() *commands.Image { return s.gui.Panels.Images.List.GetAllItems()[0] })
-	assert.Equal(t, want, header(s.gui.imageConfigStr(image)))
+	assert.Equal(t, want, header(s.gui.imageConfigStr(image, "")))
 
 	volume := onLoop(t, s, func() *commands.Volume { return s.gui.Panels.Volumes.List.GetAllItems()[0] })
 	assert.Equal(t, want, header(s.gui.volumeConfigStr(volume)))

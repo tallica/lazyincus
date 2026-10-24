@@ -8,6 +8,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
+	github.com/google/go-containerregistry v0.22.1
 	github.com/integrii/flaggy v1.8.0
 	github.com/jesseduffield/gocui v0.3.1-0.20260331125330-c81715e95462
 	github.com/jesseduffield/kill v0.0.0-20250101124109-e216ddbe133a
@@ -32,6 +33,8 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.5 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
+	github.com/docker/cli v29.7.2+incompatible // indirect
+	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/flosch/pongo2/v6 v6.1.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
@@ -74,8 +77,10 @@ require (
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
+	gotest.tools/v3 v3.5.2 // indirect
 )

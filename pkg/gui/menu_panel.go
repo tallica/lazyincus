@@ -3,6 +3,8 @@ package gui
 import (
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/tallica/lazyincus/pkg/gui/panels"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
@@ -22,6 +24,8 @@ type CreateMenuOptions struct {
 	TabIndex int
 	// Wide is for rows with more to say than a menu's.
 	Wide bool
+	// OnConfirm makes the menu a checklist, handed the rows ticked on enter.
+	OnConfirm func(picked []*types.MenuItem) error
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -34,7 +38,9 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		Gui:            gui.intoInterface(),
 		OnClick:        gui.onMenuPress,
 		Sort:           nil,
-		GetTableCells:  presentation.GetMenuItemDisplayStrings,
+		GetTableCells: func(item *types.MenuItem) []string {
+			return presentation.GetMenuItemDisplayStrings(item, gui.State.MenuConfirm != nil)
+		},
 		OnRerender: func() error {
 			return gui.resizePopupPanel(gui.Views.Menu)
 		},
@@ -60,6 +66,15 @@ func (gui *Gui) onMenuPress(menuItem *types.MenuItem) error {
 }
 
 func (gui *Gui) handleMenuPress() error {
+	if confirm := gui.State.MenuConfirm; confirm != nil {
+		picked := lo.Filter(gui.Panels.Menu.List.GetAllItems(), func(item *types.MenuItem, _ int) bool { return item.Checked })
+		if err := gui.handleMenuClose(); err != nil || len(picked) == 0 {
+			return err
+		}
+
+		return confirm(picked)
+	}
+
 	selectedMenuItem, err := gui.Panels.Menu.GetSelectedItem()
 	if err != nil {
 		return nil
@@ -68,8 +83,36 @@ func (gui *Gui) handleMenuPress() error {
 	return gui.onMenuPress(selectedMenuItem)
 }
 
+// handleMenuToggle is space: tick in a checklist, press in any other menu.
+func (gui *Gui) handleMenuToggle() error {
+	if gui.State.MenuConfirm == nil {
+		return gui.handleMenuPress()
+	}
+
+	item, err := gui.Panels.Menu.GetSelectedItem()
+	if err != nil {
+		return nil
+	}
+
+	item.Checked = !item.Checked
+
+	return gui.Panels.Menu.RerenderList()
+}
+
+// handleMenuToggleAll ticks every row, or none when they all were.
+func (gui *Gui) handleMenuToggleAll() error {
+	items := gui.Panels.Menu.List.GetAllItems()
+	all := lo.EveryBy(items, func(item *types.MenuItem) bool { return item.Checked })
+
+	for _, item := range items {
+		item.Checked = !all
+	}
+
+	return gui.Panels.Menu.RerenderList()
+}
+
 func (gui *Gui) Menu(opts CreateMenuOptions) error {
-	if !opts.HideCancel {
+	if !opts.HideCancel && opts.OnConfirm == nil {
 		opts.Items = append(opts.Items, &types.MenuItem{
 			LabelColumns: []string{gui.Tr.Cancel},
 			OnPress: func() error {
@@ -100,6 +143,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 
 	gui.State.DaemonPopup = false
 	gui.State.WideMenu = opts.Wide
+	gui.State.MenuConfirm = opts.OnConfirm
 	// Set before the rows are rendered, which sizes the popup to them.
 	gui.Views.Menu.Title = opts.Title
 	// The title as well when there are tabs: gocui draws the tabs, and the
@@ -135,6 +179,16 @@ func (gui *Gui) renderMenuOptions() error {
 
 	if gui.State.DaemonPopup {
 		optionsMap["[ ]"] = gui.Tr.SwitchList
+	}
+
+	if gui.State.MenuConfirm != nil {
+		optionsMap["space"] = gui.Tr.Toggle
+		optionsMap["a"] = gui.Tr.ToggleAll
+		optionsMap["enter"] = gui.Tr.Apply
+	}
+
+	if lo.SomeBy(gui.Panels.Menu.List.GetAllItems(), func(item *types.MenuItem) bool { return item.Keys['o'].Handler != nil }) {
+		optionsMap["o"] = gui.Tr.OpenWhatChanged
 	}
 
 	return gui.renderOptionsMap(optionsMap)

@@ -130,6 +130,7 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 
 		return api.InstanceFull{Instance: api.Instance{
 			Name: name, Project: project, Status: status, ExpandedConfig: config,
+			InstancePut: api.InstancePut{Config: map[string]string{baseImageKey: name[:2]}},
 		}}
 	}
 
@@ -146,9 +147,9 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 
 	statuses, err := command.GetComposeStatuses()
 	require.NoError(t, err)
-	assert.Equal(t, map[string]map[string][]string{
-		"web":   {"web": {"Running", "Stopped"}, "db": {"Running"}},
-		"other": {"api": {"Frozen"}},
+	assert.Equal(t, map[string]ComposeProjectState{
+		"web":   {Statuses: map[string][]string{"web": {"Running", "Stopped"}, "db": {"Running"}}, Images: []string{"db", "we"}},
+		"other": {Statuses: map[string][]string{"api": {"Frozen"}}, Images: []string{"ap"}},
 	}, statuses)
 }
 

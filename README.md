@@ -194,7 +194,8 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `F` | Edit a file inside the instance in `$EDITOR`, through `incus file edit`, asking for its path (on the Services panel, the replica's) ([demo](https://asciinema.org/a/1268030)) |
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
-| `g` | Services panel: pull the service's image |
+| `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
+| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't) |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -316,6 +317,10 @@ What the keys run on a service's own row, each of them `incus-compose
 - `d` — `down`, plain or `--volumes`, after a confirmation
 - `p` — `pause`, or `unpause` when the service is already frozen
 - `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
+- `G` — over the whole stack: the services with a newer image build, from
+  → to, all ticked, `space` to untick one, `o` to open what changed;
+  `enter` confirms and recreates them on a pull (`up --recreate --pull
+  always --no-deps`)
 - `M` — `logs --follow`, every replica's interleaved, until `ctrl+c`. It
   starts empty: a container's console log is handed out once, and the Logs
   tabs have read what's there, so it shows what's written from then on

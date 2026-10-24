@@ -9,6 +9,10 @@ type TranslationSet struct {
 	Menu                                       string
 	MenuTitle                                  string
 	Execute                                    string
+	Toggle                                     string
+	ToggleAll                                  string
+	Apply                                      string
+	OpenWhatChanged                            string
 	Scroll                                     string
 	Close                                      string
 	Submit                                     string
@@ -43,6 +47,12 @@ type TranslationSet struct {
 	VolumeSizeUnknown            string
 	UsedByNothing                string
 	ImageUsersUnknown            string
+	CheckImageUpdates            string
+	CheckingImagesStatus         string
+	NoImagesToCheck              string
+	ImageUpdatesSummary          string
+	UpstreamNewer                string
+	UpstreamCurrent              string
 	ShowUsers                    string
 	InstancesUsing               string
 	NothingUses                  string
@@ -244,6 +254,10 @@ type TranslationSet struct {
 	ConfirmComposeDownWithVolumes string
 	ConfirmComposeRecreate        string
 	ConfirmComposeRecreatePull    string
+	ComposeUpdateImages           string
+	ComposeUpdateImagesTitle      string
+	ConfirmComposeUpdateImages    string
+	NoNewerImages                 string
 	ConfirmComposeStop            string
 	ConfirmComposeKill            string
 
@@ -385,6 +399,10 @@ func englishSet() TranslationSet {
 		LcSearch:                     "search (n/N: next/previous match)",
 		Navigate:                     "navigate",
 		Execute:                      "execute",
+		Toggle:                       "tick",
+		ToggleAll:                    "tick all / none",
+		Apply:                        "apply",
+		OpenWhatChanged:              "open what changed",
 		Close:                        "close",
 		Submit:                       "submit",
 		SwitchList:                   "switch list",
@@ -408,6 +426,12 @@ func englishSet() TranslationSet {
 		VolumeSizeUnknown:            "unknown - the pool's driver doesn't report it",
 		UsedByNothing:                "nothing",
 		ImageUsersUnknown:            "unknown - the instances couldn't be listed",
+		CheckImageUpdates:            "check OCI images for a newer build of their tag",
+		CheckingImagesStatus:         "checking registries",
+		NoImagesToCheck:              "No OCI image in use was pulled from a registry.",
+		ImageUpdatesSummary:          "%d with a newer build, %d current, %d couldn't be checked",
+		UpstreamNewer:                "the tag has a newer build",
+		UpstreamCurrent:              "current",
 		ShowUsers:                    "show the instances using it",
 		InstancesUsing:               "Instances using %s",
 		NothingUses:                  "No instance uses %s.",
@@ -602,6 +626,10 @@ func englishSet() TranslationSet {
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down %s and delete its volumes?",
 		ConfirmComposeRecreate:        "Are you sure you want to recreate %s? Running instances will be replaced.",
 		ConfirmComposeRecreatePull:    "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
+		ComposeUpdateImages:           "update images with a newer build",
+		ComposeUpdateImagesTitle:      "Update images",
+		ConfirmComposeUpdateImages:    "Are you sure you want to pull the newer images of %s and recreate them? Running instances will be replaced.",
+		NoNewerImages:                 "no service of %s has a newer image build",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 

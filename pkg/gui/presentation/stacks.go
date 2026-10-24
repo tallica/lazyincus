@@ -26,10 +26,14 @@ type StackRemote struct {
 }
 
 // GetStackDisplayStrings is a Stacks row: its remote when there's one to
-// show, then name, status and directory, home written as `~`.
-func GetStackDisplayStrings(guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string, remote *StackRemote) []string {
+// show, then name, status and directory, home written as `~`. The name
+// carries ↑ when an image the stack runs has a newer build upstream.
+func GetStackDisplayStrings(
+	guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string, remote *StackRemote,
+	updates map[string]commands.UpstreamStatus,
+) []string {
 	cells := []string{
-		stack.Title(),
+		WithImageMarker(stack.Title(), updates, stack.Images...),
 		displayStackStatus(guiConfig, stack),
 		commands.ShortenHome(stack.Dir, home),
 	}

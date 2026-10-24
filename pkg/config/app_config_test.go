@@ -28,13 +28,14 @@ func TestLoadUserConfigKeepsDefaults(t *testing.T) {
 }
 
 func TestLoadUserConfigOverridesOnlyWhatItSets(t *testing.T) {
-	loaded, err := loadFrom(t, "confirmOnQuit: true\ngui:\n  border: single\n  instanceColumns: [name, ipv4]\n")
+	loaded, err := loadFrom(t, "confirmOnQuit: true\ngui:\n  border: single\n  instanceColumns: [name, ipv4]\n  checkImageUpdatesOnStart: true\n")
 	assert.NoError(t, err)
 
 	expected := GetDefaultConfig()
 	expected.ConfirmOnQuit = true
 	expected.Gui.Border = "single"
 	expected.Gui.InstanceColumns = []string{"name", "ipv4"}
+	expected.Gui.CheckImageUpdatesOnStart = true
 
 	assert.Equal(t, expected, *loaded)
 }

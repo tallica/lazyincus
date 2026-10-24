@@ -128,6 +128,40 @@ func TestOperationLogCountsFailuresSince(t *testing.T) {
 	assert.True(t, due.IsZero())
 }
 
+// A failure tried again since, and gone through, leaves nothing failed:
+// incus-compose retrying a delete the daemon refused while the instance was
+// busy. Only the same action, on the same instance, started soon after,
+// counts.
+func TestOperationLogLeavesOutRetriedFailures(t *testing.T) {
+	var log operationLog
+	now := time.Now()
+
+	at := func(op *commands.Operation, started time.Duration, instance string) *commands.Operation {
+		op.Operation.Description = "Deleting instance"
+		op.Operation.CreatedAt = operationStart.Add(started)
+		op.Operation.Resources = map[string][]string{"instances": {"/1.0/instances/" + instance}}
+
+		return op
+	}
+
+	log.record(at(testOperation("refused", api.Failure, 0), 0, "web-1"), now)
+	log.record(at(testOperation("refused-again", api.Failure, 0), time.Second, "web-1"), now)
+	log.record(at(testOperation("deleted", api.Success, 0), 2*time.Second, "web-1"), now)
+	log.record(at(testOperation("refused-elsewhere", api.Failure, 0), 0, "web-2"), now)
+	log.record(at(testOperation("deleted-before", api.Success, 0), -time.Second, "web-3"), now)
+	log.record(at(testOperation("refused-after", api.Failure, 0), 0, "web-3"), now)
+	log.record(at(testOperation("refused-long-ago", api.Failure, 0), 0, "web-4"), now)
+	log.record(at(testOperation("deleted-by-hand", api.Success, 0), retriedWithin+time.Second, "web-4"), now)
+
+	_, failed, _ := log.counts(now.Add(-time.Second), now)
+	assert.Equal(t, 3, failed)
+
+	retried := lo.FilterMap(log.list(), func(op *commands.Operation, _ int) (string, bool) {
+		return op.Key(), log.retried(op)
+	})
+	assert.ElementsMatch(t, []string{"refused", "refused-again"}, retried)
+}
+
 func TestOperationLogCountsRunningOnceItHasLasted(t *testing.T) {
 	var log operationLog
 	now := time.Now()

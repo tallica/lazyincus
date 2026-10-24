@@ -410,12 +410,17 @@ func (i *Instance) Image() string {
 		return description
 	}
 
-	fingerprint := i.config(baseImageKey)
+	fingerprint := i.BaseImage()
 	if len(fingerprint) < shortFingerprintLength {
 		return fingerprint
 	}
 
 	return fingerprint[:shortFingerprintLength]
+}
+
+// BaseImage is the fingerprint of the image the instance was created from.
+func (i *Instance) BaseImage() string {
+	return i.Instance.Config[baseImageKey]
 }
 
 func (i *Instance) config(key string) string {

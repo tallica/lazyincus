@@ -17,15 +17,21 @@ const MinImageLabelWidth = 28
 
 // GetImageDisplayStrings renders one row of the images panel. The users
 // count comes straight after the label, where a narrow panel still shows
-// it: it's what says whether the image can go.
-func GetImageDisplayStrings(image *commands.Image, showProject bool) []string {
+// it: it's what says whether the image can go. newer is marked ahead of the
+// label, which a narrow panel cuts from the end.
+func GetImageDisplayStrings(image *commands.Image, showProject bool, newer bool) []string {
+	label := image.Label()
+	if newer {
+		label = utils.ColoredString("↑", color.FgYellow) + " " + label
+	}
+
 	cells := []string{
-		image.Label(),
+		label,
 		displayImageUsers(image),
 		utils.ColoredString(image.ShortFingerprint(), color.FgCyan),
 		utils.ColoredString(displayImageSize(image), color.FgYellow),
 		displayImageLastUsed(image),
-		utils.ColoredString(displayImageFlags(image), color.FgMagenta),
+		displayImageFlags(image),
 	}
 
 	if showProject {
@@ -73,7 +79,11 @@ func displayImageFlags(image *commands.Image) string {
 		flags = append(flags, "cached")
 	}
 
-	return strings.Join(flags, " ")
+	if len(flags) == 0 {
+		return ""
+	}
+
+	return utils.ColoredString(strings.Join(flags, " "), color.FgMagenta)
 }
 
 func displayImageSize(image *commands.Image) string {

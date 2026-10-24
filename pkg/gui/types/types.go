@@ -24,6 +24,9 @@ type MenuItem struct {
 
 	// Keys are what a menu's own keys do on the item, beyond enter.
 	Keys map[rune]MenuKey
+
+	// Checked is whether the item is ticked, in a menu that's a checklist.
+	Checked bool
 }
 
 // MenuKey is a key a menu item answers to. Mutates is guardReadOnly's

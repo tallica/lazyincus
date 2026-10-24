@@ -124,6 +124,12 @@ own merits.
   cursor for a row to be chosen with.
 - **Switching remote is for the session**: `R` and `--remote` write
   nothing, leaving `incus remote switch` as the persistent path.
+- [ ] **Health checks crowd out the operations history** — ic-healthd
+      execs its check in every replica on a timer, each an `Executing
+      command` operation, so `W`'s 100 ended operations cover minutes on a
+      stack with healthchecks, and a failure worth reading sinks under
+      them. Keeping successful execs out of the kept history, while still
+      listing them under way, would fix it.
 - [ ] **`--server-url` without a configured remote** — incus-compose
       connects with `--server-url`, `--client-cert-file`, `--client-key-file`
       and `--server-fingerprint` (each also an `INCUS_*` variable), no
@@ -135,6 +141,17 @@ own merits.
       values too. Read-only and docs/Remotes.md follow it.
 
 Deliberately deferred (don't re-pitch unprompted):
+
+- **Newer image tags** — `g` on Images says only whether a tag has a newer
+  build. Whether `2.2` has followed `2.1` is the compose file's question,
+  and answering it here would end at an edit to that file anyway.
+- **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
+  new build for a stack's services. An instance launched from an OCI
+  image by hand gets the `↑` but no key: `incus rebuild` discards its
+  root disk, which is no thing to put behind one keypress.
+- **A background image check** — lazyincus is opened for minutes at a
+  time, not left running for days, so a check on a timer would rarely
+  fire. `gui.checkImageUpdatesOnStart` and `g` cover it.
 
 - **Instance creation** — considered and skipped. Creation is a rare one-off
   usually done from the CLI, and the expensive part isn't the API call but

@@ -297,6 +297,19 @@ inferred.
   source's volatile keys by `instance.InstanceIncludeWhenCopying`, internal
   to Incus (`cmd/incus/copy.go`). It refuses `--instance-only` for a
   snapshot source, which never carries snapshots anyway.
+- **OCI images**: Incus fingerprints one as the SHA-256 of its layer
+  digests strung together (`computeFingerprint`, `client/oci_images.go`),
+  not by any digest the registry reports, so a check against the registry
+  recomputes it from the manifest for the image's architecture. The
+  reference it was pulled by is the `update_source` of the copy Incus
+  pulled, `incus-compose-cache`'s for incus-compose: the server URL for
+  the registry and the alias for the repository and tag, pinned with
+  `@sha256:` to the platform manifest, which is how the running build's
+  config is read back to say what a newer one changed - unless the
+  registry has dropped it since. A project's copy points its
+  `update_source` at the Incus server instead. The client's own
+  `ConnectOCI` shells out to `skopeo`, so lazyincus asks the registry
+  itself.
 - **Completion**: `tab` in `:` runs `incus __complete <args> <word>`,
   cobra's hidden command that shell completion scripts call, so it knows
   the CLI's own grammar and reads the names off the daemon the way the CLI

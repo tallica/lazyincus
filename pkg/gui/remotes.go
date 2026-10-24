@@ -52,7 +52,7 @@ type remoteFailure struct {
 }
 
 type remoteStatuses struct {
-	byProject map[string]map[string][]string
+	byProject map[string]commands.ComposeProjectState
 	err       error
 }
 
@@ -210,7 +210,7 @@ func (r *remoteCommands) store(remote string, command *commands.IncusCommand, er
 // cachedStatuses is remote's compose statuses as last read, false when
 // none has been yet, and starts another read unless one is under way.
 // changed is told when that read finds something different.
-func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]map[string][]string, error), changed func()) (remoteStatuses, bool) {
+func (r *remoteCommands) cachedStatuses(remote string, read func() (map[string]commands.ComposeProjectState, error), changed func()) (remoteStatuses, bool) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 

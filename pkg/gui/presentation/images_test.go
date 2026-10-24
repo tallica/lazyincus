@@ -26,7 +26,7 @@ func TestGetImageDisplayStrings(t *testing.T) {
 	}
 	assert.Equal(t,
 		[]string{"Debian 13", "2", "0123456789ab", "2.00MiB", "2026/09/20", "vm"},
-		plain(GetImageDisplayStrings(used, false)))
+		plain(GetImageDisplayStrings(used, false, false)))
 
 	// Unaliased and undescribed, so labelled by fingerprint. The daemon's
 	// "never" is the zero time, or the epoch from older ones.
@@ -35,8 +35,12 @@ func TestGetImageDisplayStrings(t *testing.T) {
 	}}
 	assert.Equal(t,
 		[]string{"default", "fedcba987654", "0", "fedcba987654", "", "never", "cached"},
-		plain(GetImageDisplayStrings(cached, true)))
+		plain(GetImageDisplayStrings(cached, true, false)))
+
+	newer := plain(GetImageDisplayStrings(cached, false, true))
+	assert.Equal(t, "↑ fedcba987654", newer[0])
+	assert.Equal(t, "cached", newer[5])
 
 	cached.UsersUnknown = true
-	assert.Equal(t, "?", plain(GetImageDisplayStrings(cached, false))[1])
+	assert.Equal(t, "?", plain(GetImageDisplayStrings(cached, false, false))[1])
 }

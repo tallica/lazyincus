@@ -98,7 +98,7 @@ func (gui *Gui) getStacksPanel() *panels.SideListPanel[*commands.ComposeStack] {
 				remote = &presentation.StackRemote{Name: gui.stackRemote(stack), Active: gui.onSessionRemote(stack.Remote)}
 			}
 
-			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home, remote)
+			return presentation.GetStackDisplayStrings(&gui.Config.UserConfig.Gui, stack, gui.home, remote, gui.upstreams())
 		},
 	}
 }
@@ -356,7 +356,8 @@ func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 			stack.StatusErr = statuses.err
 
 			if stack.Name != "" {
-				stack.Statuses = statuses.byProject[stack.Name]
+				project := statuses.byProject[stack.Name]
+				stack.Statuses, stack.Images = project.Statuses, project.Images
 			}
 		}
 	}
@@ -367,7 +368,7 @@ func (gui *Gui) readStackStatuses(stacks []*commands.ComposeStack) error {
 // remoteStatuses is another remote's compose statuses as last read, false
 // before any has been, asking again in the background.
 func (gui *Gui) remoteStatuses(remote string) (remoteStatuses, bool) {
-	read := func() (map[string]map[string][]string, error) {
+	read := func() (map[string]commands.ComposeProjectState, error) {
 		command, err := gui.commandFor(remote)
 		if err != nil {
 			return nil, err

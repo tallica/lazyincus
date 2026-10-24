@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -92,7 +93,20 @@ type Gui struct {
 	// returning how it ended; after runs before the screen comes back.
 	// Tests stand in for the CLIs here.
 	runOnTerminal func(cmd *exec.Cmd, after func(runErr error)) (runErr, err error)
-	stacks        stackCache
+	// checkUpstreams asks the registries about OCI images; tests stand in
+	// for them here.
+	checkUpstreams func(ctx context.Context, targets []commands.UpstreamTarget) map[string]commands.UpstreamStatus
+	// checkImagesOnStart is checkImageUpdatesOnStart as the session started.
+	checkImagesOnStart bool
+	// imageUpdates are the registry checks, by image fingerprint: a
+	// fingerprint is the image's content, so they hold on any remote. A
+	// check stores a new map rather than writing to this one, which the
+	// tabs read off the main loop.
+	imageUpdates atomic.Pointer[map[string]commands.UpstreamStatus]
+	// stackRemotes are the remotes the listed stacks are on, for the check
+	// off the main loop.
+	stackRemotes atomic.Pointer[[]string]
+	stacks       stackCache
 
 	// subtitles are the popups' subtitles as last written, by view name,
 	// and what fitSubtitle made of each: see fitSubtitle.
@@ -254,6 +268,8 @@ type guiState struct {
 	DaemonTab    daemonTab
 	DaemonOpened bool
 	WideMenu     bool
+	// MenuConfirm is the open menu's OnConfirm, nil unless it's a checklist.
+	MenuConfirm func([]*types.MenuItem) error
 
 	// OperationsSeenAt is when the operations were last on screen: the
 	// footer counts the failures since.
@@ -390,21 +406,22 @@ func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand 
 	home, _ := os.UserHomeDir()
 
 	gui := &Gui{
-		home:          home,
-		loadStack:     incusCommand.LoadComposeStack,
-		loadBackups:   (*commands.IncusCommand).ComposeBackups,
-		runIncus:      oSCommand.RunExecutableWithOutput,
-		completeIncus: oSCommand.CompleteIncus,
-		Log:           log,
-		IncusCommand:  incusCommand,
-		OSCommand:     oSCommand,
-		State:         initialState,
-		Config:        config,
-		Tr:            tr,
-		statusManager: &statusManager{},
-		taskManager:   tasks.NewTaskManager(log, tr),
-		stopped:       make(chan struct{}),
-		eventsRescope: make(chan struct{}, 1),
+		home:           home,
+		loadStack:      incusCommand.LoadComposeStack,
+		loadBackups:    (*commands.IncusCommand).ComposeBackups,
+		runIncus:       oSCommand.RunExecutableWithOutput,
+		completeIncus:  oSCommand.CompleteIncus,
+		checkUpstreams: commands.NewRegistryChecker().CheckAll,
+		Log:            log,
+		IncusCommand:   incusCommand,
+		OSCommand:      oSCommand,
+		State:          initialState,
+		Config:         config,
+		Tr:             tr,
+		statusManager:  &statusManager{},
+		taskManager:    tasks.NewTaskManager(log, tr),
+		stopped:        make(chan struct{}),
+		eventsRescope:  make(chan struct{}, 1),
 		remotes: remoteCommands{
 			connect: incusCommand.ConnectRemote,
 			known:   incusCommand.IsInstanceRemote,
@@ -420,6 +437,7 @@ func NewGui(log *zerolog.Logger, incusCommand *commands.IncusCommand, oSCommand 
 	})
 
 	gui.remotes.connected = gui.refreshForRemote
+	gui.checkImagesOnStart = config.UserConfig.Gui.CheckImageUpdatesOnStart
 	gui.runOnTerminal = func(cmd *exec.Cmd, after func(error)) (error, error) {
 		return gui.runSubprocessReturning(cmd, "", after)
 	}
@@ -595,6 +613,11 @@ func (gui *Gui) run(g *gocui.Gui) error {
 		gui.goEvery(time.Second*30, gui.refreshWarningsQuiet)
 		// The session's stream says nothing of another remote's stacks.
 		gui.pollWhileUnwatched(time.Second*10, gui.refreshStacksQuiet, gui.stacksElsewhere.Load)
+		if gui.checkImagesOnStart {
+			if err := gui.refresh(nil, gui.imageUpdatesFetch(false)); err != nil {
+				gui.Log.Warn().Err(err).Send()
+			}
+		}
 	}()
 
 	err := g.MainLoop()
@@ -725,8 +748,9 @@ func (gui *Gui) handleEditConfig(g *gocui.Gui, v *gocui.View) error {
 }
 
 // reloadConfig re-applies the settings the app caches rather than reads at
-// the point of use. screenMode, expandFocusedSidePanel, showAllSnapshots and
-// language stay as they were - see docs/Config.md.
+// the point of use. screenMode, expandFocusedSidePanel, showAllSnapshots,
+// checkImageUpdatesOnStart and language stay as they were - see
+// docs/Config.md.
 func (gui *Gui) reloadConfig() error {
 	if err := gui.Config.ReloadUserConfig(); err != nil {
 		return err
