@@ -133,7 +133,7 @@ func TestRegistryCheckerReadsBothBuilds(t *testing.T) {
 	require.NotNil(t, status.From)
 	require.NotNil(t, status.To)
 
-	from, to := BuildChange(status.From, status.To)
+	_, from, to := BuildChange(status.Ref, status.From, status.To)
 	assert.Equal(t, []string{"1.0.1", "1.0.2"}, []string{from, to})
 	assert.Equal(t, "https://github.com/acme/app/compare/aaa...bbb", BuildLink(status.From, status.To))
 }
@@ -144,33 +144,51 @@ func TestBuildChange(t *testing.T) {
 		from, to *BuildInfo
 		want     []string
 	}{
+		"the image's own variable first": {
+			&BuildInfo{Versions: map[string]string{"GOSU_VERSION": "1.17", "NGINX_VERSION": "1.27.3"}},
+			&BuildInfo{Versions: map[string]string{"GOSU_VERSION": "1.18", "NGINX_VERSION": "1.27.4"}},
+			[]string{"", "1.27.3", "1.27.4"},
+		},
+		"another variable, named": {
+			&BuildInfo{Versions: map[string]string{"GOSU_VERSION": "1.17", "PG_VERSION": "17.5"}},
+			&BuildInfo{Versions: map[string]string{"GOSU_VERSION": "1.17", "PG_VERSION": "17.6"}},
+			[]string{"PG_VERSION", "17.5", "17.6"},
+		},
 		"by label": {
 			&BuildInfo{Version: "11.2.0", Versions: map[string]string{"GO_VERSION": "1.27"}},
 			&BuildInfo{Version: "11.2.1", Versions: map[string]string{"GO_VERSION": "1.28"}},
-			[]string{"11.2.0", "11.2.1"},
+			[]string{"", "11.2.0", "11.2.1"},
 		},
 		"by variable": {
 			&BuildInfo{Versions: map[string]string{"NGINX_VERSION": "1.27.3", "NJS_VERSION": "0.8"}},
 			&BuildInfo{Versions: map[string]string{"NGINX_VERSION": "1.27.4", "NJS_VERSION": "0.8"}},
-			[]string{"1.27.3", "1.27.4"},
+			[]string{"", "1.27.3", "1.27.4"},
 		},
 		"rebuilt the same": {
 			&BuildInfo{Version: "7", Created: day},
 			&BuildInfo{Version: "7", Created: day.AddDate(0, 0, 9)},
-			[]string{"2026-10-01", "2026-10-10"},
+			[]string{"", "2026-10-01", "2026-10-10"},
 		},
 		"rebuilt the same day": {
 			&BuildInfo{Created: day}, &BuildInfo{Created: day.Add(time.Hour)},
-			[]string{"2026-10-01 09:30", "2026-10-01 10:30"},
+			[]string{"", "2026-10-01 09:30", "2026-10-01 10:30"},
 		},
-		"the old build gone": {nil, &BuildInfo{Version: "2"}, []string{"", "2"}},
-		"nothing read":       {nil, nil, []string{"", ""}},
+		"the old build gone": {nil, &BuildInfo{Version: "2"}, []string{"", "", "2"}},
+		"nothing read":       {nil, nil, []string{"", "", ""}},
 	}
 
 	for label, c := range cases {
-		from, to := BuildChange(c.from, c.to)
-		assert.Equal(t, c.want, []string{from, to}, label)
+		variable, from, to := BuildChange("docker.io/library/nginx:alpine", c.from, c.to)
+		assert.Equal(t, c.want, []string{variable, from, to}, label)
 	}
+}
+
+func TestOwnVersion(t *testing.T) {
+	assert.True(t, ownVersion("docker.io/library/nginx:alpine", "NGINX_VERSION"))
+	assert.True(t, ownVersion("docker.io/keinos/sqlite3:latest@sha256:00", "SQLITE_VERSION"))
+	assert.True(t, ownVersion("ghcr.io/acme/ic-healthd:1", "IC_HEALTHD_VERSION"))
+	assert.False(t, ownVersion("docker.io/gogs/gogs:latest", "GO_VERSION"))
+	assert.False(t, ownVersion("docker.io/library/postgres:17", "GOSU_VERSION"))
 }
 
 func TestBuildLink(t *testing.T) {

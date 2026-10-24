@@ -541,29 +541,30 @@ selection to whatever took its place.
 
 `g` checks the OCI images instances were created from for a newer build
 of the tag they were pulled by, on the session's remote and every other
-one a listed stack is on and that's connected. The image gets a `↑`
-ahead of its label, where a narrow panel doesn't cut it off. What runs
-it gets one too - an instance, a service or replica, a stack - in its
-`image` column, or by its name where that isn't shown, and
-a service's Info tab says what the registry said. Recreating with a pull,
-`U`, takes the new build. `G` on Stacks or Services does it for the
-services of the stack you tick, in one `up`; `--no-deps` keeps it to
-them, since with `--recreate` `up` would recreate what they depend on
-too. Each row says from → to: the `org.opencontainers.image.version`
-label, else a `*_VERSION` variable that changed, as the official images
-set, else the build date; `o` opens the GitHub comparison of the two
-builds' revisions, or the releases, when the image's labels name its
-source. Reading both builds' configs costs a newer build a manifest GET
-or two, which Docker Hub counts as pulls. It checks first when nothing
-has been checked yet, and checks again after, for the images the services
-now run. The tag comes from the copy Incus pulled, so an image
-incus-compose built has none and isn't checked, and neither is a service
-with no instances yet. The check runs from this machine, not the daemon,
-with the credentials in your `~/.docker/config.json`; a registry only the
-daemon can reach shows its error on the Config tab. A tag that hasn't
-moved costs a HEAD, which Docker Hub doesn't count against its pull
-limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag,
-`2.1` to `2.2`, is the compose file's business, and is left to
+one a listed stack is on and that's connected. The image gets a `↑` ahead
+of its label, where a narrow panel doesn't cut it off. What runs it gets
+one too - an instance, a service or replica, a stack - in its `image`
+column, or by its name where that isn't shown, and a service's Info tab
+says what the registry said. Recreating with a pull, `U`, takes the new
+build. `G` on Stacks or Services does it for the services of the stack
+you tick, in one `up`; `--no-deps` keeps it to them, since with
+`--recreate` `up` would recreate what they depend on too. Each row says
+from → to: the `org.opencontainers.image.version` label, else a changed
+`*_VERSION` variable, as the official images set - the one named for the
+image first, any other shown by name - else the build date; `o` opens the
+GitHub comparison of the two builds' revisions, or the releases, when the
+image's labels name its source. Reading both builds' configs costs a
+newer build a manifest GET or two, which Docker Hub counts as pulls. It
+checks first when nothing has been checked yet, and checks again after,
+for the images the services now run. The tag comes from the copy Incus
+pulled, so an image incus-compose built has none and isn't checked, and
+neither is a service with no instances yet. The check runs from this
+machine, not the daemon, with the credentials in your
+`~/.docker/config.json`; a registry only the daemon can reach shows its
+error on the Config tab. A tag that hasn't moved costs a HEAD, which
+Docker Hub doesn't count against its pull limit.
+`gui.checkImageUpdatesOnStart` checks at startup too. A newer tag, `2.1`
+to `2.2`, is the compose file's business, and is left to
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
 on the repository the file lives in.
 

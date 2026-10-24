@@ -8,6 +8,7 @@ import (
 	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/samber/lo"
 )
 
 // The OCI annotations a build says what it is with, when it says at all.
@@ -52,12 +53,14 @@ func buildInfo(image v1.Image) (*BuildInfo, error) {
 	return info, nil
 }
 
-// BuildChange is how two builds of a tag differ, best said: by version
-// label, else by a `*_VERSION` variable that changed, else by build date.
-// Either side empty is unknown.
-func BuildChange(from, to *BuildInfo) (string, string) {
+// BuildChange is how two builds of ref's tag differ, best said: by version
+// label, else by a `*_VERSION` variable that changed - the image's own, named
+// for its repository, ahead of any other - else by build date. variable
+// names the one compared when it isn't the image's own; either side empty
+// is unknown.
+func BuildChange(ref string, from, to *BuildInfo) (variable, before, after string) {
 	if to == nil {
-		return "", ""
+		return "", "", ""
 	}
 
 	if from == nil {
@@ -65,16 +68,36 @@ func BuildChange(from, to *BuildInfo) (string, string) {
 	}
 
 	if to.Version != "" && to.Version != from.Version {
-		return from.Version, to.Version
+		return "", from.Version, to.Version
 	}
 
-	for _, key := range slices.Sorted(maps.Keys(to.Versions)) {
-		if value := to.Versions[key]; value != from.Versions[key] {
-			return from.Versions[key], value
+	changed := lo.Filter(slices.Sorted(maps.Keys(to.Versions)), func(key string, _ int) bool {
+		return to.Versions[key] != from.Versions[key]
+	})
+
+	for _, key := range changed {
+		if ownVersion(ref, key) {
+			return "", from.Versions[key], to.Versions[key]
 		}
 	}
 
-	return buildDate(from.Created, to.Created), buildDate(to.Created, from.Created)
+	if len(changed) > 0 {
+		return changed[0], from.Versions[changed[0]], to.Versions[changed[0]]
+	}
+
+	return "", buildDate(from.Created, to.Created), buildDate(to.Created, from.Created)
+}
+
+// ownVersion is whether key is the version of what ref's repository is
+// named for: NGINX_VERSION for nginx, SQLITE_VERSION for sqlite3.
+func ownVersion(ref, key string) bool {
+	repository, _, _ := strings.Cut(ref, "@")
+	repository = repository[strings.LastIndex(repository, "/")+1:]
+	repository, _, _ = strings.Cut(repository, ":")
+
+	name := strings.NewReplacer("-", "_", ".", "_").Replace(strings.ToUpper(repository))
+
+	return key == strings.TrimRight(name, "0123456789")+"_VERSION"
 }
 
 // buildDate is a build's date, with the time when the other build's is the

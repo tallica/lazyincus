@@ -37,12 +37,17 @@ func servicesWithUpdates(services []*commands.ComposeService, updates map[string
 // buildChangeStr is a newer build's from → to, a side the registry didn't
 // say left as ?, and empty when it said nothing of either.
 func buildChangeStr(status commands.UpstreamStatus) string {
-	from, to := commands.BuildChange(status.From, status.To)
+	variable, from, to := commands.BuildChange(status.Ref, status.From, status.To)
 	if from == "" && to == "" {
 		return ""
 	}
 
-	return cmp.Or(from, "?") + " → " + cmp.Or(to, "?")
+	change := cmp.Or(from, "?") + " → " + cmp.Or(to, "?")
+	if variable != "" {
+		return variable + " " + change
+	}
+
+	return change
 }
 
 // handleUpdateImages is `G` on Stacks and Services: the stack's services
