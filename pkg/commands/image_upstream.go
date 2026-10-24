@@ -3,7 +3,9 @@ package commands
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -13,6 +15,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/lxc/incus/v7/shared/api"
 )
 
@@ -160,6 +163,7 @@ type RegistryChecker struct {
 	// and architecture.
 	seen map[string]seenTag
 	// builds are the configs read, by repository and digest: neither moves.
+	// One the registry no longer has is nil, so it isn't asked for again.
 	builds map[string]*BuildInfo
 }
 
@@ -255,6 +259,11 @@ func (c *RegistryChecker) build(ctx context.Context, target UpstreamTarget, dige
 	image, err := remote.Image(at, options...)
 	if err == nil {
 		info, err = buildInfo(image)
+	}
+
+	var gone *transport.Error
+	if errors.As(err, &gone) && gone.StatusCode == http.StatusNotFound {
+		info, err = nil, nil
 	}
 
 	if err != nil {

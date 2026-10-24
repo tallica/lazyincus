@@ -138,6 +138,28 @@ func TestRegistryCheckerReadsBothBuilds(t *testing.T) {
 	assert.Equal(t, "https://github.com/acme/app/compare/aaa...bbb", BuildLink(status.From, status.To))
 }
 
+// A running build the registry has since let go is asked for once: Docker
+// Hub would count each ask as a pull.
+func TestRegistryCheckerAsksForAGoneBuildOnce(t *testing.T) {
+	reg := newTestRegistry(t)
+	reg.push(t, "library/app:1")
+
+	checker := NewRegistryChecker()
+	target := UpstreamTarget{
+		Fingerprint: "old", Ref: reg.host + "/library/app:1", Architecture: "x86_64",
+		Pinned: "sha256:" + strings.Repeat("0", 64),
+	}
+
+	status := checker.Check(context.Background(), target)
+	require.Equal(t, UpstreamNewer, status.State)
+	assert.Nil(t, status.From)
+	assert.NotNil(t, status.To)
+
+	pulls := reg.pulls.Load()
+	assert.Nil(t, checker.Check(context.Background(), target).From)
+	assert.Equal(t, pulls, reg.pulls.Load())
+}
+
 func TestBuildChange(t *testing.T) {
 	day := time.Date(2026, 10, 1, 9, 30, 0, 0, time.Local)
 	cases := map[string]struct {
