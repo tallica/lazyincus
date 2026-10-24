@@ -3,6 +3,7 @@ package gui
 import (
 	"context"
 	"os/exec"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -125,6 +126,35 @@ func TestUpdateImagesChecksAStackNotYetChecked(t *testing.T) {
 	s.press(t, 'G')
 	s.settle(t, "[x] web")
 	assert.Equal(t, int32(1), asked.Load(), "checked already")
+}
+
+// A popup opened while G's check was out keeps the screen: the checklist
+// doesn't open over it.
+func TestUpdateImagesLeavesAPopupOpenedMeanwhile(t *testing.T) {
+	release := make(chan struct{})
+
+	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
+		withImageUpdates(t, map[string]commands.UpstreamState{"web": commands.UpstreamNewer})(s)
+
+		check := s.gui.checkUpstreams
+		s.gui.checkUpstreams = func(ctx context.Context, targets []commands.UpstreamTarget) map[string]commands.UpstreamStatus {
+			<-release
+			return check(ctx, targets)
+		}
+	})
+	landed(t, s, "stacks")
+	require.Eventually(t, func() bool { return len(serviceNames(t, s)) == 3 }, 5*time.Second, 20*time.Millisecond)
+
+	s.press(t, 'G')
+	s.press(t, 'x')
+	// The waiting status animates until the check is let through.
+	require.Eventually(t, func() bool { return strings.Contains(s.snapshot(t), "─Menu─") }, 5*time.Second, 20*time.Millisecond)
+	close(release)
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() bool { return s.gui.upstreams() != nil })
+	}, 5*time.Second, 20*time.Millisecond)
+	assert.NotContains(t, s.settle(t, "─Menu─"), "[x] web")
 }
 
 func TestUpdateImagesWithNothingNewer(t *testing.T) {

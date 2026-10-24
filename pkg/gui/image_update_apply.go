@@ -75,7 +75,14 @@ func (gui *Gui) handleUpdateImages(g *gocui.Gui, v *gocui.View) error {
 		}
 
 		return gui.WithWaitingStatus(gui.Tr.CheckingImagesStatus, func() error {
-			return gui.refresh(func() error { return gui.updateImagesMenu(stack) }, gui.imageUpdatesFetch(false))
+			return gui.refresh(func() error {
+				// Not over a popup opened while the registries were asked.
+				if gui.popupPanelFocused() {
+					return nil
+				}
+
+				return gui.updateImagesMenu(stack)
+			}, gui.imageUpdatesFetch(false))
 		})
 	})
 }
