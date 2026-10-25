@@ -49,6 +49,14 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		DisableFilter: true,
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
+		// Or a filter matching nothing would shrink W's popup to its frame.
+		EmptyNote: func() string {
+			if gui.State.DaemonPopup && gui.FilterString(gui.Views.Menu) != "" {
+				return gui.Tr.NoMatches
+			}
+
+			return ""
+		},
 		// W's lists are read in time order, and refresh while filtered.
 		FilterKeepsOrder: func() bool { return gui.State.DaemonPopup },
 		FlexColumns:      func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
@@ -205,8 +213,6 @@ func (gui *Gui) renderMenuOptions() error {
 // handleMenuEscape clears W's filter before it closes the popup.
 func (gui *Gui) handleMenuEscape() error {
 	if gui.State.DaemonPopup && gui.FilterString(gui.Views.Menu) != "" {
-		gui.removeViewFromStack(gui.Views.Filter)
-
 		return gui.clearFilter()
 	}
 

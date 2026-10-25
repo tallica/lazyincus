@@ -397,3 +397,35 @@ func TestOperationsStayPutAsNewOnesArrive(t *testing.T) {
 	require.Eventually(t, func() bool { return slices.Equal([]int{6, 1, 5}, position()) }, 5*time.Second, 20*time.Millisecond)
 	assert.Equal(t, reading, selected())
 }
+
+// Left with esc or enter, the prompt isn't where closing the popup goes
+// back to: hidden there, it would take what's typed next.
+func TestClosingWAfterFilteringLeavesThePrompt(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Starting instance")
+	current := func() string { return onLoop(t, s, func() string { return s.gui.g.CurrentView().Name() }) }
+
+	// enter keeps the filter, which the first esc on the list clears.
+	for leave, escs := range map[tcell.Key]int{tcell.KeyEsc: 1, tcell.KeyEnter: 2} {
+		s.press(t, 'W')
+		s.settle(t, "Starting instance")
+		s.press(t, '/')
+		s.typeText(t, "zzz")
+		s.settle(t, "no matches")
+
+		s.pressKey(t, leave)
+		require.Eventually(t, func() bool { return current() == "menu" }, 5*time.Second, 20*time.Millisecond)
+
+		if escs == 2 {
+			s.pressKey(t, tcell.KeyEsc)
+			s.settle(t, "Starting instance")
+		}
+
+		s.pressKey(t, tcell.KeyEsc)
+		require.Eventually(t, func() bool { return !onLoop(t, s, func() bool { return s.gui.Views.Menu.Visible }) },
+			5*time.Second, 20*time.Millisecond)
+		assert.NotEqual(t, "filter", current())
+	}
+}
