@@ -940,16 +940,18 @@ A row is when it started, the status, what it does and to what, and how
 long it took or how far it's got. When they don't fit, how far it's got
 narrows first, to the width of the durations, so an operation under way
 doesn't shift every row's columns; then the target, the project and the
-description, each to a few characters on a small screen. `enter` adds the
-error, the resources and, for a task, its metadata; a websocket's metadata
-is its connection secrets, and a token - a join or certificate token, its
-secret in its metadata - isn't listed at all. `d` cancels one the daemon
-says may be cancelled, after a confirmation. The footer says how many have
-been under way for a second or more, and in red how many have failed since
-the list was last on screen. A failure followed within a minute by the same
-action on the same resources going through is greyed out as `retried` and
-not counted: incus-compose retries a delete the daemon refused while
-ic-healthd was writing the instance's health into its config.
+description, each to a few characters on a small screen. On the first row
+the cursor stays on the newest as more arrive; further down, the rows on
+screen stay put. `enter` adds the error, the resources and, for a task, its
+metadata; a websocket's metadata is its connection secrets, and a token - a
+join or certificate token, its secret in its metadata - isn't listed at
+all. `d` cancels one the daemon says may be cancelled, after a
+confirmation. The footer says how many have been under way for a second or
+more, and in red how many have failed since the list was last on screen. A
+failure followed within a minute by the same action on the same resources
+going through is greyed out as `retried` and not counted: incus-compose
+retries a delete the daemon refused while ic-healthd was writing the
+instance's health into its config.
 
 ### Warnings
 

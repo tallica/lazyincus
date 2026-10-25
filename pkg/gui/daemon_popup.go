@@ -1,8 +1,6 @@
 package gui
 
 import (
-	"slices"
-
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
@@ -44,13 +42,10 @@ func (gui *Gui) handleOpenDaemon(g *gocui.Gui, v *gocui.View) error {
 // openDaemon opens the popup on tab, the cursor on the row keyed selected,
 // or the first.
 func (gui *Gui) openDaemon(tab daemonTab, selected string) error {
-	items, keys := gui.daemonItems(tab)
-
 	if err := gui.Menu(CreateMenuOptions{
 		Subtitle:    gui.daemonHint(tab),
-		Items:       items,
+		Items:       gui.daemonItems(tab),
 		HideCancel:  true,
-		Selected:    max(slices.Index(keys, selected), 0),
 		Tabs:        []string{gui.Tr.OperationsTitle, gui.Tr.WarningsTitle},
 		TabIndex:    int(tab),
 		Wide:        true,
@@ -63,6 +58,11 @@ func (gui *Gui) openDaemon(tab daemonTab, selected string) error {
 
 	if tab == daemonOperations {
 		gui.seeOperations()
+	}
+
+	gui.Panels.Menu.SetSelectedLineIdx(max(gui.daemonRow(selected), 0))
+	if err := gui.Panels.Menu.RerenderList(); err != nil {
+		return err
 	}
 
 	return gui.renderMenuOptions()
@@ -89,8 +89,7 @@ func (gui *Gui) daemonHint(tab daemonTab) string {
 	return gui.Tr.WarningsHint
 }
 
-// daemonItems are tab's rows, and the key of the item on each.
-func (gui *Gui) daemonItems(tab daemonTab) ([]*types.MenuItem, []string) {
+func (gui *Gui) daemonItems(tab daemonTab) []*types.MenuItem {
 	if tab == daemonOperations {
 		return gui.operationItems()
 	}
@@ -107,6 +106,15 @@ func (gui *Gui) daemonFlexColumns(tab daemonTab) []utils.FlexColumn {
 	return nil
 }
 
+// daemonRow is the index of the row keyed key among those shown, or -1.
+func (gui *Gui) daemonRow(key string) int {
+	if key == "" {
+		return -1
+	}
+
+	return gui.Panels.Menu.List.GetIndexBy(func(item *types.MenuItem) bool { return item.Key == key })
+}
+
 // daemonSelected is the key of the row the popup has selected on tab, or
 // "" when it isn't open there. Read it before the state behind the rows
 // changes: redrawDaemon puts the cursor back on that row.
@@ -115,12 +123,17 @@ func (gui *Gui) daemonSelected(tab daemonTab) string {
 		return ""
 	}
 
-	_, keys := gui.daemonItems(tab)
-	if index := gui.Panels.Menu.SelectedIdx; index >= 0 && index < len(keys) {
-		return keys[index]
+	// On the first row, the cursor follows the newest.
+	if tab == daemonOperations && gui.Panels.Menu.SelectedIdx == 0 {
+		return ""
 	}
 
-	return ""
+	item, err := gui.Panels.Menu.GetSelectedItem()
+	if err != nil {
+		return ""
+	}
+
+	return item.Key
 }
 
 // redrawDaemon redraws the popup in place if it's open on tab, the cursor
@@ -132,15 +145,19 @@ func (gui *Gui) redrawDaemon(tab daemonTab, selected string) error {
 		return nil
 	}
 
-	items, keys := gui.daemonItems(tab)
+	was := gui.Panels.Menu.SelectedIdx
 	gui.State.MenuFlexColumns = gui.daemonFlexColumns(tab)
-	gui.Panels.Menu.SetItems(items)
+	gui.Panels.Menu.SetItems(gui.daemonItems(tab))
 
-	if index := slices.Index(keys, selected); index >= 0 {
-		gui.Panels.Menu.SetSelectedLineIdx(index)
-	}
+	index := max(gui.daemonRow(selected), 0)
+	gui.Panels.Menu.SetSelectedLineIdx(index)
 
 	if tab == daemonOperations {
+		// The rows on screen stay put as new ones arrive above them.
+		if ox, oy := gui.Views.Menu.Origin(); index != was {
+			gui.Views.Menu.SetOrigin(ox, max(oy+gui.Panels.Menu.SelectedIdx-was, 0))
+		}
+
 		gui.seeOperations()
 	}
 

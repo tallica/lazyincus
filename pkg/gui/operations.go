@@ -181,8 +181,8 @@ func (l *operationLog) clear() {
 }
 
 // operationItems are the popup's rows, under way first, being what the list
-// is for, then newest first; and each one's operation's key.
-func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
+// is for, then newest first.
+func (gui *Gui) operationItems() []*types.MenuItem {
 	operations := gui.operations.list()
 	slices.SortStableFunc(operations, func(a, b *commands.Operation) int {
 		if a.IsFinal() != b.IsFinal() {
@@ -197,13 +197,12 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 	})
 
 	items := make([]*types.MenuItem, 0, len(operations))
-	keys := make([]string, 0, len(operations))
 
 	for _, operation := range operations {
-		keys = append(keys, operation.Key())
 		columns := presentation.GetOperationDisplayStrings(
 			operation, gui.State.SpansProjects.Operations, gui.operations.retried(operation))
 		items = append(items, &types.MenuItem{
+			Key:          operation.Key(),
 			LabelColumns: columns,
 			FilterText:   operationLabel(operation),
 			OnPress:      func() error { return gui.showOperation(operation) },
@@ -217,7 +216,7 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 		items = append(items, &types.MenuItem{LabelColumns: []string{gui.Tr.NoOperations}})
 	}
 
-	return items, keys
+	return items
 }
 
 // showOperation is enter on an operation: all of it, which the row has no

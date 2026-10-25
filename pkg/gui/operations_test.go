@@ -281,3 +281,66 @@ func TestOperationsFromALeftScopeAreDropped(t *testing.T) {
 		}))
 	}, 5*time.Second, 20*time.Millisecond)
 }
+
+// recordOperations logs ended operations, one a second from operationStart,
+// each described as its description says, and waits until they're in.
+func recordOperations(t *testing.T, s *screen, descriptions ...string) {
+	t.Helper()
+
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	for i, description := range descriptions {
+		operation := testOperation(fmt.Sprintf("op%02d", i), api.Success, 0)
+		operation.Operation.Description = description
+		operation.Operation.CreatedAt = operationStart.Add(time.Duration(i) * time.Second)
+		s.gui.recordOperation(scope, operation)
+	}
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() int { return len(s.gui.operations.list()) }) == len(descriptions)
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
+// On the first row the cursor follows the newest; further down, the rows on
+// screen stay put as new ones arrive above them.
+func TestOperationsStayPutAsNewOnesArrive(t *testing.T) {
+	s := startScreen(t, 140, 30, nil)
+	s.ready(t)
+
+	recordOperations(t, s, slices.Repeat([]string{"Executing command"}, 40)...)
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	arrive := func(id string, at time.Duration) {
+		operation := testOperation(id, api.Success, 0)
+		operation.Operation.CreatedAt = operationStart.Add(at)
+		s.gui.recordOperation(scope, operation)
+	}
+	// The selected row, the first on screen, and the cursor's on screen.
+	position := func() []int {
+		return onLoop(t, s, func() []int {
+			_, oy := s.gui.Views.Menu.Origin()
+			_, cy := s.gui.Views.Menu.Cursor()
+			return []int{s.gui.Panels.Menu.SelectedIdx, oy, cy}
+		})
+	}
+	selected := func() string {
+		return onLoop(t, s, func() string {
+			item, _ := s.gui.Panels.Menu.GetSelectedItem()
+			return item.Key
+		})
+	}
+
+	s.press(t, 'W')
+	s.settle(t, "Operations - Warnings")
+
+	arrive("newest", time.Hour)
+	require.Eventually(t, func() bool { return selected() == "newest" }, 5*time.Second, 20*time.Millisecond)
+
+	for range 5 {
+		s.pressKey(t, tcell.KeyDown)
+	}
+	require.Eventually(t, func() bool { return slices.Equal([]int{5, 0, 5}, position()) }, 5*time.Second, 20*time.Millisecond)
+	reading := selected()
+
+	arrive("newer still", 2*time.Hour)
+	require.Eventually(t, func() bool { return slices.Equal([]int{6, 1, 5}, position()) }, 5*time.Second, 20*time.Millisecond)
+	assert.Equal(t, reading, selected())
+}

@@ -50,6 +50,7 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
 		FlexColumns:   func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
+		SameItem:      func(a, b *types.MenuItem) bool { return a.Key != "" && a.Key == b.Key },
 		Filter: func(item *types.MenuItem) bool {
 			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
 		},

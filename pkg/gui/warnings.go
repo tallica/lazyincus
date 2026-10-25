@@ -111,14 +111,13 @@ func sortWarnings(warnings []*commands.Warning) {
 	})
 }
 
-// warningItems are the popup's rows, and each one's warning's key.
-func (gui *Gui) warningItems() ([]*types.MenuItem, []string) {
+// warningItems are the popup's rows.
+func (gui *Gui) warningItems() []*types.MenuItem {
 	items := make([]*types.MenuItem, 0, len(gui.State.Warnings))
-	keys := make([]string, 0, len(gui.State.Warnings))
 
 	for _, warning := range gui.State.Warnings {
-		keys = append(keys, warning.Key())
 		items = append(items, &types.MenuItem{
+			Key:          warning.Key(),
 			LabelColumns: presentation.GetWarningDisplayStrings(warning),
 			FilterText:   warning.Warning.Type + " " + warning.Warning.LastMessage,
 			OnPress:      func() error { return gui.showWarning(warning) },
@@ -133,7 +132,7 @@ func (gui *Gui) warningItems() ([]*types.MenuItem, []string) {
 		items = append(items, &types.MenuItem{LabelColumns: []string{gui.Tr.NoWarnings}})
 	}
 
-	return items, keys
+	return items
 }
 
 // showWarning is enter on a warning: all of it, which the row has no room
