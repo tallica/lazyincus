@@ -5,8 +5,10 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	lcUtils "github.com/jesseduffield/lazycore/pkg/utils"
@@ -547,6 +549,18 @@ func (gui *Gui) run(g *gocui.Gui) error {
 	if err := gui.SetColorScheme(); err != nil {
 		return err
 	}
+
+	// Dying on these skips g.Close and leaves the terminal in raw mode.
+	terminate := make(chan os.Signal, 1)
+	signal.Notify(terminate, syscall.SIGTERM, syscall.SIGHUP)
+	defer signal.Stop(terminate)
+	go func() {
+		select {
+		case <-terminate:
+			g.Update(func(*gocui.Gui) error { return gocui.ErrQuit })
+		case <-gui.stopped:
+		}
+	}()
 
 	g.ErrorHandler = gui.handleError
 	g.OnSearchEscape = gui.onSearchEscape
