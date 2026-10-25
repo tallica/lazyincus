@@ -26,6 +26,8 @@ type CreateMenuOptions struct {
 	Wide bool
 	// OnConfirm makes the menu a checklist, handed the rows ticked on enter.
 	OnConfirm func(picked []*types.MenuItem) error
+	// FlexColumns narrow for the rows to fit; checklists don't take them.
+	FlexColumns []utils.FlexColumn
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -47,6 +49,7 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		DisableFilter: true,
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
+		FlexColumns:   func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
 		Filter: func(item *types.MenuItem) bool {
 			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
 		},
@@ -143,6 +146,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 
 	gui.State.DaemonPopup = false
 	gui.State.WideMenu = opts.Wide
+	gui.State.MenuFlexColumns = opts.FlexColumns
 	gui.State.MenuConfirm = opts.OnConfirm
 	// Set before the rows are rendered, which sizes the popup to them.
 	gui.Views.Menu.Title = opts.Title

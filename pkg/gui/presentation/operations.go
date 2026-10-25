@@ -16,26 +16,59 @@ const (
 	SecondsFormat = "2006/01/02 15:04:05 MST"
 )
 
-// MinOperationDescriptionWidth is as narrow as the description goes for the
-// columns after it.
-const MinOperationDescriptionWidth = 18
+// How far the columns narrow, in OperationFlexColumns' order.
+const (
+	MinOperationTargetWidth      = 12
+	MinOperationProjectWidth     = 10
+	MinOperationDescriptionWidth = 18
 
-// GetOperationDisplayStrings leads with the status, which is what the list
-// is read for.
+	NarrowOperationTargetWidth      = 6
+	NarrowOperationProjectWidth     = 6
+	NarrowOperationDescriptionWidth = 10
+	NarrowOperationProgressWidth    = 5
+)
+
+// GetOperationDisplayStrings reads like a log: when, then the status.
 func GetOperationDisplayStrings(operation *commands.Operation, showProject, retried bool) []string {
 	cells := []string{
-		OperationStatus(operation, retried),
-		operation.Operation.Description,
-		utils.ColoredString(operation.Target(), color.FgCyan),
 		utils.ColoredString(operation.Operation.CreatedAt.Local().Format(TimeFormat), color.FgYellow),
-		operationProgress(operation),
+		OperationStatus(operation, retried),
 	}
 
 	if showProject {
-		cells = append([]string{utils.ColoredString(operation.Project, color.FgCyan)}, cells...)
+		cells = append(cells, utils.ColoredString(operation.Project, color.FgCyan))
 	}
 
-	return cells
+	return append(cells,
+		operation.Operation.Description,
+		utils.ColoredString(operation.Target(), color.FgCyan),
+		operationProgress(operation),
+	)
+}
+
+// OperationFlexColumns narrows the progress first, to tookWidth: it can't shift the rest.
+func OperationFlexColumns(showProject bool, tookWidth int) []utils.FlexColumn {
+	// Without one, -1 for the project: RenderTableToWidth skips it.
+	project, description := -1, 2
+	if showProject {
+		project, description = 2, 3
+	}
+	target, progress := description+1, description+2
+
+	if tookWidth == 0 {
+		tookWidth = NarrowOperationProgressWidth
+	}
+
+	return []utils.FlexColumn{
+		{Index: progress, MinWidth: tookWidth},
+		{Index: target, MinWidth: MinOperationTargetWidth},
+		{Index: project, MinWidth: MinOperationProjectWidth},
+		{Index: description, MinWidth: MinOperationDescriptionWidth},
+		{Index: target, MinWidth: NarrowOperationTargetWidth},
+		{Index: project, MinWidth: NarrowOperationProjectWidth},
+		{Index: description, MinWidth: NarrowOperationDescriptionWidth},
+		{Index: progress, MinWidth: NarrowOperationProgressWidth},
+	}
 }
 
 // OperationStatus is the status with a mark that reads at a glance.
@@ -52,6 +85,18 @@ func OperationStatus(operation *commands.Operation, retried bool) string {
 	default:
 		return utils.ColoredString("● "+operation.Status(), color.FgYellow)
 	}
+}
+
+// OperationTookWidth is the width the widest duration of operations takes.
+func OperationTookWidth(operations []*commands.Operation) int {
+	width := 0
+	for _, operation := range operations {
+		if operation.IsFinal() {
+			width = max(width, utils.DisplayWidth(OperationDuration(operation.Took())))
+		}
+	}
+
+	return width
 }
 
 // operationProgress is how long an ended operation took, or how far one

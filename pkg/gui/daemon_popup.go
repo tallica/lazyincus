@@ -4,7 +4,9 @@ import (
 	"slices"
 
 	"github.com/jesseduffield/gocui"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // daemonTab is a list in the popup `W` opens: what the daemon is doing and
@@ -45,13 +47,14 @@ func (gui *Gui) openDaemon(tab daemonTab, selected string) error {
 	items, keys := gui.daemonItems(tab)
 
 	if err := gui.Menu(CreateMenuOptions{
-		Subtitle:   gui.daemonHint(tab),
-		Items:      items,
-		HideCancel: true,
-		Selected:   max(slices.Index(keys, selected), 0),
-		Tabs:       []string{gui.Tr.OperationsTitle, gui.Tr.WarningsTitle},
-		TabIndex:   int(tab),
-		Wide:       true,
+		Subtitle:    gui.daemonHint(tab),
+		Items:       items,
+		HideCancel:  true,
+		Selected:    max(slices.Index(keys, selected), 0),
+		Tabs:        []string{gui.Tr.OperationsTitle, gui.Tr.WarningsTitle},
+		TabIndex:    int(tab),
+		Wide:        true,
+		FlexColumns: gui.daemonFlexColumns(tab),
 	}); err != nil {
 		return err
 	}
@@ -95,6 +98,15 @@ func (gui *Gui) daemonItems(tab daemonTab) ([]*types.MenuItem, []string) {
 	return gui.warningItems()
 }
 
+func (gui *Gui) daemonFlexColumns(tab daemonTab) []utils.FlexColumn {
+	if tab == daemonOperations {
+		return presentation.OperationFlexColumns(
+			gui.State.SpansProjects.Operations, presentation.OperationTookWidth(gui.operations.list()))
+	}
+
+	return nil
+}
+
 // daemonSelected is the key of the row the popup has selected on tab, or
 // "" when it isn't open there. Read it before the state behind the rows
 // changes: redrawDaemon puts the cursor back on that row.
@@ -121,6 +133,7 @@ func (gui *Gui) redrawDaemon(tab daemonTab, selected string) error {
 	}
 
 	items, keys := gui.daemonItems(tab)
+	gui.State.MenuFlexColumns = gui.daemonFlexColumns(tab)
 	gui.Panels.Menu.SetItems(items)
 
 	if index := slices.Index(keys, selected); index >= 0 {

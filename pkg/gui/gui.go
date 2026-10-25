@@ -22,6 +22,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/gui/types"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/tasks"
+	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // Gui wraps the gocui Gui object which handles rendering and events
@@ -270,6 +271,8 @@ type guiState struct {
 	DaemonTab    daemonTab
 	DaemonOpened bool
 	WideMenu     bool
+
+	MenuFlexColumns []utils.FlexColumn
 	// MenuConfirm is the open menu's OnConfirm, nil unless it's a checklist.
 	MenuConfirm func([]*types.MenuItem) error
 
