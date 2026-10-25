@@ -920,6 +920,8 @@ The popup is redrawn in place as either list changes, the cursor on the
 same row: an acknowledged warning moves down the list, an operation that
 ends moves below the ones under way. `enter` shows all of a row, and
 closing that, or answering a key's confirmation, goes back to the list.
+`/` filters the list on show, keeping its order rather than ranking the
+matches, and `esc` clears that before it closes the popup.
 The keys are the menu's (`MenuItem.Keys`), each saying whether it changes
 anything, since the menu's keys mean something else in every menu: a
 read-only remote refuses them here and nowhere else.
@@ -942,16 +944,18 @@ narrows first, to the width of the durations, so an operation under way
 doesn't shift every row's columns; then the target, the project and the
 description, each to a few characters on a small screen. On the first row
 the cursor stays on the newest as more arrive; further down, the rows on
-screen stay put. `enter` adds the error, the resources and, for a task, its
-metadata; a websocket's metadata is its connection secrets, and a token - a
-join or certificate token, its secret in its metadata - isn't listed at
-all. `d` cancels one the daemon says may be cancelled, after a
-confirmation. The footer says how many have been under way for a second or
-more, and in red how many have failed since the list was last on screen. A
-failure followed within a minute by the same action on the same resources
-going through is greyed out as `retried` and not counted: incus-compose
-retries a delete the daemon refused while ic-healthd was writing the
-instance's health into its config.
+screen stay put. `f` steps through showing only the failed, only the
+succeeded, and all of them again, for the session; the tab's title says
+which. `enter` adds the error, the resources and, for a task, its metadata;
+a websocket's metadata is its connection secrets, and a token - a join or
+certificate token, its secret in its metadata - isn't listed at all. `d`
+cancels one the daemon says may be cancelled, after a confirmation. The
+footer says how many have been under way for a second or more, and in red
+how many have failed since the list was last on screen. A failure followed
+within a minute by the same action on the same resources going through is
+greyed out as `retried` and not counted: incus-compose retries a delete the
+daemon refused while ic-healthd was writing the instance's health into its
+config.
 
 ### Warnings
 

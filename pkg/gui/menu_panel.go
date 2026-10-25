@@ -49,8 +49,10 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		DisableFilter: true,
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
-		FlexColumns:   func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
-		SameItem:      func(a, b *types.MenuItem) bool { return a.Key != "" && a.Key == b.Key },
+		// W's lists are read in time order, and refresh while filtered.
+		FilterKeepsOrder: func() bool { return gui.State.DaemonPopup },
+		FlexColumns:      func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
+		SameItem:         func(a, b *types.MenuItem) bool { return a.Key != "" && a.Key == b.Key },
 		Filter: func(item *types.MenuItem) bool {
 			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
 		},
@@ -184,6 +186,7 @@ func (gui *Gui) renderMenuOptions() error {
 
 	if gui.State.DaemonPopup {
 		optionsMap["[ ]"] = gui.Tr.SwitchList
+		optionsMap["/"] = gui.Tr.LcFilter
 	}
 
 	if gui.State.MenuConfirm != nil {
@@ -197,6 +200,17 @@ func (gui *Gui) renderMenuOptions() error {
 	}
 
 	return gui.renderOptionsMap(optionsMap)
+}
+
+// handleMenuEscape clears W's filter before it closes the popup.
+func (gui *Gui) handleMenuEscape() error {
+	if gui.State.DaemonPopup && gui.FilterString(gui.Views.Menu) != "" {
+		gui.removeViewFromStack(gui.Views.Filter)
+
+		return gui.clearFilter()
+	}
+
+	return gui.handleMenuClose()
 }
 
 func (gui *Gui) handleMenuClose() error {

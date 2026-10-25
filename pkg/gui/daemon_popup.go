@@ -1,6 +1,8 @@
 package gui
 
 import (
+	"strings"
+
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
@@ -46,7 +48,7 @@ func (gui *Gui) openDaemon(tab daemonTab, selected string) error {
 		Subtitle:    gui.daemonHint(tab),
 		Items:       gui.daemonItems(tab),
 		HideCancel:  true,
-		Tabs:        []string{gui.Tr.OperationsTitle, gui.Tr.WarningsTitle},
+		Tabs:        gui.daemonTabs(),
 		TabIndex:    int(tab),
 		Wide:        true,
 		FlexColumns: gui.daemonFlexColumns(tab),
@@ -60,6 +62,8 @@ func (gui *Gui) openDaemon(tab daemonTab, selected string) error {
 		gui.seeOperations()
 	}
 
+	// Rendered again now the popup is the daemon's: Menu filtered the rows
+	// as any menu's, which ranks them by how well they match.
 	gui.Panels.Menu.SetSelectedLineIdx(max(gui.daemonRow(selected), 0))
 	if err := gui.Panels.Menu.RerenderList(); err != nil {
 		return err
@@ -79,6 +83,29 @@ func (gui *Gui) handleDaemonTab(step int) func(*gocui.Gui, *gocui.View) error {
 
 		return gui.openDaemon(daemonTab((int(gui.State.DaemonTab)+step+tabs)%tabs), "")
 	}
+}
+
+// handleDaemonFilter is `/` in the popup.
+func (gui *Gui) handleDaemonFilter(*gocui.Gui, *gocui.View) error {
+	if !gui.State.DaemonPopup {
+		return nil
+	}
+
+	gui.State.Filter.active = true
+	gui.State.Filter.panel = gui.Panels.Menu
+	gui.renderFilterPrompt()
+
+	return gui.switchFocus(gui.Views.Filter)
+}
+
+// daemonTabs names the operations after what they're cut down to.
+func (gui *Gui) daemonTabs() []string {
+	operations := gui.Tr.OperationsTitle
+	if shown := gui.operationsShownLabel(); shown != "" {
+		operations += " (" + shown + ")"
+	}
+
+	return []string{operations, gui.Tr.WarningsTitle}
 }
 
 func (gui *Gui) daemonHint(tab daemonTab) string {
@@ -146,6 +173,8 @@ func (gui *Gui) redrawDaemon(tab daemonTab, selected string) error {
 	}
 
 	was := gui.Panels.Menu.SelectedIdx
+	gui.Views.Menu.Tabs = gui.daemonTabs()
+	gui.Views.Menu.Title = strings.Join(gui.Views.Menu.Tabs, " - ")
 	gui.State.MenuFlexColumns = gui.daemonFlexColumns(tab)
 	gui.Panels.Menu.SetItems(gui.daemonItems(tab))
 

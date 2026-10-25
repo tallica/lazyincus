@@ -279,6 +279,8 @@ type guiState struct {
 	// OperationsSeenAt is when the operations were last on screen: the
 	// footer counts the failures since.
 	OperationsSeenAt time.Time
+	// OperationsShown is set by `f` and holds for the session.
+	OperationsShown operationsShown
 
 	// BackupVerifications are `backup verify`'s reports, by backupKey:
 	// verifying walks every restore point, so it's asked for, not polled,

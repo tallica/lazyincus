@@ -300,6 +300,59 @@ func recordOperations(t *testing.T, s *screen, descriptions ...string) {
 	}, 5*time.Second, 20*time.Millisecond)
 }
 
+func TestFCutsTheOperationsDownByStatus(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Starting instance")
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	failed := testOperation("failed", api.Failure, 0)
+	failed.Operation.Description = "Stopping instance"
+	s.gui.recordOperation(scope, failed)
+
+	s.press(t, 'W')
+	s.settle(t, "Stopping instance")
+
+	s.press(t, 'f')
+	screen := s.settle(t, "Operations (failed) - Warnings")
+	assert.Contains(t, screen, "✗ failure")
+	assert.NotContains(t, screen, "Starting instance")
+
+	s.press(t, 'f')
+	screen = s.settle(t, "Operations (succeeded) - Warnings")
+	assert.Contains(t, screen, "Starting instance")
+	assert.NotContains(t, screen, "Stopping instance")
+
+	s.press(t, 'f')
+	screen = s.settle(t, "Operations - Warnings")
+	assert.Contains(t, screen, "Starting instance")
+	assert.Contains(t, screen, "Stopping instance")
+}
+
+// The fuzzy filter would put the exact match first; the operations stay in
+// time order.
+func TestFilteringTheOperationsKeepsTheirOrder(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Deleting snapshot", "Snapshotting instance", "Starting instance")
+
+	s.press(t, 'W')
+	s.settle(t, "Starting instance")
+	s.press(t, '/')
+	s.typeText(t, "snapshot")
+
+	screen := s.settle(t, "filter: snapshot")
+	assert.NotContains(t, screen, "Starting instance")
+	assert.Regexp(t, `Snapshotting instance[^\n]*\n[^\n]*Deleting snapshot`, screen)
+
+	// esc leaves the filter, then the popup.
+	s.pressKey(t, tcell.KeyEnter)
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "Starting instance")
+	assert.True(t, onLoop(t, s, func() bool { return s.gui.daemonOpen(daemonOperations) }))
+}
+
 // On the first row the cursor follows the newest; further down, the rows on
 // screen stay put as new ones arrive above them.
 func TestOperationsStayPutAsNewOnesArrive(t *testing.T) {
