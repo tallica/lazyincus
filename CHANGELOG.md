@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `make install` builds lazyincus into `~/go/bin`.
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
 - `g` on Images checks the OCI images in use for a newer build of their tag, marking them and what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed.

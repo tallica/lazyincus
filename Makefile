@@ -1,4 +1,4 @@
-.PHONY: run build test vet lint audit release-check release-snapshot clean
+.PHONY: run build install test vet lint audit release-check release-snapshot clean
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo unversioned)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null)
@@ -10,6 +10,10 @@ run:
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o lazyincus .
+
+# Into $GOBIN, ~/go/bin by default; version stamped like `build`.
+install:
+	go install -ldflags "$(LDFLAGS)" .
 
 test:
 	go test ./...

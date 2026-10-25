@@ -435,7 +435,7 @@ go test ./...
 ```
 
 or via the Makefile (`make build`, `make vet`, `make test`, `make lint`,
-`make run`, `make clean`).
+`make run`, `make install` for `~/go/bin`, `make clean`).
 
 ## License
 
