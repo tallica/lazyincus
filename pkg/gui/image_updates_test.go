@@ -28,7 +28,7 @@ func TestCheckImageUpdates(t *testing.T) {
 	s := startScreenWith(t, 240, 40, func(userConfig *config.UserConfig) {
 		userConfig.Gui.InstanceColumns = []string{"name", "image"}
 	}, func(s *screen) {
-		images := fixtureServer().Images
+		images := incustest.Fixture().Images
 		images[0].UpdateSource = &api.ImageSource{
 			Protocol: "oci", Server: "https://docker.io", Alias: "library/alpine:3.22@sha256:dc92",
 		}

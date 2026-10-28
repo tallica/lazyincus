@@ -11,6 +11,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
 func newInstanceFromSnapshot(t *testing.T, s *screen) {
@@ -31,9 +32,9 @@ func TestNewInstanceFromASnapshot(t *testing.T) {
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		s.gui.runIncus = func(cmd *exec.Cmd) (string, error) {
-			copied := fixtureServer().Instances[1]
+			copied := incustest.Fixture().Instances[1]
 			copied.Name, copied.Status, copied.Snapshots = "web-daily-b", "Stopped", nil
-			s.server.SetInstances(append(fixtureServer().Instances, copied))
+			s.server.SetInstances(append(incustest.Fixture().Instances, copied))
 			ran <- cmd.Args
 
 			return "", nil

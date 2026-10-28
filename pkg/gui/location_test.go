@@ -44,7 +44,7 @@ func TestTheInfoTabSaysWhereAnInstanceLives(t *testing.T) {
 			composeFixture("shop", "api-1", "api"),
 			composeFixture("shop", "api-2", "api"),
 			composeFixture("elsewhere", "job-1", "job"),
-			fixtureServer().Instances[0],
+			incustest.Fixture().Instances[0],
 		})
 	})
 
@@ -174,12 +174,12 @@ func TestLocationFallbacks(t *testing.T) {
 // An instance's proxy devices are its Ports line, and one with none has no
 // such line.
 func TestTheInfoTabListsAnInstancesPorts(t *testing.T) {
-	web := fixtureServer().Instances[0]
+	web := incustest.Fixture().Instances[0]
 	web.ExpandedDevices = map[string]map[string]string{
 		"proxy-80":  {"type": "proxy", "listen": "tcp:0.0.0.0:8080", "connect": "tcp:127.0.0.1:80"},
 		"proxy-dns": {"type": "proxy", "listen": "udp:192.0.2.1:53", "connect": "udp:127.0.0.1:53"},
 	}
-	plain := fixtureServer().Instances[1]
+	plain := incustest.Fixture().Instances[1]
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		s.server.SetInstances([]api.InstanceFull{web, plain})
@@ -202,9 +202,9 @@ func TestTheInfoTabListsAnInstancesPorts(t *testing.T) {
 // An instance's description is one line under its name, and one without a
 // description has no such line.
 func TestTheInfoTabShowsAnInstancesDescription(t *testing.T) {
-	web := fixtureServer().Instances[0]
+	web := incustest.Fixture().Instances[0]
 	web.Description = "Shop front\nbehind the proxy"
-	plain := fixtureServer().Instances[1]
+	plain := incustest.Fixture().Instances[1]
 
 	s := startScreenWith(t, 140, 40, nil, func(s *screen) {
 		s.server.SetInstances([]api.InstanceFull{web, plain})

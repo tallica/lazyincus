@@ -11,6 +11,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
 func TestRefreshSeqTurnsAwayAnOlderFetch(t *testing.T) {
@@ -42,7 +43,7 @@ func TestSelectionFollowsAnInstanceThatResorts(t *testing.T) {
 	s.do(t, s.gui.Panels.Instances.HandleNextLine)
 	s.settle(t, "Name:         web")
 
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	for i := range instances {
 		if instances[i].Name == "web" {
 			instances[i].Status = "Stopped"
@@ -60,7 +61,7 @@ func TestProjectSwitchShowsOnlyThatProject(t *testing.T) {
 	s := startScreen(t, 140, 40, nil)
 	s.ready(t)
 
-	s.server.SetInstances(append(fixtureServer().Instances, api.InstanceFull{Instance: api.Instance{
+	s.server.SetInstances(append(incustest.Fixture().Instances, api.InstanceFull{Instance: api.Instance{
 		Name: "api", Project: "other", Status: "Running", Type: "container",
 	}}))
 
@@ -202,7 +203,7 @@ func TestTheInstancesPollRefreshesTheServices(t *testing.T) {
 	}
 	require.Eventually(t, func() bool { return webInstances() == 0 }, 5*time.Second, 20*time.Millisecond)
 
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	for i := range instances {
 		if instances[i].Name == "web" {
 			instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)

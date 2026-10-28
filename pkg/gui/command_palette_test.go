@@ -281,12 +281,12 @@ func TestTabInAFilterCyclesPanels(t *testing.T) {
 func (s *screen) removeInstance(t *testing.T, name string) {
 	t.Helper()
 
-	s.server.SetInstances(lo.Reject(fixtureServer().Instances, func(instance api.InstanceFull, _ int) bool {
+	s.server.SetInstances(lo.Reject(incustest.Fixture().Instances, func(instance api.InstanceFull, _ int) bool {
 		return instance.Name == name
 	}))
 	require.NoError(t, s.gui.refreshInstances())
 	require.Eventually(t, func() bool {
-		return onLoop(t, s, s.gui.Panels.Instances.List.Len) == len(fixtureServer().Instances)-1
+		return onLoop(t, s, s.gui.Panels.Instances.List.Len) == len(incustest.Fixture().Instances)-1
 	}, 5*time.Second, 10*time.Millisecond)
 }
 

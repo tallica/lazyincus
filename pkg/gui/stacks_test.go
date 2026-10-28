@@ -72,7 +72,7 @@ func withStacks(t *testing.T, local *commands.ComposeStack, saved ...*commands.C
 
 // labelled sets the server's instances' compose labels, by name.
 func labelled(s *screen, services map[string]string) {
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	for i := range instances {
 		if service, ok := services[instances[i].Name]; ok {
 			instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)
@@ -297,7 +297,7 @@ func TestServicesFollowTheSelectedStack(t *testing.T) {
 // a project no stack lists, or of a service its stack no longer declares,
 // stays standalone.
 func TestStandaloneInstancesLeaveOutEveryStack(t *testing.T) {
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	compose := func(project, name, service string) api.InstanceFull {
 		instance := instances[0]
 		instance.Name, instance.Project = name, project
@@ -418,7 +418,7 @@ func withRemotes(servers map[string]*incustest.Server) func(*screen) {
 }
 
 func composeFixture(project, name, service string) api.InstanceFull {
-	instance := fixtureServer().Instances[0]
+	instance := incustest.Fixture().Instances[0]
 	instance.Name, instance.Project = name, project
 	instance.ExpandedConfig = map[string]string{"user.label.incus-compose.service": service}
 
@@ -813,7 +813,7 @@ func TestCopyingFromAStack(t *testing.T) {
 		withStacks(t, stack)(s)
 		s.server.SetURL("https://192.0.2.5:8443")
 
-		instances := fixtureServer().Instances
+		instances := incustest.Fixture().Instances
 		for i := range instances {
 			if instances[i].Name == "web" {
 				instances[i].ExpandedConfig = maps.Clone(instances[i].ExpandedConfig)

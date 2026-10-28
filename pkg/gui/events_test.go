@@ -61,7 +61,7 @@ func TestAnEventRefreshesItsListBeforeThePoll(t *testing.T) {
 	s.ready(t)
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
 
-	images := append(fixtureServer().Images, api.Image{
+	images := append(incustest.Fixture().Images, api.Image{
 		Fingerprint: "fedcba9876543210fedcba9876543210", Project: "default", Type: "container",
 		Properties: map[string]string{"description": "Freshly pulled"},
 	})
@@ -79,7 +79,7 @@ func TestAProjectSwitchReopensTheEventStream(t *testing.T) {
 	s.do(t, func() error { return s.gui.switchToProject("other") })
 	s.settle(t, "(fake/other)")
 
-	s.server.SetImages(append(fixtureServer().Images, api.Image{
+	s.server.SetImages(append(incustest.Fixture().Images, api.Image{
 		Fingerprint: "fedcba9876543210fedcba9876543210", Project: "other", Type: "container",
 		Properties: map[string]string{"description": "Other project's"},
 	}))
@@ -236,7 +236,7 @@ func TestAReopenedStreamCatchesUp(t *testing.T) {
 	s.server.SetDown(true)
 	require.Eventually(t, func() bool { return s.server.Listening() == 0 }, 5*time.Second, 10*time.Millisecond)
 
-	s.server.SetImages(append(fixtureServer().Images, api.Image{
+	s.server.SetImages(append(incustest.Fixture().Images, api.Image{
 		Fingerprint: "fedcba9876543210fedcba9876543210", Project: "default", Type: "container",
 		Properties: map[string]string{"description": "Pulled while away"},
 	}))
@@ -336,7 +336,7 @@ func TestAnOperationMarksOnlyItsProjectsInstance(t *testing.T) {
 	s.ready(t)
 	require.Eventually(t, func() bool { return s.server.Listening() == 1 }, 5*time.Second, 10*time.Millisecond)
 
-	s.server.SetInstances(append(fixtureServer().Instances, api.InstanceFull{Instance: api.Instance{
+	s.server.SetInstances(append(incustest.Fixture().Instances, api.InstanceFull{Instance: api.Instance{
 		Name: "web", Project: "other", Status: "Running", Type: "container",
 	}}))
 	require.NoError(t, s.gui.refreshInstances())
@@ -492,7 +492,7 @@ func TestTheConfigTabFollowsAConfigChange(t *testing.T) {
 	s.do(t, func() error { return s.gui.Panels.Instances.SetMainTab("config") })
 	s.settle(t, "volatile.base_image")
 
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	for i := range instances {
 		if instances[i].Name == "a-name-long-enough-to-be-cut-off" {
 			instances[i].Config = map[string]string{
@@ -545,7 +545,7 @@ func TestTheConfigTabFollowsAChangeWhileBeingRead(t *testing.T) {
 	s.settle(t, "volatile.base_image")
 	s.do(t, func() error { return s.gui.handleEnterMain(s.g, s.gui.Views.Instances) })
 
-	instances := fixtureServer().Instances
+	instances := incustest.Fixture().Instances
 	for i := range instances {
 		if instances[i].Name == "a-name-long-enough-to-be-cut-off" {
 			instances[i].Config = map[string]string{
