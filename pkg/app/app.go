@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -10,6 +11,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/gui"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/log"
+	"github.com/tallica/lazyincus/pkg/tui"
 )
 
 // App struct
@@ -45,6 +47,10 @@ func NewApp(config *config.AppConfig) (*App, error) {
 }
 
 func (app *App) Run() error {
+	if os.Getenv("LAZYINCUS_TUI") == "bubbletea" {
+		return tui.Run(app.IncusCommand, app.OSCommand, app.Tr, app.Config)
+	}
+
 	return app.Gui.Run()
 }
 

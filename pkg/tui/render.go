@@ -1,0 +1,257 @@
+package tui
+
+import (
+	"fmt"
+	"slices"
+	"strings"
+
+	"charm.land/lipgloss/v2"
+	"github.com/jesseduffield/lazycore/pkg/boxlayout"
+)
+
+// render layers each window at its rectangle, ID'd by name for hit-testing.
+func (m *Model) render() string {
+	if m.width == 0 || m.height == 0 {
+		return ""
+	}
+
+	dims := m.dims()
+	layers := []*lipgloss.Layer{}
+	place := func(id string, content string) {
+		d := dims[id]
+		layers = append(layers, lipgloss.NewLayer(content).ID(id).X(d.X0).Y(d.Y0))
+	}
+
+	if _, ok := dims[limitView]; ok {
+		w, h := size(dims[limitView])
+		place(limitView, m.theme.frame(frameSpec{title: m.tr.NotEnoughSpace}, w, h))
+
+		return m.compose(layers)
+	}
+
+	for index, window := range m.windowNames() {
+		if d, ok := dims[window]; ok {
+			place(window, m.windowFrame(window, index, d))
+		}
+	}
+
+	if d, ok := dims[mainView]; ok {
+		place(mainView, m.mainFrame(d))
+	}
+
+	if d, ok := dims[optionsView]; ok {
+		w, _ := size(d)
+		place(optionsView, fit(tint(m.options(), m.theme.options), w))
+	}
+
+	if _, ok := dims[informationView]; ok {
+		place(informationView, tint(m.information(), "\x1b[32m"))
+	}
+
+	for i, p := range m.popups {
+		x0, y0, x1, y1, lines := popupLayout(p, m.width, m.height)
+		frame := m.theme.frame(frameSpec{title: p.title, body: lines, focused: i == len(m.popups)-1}, x1-x0+1, y1-y0+1)
+		layers = append(layers, lipgloss.NewLayer(frame).ID(popupView).X(x0).Y(y0).Z(i+1))
+	}
+
+	return m.compose(layers)
+}
+
+func (m *Model) compose(layers []*lipgloss.Layer) string {
+	canvas := lipgloss.NewCanvas(m.width, m.height)
+	canvas.Compose(lipgloss.NewCompositor(layers...))
+
+	return canvas.Render()
+}
+
+func (m *Model) dims() map[string]boxlayout.Dimensions {
+	return m.dimensions(m.width, m.height, m.information(), m.appStatus)
+}
+
+func size(d boxlayout.Dimensions) (int, int) {
+	return d.X1 - d.X0 + 1, d.Y1 - d.Y0 + 1
+}
+
+func (m *Model) windowFrame(window string, index int, d boxlayout.Dimensions) string {
+	w, h := size(d)
+	p := m.activeInWindow(window)
+
+	spec := frameSpec{
+		prefix:  titlePrefix(index),
+		title:   m.sideTitle(p, window),
+		tabs:    m.windowTabs(window, index, w),
+		tab:     slices.Index(m.windowPanels(window), p),
+		body:    m.listBody(p, w-2, h-2),
+		focused: m.currentView() == p.name,
+		colour:  remoteColour(m.cfg.UserConfig, m.incus.RemoteName()),
+	}
+
+	return m.theme.frame(spec, w, h)
+}
+
+// sideTitle is pkg/gui's titleStacks: collapsed, Stacks and Instances count.
+func (m *Model) sideTitle(p *panel, window string) string {
+	if !m.stacksCollapsed(window, m.windowOf(m.currentSideView())) {
+		return p.title()
+	}
+
+	switch p.name {
+	case "stacks", "instances":
+		return fmt.Sprintf(m.tr.TitleCount, p.title(), p.count())
+	case "services":
+		return m.tr.ServicesTitle
+	}
+
+	return p.title()
+}
+
+// listBody is a list's visible rows, highlighted as gocui's onFocusChange.
+func (m *Model) listBody(p *panel, width, rows int) []string {
+	lines := p.lines
+	if lines == nil {
+		return []string{p.empty}
+	}
+
+	all := lines()
+	if len(all) == 0 {
+		return []string{p.empty}
+	}
+
+	bg := ""
+	switch {
+	case m.currentView() == p.name:
+		bg = m.theme.selectedBg
+	case m.currentSideView() == p.name:
+		bg = m.theme.inactiveSelected
+	}
+
+	end := min(p.origin+rows, len(all))
+	body := make([]string, 0, max(end-p.origin, 0))
+	for i := p.origin; i < end; i++ {
+		if i == p.selected {
+			body = append(body, highlight(all[i], width, bg))
+			continue
+		}
+		body = append(body, all[i])
+	}
+
+	return body
+}
+
+func (m *Model) mainFrame(d boxlayout.Dimensions) string {
+	w, h := size(d)
+	p := m.currentSidePanel()
+
+	spec := frameSpec{
+		focused: m.currentView() == mainView,
+		colour:  remoteColour(m.cfg.UserConfig, m.incus.RemoteName()),
+	}
+
+	if p.mainTabs != nil {
+		tabs := p.mainTabs()
+		for _, tab := range tabs {
+			spec.tabs = append(spec.tabs, tab.title)
+		}
+		spec.tab = p.mainTab
+		if p.mainTab < len(tabs) {
+			lines := strings.Split(tabs[p.mainTab].content(), "\n")
+			spec.body = lines[min(m.mainOrigin, len(lines)-1):]
+		}
+	}
+
+	return m.theme.frame(spec, w, h)
+}
+
+func (m *Model) mainLineCount() int {
+	p := m.currentSidePanel()
+	if p.mainTabs == nil {
+		return 0
+	}
+
+	tabs := p.mainTabs()
+	if p.mainTab >= len(tabs) {
+		return 0
+	}
+
+	return strings.Count(tabs[p.mainTab].content(), "\n") + 1
+}
+
+// tint is a gocui view's FgColor: a reset in s returns to it, not default.
+func tint(s, colour string) string {
+	if colour == "" {
+		return s
+	}
+
+	return colour + strings.ReplaceAll(s, reset, reset+colour) + reset
+}
+
+// options are the footer's key hints, as pkg/gui's optionsMapToString.
+func (m *Model) options() string {
+	options := map[string]string{
+		"PgUp/PgDn": m.tr.Scroll,
+		"← → ↑ ↓":   m.tr.Navigate,
+		"q":         m.tr.Quit,
+		"x":         m.tr.Menu,
+	}
+
+	if len(m.popups) > 0 {
+		options = map[string]string{"esc/enter": m.tr.Close}
+		if m.popups[len(m.popups)-1].onYes != nil {
+			options = map[string]string{"n/esc": m.tr.No, "y/enter": m.tr.Yes}
+		}
+	}
+
+	pairs := make([]string, 0, len(options))
+	for key, description := range options {
+		pairs = append(pairs, key+": "+description)
+	}
+	slices.Sort(pairs)
+
+	return strings.Join(pairs, ", ")
+}
+
+// information is pkg/gui's getInformationContent, not yet counting ops.
+func (m *Model) information() string {
+	return infoSectionPadding + m.incusStatus() + m.cfg.Version
+}
+
+func (m *Model) incusStatus() string {
+	remote := m.incus.RemoteName()
+	version := m.incus.ServerVersion()
+	if remote == "" && version == "" {
+		return ""
+	}
+
+	label := "Incus"
+	if version != "" {
+		label += " v" + version
+	}
+
+	scope := remote
+	if colour := remoteColour(m.cfg.UserConfig, remote); colour != "" && remote != "" {
+		scope = colour + remote + reset
+	}
+
+	project := m.incus.ProjectName()
+	if m.incus.IsAllProjects() {
+		project = m.tr.AllProjects
+	}
+	if project != "" {
+		scope = strings.TrimPrefix(scope+"/"+project, "/")
+	}
+	if scope != "" {
+		label += " (" + scope + ")"
+	}
+
+	if m.cfg.ReadOnly || m.cfg.UserConfig.Remotes[remote].ReadOnly {
+		label += " \x1b[33m" + m.tr.ReadOnly + reset
+	}
+
+	if m.incus.IsConnected() {
+		label += " \x1b[32m●" + reset
+	} else {
+		label += " \x1b[31m✗" + reset
+	}
+
+	return label + "  "
+}
