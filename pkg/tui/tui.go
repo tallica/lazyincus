@@ -95,6 +95,13 @@ func poll() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmd := m.update(msg)
+	m.fitLists()
+
+	return m, cmd
+}
+
+func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -103,29 +110,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case instancesMsg:
 		// Each answer re-arms the poll, so one is in flight at most.
 		if msg.seq < m.appliedSeq {
-			return m, nil
+			return nil
 		}
 		m.appliedSeq = msg.seq
 		if msg.err == nil {
 			m.setInstances(msg.instances)
 			m.loaded = true
 		}
-		return m, poll()
+		return poll()
 
 	case pollMsg:
-		return m, m.fetchInstances()
+		return m.fetchInstances()
 
 	case execDoneMsg:
 		if msg.err != nil {
 			m.openError(msg.err.Error())
 		}
-		return m, m.fetchInstances()
+		return m.fetchInstances()
 
 	case tea.KeyPressMsg:
-		return m, m.handleKey(msg.String())
+		return m.handleKey(msg.String())
 	}
 
-	return m, nil
+	return nil
 }
 
 // handleKey tries the top popup, then the focused view, then global keys.
@@ -275,6 +282,22 @@ func (m *Model) listRows(p *panel) int {
 	_, h := size(d)
 
 	return h - 2
+}
+
+// fitLists renders every list to its window's width once a message has
+// changed what they show or where: View only reads the rows.
+func (m *Model) fitLists() {
+	if m.width == 0 {
+		return
+	}
+
+	dims := m.dims()
+	for _, p := range m.visiblePanels() {
+		if d, ok := dims[p.windowName()]; ok {
+			w, _ := size(d)
+			p.fit(w - 2)
+		}
+	}
 }
 
 func (m *Model) clampLists() {

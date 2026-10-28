@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
+	"github.com/jesseduffield/lazycore/pkg/boxlayout"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -64,6 +65,7 @@ func TestLayoutMatchesGocui(t *testing.T) {
 			require.NoError(t, err)
 			want := strings.Split(string(raw), "\n")
 
+			tc.opts.fixture = true
 			m := start(t, tc.opts, tc.width, tc.height)
 			press(m, tc.keys...)
 			if tc.open != nil {
@@ -73,11 +75,25 @@ func TestLayoutMatchesGocui(t *testing.T) {
 
 			require.NotEmpty(t, corners(want))
 			assert.Equal(t, corners(want), corners(got))
+			if d, ok := m.dims()["instances"]; ok && !tc.opts.compose {
+				assert.Equal(t, inside(want, d), inside(got, d), "the instances list")
+			}
 			if tc.footer {
 				assert.Equal(t, strings.TrimRight(want[tc.height-1], " "), strings.TrimRight(got[tc.height-1], " "))
 			}
 		})
 	}
+}
+
+// inside is the text within d's frame, right-trimmed.
+func inside(lines []string, d boxlayout.Dimensions) []string {
+	rows := []string{}
+	for y := d.Y0 + 1; y < d.Y1 && y < len(lines); y++ {
+		row := ansi.Cut(lines[y], d.X0+1, d.X1)
+		rows = append(rows, strings.TrimRight(row, " "))
+	}
+
+	return rows
 }
 
 // corners are where every frame corner is on a screen, as "x,y rune".

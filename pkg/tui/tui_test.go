@@ -16,8 +16,10 @@ import (
 )
 
 type options struct {
-	readOnly  bool
-	compose   bool
+	readOnly bool
+	compose  bool
+	// fixture is pkg/gui's screen-test daemon in place of the small one.
+	fixture   bool
 	configure func(*config.UserConfig)
 }
 
@@ -43,6 +45,9 @@ func newTestModel(t *testing.T, opts options) *Model {
 		Version:   "7.4",
 		Instances: []api.InstanceFull{instance("db", "Stopped"), instance("web", "Running"), instance("cache", "Running")},
 	})
+	if opts.fixture {
+		server = incustest.Fixture()
+	}
 	incus := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, server, "fake")
 
 	m := NewModel(incus, osCommand, tr, appConfig)
@@ -66,9 +71,12 @@ func start(t *testing.T, opts options, width, height int) *Model {
 	return m
 }
 
+// press types keys by name, as Update would take them from KeyPressMsg.
 func press(m *Model, keys ...string) {
 	for _, key := range keys {
-		if cmd := m.handleKey(key); cmd != nil {
+		cmd := m.handleKey(key)
+		m.fitLists()
+		if cmd != nil {
 			if msg := cmd(); msg != nil {
 				m.Update(msg)
 			}

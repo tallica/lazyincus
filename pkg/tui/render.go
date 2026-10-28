@@ -107,12 +107,7 @@ func (m *Model) sideTitle(p *panel, window string) string {
 
 // listBody is a list's visible rows, highlighted as gocui's onFocusChange.
 func (m *Model) listBody(p *panel, width, rows int) []string {
-	lines := p.lines
-	if lines == nil {
-		return []string{p.empty}
-	}
-
-	all := lines()
+	all := p.rows
 	if len(all) == 0 {
 		return []string{p.empty}
 	}

@@ -1,5 +1,11 @@
 package tui
 
+import (
+	"strings"
+
+	"github.com/tallica/lazyincus/pkg/utils"
+)
+
 // panel is pkg/gui's sidePanelDef as data, plus its list's state.
 type panel struct {
 	name string
@@ -10,10 +16,15 @@ type panel struct {
 	title      func() string
 	hidden     func() bool
 
-	// lines are the rows, rendered; empty is what an empty list says.
-	lines    func() []string
+	// cells are the rows' columns; flex the columns that narrow to fit.
+	cells    [][]string
+	flex     func() []utils.FlexColumn
 	empty    string
 	mainTabs func() []mainTab
+
+	// rows are cells rendered at rowsWidth, -1 once cells change.
+	rows      []string
+	rowsWidth int
 
 	selected int
 	origin   int
@@ -38,11 +49,40 @@ func (p *panel) isHidden() bool {
 }
 
 func (p *panel) count() int {
-	if p.lines == nil {
-		return 0
+	return len(p.cells)
+}
+
+func (p *panel) setCells(cells [][]string) {
+	p.cells = cells
+	p.rowsWidth = -1
+}
+
+// fit renders the rows to width as pkg/gui's writeRows does, each cut row
+// marked with an ellipsis; a no-op at the width they're already at.
+func (p *panel) fit(width int) {
+	if width == p.rowsWidth {
+		return
+	}
+	p.rowsWidth = width
+
+	var flex []utils.FlexColumn
+	if p.flex != nil {
+		flex = p.flex()
 	}
 
-	return len(p.lines())
+	table, err := utils.RenderTableToWidth(p.cells, width, flex)
+	if err != nil {
+		p.rows = []string{err.Error()}
+		return
+	}
+
+	p.rows = nil
+	if len(p.cells) == 0 {
+		return
+	}
+	for _, row := range strings.Split(table, "\n") {
+		p.rows = append(p.rows, utils.Truncate(row, width))
+	}
 }
 
 // selectRow clamps the selection and scrolls just enough to show it.
@@ -72,7 +112,7 @@ func (m *Model) newPanels() []*panel {
 		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
 		{
 			name: "instances", title: static(tr.InstancesTitle), empty: tr.NoInstances,
-			lines: m.instanceLines, mainTabs: m.instanceMainTabs,
+			flex: m.instanceFlex, mainTabs: m.instanceMainTabs,
 		},
 		{
 			name: "snapshots", title: m.snapshotsTitle, window: snapshotsWindow,

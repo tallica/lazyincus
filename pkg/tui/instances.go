@@ -5,7 +5,6 @@ import (
 	"io"
 	"os/exec"
 	"sort"
-	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -60,6 +59,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	m.showProject = len(projects) > 1
 
 	p := m.panelNamed("instances")
+	p.setCells(m.instanceCells())
 	for i, instance := range instances {
 		if instance.Key() == key {
 			p.selected = i
@@ -77,22 +77,20 @@ func lessInstance(a, b *commands.Instance) bool {
 	return a.Name < b.Name
 }
 
-func (m *Model) instanceLines() []string {
-	if len(m.instances) == 0 {
-		return nil
-	}
-
-	rows := make([][]string, len(m.instances))
+func (m *Model) instanceCells() [][]string {
+	cells := make([][]string, len(m.instances))
 	for i, instance := range m.instances {
-		rows[i] = presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, m.showProject, nil)
+		cells[i] = presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, m.showProject, nil)
 	}
 
-	table, err := utils.RenderTable(rows)
-	if err != nil {
-		return []string{err.Error()}
-	}
+	return cells
+}
 
-	return strings.Split(table, "\n")
+func (m *Model) instanceFlex() []utils.FlexColumn {
+	return []utils.FlexColumn{{
+		Index:    presentation.InstanceImageColumn(&m.cfg.UserConfig.Gui, m.showProject),
+		MinWidth: presentation.MinImageAliasWidth,
+	}}
 }
 
 func (m *Model) instanceMainTabs() []mainTab {
