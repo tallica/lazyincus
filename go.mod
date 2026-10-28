@@ -3,7 +3,10 @@ module github.com/tallica/lazyincus
 go 1.27.3
 
 require (
+	charm.land/bubbletea/v2 v2.1.1
+	charm.land/lipgloss/v2 v2.0.6
 	github.com/OpenPeeDeeP/xdg v1.0.0
+	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/fatih/color v1.19.0
 	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/go-errors/errors v1.5.1
@@ -29,6 +32,13 @@ require (
 	github.com/apex/log v1.9.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/charmbracelet/colorprofile v0.4.3 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
+	github.com/charmbracelet/x/term v0.2.2 // indirect
+	github.com/charmbracelet/x/termios v0.1.1 // indirect
+	github.com/charmbracelet/x/windows v0.2.2 // indirect
+	github.com/clipperhouse/displaywidth v0.11.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/log v0.2.0 // indirect
 	github.com/containerd/platforms v1.0.0-rc.5 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
@@ -47,11 +57,13 @@ require (
 	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mattn/go-runewidth v0.0.30 // indirect
 	github.com/moby/sys/user v0.4.1 // indirect
 	github.com/moby/sys/userns v0.2.1 // indirect
+	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
@@ -66,6 +78,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/go-mtree v0.7.0 // indirect
+	github.com/xo/terminfo v1.0.0 // indirect
 	github.com/zitadel/oidc/v3 v3.51.3 // indirect
 	github.com/zitadel/schema v1.3.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
