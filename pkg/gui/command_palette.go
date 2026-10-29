@@ -58,12 +58,17 @@ func (gui *Gui) openPalette(g *gocui.Gui, v *gocui.View, item string) error {
 	return gui.switchFocus(gui.Views.Filter)
 }
 
+// paletteOpen is the menu being filtered as the palette, not as W's popup.
 func (gui *Gui) paletteOpen() bool {
-	return gui.State.Filter.panel == gui.Panels.Menu
+	return gui.State.Filter.panel == gui.Panels.Menu && !gui.State.DaemonPopup
 }
 
 // paletteTab opens the actions of the palette's selected item.
 func (gui *Gui) paletteTab() error {
+	if gui.State.Filter.panel == gui.Panels.Menu && gui.State.DaemonPopup {
+		return nil
+	}
+
 	if !gui.paletteOpen() {
 		return gui.cycleSidePanel(1)()
 	}

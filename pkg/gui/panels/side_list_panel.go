@@ -2,6 +2,7 @@ package panels
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/go-errors/errors"
@@ -83,6 +84,10 @@ type SideListPanel[T comparable] struct {
 
 	// FilterText is what the fuzzy filter matches; the cells when nil or "".
 	FilterText func(T) string
+
+	// FilterKeepsOrder, when it says so, has the fuzzy filter keep the list's
+	// order and the cursor's item rather than rank the matches.
+	FilterKeepsOrder func() bool
 
 	// This can be nil if you want to always show the panel
 	Hide func() bool
@@ -313,7 +318,7 @@ func (self *SideListPanel[T]) filterAndSort(selected T, hadSelection bool) {
 	// Follow the selected item to wherever it sorted to. The list re-sorts on
 	// every background refresh, so holding the cursor at a fixed index would
 	// hand the selection to a different item the moment one changes state.
-	if hadSelection && !fuzzyFilter {
+	if hadSelection && (!fuzzyFilter || self.filterKeepsOrder()) {
 		if index := self.selectedIndex(selected); index >= 0 {
 			self.SelectedIdx = index
 		}
@@ -334,6 +339,10 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 	})
 
 	indices := utils.FuzzyRank(texts, needle)
+	keepOrder := self.filterKeepsOrder()
+	if keepOrder {
+		sort.Ints(indices)
+	}
 
 	rank := map[T]int{}
 	for position, index := range indices {
@@ -345,7 +354,13 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 		return ok
 	})
 	self.List.Sort(func(a, b T) bool { return rank[a] < rank[b] })
-	self.SelectedIdx = 0
+	if !keepOrder {
+		self.SelectedIdx = 0
+	}
+}
+
+func (self *SideListPanel[T]) filterKeepsOrder() bool {
+	return self.FilterKeepsOrder != nil && self.FilterKeepsOrder()
 }
 
 // Select puts the cursor on item, and says whether the list shows it. A

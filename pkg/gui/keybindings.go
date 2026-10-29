@@ -154,7 +154,7 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			ViewName: "menu",
 			Key:      gocui.KeyEsc,
 			Modifier: gocui.ModNone,
-			Handler:  wrappedHandler(gui.handleMenuClose),
+			Handler:  wrappedHandler(gui.handleMenuEscape),
 		},
 		{
 			ViewName: "menu",
@@ -217,6 +217,18 @@ func (gui *Gui) GetInitialKeybindings() []*Binding {
 			Key:      ']',
 			Modifier: gocui.ModNone,
 			Handler:  gui.handleDaemonTab(1),
+		},
+		{
+			ViewName: "menu",
+			Key:      '/',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleDaemonFilter,
+		},
+		{
+			ViewName: "menu",
+			Key:      'f',
+			Modifier: gocui.ModNone,
+			Handler:  gui.handleOperationsShown,
 		},
 		{
 			ViewName:    "instances",
