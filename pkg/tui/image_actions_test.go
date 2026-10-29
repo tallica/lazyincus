@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -46,4 +47,28 @@ func TestImageKeysAreRefusedReadOnly(t *testing.T) {
 		assert.Contains(t, m.popups[0].message, "--read-only", key)
 		press(m, "esc")
 	}
+}
+
+func TestUNarrowsInstancesToAnImagesUsersUntilEsc(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+	press(m, "3")
+
+	press(m, "u")
+	assert.Equal(t, "instances", m.currentView())
+	assert.Equal(t, fmt.Sprintf(m.tr.InstancesUsing, "Alpine 3.22 amd64"), m.instancesTitle())
+	assert.ElementsMatch(t, []string{"default/web", "default/a-name-long-enough-to-be-cut-off"}, shownInstances(m))
+
+	press(m, "esc")
+	assert.Equal(t, "images", m.currentView())
+	assert.Equal(t, m.tr.InstancesTitle, m.instancesTitle())
+	assert.Len(t, shownInstances(m), 3)
+}
+
+func TestUOnAnUnusedImageSaysSo(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+	press(m, "3", "j", "u")
+
+	require.Len(t, m.popups, 1)
+	assert.Equal(t, fmt.Sprintf(m.tr.NothingUses, "Debian 13 amd64"), ansi.Strip(m.popups[0].message))
+	assert.Equal(t, m.tr.InstancesTitle, m.instancesTitle())
 }

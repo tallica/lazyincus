@@ -65,6 +65,7 @@ type Model struct {
 	upstreams   map[string]commands.UpstreamStatus
 	showProject bool
 	showStopped bool
+	instanceUsers *instanceUsers
 
 	refreshes refreshSeqs
 	events    events
@@ -250,6 +251,11 @@ func (m *Model) quit() tea.Cmd {
 func (m *Model) escape() {
 	if m.filter.active {
 		m.clearFilter()
+		return
+	}
+
+	if m.instanceUsers != nil && m.currentView() == "instances" {
+		m.clearInstanceUsers()
 	}
 }
 

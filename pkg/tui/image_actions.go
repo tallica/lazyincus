@@ -103,6 +103,10 @@ func (m *Model) confirmPruneImages(images []*commands.Image) tea.Cmd {
 	return nil
 }
 
+func (m *Model) imageUsers(image *commands.Image) tea.Cmd {
+	return m.showUsers(image.Label(), image.IsUsedBy)
+}
+
 func (m *Model) imageCopy(image *commands.Image) tea.Cmd {
 	m.copyMenu(
 		copyValue{m.tr.CopyFingerprint, image.Fingerprint},

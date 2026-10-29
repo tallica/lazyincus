@@ -2,10 +2,13 @@ package tui
 
 import (
 	"errors"
+	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -119,8 +122,12 @@ func spansProjects[T any](items []T, project func(T) string) bool {
 
 func instanceProject(instance *commands.Instance) string { return instance.Project }
 
-// keepInstance is pkg/gui's instances Filter, for what's ported: e's.
+// keepInstance is pkg/gui's instances Filter, for what's ported: every user while narrowed.
 func (m *Model) keepInstance(item int) bool {
+	if m.instanceUsers != nil {
+		return m.instanceUsers.uses(m.instances[item])
+	}
+
 	return m.showStopped || !isStopped(m.instances[item])
 }
 
@@ -258,4 +265,51 @@ func (m *Model) instanceKey() string {
 func (m *Model) viewInstanceLogs() {
 	m.setMainTab(m.panelNamed("instances"), "logs")
 	m.enterMain()
+}
+
+// instanceUsers is pkg/gui's: what the instances panel is narrowed to by `u`.
+type instanceUsers struct {
+	label string
+	uses  func(*commands.Instance) bool
+	// from is the list `u` was pressed in, which esc returns to.
+	from string
+}
+
+// showUsers is pkg/gui's: Instances narrowed to what uses a resource, focused.
+func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.Cmd {
+	if !slices.ContainsFunc(m.instances, uses) {
+		m.openError(fmt.Sprintf(m.tr.NothingUses, label))
+		return nil
+	}
+
+	m.instanceUsers = &instanceUsers{label: label, uses: uses, from: m.currentView()}
+	p := m.panelNamed("instances")
+	p.selected = 0
+	m.filterList(p)
+	p.selectRow(0, m.listRows(p))
+	m.focusView("instances")
+
+	return nil
+}
+
+// clearInstanceUsers is pkg/gui's: the whole list back, and focus where `u` was pressed.
+func (m *Model) clearInstanceUsers() {
+	from := m.instanceUsers.from
+	m.instanceUsers = nil
+	p := m.panelNamed("instances")
+	m.filterList(p)
+	p.selectRow(p.selected, m.listRows(p))
+
+	if from != "" {
+		m.focusView(from)
+	}
+}
+
+// instancesTitle is pkg/gui's instancesPanelTitle, for what's ported.
+func (m *Model) instancesTitle() string {
+	if m.instanceUsers != nil {
+		return fmt.Sprintf(m.tr.InstancesUsing, m.instanceUsers.label)
+	}
+
+	return m.tr.InstancesTitle
 }
