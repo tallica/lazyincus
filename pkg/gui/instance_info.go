@@ -33,8 +33,4 @@ func (gui *Gui) instanceIdentityStr(instance *commands.Instance, omit ...string)
 	return presentation.InstanceIdentity(instance, gui.instanceLocation(instance), gui.publishHostFor(instance.Remote), omit...)
 }
 
-func (gui *Gui) sectionHeading(title string) string {
-	return presentation.SectionHeading(title, int(gui.mainViewWidth.Load()))
-}
-
 const identityPadding = presentation.IdentityPadding

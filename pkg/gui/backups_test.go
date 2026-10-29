@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -139,13 +140,12 @@ func TestBackupsSayWhyTheyCantBeListed(t *testing.T) {
 }
 
 func TestBackupVolumesStr(t *testing.T) {
-	gui := &Gui{}
 	backup := testBackup("2026-09-21T06:00:00Z", "", "db", "cache")
 
-	unverified := utils.Decolorise(gui.backupVolumesStr(backup, nil))
+	unverified := utils.Decolorise(presentation.BackupVolumes(backup, nil))
 	assert.Contains(t, unverified, "vol-db    → default-backup/ic-backup-db")
 
-	verified := utils.Decolorise(gui.backupVolumesStr(backup, &commands.BackupVerification{
+	verified := utils.Decolorise(presentation.BackupVolumes(backup, &commands.BackupVerification{
 		Volumes: []commands.BackupVolumeStatus{
 			{Volume: "vol-cache", Status: "restore point missing"},
 			{Volume: "vol-db", Status: "ok"},

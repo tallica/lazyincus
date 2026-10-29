@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/jesseduffield/gocui"
-	"github.com/lxc/incus/v7/shared/units"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
@@ -87,77 +86,18 @@ func (gui *Gui) renderBackupInfo(backup *commands.ComposeBackup) tasks.TaskFunc 
 }
 
 func (gui *Gui) backupInfoStr(stack *commands.ComposeStack, backup *commands.ComposeBackup, verification *commands.BackupVerification) string {
-	padding := identityPadding
-	line := func(label, value string) string {
-		if value == "" {
-			return ""
-		}
+	var loc *location
 
-		return utils.WithPadding(label+": ", padding) + value + "\n"
-	}
-
-	output := ""
 	if stack != nil {
 		remote := stack.Remote
 		if remote == "" {
 			remote = gui.IncusCommand.RemoteName()
 		}
 
-		output += presentation.LocationLines(location{Remote: remote, Project: stack.Name, Stack: gui.stackLabel(remote, stack.Name)})
+		loc = &location{Remote: remote, Project: stack.Name, Stack: gui.stackLabel(remote, stack.Name)}
 	}
 
-	output += line("Name", backup.Name)
-	output += line("Taken at", backup.CreatedAt().Local().Format(presentation.DateTimeFormat))
-	// What every incus-compose backup verb takes to name this one.
-	output += line("Timestamp", backup.Timestamp)
-	output += line("Pool", backup.Pool())
-
-	if backup.Size > 0 {
-		output += line("Size", units.GetByteSizeStringIEC(backup.Size, 2))
-	}
-
-	if verification == nil {
-		output += line("Verified", gui.Tr.BackupNotVerified)
-	}
-
-	output += "\n" + gui.sectionHeading(gui.Tr.VolumesTitle) + "\n\n"
-	output += gui.backupVolumesStr(backup, verification)
-
-	return output
-}
-
-// backupVolumesStr pairs each volume with its backup and `verify`'s word on
-// it; one the stack has gained since the backup has no backup side.
-func (gui *Gui) backupVolumesStr(backup *commands.ComposeBackup, verification *commands.BackupVerification) string {
-	statuses := map[string]string{}
-	if verification != nil {
-		for _, volume := range verification.Volumes {
-			statuses[volume.Volume] = volume.Status
-		}
-	}
-
-	rows := make([][]string, 0, len(backup.Volumes))
-	listed := map[string]bool{}
-
-	for _, volume := range backup.Volumes {
-		listed[volume.Source.Name] = true
-		rows = append(rows, []string{volume.Source.Name, "→ " + volume.Backup.Project + "/" + volume.Backup.Name, presentation.BackupVolumeStatus(statuses[volume.Source.Name])})
-	}
-
-	if verification != nil {
-		for _, volume := range verification.Volumes {
-			if !listed[volume.Volume] {
-				rows = append(rows, []string{volume.Volume, "", presentation.BackupVolumeStatus(volume.Status)})
-			}
-		}
-	}
-
-	table, err := utils.RenderTable(rows)
-	if err != nil {
-		return err.Error()
-	}
-
-	return table
+	return presentation.BackupInfo(loc, backup, verification, int(gui.mainViewWidth.Load()), gui.Tr)
 }
 
 // fetchBackups lists the selected stack's backups. Not an error when it
@@ -464,15 +404,8 @@ func (gui *Gui) backupVerify(backup *commands.ComposeBackup) error {
 	})
 }
 
-// backupLabel is how a prompt names a backup: when it was taken, and its
-// name if it has one.
 func (gui *Gui) backupLabel(backup *commands.ComposeBackup) string {
-	label := backup.CreatedAt().Local().Format(presentation.DateTimeFormat)
-	if backup.Name != "" {
-		label += " (" + backup.Name + ")"
-	}
-
-	return label
+	return presentation.BackupLabel(backup)
 }
 
 // handleGoToBackups focuses the Backups tab, whichever of its window's tabs

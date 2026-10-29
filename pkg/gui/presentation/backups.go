@@ -67,3 +67,85 @@ func BackupVolumeStatus(status string) string {
 		return utils.ColoredString(status, color.FgRed)
 	}
 }
+
+// BackupInfo is the Info tab; a nil loc has no stack to place the backup in.
+func BackupInfo(loc *Location, backup *commands.ComposeBackup, verification *commands.BackupVerification,
+	width int, tr *i18n.TranslationSet,
+) string {
+	line := func(label, value string) string {
+		if value == "" {
+			return ""
+		}
+
+		return utils.WithPadding(label+": ", IdentityPadding) + value + "\n"
+	}
+
+	output := ""
+	if loc != nil {
+		output += LocationLines(*loc)
+	}
+
+	output += line("Name", backup.Name)
+	output += line("Taken at", backup.CreatedAt().Local().Format(DateTimeFormat))
+	// What every incus-compose backup verb takes to name this one.
+	output += line("Timestamp", backup.Timestamp)
+	output += line("Pool", backup.Pool())
+
+	if backup.Size > 0 {
+		output += line("Size", units.GetByteSizeStringIEC(backup.Size, 2))
+	}
+
+	if verification == nil {
+		output += line("Verified", tr.BackupNotVerified)
+	}
+
+	output += "\n" + SectionHeading(tr.VolumesTitle, width) + "\n\n"
+	output += BackupVolumes(backup, verification)
+
+	return output
+}
+
+// BackupVolumes pairs each volume with its backup and `verify`'s word on
+// it; one the stack has gained since the backup has no backup side.
+func BackupVolumes(backup *commands.ComposeBackup, verification *commands.BackupVerification) string {
+	statuses := map[string]string{}
+	if verification != nil {
+		for _, volume := range verification.Volumes {
+			statuses[volume.Volume] = volume.Status
+		}
+	}
+
+	rows := make([][]string, 0, len(backup.Volumes))
+	listed := map[string]bool{}
+
+	for _, volume := range backup.Volumes {
+		listed[volume.Source.Name] = true
+		rows = append(rows, []string{volume.Source.Name, "→ " + volume.Backup.Project + "/" + volume.Backup.Name, BackupVolumeStatus(statuses[volume.Source.Name])})
+	}
+
+	if verification != nil {
+		for _, volume := range verification.Volumes {
+			if !listed[volume.Volume] {
+				rows = append(rows, []string{volume.Volume, "", BackupVolumeStatus(volume.Status)})
+			}
+		}
+	}
+
+	table, err := utils.RenderTable(rows)
+	if err != nil {
+		return err.Error()
+	}
+
+	return table
+}
+
+// BackupLabel is how a prompt names a backup: when it was taken, and its
+// name if it has one.
+func BackupLabel(backup *commands.ComposeBackup) string {
+	label := backup.CreatedAt().Local().Format(DateTimeFormat)
+	if backup.Name != "" {
+		label += " (" + backup.Name + ")"
+	}
+
+	return label
+}
