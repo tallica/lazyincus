@@ -264,6 +264,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case instanceUpdatedMsg:
 		return m.refreshUpdated()
 
+	case projectsMsg:
+		m.onProjects(msg)
+
 	case remotesChangedMsg:
 		return refreshQuiet(nil, m.fetchStacks(), m.fetchServices())
 

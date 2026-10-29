@@ -156,6 +156,23 @@ func (r *remoteCommands) get(remote string) (*commands.IncusCommand, error) {
 	return nil, errConnecting
 }
 
+// connectNow is get waiting for the connection, and trying a remote that
+// failed recently anyway: for someone who asked for that remote by name.
+func (r *remoteCommands) connectNow(remote string) (*commands.IncusCommand, error) {
+	r.mutex.Lock()
+	command, ok := r.commands[remote]
+	r.mutex.Unlock()
+
+	if ok {
+		return command, nil
+	}
+
+	command, err := r.connect(remote)
+	r.store(remote, command, err)
+
+	return command, err
+}
+
 func (r *remoteCommands) store(remote string, command *commands.IncusCommand, err error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

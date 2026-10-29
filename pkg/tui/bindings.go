@@ -141,6 +141,8 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "K", handler: scroll(-1)},
 		&binding{key: "H", handler: scrollStep((*pane).scrollLeft)},
 		&binding{key: "L", handler: scrollStep((*pane).scrollRight)},
+		&binding{key: "P", description: m.tr.SwitchProject, handler: (*Model).switchProjectMenu},
+		&binding{key: "R", description: m.tr.SwitchRemote, handler: (*Model).switchRemoteMenu},
 		&binding{key: "+", description: m.tr.LcNextScreenMode, handler: do(func(m *Model) { m.nextScreenMode(1) })},
 		&binding{key: "_", description: m.tr.LcPrevScreenMode, handler: do(func(m *Model) { m.nextScreenMode(-1) })},
 		&binding{key: "=", description: m.tr.LcToggleExpandSidePanel, handler: do(func(m *Model) { m.expandSidePanel = !m.expandSidePanel })},

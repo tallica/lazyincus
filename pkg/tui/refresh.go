@@ -15,8 +15,8 @@ type refreshMsg struct {
 	err     error
 	// quiet logs err instead of reporting it: a poll's.
 	quiet bool
-	// round counts refreshAll's groups yet to land.
-	round *int
+	// round is the groups of refreshAll or a change of scope yet to land.
+	round *refreshRound
 	// next runs whatever the fetches found: a poll re-arming.
 	next tea.Cmd
 	// ending is the operations' marks to take off once the listing lands.
@@ -62,17 +62,36 @@ func gather(fetches []fetch) ([]func(), error) {
 	return applies, firstErr
 }
 
+// refreshRound is one read of every panel: its status, if any, comes off
+// and its first error is reported once the last group has landed.
+type refreshRound struct {
+	left   int
+	err    error
+	status string
+}
+
 // refreshAll reads every panel, each group shown as soon as it's read.
 func (m *Model) refreshAll() tea.Cmd {
+	return m.refreshGroups("")
+}
+
+// reloadAll is refreshAll under a waiting status, one popup for a remote that's gone.
+func (m *Model) reloadAll(status string) tea.Cmd {
+	m.addStatus(appStatus{name: status, waiting: true})
+
+	return tea.Batch(m.spin(), m.refreshGroups(status))
+}
+
+func (m *Model) refreshGroups(status string) tea.Cmd {
 	groups := m.fetchGroups()
-	round := len(groups)
+	round := &refreshRound{left: len(groups), status: status}
 
 	cmds := make([]tea.Cmd, len(groups))
 	for i, group := range groups {
 		cmds[i] = func() tea.Msg {
 			applies, err := gather(group)
 
-			return refreshMsg{applies: applies, err: err, quiet: true, round: &round}
+			return refreshMsg{applies: applies, err: err, quiet: true, round: round}
 		}
 	}
 
@@ -102,10 +121,22 @@ func (m *Model) applyRefresh(msg refreshMsg) tea.Cmd {
 		m.rerenderInstances()
 	}
 
-	if msg.round != nil {
-		*msg.round--
-		if *msg.round == 0 {
+	if round := msg.round; round != nil {
+		round.left--
+		if msg.err != nil && round.err == nil {
+			round.err = msg.err
+		}
+
+		if round.left == 0 {
 			m.stopAwaiting()
+
+			if round.status != "" {
+				m.removeStatus(round.status)
+
+				if round.err != nil {
+					m.handleError(round.err)
+				}
+			}
 		}
 	}
 
@@ -186,6 +217,14 @@ type refreshSeqs struct {
 	networks     refreshSeq
 	profiles     refreshSeq
 	imageUpdates refreshSeq
+}
+
+// invalidateAll turns away every fetch in flight but the image check, which
+// a change of scope doesn't concern.
+func (s *refreshSeqs) invalidateAll() {
+	for _, seq := range []*refreshSeq{&s.stacks, &s.services, &s.instances, &s.images, &s.volumes, &s.networks, &s.profiles} {
+		seq.invalidate()
+	}
 }
 
 // refreshEnding is pkg/gui's: ends come off even when a fetch fails.
