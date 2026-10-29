@@ -237,7 +237,10 @@ func (m *Model) newPanels() []*panel {
 			name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks,
 			mainTabs: m.networkMainTabs, itemKey: m.networkKey, keep: m.keepNetwork,
 		},
-		{name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles},
+		{
+			name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles,
+			flex: m.profileFlex, mainTabs: m.profileMainTabs, itemKey: m.profileKey,
+		},
 	}
 	for _, p := range panels {
 		p.awaiting = tr.Loading

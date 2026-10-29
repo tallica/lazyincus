@@ -220,6 +220,9 @@ func (m *Model) paletteSources() map[string]paletteSource {
 		"networks": m.sourceOf(m.panelNamed("networks"),
 			func(item int) string { return m.networks[item].Key() },
 			func(item int) string { return m.networks[item].Name }, nil),
+		"profiles": m.sourceOf(m.panelNamed("profiles"),
+			func(item int) string { return m.profiles[item].Key() },
+			func(item int) string { return m.profiles[item].Name }, nil),
 		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
 			func(item int) string { return m.snapshots[item].Key() },
 			func(item int) string {

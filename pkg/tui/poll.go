@@ -35,6 +35,7 @@ func (m *Model) pollers() tea.Cmd {
 		m.tick(resourcesPollInterval, slowPollMsg{refreshImages}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshVolumes}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshNetworks}),
+		m.tick(resourcesPollInterval, slowPollMsg{refreshProfiles}),
 	)
 }
 

@@ -68,6 +68,8 @@ type Model struct {
 	networks      []*commands.Network
 	networksSpan  bool
 	showUnmanaged bool
+	profiles      []*commands.Profile
+	profilesSpan  bool
 	// networkTabs is pkg/gui's: the forward and ACL events, which the networks' tabs show.
 	networkTabs uint64
 	// upstreams are the registry checks by image fingerprint, nil before the first.
