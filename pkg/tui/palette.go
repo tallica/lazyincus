@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/fatih/color"
@@ -204,46 +205,59 @@ type paletteEntry struct {
 
 // paletteSources is pkg/gui's, for the panels ported so far.
 func (m *Model) paletteSources() map[string]paletteSource {
-	p := m.panelNamed("instances")
-
 	return map[string]paletteSource{
-		"instances": {
-			selected: func() (string, func() bool, bool) {
-				instance := m.selectedInstance()
-				if instance == nil {
-					return "", nil, false
-				}
+		"instances": m.sourceOf(m.panelNamed("instances"),
+			func(item int) string { return m.instances[item].Key() },
+			func(item int) string { return m.onRemote(m.instances[item].Name, m.instances[item].Remote) },
+			func(item int) string { return m.instances[item].Project }),
+		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
+			func(item int) string { return m.snapshots[item].Key() },
+			func(item int) string {
+				return m.onRemote(m.snapshots[item].Owner+"/"+m.snapshots[item].Name, m.actionRemote("snapshots"))
+			}, nil),
+	}
+}
 
-				key := instance.Key()
-				still := func() bool {
-					selected := m.selectedInstance()
-					return selected != nil && selected.Key() == key
-				}
+// sourceOf is pkg/gui's, items told apart by key; detail can be nil.
+func (m *Model) sourceOf(p *panel, key, name, detail func(item int) string) paletteSource {
+	rowOf := func(k string) int {
+		return slices.IndexFunc(p.shown, func(item int) bool { return key(item) == k })
+	}
 
-				return m.onRemote(instance.Name, instance.Remote), still, true
-			},
-			items: func() []paletteEntry {
-				entries := make([]paletteEntry, 0, p.count())
-				for _, item := range p.shown {
-					instance := m.instances[item]
-					key := instance.Key()
-					entries = append(entries, paletteEntry{
-						name:   m.onRemote(instance.Name, instance.Remote),
-						detail: instance.Project,
-						goTo: func() bool {
-							for row, item := range p.shown {
-								if m.instances[item].Key() == key {
-									p.selectRow(row, m.listRows(p))
-									return true
-								}
-							}
-							return false
-						},
-					})
-				}
+	return paletteSource{
+		selected: func() (string, func() bool, bool) {
+			item := p.item()
+			if item < 0 {
+				return "", nil, false
+			}
 
-				return entries
-			},
+			k := key(item)
+			still := func() bool {
+				item := p.item()
+				return item >= 0 && key(item) == k
+			}
+
+			return name(item), still, true
+		},
+		items: func() []paletteEntry {
+			entries := make([]paletteEntry, 0, p.count())
+			for _, item := range p.shown {
+				k := key(item)
+				entry := paletteEntry{name: name(item), goTo: func() bool {
+					row := rowOf(k)
+					if row < 0 {
+						return false
+					}
+					p.selectRow(row, m.listRows(p))
+					return true
+				}}
+				if detail != nil {
+					entry.detail = detail(item)
+				}
+				entries = append(entries, entry)
+			}
+
+			return entries
 		},
 	}
 }

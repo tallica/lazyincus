@@ -59,6 +59,9 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 		}
 	}
 	p.selectRow(p.selected, m.listRows(p))
+
+	// The snapshots come with the instances.
+	m.setSnapshots()
 }
 
 // selectInstance is pkg/gui's Select: the cursor onto the instance with key, if shown.

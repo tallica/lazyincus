@@ -54,6 +54,9 @@ type Model struct {
 	// stacksHere stays false: nothing loads stacks yet.
 	stacksHere       bool
 	snapshotsShowAll bool
+	snapshotsFollow  snapshotsFollow
+	snapshotsSpan    snapshotsSpan
+	snapshots        []*commands.Snapshot
 
 	instances   []*commands.Instance
 	showProject bool
@@ -132,6 +135,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // fitViews fits the lists and main to their windows: View only reads them.
 func (m *Model) fitViews() {
+	m.followSelection()
 	m.fitStatus()
 	m.fitLists()
 	m.fitMain()

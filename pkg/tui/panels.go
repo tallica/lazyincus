@@ -202,6 +202,7 @@ func (m *Model) newPanels() []*panel {
 		{
 			name: "snapshots", title: m.snapshotsTitle, window: snapshotsWindow,
 			plainTitle: tr.SnapshotsTitle, shortTitle: tr.SnapshotsShort, empty: tr.NoSnapshots,
+			flex: m.snapshotFlex, mainTabs: m.snapshotMainTabs, itemKey: m.snapshotKey,
 		},
 		{
 			name: "backups", title: static(tr.BackupsTitle), hidden: m.backupsAway, window: snapshotsWindow,
@@ -230,13 +231,4 @@ func (m *Model) backupsAway() bool {
 // stacksAway is pkg/gui's stacksAway.
 func (m *Model) stacksAway() bool {
 	return !m.stacksHere && m.cfg.UserConfig.Gui.CollapseStacksElsewhere
-}
-
-// snapshotsTitle is pkg/gui's snapshotsTabTitle.
-func (m *Model) snapshotsTitle() string {
-	if m.snapshotsShowAll {
-		return m.tr.SnapshotsTitle + " (" + m.tr.AllSnapshotsLabel + ")"
-	}
-
-	return m.tr.SnapshotsTitle
 }

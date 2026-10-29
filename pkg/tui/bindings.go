@@ -96,6 +96,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "instances", description: m.tr.Rename, mutates: true, handler: onInstance((*Model).instanceRename)},
 		&binding{view: "instances", description: m.tr.EditDescription, mutates: true, handler: onInstance((*Model).instanceEditDescription)},
 		&binding{view: "instances", key: "E", description: m.tr.ExecShell, mutates: true, handler: onInstance((*Model).instanceExecShell)},
+		&binding{view: "snapshots", key: "e", description: m.tr.ToggleAllSnapshots, noSelection: true, handler: do((*Model).toggleAllSnapshots)},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
 		&binding{view: mainView, key: "left", handler: scrollStep((*pane).scrollLeft)},
@@ -248,8 +249,12 @@ func (m *Model) guardReadOnly(b *binding) {
 	}
 }
 
-// actionRemote is pkg/gui's, for the panels ported so far: the session's.
-func (m *Model) actionRemote(string) string {
+// actionRemote is pkg/gui's, for the panels ported so far.
+func (m *Model) actionRemote(view string) string {
+	if view == "snapshots" {
+		return m.snapshotsRemote()
+	}
+
 	return m.incus.RemoteName()
 }
 
