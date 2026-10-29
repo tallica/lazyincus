@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
@@ -16,6 +17,8 @@ type frameSpec struct {
 	focused bool
 	// colour is the frame's escape while unfocused, "" for the theme's.
 	colour string
+	// total and origin place the scrollbar: content lines, first one shown.
+	total, origin int
 }
 
 // frame draws s in a w×h box, its title in the top edge where gocui's
@@ -43,12 +46,17 @@ func (t theme) frame(s frameSpec, w, h int) string {
 	lines = append(lines, border+r.tl+r.h+reset+heading+border+rule+r.tr+reset)
 
 	side := border + r.v + reset
+	start, end := scrollbar(s.total, h-2, s.origin)
 	for i := range h - 2 {
 		line := strings.Repeat(" ", inner)
 		if i < len(s.body) {
 			line = fit(s.body[i], inner)
 		}
-		lines = append(lines, side+line+side)
+		right := side
+		if i >= start && i <= end {
+			right = border + "▐" + reset
+		}
+		lines = append(lines, side+line+right)
 	}
 
 	lines = append(lines, border+r.bl+strings.Repeat(r.h, inner)+r.br+reset)
@@ -86,6 +94,26 @@ func (t theme) heading(s frameSpec, border string) string {
 	}
 
 	return prefix + strings.Join(parts, other+" - "+reset)
+}
+
+// scrollbar is the rows gocui's calcRealScrollbarStartEnd puts the thumb
+// on, end inclusive; start > end for none.
+func scrollbar(total, height, origin int) (int, int) {
+	if height < 2 || height >= total {
+		return 0, -1
+	}
+
+	area := height - 1
+	size := int(float64(height) / float64(total) * float64(area))
+
+	start := 0
+	if maxOrigin := total - height; origin == maxOrigin {
+		start = area - size
+	} else if maxOrigin > 0 {
+		start = int(math.Ceil(float64(origin) / float64(maxOrigin) * float64(area-size-1)))
+	}
+
+	return start, start + size
 }
 
 // fit cuts or pads line to exactly width cells, colour codes kept.

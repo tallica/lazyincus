@@ -50,7 +50,8 @@ func (m *Model) render() string {
 
 	for i, p := range m.popups {
 		x0, y0, x1, y1, lines := popupLayout(p, m.width, m.height)
-		frame := m.theme.frame(frameSpec{title: p.title, body: lines, focused: i == len(m.popups)-1}, x1-x0+1, y1-y0+1)
+		spec := frameSpec{title: p.title, body: lines, focused: i == len(m.popups)-1, total: len(lines)}
+		frame := m.theme.frame(spec, x1-x0+1, y1-y0+1)
 		layers = append(layers, lipgloss.NewLayer(frame).ID(popupView).X(x0).Y(y0).Z(i+1))
 	}
 
@@ -84,6 +85,8 @@ func (m *Model) windowFrame(window string, index int, d boxlayout.Dimensions) st
 		body:    m.listBody(p, w-2, h-2),
 		focused: m.currentView() == p.name,
 		colour:  remoteColour(m.cfg.UserConfig, m.incus.RemoteName()),
+		total:   max(len(p.rows), 1),
+		origin:  p.origin,
 	}
 
 	return m.theme.frame(spec, w, h)
@@ -148,27 +151,11 @@ func (m *Model) mainFrame(d boxlayout.Dimensions) string {
 			spec.tabs = append(spec.tabs, tab.title)
 		}
 		spec.tab = p.mainTab
-		if p.mainTab < len(tabs) {
-			lines := strings.Split(tabs[p.mainTab].content(), "\n")
-			spec.body = lines[min(m.mainOrigin, len(lines)-1):]
-		}
 	}
+	spec.body = m.main.visible(h - 2)
+	spec.total, spec.origin = len(m.main.lines), m.main.oy
 
 	return m.theme.frame(spec, w, h)
-}
-
-func (m *Model) mainLineCount() int {
-	p := m.currentSidePanel()
-	if p.mainTabs == nil {
-		return 0
-	}
-
-	tabs := p.mainTabs()
-	if p.mainTab >= len(tabs) {
-		return 0
-	}
-
-	return strings.Count(tabs[p.mainTab].content(), "\n") + 1
 }
 
 // tint is a gocui view's FgColor: a reset in s returns to it, not default.

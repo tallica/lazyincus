@@ -36,7 +36,7 @@ type Model struct {
 
 	screenMode      screenMode
 	expandSidePanel bool
-	mainOrigin      int
+	main            pane
 	appStatus       string
 
 	composeAvailable bool
@@ -96,9 +96,15 @@ func poll() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmd := m.update(msg)
-	m.fitLists()
+	m.fitViews()
 
 	return m, cmd
+}
+
+// fitViews fits the lists and main to their windows: View only reads them.
+func (m *Model) fitViews() {
+	m.fitLists()
+	m.fitMain()
 }
 
 func (m *Model) update(msg tea.Msg) tea.Cmd {
@@ -156,11 +162,13 @@ func (m *Model) viewKey(key string) (bool, tea.Cmd) {
 		case "esc":
 			m.returnFocus()
 		case "k", "up":
-			m.scrollMain(-m.cfg.UserConfig.Gui.ScrollHeight)
+			m.scrollMain(-1)
 		case "j", "down":
-			m.scrollMain(m.cfg.UserConfig.Gui.ScrollHeight)
-		case "h", "left", "l", "right":
-			// Sideways scrolling comes with the scrollable pane.
+			m.scrollMain(1)
+		case "h", "left":
+			m.main.scrollLeft(m.cfg.UserConfig.Gui.ScrollHeight)
+		case "l", "right":
+			m.main.scrollRight(m.cfg.UserConfig.Gui.ScrollHeight)
 		default:
 			return false, nil
 		}
@@ -203,12 +211,19 @@ func (m *Model) globalKey(key string) tea.Cmd {
 			return nil
 		}
 		return tea.Quit
-	case "pgup", "ctrl+u":
-		m.scrollMain(-m.cfg.UserConfig.Gui.ScrollHeight)
-	case "pgdown", "ctrl+d":
-		m.scrollMain(m.cfg.UserConfig.Gui.ScrollHeight)
+	case "pgup", "ctrl+u", "K":
+		m.scrollMain(-1)
+	case "pgdown", "ctrl+d", "J":
+		m.scrollMain(1)
+	case "H":
+		m.main.scrollLeft(m.cfg.UserConfig.Gui.ScrollHeight)
+	case "L":
+		m.main.scrollRight(m.cfg.UserConfig.Gui.ScrollHeight)
 	case "home":
-		m.mainOrigin = 0
+		m.main.autoscroll = false
+		m.main.ox, m.main.oy = 0, 0
+	case "end":
+		m.main.autoscroll = true
 	case "tab":
 		m.cycleWindows(1)
 	case "shift+tab":
@@ -227,7 +242,6 @@ func (m *Model) globalKey(key string) tea.Cmd {
 		if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
 			if windows := m.windowNames(); int(key[0]-'1') < len(windows) {
 				m.goToWindow(windows[key[0]-'1'])
-				m.mainOrigin = 0
 			}
 		}
 	}
@@ -238,11 +252,7 @@ func (m *Model) globalKey(key string) tea.Cmd {
 }
 
 func (m *Model) moveSelection(p *panel, step int) {
-	before := p.selected
 	p.selectRow(p.selected+step, m.listRows(p))
-	if p.selected != before {
-		m.mainOrigin = 0
-	}
 }
 
 func (m *Model) cycleMainTab(p *panel, step int) {
@@ -251,26 +261,40 @@ func (m *Model) cycleMainTab(p *panel, step int) {
 	}
 
 	p.mainTab = wrap(p.mainTab+step, len(p.mainTabs()))
-	m.mainOrigin = 0
 }
 
-// scrollMain is pkg/gui's scrollUpMain and scrollDownMain.
-func (m *Model) scrollMain(lines int) {
-	if lines < 0 {
-		m.mainOrigin = max(m.mainOrigin+lines, 0)
+// scrollMain is pkg/gui's scrollUpMain (-1) and scrollDownMain (1).
+func (m *Model) scrollMain(direction int) {
+	step := m.cfg.UserConfig.Gui.ScrollHeight
+	if direction < 0 {
+		m.main.scrollUp(step)
 		return
 	}
 
-	reserved := 0
-	if !m.cfg.UserConfig.Gui.ScrollPastBottom {
-		_, h := size(m.dims()[mainView])
-		reserved = h - 2
+	_, h := size(m.dims()[mainView])
+	m.main.scrollDown(step, h-2, m.cfg.UserConfig.Gui.ScrollPastBottom)
+}
+
+// fitMain refreshes the main pane from the tab on show.
+func (m *Model) fitMain() {
+	d, ok := m.dims()[mainView]
+	if !ok {
+		return
 	}
-	if m.mainOrigin+reserved >= m.mainLineCount() {
+	w, h := size(d)
+
+	p := m.currentSidePanel()
+	if p.mainTabs == nil {
+		m.main.set(p.name, "", false, false, w-2, h-2)
 		return
 	}
 
-	m.mainOrigin += lines
+	tab := p.mainTabs()[p.mainTab]
+	key := p.name + "\x00" + tab.title
+	if p.itemKey != nil {
+		key += "\x00" + p.itemKey()
+	}
+	m.main.set(key, tab.content(), tab.wrap, tab.autoscroll, w-2, h-2)
 }
 
 func (m *Model) listRows(p *panel) int {
@@ -284,8 +308,6 @@ func (m *Model) listRows(p *panel) int {
 	return h - 2
 }
 
-// fitLists renders every list to its window's width once a message has
-// changed what they show or where: View only reads the rows.
 func (m *Model) fitLists() {
 	if m.width == 0 {
 		return

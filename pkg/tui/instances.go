@@ -94,10 +94,21 @@ func (m *Model) instanceFlex() []utils.FlexColumn {
 }
 
 func (m *Model) instanceMainTabs() []mainTab {
+	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
+
 	return []mainTab{
-		{title: m.tr.InfoTitle, content: m.instanceInfo},
-		{title: m.tr.ConfigTitle, content: m.instanceConfig},
+		{title: m.tr.InfoTitle, content: m.instanceInfo, wrap: wrap},
+		{title: m.tr.ConfigTitle, content: m.instanceConfig, wrap: wrap},
 	}
+}
+
+func (m *Model) instanceKey() string {
+	instance := m.selectedInstance()
+	if instance == nil {
+		return ""
+	}
+
+	return instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
 }
 
 func (m *Model) instanceConfig() string {

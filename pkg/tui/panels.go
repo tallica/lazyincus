@@ -21,6 +21,8 @@ type panel struct {
 	flex     func() []utils.FlexColumn
 	empty    string
 	mainTabs func() []mainTab
+	// itemKey is pkg/gui's GetItemContextCacheKey for the selected row.
+	itemKey func() string
 
 	// rows are cells rendered at rowsWidth, -1 once cells change.
 	rows      []string
@@ -32,8 +34,10 @@ type panel struct {
 }
 
 type mainTab struct {
-	title   string
-	content func() string
+	title      string
+	content    func() string
+	wrap       bool
+	autoscroll bool
 }
 
 func (p *panel) windowName() string {
@@ -112,7 +116,7 @@ func (m *Model) newPanels() []*panel {
 		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
 		{
 			name: "instances", title: static(tr.InstancesTitle), empty: tr.NoInstances,
-			flex: m.instanceFlex, mainTabs: m.instanceMainTabs,
+			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey,
 		},
 		{
 			name: "snapshots", title: m.snapshotsTitle, window: snapshotsWindow,

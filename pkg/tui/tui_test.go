@@ -75,7 +75,7 @@ func start(t *testing.T, opts options, width, height int) *Model {
 func press(m *Model, keys ...string) {
 	for _, key := range keys {
 		cmd := m.handleKey(key)
-		m.fitLists()
+		m.fitViews()
 		if cmd != nil {
 			if msg := cmd(); msg != nil {
 				m.Update(msg)
@@ -211,4 +211,24 @@ func TestTooSmall(t *testing.T) {
 	m := start(t, options{}, 9, 20)
 
 	assert.Contains(t, strings.Join(screen(m), ""), "Not")
+}
+
+func TestMainScrollKeys(t *testing.T) {
+	m := start(t, options{}, 90, 9)
+	press(m, "]")
+	step := m.cfg.UserConfig.Gui.ScrollHeight
+	require.Contains(t, screen(m)[1], "architecture:")
+
+	press(m, "J")
+	assert.Equal(t, step, m.main.oy)
+	assert.NotContains(t, screen(m)[1], "architecture:")
+
+	press(m, "home")
+	assert.Contains(t, screen(m)[1], "architecture:")
+
+	press(m, "end")
+	assert.Equal(t, len(m.main.lines)-6, m.main.oy, "autoscroll keeps the last line in view")
+	press(m, "K")
+	assert.False(t, m.main.autoscroll)
+	assert.Equal(t, len(m.main.lines)-6-step, m.main.oy)
 }
