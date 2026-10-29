@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -142,99 +140,17 @@ func (gui *Gui) renderServiceInfo(row *commands.ServiceRow) tasks.TaskFunc {
 
 func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 	service := row.Service
-	// The same column the instance blocks below use: the tab is one run of
-	// labels, the service's and then its instances'.
-	padding := identityPadding
-
-	line := func(label, value string) string {
-		if value == "" {
-			return ""
-		}
-
-		return utils.WithPadding(label+": ", padding) + value + "\n"
-	}
 
 	remote := service.Remote
 	if remote == "" {
 		remote = gui.IncusCommand.RemoteName()
 	}
 
-	output := presentation.LocationLines(location{Remote: remote, Project: service.Project, Stack: gui.stackLabel(remote, service.Project)})
-	output += line("Service", service.Name)
-	output += line("Image", service.ResolvedImage())
-	output += line("Registry", gui.upstreamVerdict(commands.MostTelling(gui.upstreams(), presentation.BaseImages(row.Instances())...)))
-	output += line("Replicas", presentation.ServiceReplicas(service))
-	output += line("Health", service.Health())
+	loc := location{Remote: remote, Project: service.Project, Stack: gui.stackLabel(remote, service.Project)}
+	verdict := gui.upstreamVerdict(commands.MostTelling(gui.upstreams(), presentation.BaseImages(row.Instances())...))
 
-	if project := gui.composeProject.Load(); project != nil {
-		output += line("Healthcheck", gui.composeHealthcheckStr(project))
-	}
-
-	output += line("Command", service.Command)
-	output += line("Restart", service.Restart)
-	output += line("Ports", strings.Join(service.Ports, ", "))
-	output += line("Volumes", strings.Join(service.Volumes, ", "))
-	output += line("Devices", strings.Join(service.Devices, ", "))
-	output += line("Depends on", strings.Join(service.DependsOn, ", "))
-
-	if len(service.Instances) == 0 {
-		return output + "\n" + gui.Tr.ServiceNotRunning
-	}
-
-	// Each instance's own Info tab under that - the selected replica's
-	// alone, or every one of them from the service's own row - each under a
-	// heading of its own, and minus the lines the service or that heading
-	// has just said: where it lives and its image are the same for every
-	// replica, the name and which replica it is are the heading's, and a
-	// lone instance's health is what the service's rolls up to.
-	omit := []string{"Remote", "Project", "Stack", "Service", "Image", "Name"}
-	if len(service.Instances) == 1 {
-		omit = append(omit, "Health")
-	}
-
-	for _, instance := range row.Instances() {
-		output += "\n" + gui.instanceHeading(service, instance) + "\n"
-		output += "\n" + gui.instanceInfoStr(instance.Latest(), omit...)
-	}
-
-	return output
-}
-
-// instanceHeading rules off one instance's block and says which of the
-// service's instances it is - a name among a dozen identical labels not
-// being enough to place you. The number is over the service's instances
-// rather than the ones on screen, so a replica's own row still reads "2 of
-// 4". A lone instance has no count worth printing, and one carrying the
-// service's own name has nothing left to say: the Service line said it.
-func (gui *Gui) instanceHeading(service *commands.ComposeService, instance *commands.Instance) string {
-	instances := service.SortedInstances()
-
-	if len(instances) < 2 {
-		if instance.Name == service.Name {
-			return gui.sectionHeading(gui.Tr.InstanceTitle)
-		}
-
-		return gui.sectionHeading(fmt.Sprintf(gui.Tr.ServiceInstanceHeading, instance.Name))
-	}
-
-	index := slices.IndexFunc(instances, func(other *commands.Instance) bool {
-		return other.Name == instance.Name
-	})
-
-	return gui.sectionHeading(fmt.Sprintf(
-		gui.Tr.ServiceReplicaHeading, index+1, len(instances), instance.Name))
-}
-
-func (gui *Gui) composeHealthcheckStr(project *commands.ComposeProject) string {
-	if !project.HealthcheckEnabled() {
-		return gui.Tr.No
-	}
-
-	if scope := project.HealthcheckScope(); scope != "" {
-		return fmt.Sprintf("%s (scope: %s)", gui.Tr.Yes, scope)
-	}
-
-	return gui.Tr.Yes
+	return presentation.ServiceInfo(row, loc, verdict, gui.composeProject.Load(), gui.instanceInfoStr,
+		int(gui.mainViewWidth.Load()), gui.Tr)
 }
 
 // serviceInstanceTab is a tab that is really the instance's: the row's
@@ -247,22 +163,12 @@ func (gui *Gui) serviceInstanceTab(
 		instance, ok := row.SelectedInstance()
 		if !ok {
 			return gui.NewSimpleRenderStringTask(func() string {
-				return gui.serviceNoSingleInstanceStr(row.Service)
+				return presentation.ServiceNoSingleInstance(row.Service, gui.Tr)
 			})
 		}
 
 		return render(instance)
 	}
-}
-
-// serviceNoSingleInstanceStr says which of the two reasons there's no
-// instance to show: nothing running, or a row per replica to pick from.
-func (gui *Gui) serviceNoSingleInstanceStr(service *commands.ComposeService) string {
-	if len(service.Instances) == 0 {
-		return gui.Tr.ServiceNotRunning
-	}
-
-	return gui.Tr.ServiceMultipleInstances
 }
 
 // renderServiceLogs delegates to the instance logs renderer, which owns the
@@ -280,54 +186,20 @@ func (gui *Gui) renderServiceLogs(row *commands.ServiceRow) tasks.TaskFunc {
 		return gui.NewSimpleRenderStringTask(func() string { return gui.Tr.ServiceNotRunning })
 	}
 
-	return gui.renderLogsToMain(func() string { return gui.serviceLogsStr(row.Service, instances) })
-}
-
-func (gui *Gui) serviceLogsStr(service *commands.ComposeService, instances []*commands.Instance) string {
-	sections := make([]string, 0, len(instances))
-
-	for _, instance := range instances {
-		sections = append(sections, gui.instanceHeading(service, instance)+"\n\n"+strings.TrimRight(gui.instanceLogStr(instance), "\n"))
-	}
-
-	return strings.Join(sections, "\n\n")
+	return gui.renderLogsToMain(func() string {
+		return presentation.ServiceLogs(row.Service, instances, int(gui.mainViewWidth.Load()), gui.instanceLogStr, gui.Tr)
+	})
 }
 
 func (gui *Gui) renderServiceConfig(row *commands.ServiceRow) tasks.TaskFunc {
 	return gui.NewSimpleRenderStringTask(func() string { return gui.serviceConfigStr(row) })
 }
 
-// serviceConfigStr is both halves of a service's configuration: what the
-// compose file declares, then what the daemon made of it.
 func (gui *Gui) serviceConfigStr(row *commands.ServiceRow) string {
-	service := row.Service
-	output := gui.sectionHeading(gui.Tr.ComposeTitle) + "\n\n" + gui.composeServiceConfigStr(service)
+	definition, found, err := gui.IncusCommand.ComposeServiceConfig(row.Service.Dir, row.Service.Name)
 
-	// Then what the daemon made of it: the same dump the instances panel's
-	// Config tab shows, one per instance the row stands for, under the Info
-	// tab's own headings.
-	for _, instance := range row.Instances() {
-		output += "\n\n" + gui.instanceHeading(service, instance) +
-			"\n\n" + gui.instanceConfigStr(instance)
-	}
-
-	return output
-}
-
-// composeServiceConfigStr is the selected service's slice of `incus-compose
-// config`, re-rendered as YAML: the command prints the whole project, and
-// the panel is already one row per service.
-func (gui *Gui) composeServiceConfigStr(service *commands.ComposeService) string {
-	definition, found, err := gui.IncusCommand.ComposeServiceConfig(service.Dir, service.Name)
-	if err != nil {
-		return fmt.Sprintf("Error running `incus-compose config`: %v", err)
-	}
-
-	if !found {
-		return gui.Tr.ServiceNotInComposeFile
-	}
-
-	return utils.ColoredYamlString(definition)
+	return presentation.ServiceConfig(row, presentation.ComposeServiceConfig(definition, found, err, gui.Tr),
+		int(gui.mainViewWidth.Load()), gui.Tr)
 }
 
 // fetchServices lists the services of the stack the Stacks panel has
@@ -402,7 +274,7 @@ func (gui *Gui) fetchServices() (func() error, error) {
 			gui.composeProject.Store(project)
 		}
 
-		gui.composeInstances.Store(&stackInstances{remote: stack.Remote, project: stack.Name, services: services, orphans: orphans})
+		gui.composeInstances.Store(&stackInstances{Remote: stack.Remote, Project: stack.Name, Services: services, Orphans: orphans})
 
 		gui.Panels.Services.NoItemsMessage = gui.Tr.NoServices
 		gui.State.ServicesNote = ""

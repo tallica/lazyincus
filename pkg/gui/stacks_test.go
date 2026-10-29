@@ -19,6 +19,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 )
 
 // testStack is a stack in a directory of its own under root, named for its
@@ -701,11 +702,11 @@ func composeInstance(name, service, status string, devices map[string]map[string
 // nothing behind it; a service that matches has none.
 func TestStackDrift(t *testing.T) {
 	state := &stackInstances{
-		services: []*commands.ComposeService{
+		Services: []*commands.ComposeService{
 			{Name: "web", Instances: []*commands.Instance{composeInstance("web", "web", "Running", nil)}},
 			{Name: "cache"},
 		},
-		orphans: []*commands.Instance{
+		Orphans: []*commands.Instance{
 			composeInstance("worker-1", "worker", "Running", nil),
 			composeInstance("worker-2", "worker", "Stopped", nil),
 		},
@@ -714,9 +715,9 @@ func TestStackDrift(t *testing.T) {
 	assert.Equal(t,
 		"cache:        declared, not created\n"+
 			"worker:       2 instances, partial, not in the compose file\n",
-		stackDriftStr(state))
+		presentation.StackDrift(state))
 
-	assert.Empty(t, stackDriftStr(&stackInstances{services: state.services[:1]}))
+	assert.Empty(t, presentation.StackDrift(&stackInstances{Services: state.Services[:1]}))
 }
 
 // A replica goes by its own name, a lone instance by its service's, and one
@@ -739,7 +740,7 @@ func TestStackEndpoints(t *testing.T) {
 		"api:          *:8080 → 80\n"+
 			"web-1:        *:8080 → 80\n"+
 			"web-2:        *:8080 → 80\n",
-		stackEndpointsStr(services, ""))
+		presentation.StackEndpoints(services, ""))
 }
 
 // A stack's Logs tab stacks each instance's console log under its service's
@@ -848,7 +849,7 @@ func TestStackUsageLinesUpItsValues(t *testing.T) {
 
 	columns := map[int]bool{}
 
-	for _, line := range strings.Split(strings.TrimSpace(stackUsageStr([]*commands.Instance{instance})), "\n") {
+	for _, line := range strings.Split(strings.TrimSpace(presentation.StackUsage([]*commands.Instance{instance})), "\n") {
 		if label, _, ok := strings.Cut(line, ": "); ok && !strings.HasSuffix(line, ":") {
 			rest := line[len(label)+2:]
 			columns[len(line)-len(strings.TrimLeft(rest, " "))] = true

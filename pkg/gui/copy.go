@@ -9,6 +9,7 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/gui/types"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
@@ -84,11 +85,11 @@ func (gui *Gui) stackCopy(stack *commands.ComposeStack) error {
 		{gui.Tr.CopyDirectory, stack.Dir},
 	}
 
-	if state := gui.composeInstances.Load(); state.isOf(stack) {
-		for _, service := range sortedServices(state.services) {
+	if state := gui.composeInstances.Load(); state.IsOf(stack) {
+		for _, service := range presentation.SortedServices(state.Services) {
 			for _, instance := range service.SortedInstances() {
 				for _, port := range instance.Latest().PublishedPorts(gui.publishHostFor(stack.Remote)) {
-					label := endpointName(service, instance)
+					label := presentation.EndpointName(service, instance)
 					if port.Target != "" {
 						label += " → " + port.Target
 					}

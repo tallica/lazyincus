@@ -7,10 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"sync"
 
-	"github.com/fatih/color"
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -470,35 +468,7 @@ func (gui *Gui) renderStackLogs(stack *commands.ComposeStack) tasks.TaskFunc {
 }
 
 func (gui *Gui) stackLogsStr(stack *commands.ComposeStack) string {
-	if stack.Err != nil {
-		return utils.ColoredString(stack.Err.Error(), color.FgRed)
-	}
-
-	state := gui.composeInstances.Load()
-	if !state.isOf(stack) {
-		return ""
-	}
-
-	var sections []string
-
-	for _, service := range sortedServices(state.services) {
-		instances := service.SortedInstances()
-
-		for _, instance := range instances {
-			heading := service.Name
-			if len(instances) > 1 {
-				heading = instance.Name
-			}
-
-			sections = append(sections, gui.sectionHeading(heading)+"\n\n"+strings.TrimRight(gui.instanceLogStr(instance), "\n"))
-		}
-	}
-
-	if len(sections) == 0 {
-		return gui.Tr.StackNotRunning
-	}
-
-	return strings.Join(sections, "\n\n")
+	return presentation.StackLogs(stack, gui.composeInstances.Load(), int(gui.mainViewWidth.Load()), gui.instanceLogStr, gui.Tr)
 }
 
 func (gui *Gui) handleStackViewLogs(g *gocui.Gui, v *gocui.View) error {
