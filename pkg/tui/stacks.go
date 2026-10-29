@@ -65,6 +65,13 @@ func (c *stackCache) put(stack *commands.ComposeStack) {
 	c.stacks[stack.Dir] = stack
 }
 
+func (c *stackCache) forget(dir string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	delete(c.stacks, dir)
+}
+
 // listStacks is pkg/gui's: every stack with its config, each a copy of the cached one.
 func (m *Model) listStacks(saved []string) []*commands.ComposeStack {
 	stacks := []*commands.ComposeStack{}
