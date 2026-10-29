@@ -11,12 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `make install` builds lazyincus into `~/go/bin`.
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
 - `g` on Images checks the OCI images in use for a newer build of their tag, marking them and what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.
+- `W`'s popup filters by name with `/`, and `f` shows only the failed or succeeded operations.
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed.
 
 ### Fixed
 - Being killed with SIGTERM or SIGHUP, as by `make run` being stopped, now restores the terminal instead of leaving it broken.
 - The "Connection lost" popup no longer comes back for a moment after the daemon answers again.
 - The footer no longer counts a failure that was retried and went through, such as incus-compose's delete refused while ic-healthd updated the instance; `W` greys it out as `retried`.
+- `W`'s operations lead with their start time and fit long project or resource names, which pushed the time and duration out of sight.
+- An operation under way in `W` no longer shifts every row's columns as it reports its progress; on a small screen, names are cut short with `…`.
+- Further down `W`'s operations, the rows on screen stay put as new ones arrive; on the first row it follows the newest.
 - An operation's duration in `W`'s popup shows milliseconds under a second, where it was rounded to a tenth, often to `0s`.
 - The footer counts a running operation only once it has lasted a second, so the warning count beside it no longer jumps.
 - A Stacks or Services verb that fails on the daemon now shows the daemon's error in a popup once the terminal returns.

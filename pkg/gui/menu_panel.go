@@ -26,6 +26,8 @@ type CreateMenuOptions struct {
 	Wide bool
 	// OnConfirm makes the menu a checklist, handed the rows ticked on enter.
 	OnConfirm func(picked []*types.MenuItem) error
+	// FlexColumns narrow for the rows to fit; checklists don't take them.
+	FlexColumns []utils.FlexColumn
 }
 
 func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
@@ -47,6 +49,18 @@ func (gui *Gui) getMenuPanel() *panels.SideListPanel[*types.MenuItem] {
 		DisableFilter: true,
 		FuzzyFilter:   true,
 		FilterText:    func(item *types.MenuItem) string { return item.FilterText },
+		// Or a filter matching nothing would shrink W's popup to its frame.
+		EmptyNote: func() string {
+			if gui.State.DaemonPopup && gui.FilterString(gui.Views.Menu) != "" {
+				return gui.Tr.NoMatches
+			}
+
+			return ""
+		},
+		// W's lists are read in time order, and refresh while filtered.
+		FilterKeepsOrder: func() bool { return gui.State.DaemonPopup },
+		FlexColumns:      func() []utils.FlexColumn { return gui.State.MenuFlexColumns },
+		SameItem:         func(a, b *types.MenuItem) bool { return a.Key != "" && a.Key == b.Key },
 		Filter: func(item *types.MenuItem) bool {
 			return !item.HideUntilFiltered || gui.FilterString(gui.Views.Menu) != ""
 		},
@@ -143,6 +157,7 @@ func (gui *Gui) Menu(opts CreateMenuOptions) error {
 
 	gui.State.DaemonPopup = false
 	gui.State.WideMenu = opts.Wide
+	gui.State.MenuFlexColumns = opts.FlexColumns
 	gui.State.MenuConfirm = opts.OnConfirm
 	// Set before the rows are rendered, which sizes the popup to them.
 	gui.Views.Menu.Title = opts.Title
@@ -179,6 +194,7 @@ func (gui *Gui) renderMenuOptions() error {
 
 	if gui.State.DaemonPopup {
 		optionsMap["[ ]"] = gui.Tr.SwitchList
+		optionsMap["/"] = gui.Tr.LcFilter
 	}
 
 	if gui.State.MenuConfirm != nil {
@@ -192,6 +208,15 @@ func (gui *Gui) renderMenuOptions() error {
 	}
 
 	return gui.renderOptionsMap(optionsMap)
+}
+
+// handleMenuEscape clears W's filter before it closes the popup.
+func (gui *Gui) handleMenuEscape() error {
+	if gui.State.DaemonPopup && gui.FilterString(gui.Views.Menu) != "" {
+		return gui.clearFilter()
+	}
+
+	return gui.handleMenuClose()
 }
 
 func (gui *Gui) handleMenuClose() error {

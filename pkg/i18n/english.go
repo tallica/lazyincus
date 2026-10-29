@@ -347,6 +347,9 @@ type TranslationSet struct {
 
 	OperationsTitle         string
 	NoOperations            string
+	NoOperationsShown       string
+	OperationsFailedOnly    string
+	OperationsSucceededOnly string
 	OperationsHint          string
 	OperationTitle          string
 	OperationResources      string
@@ -718,7 +721,10 @@ func englishSet() TranslationSet {
 
 		OperationsTitle:         "Operations",
 		NoOperations:            "No operations - they're listed as they run",
-		OperationsHint:          "d: cancel, enter: details",
+		NoOperationsShown:       "No %s operations - f shows the rest",
+		OperationsFailedOnly:    "failed",
+		OperationsSucceededOnly: "succeeded",
+		OperationsHint:          "f: failed/succeeded/all, d: cancel, enter: details",
 		OperationTitle:          "Operation",
 		OperationResources:      "Resources",
 		OperationMetadata:       "Metadata",

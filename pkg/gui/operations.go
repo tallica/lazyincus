@@ -180,10 +180,56 @@ func (l *operationLog) clear() {
 	l.entries = nil
 }
 
+// operationsShown is which operations the list is cut down to.
+type operationsShown int
+
+const (
+	operationsAll operationsShown = iota
+	operationsFailed
+	operationsSucceeded
+)
+
+func (shown operationsShown) has(operation *commands.Operation) bool {
+	switch shown {
+	case operationsFailed:
+		return operation.Operation.StatusCode == api.Failure
+	case operationsSucceeded:
+		return operation.Operation.StatusCode == api.Success
+	default:
+		return true
+	}
+}
+
+// operationsShownLabel is what the list is cut down to, "" for nothing.
+func (gui *Gui) operationsShownLabel() string {
+	switch gui.State.OperationsShown {
+	case operationsFailed:
+		return gui.Tr.OperationsFailedOnly
+	case operationsSucceeded:
+		return gui.Tr.OperationsSucceededOnly
+	default:
+		return ""
+	}
+}
+
+// handleOperationsShown is `f` on the operations: all, failed, succeeded.
+func (gui *Gui) handleOperationsShown(*gocui.Gui, *gocui.View) error {
+	if !gui.daemonOpen(daemonOperations) {
+		return nil
+	}
+
+	selected := gui.daemonSelected(daemonOperations)
+	gui.State.OperationsShown = (gui.State.OperationsShown + 1) % (operationsSucceeded + 1)
+
+	return gui.redrawDaemon(daemonOperations, selected)
+}
+
 // operationItems are the popup's rows, under way first, being what the list
-// is for, then newest first; and each one's operation's key.
-func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
-	operations := gui.operations.list()
+// is for, then newest first.
+func (gui *Gui) operationItems() []*types.MenuItem {
+	operations := lo.Filter(gui.operations.list(), func(operation *commands.Operation, _ int) bool {
+		return gui.State.OperationsShown.has(operation)
+	})
 	slices.SortStableFunc(operations, func(a, b *commands.Operation) int {
 		if a.IsFinal() != b.IsFinal() {
 			if a.IsFinal() {
@@ -197,15 +243,14 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 	})
 
 	items := make([]*types.MenuItem, 0, len(operations))
-	keys := make([]string, 0, len(operations))
 
 	for _, operation := range operations {
-		keys = append(keys, operation.Key())
 		columns := presentation.GetOperationDisplayStrings(
 			operation, gui.State.SpansProjects.Operations, gui.operations.retried(operation))
 		items = append(items, &types.MenuItem{
+			Key:          operation.Key(),
 			LabelColumns: columns,
-			FilterText:   operationLabel(operation),
+			FilterText:   operationLabel(operation) + " " + operation.Project,
 			OnPress:      func() error { return gui.showOperation(operation) },
 			Keys: map[rune]types.MenuKey{
 				'd': {Handler: func() error { return gui.operationCancel(operation) }, Mutates: true},
@@ -214,10 +259,15 @@ func (gui *Gui) operationItems() ([]*types.MenuItem, []string) {
 	}
 
 	if len(items) == 0 {
-		items = append(items, &types.MenuItem{LabelColumns: []string{gui.Tr.NoOperations}})
+		empty := gui.Tr.NoOperations
+		if shown := gui.operationsShownLabel(); shown != "" {
+			empty = fmt.Sprintf(gui.Tr.NoOperationsShown, shown)
+		}
+
+		items = append(items, &types.MenuItem{LabelColumns: []string{empty}})
 	}
 
-	return items, keys
+	return items
 }
 
 // showOperation is enter on an operation: all of it, which the row has no

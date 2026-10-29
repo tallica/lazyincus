@@ -27,6 +27,9 @@ type MenuItem struct {
 
 	// Checked is whether the item is ticked, in a menu that's a checklist.
 	Checked bool
+
+	// Key keeps the cursor on the item when the menu's items are rebuilt.
+	Key string
 }
 
 // MenuKey is a key a menu item answers to. Mutates is guardReadOnly's

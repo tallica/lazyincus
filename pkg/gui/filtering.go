@@ -61,6 +61,10 @@ func (gui *Gui) onNewFilterNeedle(value string) error {
 		return nil
 	}
 
+	if gui.State.Filter.panel == nil {
+		return nil
+	}
+
 	gui.ResetOrigin(gui.State.Filter.panel.GetView())
 	return gui.State.Filter.panel.RerenderList()
 }
@@ -91,7 +95,19 @@ func (gui *Gui) escapeFilterPrompt() error {
 		return gui.leaveSearchPrompt()
 	}
 
-	return gui.returnFocus()
+	return gui.returnFromFilter()
+}
+
+// returnFromFilter takes the prompt off the view stack too: returning to a
+// popup leaves it there, for closing the popup to focus it, hidden.
+func (gui *Gui) returnFromFilter() error {
+	if err := gui.returnFocus(); err != nil {
+		return err
+	}
+
+	gui.removeViewFromStack(gui.Views.Filter)
+
+	return nil
 }
 
 // leaveSearchPrompt returns to the main panel, taking the prompt off the
@@ -146,7 +162,7 @@ func (gui *Gui) commitFilter() error {
 		return gui.leaveSearchPrompt()
 	}
 
-	return gui.returnFocus()
+	return gui.returnFromFilter()
 }
 
 // filteredPrevLine and filteredNextLine move through the list being filtered

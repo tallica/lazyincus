@@ -281,3 +281,151 @@ func TestOperationsFromALeftScopeAreDropped(t *testing.T) {
 		}))
 	}, 5*time.Second, 20*time.Millisecond)
 }
+
+// recordOperations logs ended operations, one a second from operationStart,
+// each described as its description says, and waits until they're in.
+func recordOperations(t *testing.T, s *screen, descriptions ...string) {
+	t.Helper()
+
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	for i, description := range descriptions {
+		operation := testOperation(fmt.Sprintf("op%02d", i), api.Success, 0)
+		operation.Operation.Description = description
+		operation.Operation.CreatedAt = operationStart.Add(time.Duration(i) * time.Second)
+		s.gui.recordOperation(scope, operation)
+	}
+
+	require.Eventually(t, func() bool {
+		return onLoop(t, s, func() int { return len(s.gui.operations.list()) }) == len(descriptions)
+	}, 5*time.Second, 20*time.Millisecond)
+}
+
+func TestFCutsTheOperationsDownByStatus(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Starting instance")
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	failed := testOperation("failed", api.Failure, 0)
+	failed.Operation.Description = "Stopping instance"
+	s.gui.recordOperation(scope, failed)
+
+	s.press(t, 'W')
+	s.settle(t, "Stopping instance")
+
+	s.press(t, 'f')
+	screen := s.settle(t, "Operations (failed) - Warnings")
+	assert.Contains(t, screen, "✗ failure")
+	assert.NotContains(t, screen, "Starting instance")
+
+	s.press(t, 'f')
+	screen = s.settle(t, "Operations (succeeded) - Warnings")
+	assert.Contains(t, screen, "Starting instance")
+	assert.NotContains(t, screen, "Stopping instance")
+
+	s.press(t, 'f')
+	screen = s.settle(t, "Operations - Warnings")
+	assert.Contains(t, screen, "Starting instance")
+	assert.Contains(t, screen, "Stopping instance")
+}
+
+// The fuzzy filter would put the exact match first; the operations stay in
+// time order.
+func TestFilteringTheOperationsKeepsTheirOrder(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Deleting snapshot", "Snapshotting instance", "Starting instance")
+
+	s.press(t, 'W')
+	s.settle(t, "Starting instance")
+	s.press(t, '/')
+	s.typeText(t, "snapshot")
+
+	screen := s.settle(t, "filter: snapshot")
+	assert.NotContains(t, screen, "Starting instance")
+	assert.Regexp(t, `Snapshotting instance[^\n]*\n[^\n]*Deleting snapshot`, screen)
+
+	// esc leaves the filter, then the popup.
+	s.pressKey(t, tcell.KeyEnter)
+	s.pressKey(t, tcell.KeyEsc)
+	s.settle(t, "Starting instance")
+	assert.True(t, onLoop(t, s, func() bool { return s.gui.daemonOpen(daemonOperations) }))
+}
+
+// On the first row the cursor follows the newest; further down, the rows on
+// screen stay put as new ones arrive above them.
+func TestOperationsStayPutAsNewOnesArrive(t *testing.T) {
+	s := startScreen(t, 140, 30, nil)
+	s.ready(t)
+
+	recordOperations(t, s, slices.Repeat([]string{"Executing command"}, 40)...)
+	scope := onLoop(t, s, func() uint64 { return s.gui.operationsScope.Load() })
+	arrive := func(id string, at time.Duration) {
+		operation := testOperation(id, api.Success, 0)
+		operation.Operation.CreatedAt = operationStart.Add(at)
+		s.gui.recordOperation(scope, operation)
+	}
+	// The selected row, the first on screen, and the cursor's on screen.
+	position := func() []int {
+		return onLoop(t, s, func() []int {
+			_, oy := s.gui.Views.Menu.Origin()
+			_, cy := s.gui.Views.Menu.Cursor()
+			return []int{s.gui.Panels.Menu.SelectedIdx, oy, cy}
+		})
+	}
+	selected := func() string {
+		return onLoop(t, s, func() string {
+			item, _ := s.gui.Panels.Menu.GetSelectedItem()
+			return item.Key
+		})
+	}
+
+	s.press(t, 'W')
+	s.settle(t, "Operations - Warnings")
+
+	arrive("newest", time.Hour)
+	require.Eventually(t, func() bool { return selected() == "newest" }, 5*time.Second, 20*time.Millisecond)
+
+	for range 5 {
+		s.pressKey(t, tcell.KeyDown)
+	}
+	require.Eventually(t, func() bool { return slices.Equal([]int{5, 0, 5}, position()) }, 5*time.Second, 20*time.Millisecond)
+	reading := selected()
+
+	arrive("newer still", 2*time.Hour)
+	require.Eventually(t, func() bool { return slices.Equal([]int{6, 1, 5}, position()) }, 5*time.Second, 20*time.Millisecond)
+	assert.Equal(t, reading, selected())
+}
+
+// Left with esc or enter, the prompt isn't where closing the popup goes
+// back to: hidden there, it would take what's typed next.
+func TestClosingWAfterFilteringLeavesThePrompt(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	recordOperations(t, s, "Starting instance")
+	current := func() string { return onLoop(t, s, func() string { return s.gui.g.CurrentView().Name() }) }
+
+	// enter keeps the filter, which the first esc on the list clears.
+	for leave, escs := range map[tcell.Key]int{tcell.KeyEsc: 1, tcell.KeyEnter: 2} {
+		s.press(t, 'W')
+		s.settle(t, "Starting instance")
+		s.press(t, '/')
+		s.typeText(t, "zzz")
+		s.settle(t, "no matches")
+
+		s.pressKey(t, leave)
+		require.Eventually(t, func() bool { return current() == "menu" }, 5*time.Second, 20*time.Millisecond)
+
+		if escs == 2 {
+			s.pressKey(t, tcell.KeyEsc)
+			s.settle(t, "Starting instance")
+		}
+
+		s.pressKey(t, tcell.KeyEsc)
+		require.Eventually(t, func() bool { return !onLoop(t, s, func() bool { return s.gui.Views.Menu.Visible }) },
+			5*time.Second, 20*time.Millisecond)
+		assert.NotEqual(t, "filter", current())
+	}
+}
