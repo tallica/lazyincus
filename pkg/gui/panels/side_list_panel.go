@@ -2,12 +2,10 @@ package panels
 
 import (
 	"context"
-	"sort"
 	"strings"
 
 	"github.com/go-errors/errors"
 	"github.com/jesseduffield/gocui"
-	"github.com/sahilm/fuzzy"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/tasks"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -335,33 +333,7 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 		return utils.Decolorise(strings.Join(self.GetTableCells(item), " "))
 	})
 
-	words := strings.Fields(needle)
-	scores := make([]int, len(items))
-	matched := make([]int, len(items))
-	literal := make([]int, len(items))
-	for _, word := range words {
-		for _, match := range fuzzy.FindNoSort(word, texts) {
-			// Words as typed rank by how they appear, then in list order: their
-			// fuzzy scores differ by what else the text holds.
-			tier := wordTier(texts[match.Index], word)
-			matched[match.Index]++
-			if tier > 0 {
-				scores[match.Index] += 1000 * tier
-				literal[match.Index]++
-			} else {
-				scores[match.Index] += match.Score
-			}
-		}
-	}
-
-	// Scattered matches are only worth showing when nothing has the words
-	// as typed.
-	counts := matched
-	if lo.Contains(literal, len(words)) {
-		counts = literal
-	}
-	indices := lo.Filter(lo.Range(len(items)), func(index int, _ int) bool { return counts[index] == len(words) })
-	sort.SliceStable(indices, func(i, j int) bool { return scores[indices[i]] > scores[indices[j]] })
+	indices := utils.FuzzyRank(texts, needle)
 
 	rank := map[T]int{}
 	for position, index := range indices {
@@ -374,26 +346,6 @@ func (self *SideListPanel[T]) fuzzyFilter(needle string) {
 	})
 	self.List.Sort(func(a, b T) bool { return rank[a] < rank[b] })
 	self.SelectedIdx = 0
-}
-
-// wordTier ranks how word appears in text: 3 as a whole word, 2 starting
-// one, 1 inside one, 0 only scattered. The fuzzy score alone can't: its
-// greedy match takes the "st" of "instances" before the "stop" after it.
-func wordTier(text, word string) int {
-	text, word = strings.ToLower(text), strings.ToLower(word)
-	tier := 0
-	for field := range strings.FieldsSeq(text) {
-		switch {
-		case field == word:
-			return 3
-		case strings.HasPrefix(field, word):
-			tier = 2
-		case tier == 0 && strings.Contains(field, word):
-			tier = 1
-		}
-	}
-
-	return tier
 }
 
 // Select puts the cursor on item, and says whether the list shows it. A
