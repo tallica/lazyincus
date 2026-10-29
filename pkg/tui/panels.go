@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -16,8 +17,9 @@ type panel struct {
 	title      func() string
 	hidden     func() bool
 
-	// cells are the rows' columns; flex the columns that narrow to fit.
+	// cells are every item's columns, shown those on show; flex narrow.
 	cells [][]string
+	shown []int
 	flex  func() []utils.FlexColumn
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty    string
@@ -54,12 +56,43 @@ func (p *panel) isHidden() bool {
 }
 
 func (p *panel) count() int {
-	return len(p.cells)
+	return len(p.shown)
 }
 
-func (p *panel) setCells(cells [][]string) {
-	p.cells = cells
+// item is the selected row's index into cells, -1 for none.
+func (p *panel) item() int {
+	if p.selected < 0 || p.selected >= len(p.shown) {
+		return -1
+	}
+
+	return p.shown[p.selected]
+}
+
+// filter is pkg/gui's filterAndSort for a sorted list: matched as typed,
+// colour codes and all; the selection follows its item.
+func (p *panel) filter(needle string, ignore []string) {
+	item := p.item()
+
+	contains := func(cells []string, s string) bool {
+		return slices.ContainsFunc(cells, func(cell string) bool { return strings.Contains(cell, s) })
+	}
+
+	p.shown = p.shown[:0]
+	for i, cells := range p.cells {
+		if slices.ContainsFunc(ignore, func(s string) bool { return contains(cells, s) }) {
+			continue
+		}
+		if needle != "" && !contains(cells, needle) {
+			continue
+		}
+		p.shown = append(p.shown, i)
+	}
 	p.rowsWidth = -1
+
+	if i := slices.Index(p.shown, item); item >= 0 && i >= 0 {
+		p.selected = i
+	}
+	p.selected = max(min(p.selected, len(p.shown)-1), 0)
 }
 
 // fit renders the rows to width as pkg/gui's writeRows does, each cut row
@@ -75,14 +108,19 @@ func (p *panel) fit(width int) {
 		flex = p.flex()
 	}
 
-	table, err := utils.RenderTableToWidth(p.cells, width, flex)
+	cells := make([][]string, len(p.shown))
+	for i, item := range p.shown {
+		cells[i] = p.cells[item]
+	}
+
+	table, err := utils.RenderTableToWidth(cells, width, flex)
 	if err != nil {
 		p.rows = []string{err.Error()}
 		return
 	}
 
 	p.rows = nil
-	if len(p.cells) == 0 {
+	if len(cells) == 0 {
 		return
 	}
 	for _, row := range strings.Split(table, "\n") {

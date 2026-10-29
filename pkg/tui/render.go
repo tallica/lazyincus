@@ -108,7 +108,9 @@ func (m *Model) sideTitle(p *panel, window string) string {
 	}
 
 	switch p.name {
-	case "stacks", "instances":
+	case "stacks":
+		return fmt.Sprintf(m.tr.TitleCount, p.title(), len(p.cells))
+	case "instances":
 		return fmt.Sprintf(m.tr.TitleCount, p.title(), p.count())
 	case "services":
 		return m.tr.ServicesTitle

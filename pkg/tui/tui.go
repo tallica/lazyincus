@@ -211,6 +211,8 @@ func (m *Model) viewKey(key string) (bool, tea.Cmd) {
 		m.moveSelection(p, 1)
 	case "enter":
 		m.focusView(mainView)
+	case "/":
+		m.openFilter(p)
 	case "[":
 		m.cycleMainTab(p, -1)
 	case "]":
@@ -235,6 +237,10 @@ func (m *Model) globalKey(key string) tea.Cmd {
 			return nil
 		}
 		return tea.Quit
+	case "esc":
+		if m.filter.active {
+			m.clearFilter()
+		}
 	case "pgup", "ctrl+u", "K":
 		m.scrollMain(-1)
 	case "pgdown", "ctrl+d", "J":

@@ -17,11 +17,13 @@ const (
 	promptColour = "\x1b[32m"
 )
 
-// filter is the footer prompt: for now only the main panel's search.
+// filter is the footer prompt: a list's filter, or the main panel's search.
 type filter struct {
 	active bool
 	search bool
-	input  textinput.Model
+	// panel is the list being filtered, "" while searching.
+	panel string
+	input textinput.Model
 	// ox is the gocui view origin that keeps the cursor in sight.
 	ox int
 }
@@ -70,6 +72,13 @@ func isEditorKey(msg tea.KeyPressMsg) bool {
 	return key.Matches(msg, bindings...)
 }
 
+// openFilter is pkg/gui's handleOpenFilter; what was typed before stays.
+func (m *Model) openFilter(p *panel) {
+	m.filter.active = true
+	m.filter.panel = p.name
+	m.focusView(filterView)
+}
+
 // openSearch is pkg/gui's handleOpenSearch.
 func (m *Model) openSearch() {
 	if m.filter.active {
@@ -88,8 +97,10 @@ func (m *Model) filterKey(msg tea.KeyPressMsg) (bool, tea.Cmd) {
 		m.commitFilter()
 	case "esc":
 		m.escapeFilterPrompt()
-	case "up", "down":
-		// pkg/gui moves the filtered list's selection; a search has none.
+	case "up":
+		m.moveFilteredSelection(-1)
+	case "down":
+		m.moveFilteredSelection(1)
 	case "tab":
 		m.cycleWindows(1)
 	default:
@@ -111,6 +122,7 @@ func (m *Model) filterKey(msg tea.KeyPressMsg) (bool, tea.Cmd) {
 // editor takes, so even moving the cursor searches afresh.
 func (m *Model) onNeedle(needle string) {
 	if !m.filter.search {
+		m.refilter(m.filter.panel)
 		return
 	}
 
@@ -188,12 +200,38 @@ func (m *Model) clearFilter() {
 	m.filter.search = false
 	m.filter.input.Reset()
 	m.filter.ox = 0
+
+	name := m.filter.panel
+	m.filter.panel = ""
+	m.refilter(name)
 }
 
-// filterFollowsFocus is pkg/gui's switchFocus ending a search once main is
-// off the stack.
+// refilter is pkg/gui's ResetOrigin and RerenderList on a filtered list.
+func (m *Model) refilter(name string) {
+	p := m.panelNamed(name)
+	if p == nil {
+		return
+	}
+
+	p.origin = 0
+	m.filterList(p)
+	p.selectRow(p.selected, m.listRows(p))
+}
+
+// moveFilteredSelection is pkg/gui's filteredPrevLine and filteredNextLine.
+func (m *Model) moveFilteredSelection(step int) {
+	if p := m.panelNamed(m.filter.panel); p != nil {
+		m.moveSelection(p, step)
+	}
+}
+
+// filterFollowsFocus is pkg/gui's switchFocus ending a filter once its
+// list is off the stack, a search once main is.
 func (m *Model) filterFollowsFocus() {
-	if m.filter.search && !slices.Contains(m.focus, mainView) {
+	switch {
+	case m.filter.panel != "" && !slices.Contains(m.focus, m.filter.panel):
+		m.clearFilter()
+	case m.filter.search && !slices.Contains(m.focus, mainView):
 		m.clearFilter()
 	}
 }
@@ -242,4 +280,13 @@ func (m *Model) filterLine(width int) string {
 	value := m.filter.input.Value()
 
 	return tint(ansi.Cut(value, m.filter.ox, m.filter.ox+width), promptColour)
+}
+
+func (m *Model) filterList(p *panel) {
+	needle := ""
+	if m.filter.panel == p.name {
+		needle = m.filter.input.Value()
+	}
+
+	p.filter(needle, m.cfg.UserConfig.Ignore)
 }

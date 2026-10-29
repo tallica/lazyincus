@@ -34,12 +34,12 @@ func (m *Model) fetchInstances() tea.Cmd {
 }
 
 func (m *Model) selectedInstance() *commands.Instance {
-	p := m.panelNamed("instances")
-	if p.selected < 0 || p.selected >= len(m.instances) {
+	item := m.panelNamed("instances").item()
+	if item < 0 || item >= len(m.instances) {
 		return nil
 	}
 
-	return m.instances[p.selected]
+	return m.instances[item]
 }
 
 // setInstances keeps the selection on the same instance across a refresh.
@@ -59,10 +59,11 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	m.showProject = len(projects) > 1
 
 	p := m.panelNamed("instances")
-	p.setCells(m.instanceCells())
-	for i, instance := range instances {
-		if instance.Key() == key {
-			p.selected = i
+	p.cells = m.instanceCells()
+	m.filterList(p)
+	for row, item := range p.shown {
+		if instances[item].Key() == key {
+			p.selected = row
 			break
 		}
 	}
