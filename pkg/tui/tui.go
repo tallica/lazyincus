@@ -77,6 +77,9 @@ type Model struct {
 	stackServices map[string]map[string]bool
 	// selectedStack is what Services and Backups follow; nil for none.
 	selectedStack      *commands.ComposeStack
+	composeState       *composeHolder
+	serviceRows        []*commands.ServiceRow
+	servicesNote       string
 	showStackInstances bool
 	snapshotsShowAll   bool
 	snapshotsFollow    snapshotsFollow
@@ -148,6 +151,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	m.localStackDir, m.localStackExplicit = localStackDir()
 	m.loadStack = incus.LoadComposeStack
 	m.stackCache = &stackCache{}
+	m.composeState = &composeHolder{}
 	m.stacksHere, m.landing = true, true
 	m.notifyRemotes = func() {
 		select {
@@ -261,7 +265,7 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.refreshUpdated()
 
 	case remotesChangedMsg:
-		return refreshQuiet(nil, m.fetchStacks())
+		return refreshQuiet(nil, m.fetchStacks(), m.fetchServices())
 
 	case pollMsg:
 		return m.pollInstances()

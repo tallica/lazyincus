@@ -59,7 +59,7 @@ func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 
 // pollInstances is pkg/gui's refreshInstancesQuiet, the connection check too.
 func (m *Model) pollInstances() tea.Cmd {
-	return refreshQuiet(tea.Batch(syncConnection, m.tick(instancesPollInterval, pollMsg{})), m.fetchInstances())
+	return refreshQuiet(tea.Batch(syncConnection, m.tick(instancesPollInterval, pollMsg{})), m.fetchInstances(), m.fetchServices())
 }
 
 type syncConnectionMsg struct{}

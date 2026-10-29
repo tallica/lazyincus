@@ -221,6 +221,7 @@ func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool)
 		return m.stackCells()
 	})
 	m.setStackServices(stacks)
+	m.followStack(m.selectedStackRow())
 
 	if m.landing {
 		m.landing = false

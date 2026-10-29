@@ -28,6 +28,8 @@ type panel struct {
 	filterText func(item int) string
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty string
+	// note is pkg/gui's EmptyNote: a line the list shows while it has no rows.
+	note func() string
 	// awaiting stands in for the list, and in main, until its first answer.
 	awaiting string
 	mainTabs func() []mainTab
@@ -160,8 +162,11 @@ func (p *panel) fit(width int) {
 
 	p.rows = nil
 	if len(cells) == 0 {
-		if p.awaiting != "" {
+		switch {
+		case p.awaiting != "":
 			p.rows = []string{utils.Truncate(p.awaiting, width)}
+		case p.note != nil && p.note() != "":
+			p.rows = []string{utils.Truncate(p.note(), width)}
 		}
 		return
 	}
@@ -211,7 +216,10 @@ func (m *Model) newPanels() []*panel {
 
 	panels := []*panel{
 		{name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks, itemKey: m.stackKey},
-		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
+		{
+			name: "services", title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
+			flex: m.serviceFlex, note: func() string { return m.servicesNote },
+		},
 		{
 			name: "instances", title: m.instancesTitle, empty: tr.NoInstances,
 			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey, keep: m.keepInstance,

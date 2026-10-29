@@ -26,6 +26,14 @@ type snapshotsSpan struct {
 // followSelection is pkg/gui's OnSelect into refreshSnapshotsFor.
 func (m *Model) followSelection() {
 	switch m.currentSideView() {
+	case "stacks":
+		m.followStack(m.selectedStackRow())
+		// A stack hands Snapshots nothing, so it empties rather than keep the last list's.
+		if f := m.snapshotsFollow; f.label != "" || len(f.instances) > 0 || f.volume != "" {
+			m.followSnapshotsOf(snapshotsFollow{})
+		}
+	case "services":
+		m.followServices()
 	case "instances":
 		m.followInstance()
 	case "volumes":

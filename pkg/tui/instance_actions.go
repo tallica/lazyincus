@@ -128,7 +128,7 @@ func projectCLIArgs(project string) []string {
 // instanceEdit is pkg/gui's: `incus config edit`, then the lists it changed.
 func (m *Model) instanceEdit(instance *commands.Instance) tea.Cmd {
 	return m.runSubprocess(m.instanceCmd(instance, "config", "edit", instance.Name), "", func() tea.Cmd {
-		return refreshQuiet(nil, m.fetchInstances())
+		return refreshQuiet(nil, m.fetchInstances(), m.fetchServices())
 	})
 }
 
@@ -217,7 +217,7 @@ func (m *Model) instanceEditDescription(instance *commands.Instance) tea.Cmd {
 					return nil
 				}
 
-				return refresh(m.fetchInstances())
+				return refresh(m.fetchInstances(), m.fetchServices())
 			})
 	})
 
