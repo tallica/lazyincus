@@ -78,6 +78,7 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "home", handler: do((*Model).jumpToTopMain)},
 		&binding{key: "x", handler: do((*Model).openOptionsMenu)},
 		&binding{key: "?", handler: do((*Model).openOptionsMenu)},
+		&binding{key: "ctrl+p", description: m.tr.CommandPalette, handler: do((*Model).openPaletteKey)},
 	)
 	bindings = append(bindings, m.menuBindings()...)
 	bindings = append(bindings,
@@ -88,11 +89,11 @@ func (m *Model) bindings() []*binding {
 		&binding{view: mainView, key: "right", handler: scrollStep((*pane).scrollRight)},
 		&binding{view: mainView, key: "h", handler: scrollStep((*pane).scrollLeft)},
 		&binding{view: mainView, key: "l", handler: scrollStep((*pane).scrollRight)},
-		&binding{view: filterView, key: "enter", handler: do((*Model).commitFilter)},
+		&binding{view: filterView, key: "enter", handler: (*Model).commitFilter},
 		&binding{view: filterView, key: "esc", handler: do((*Model).escapeFilterPrompt)},
 		&binding{view: filterView, key: "up", handler: do(func(m *Model) { m.moveFilteredSelection(-1) })},
 		&binding{view: filterView, key: "down", handler: do(func(m *Model) { m.moveFilteredSelection(1) })},
-		&binding{view: filterView, key: "tab", handler: do(func(m *Model) { m.cycleWindows(1) })},
+		&binding{view: filterView, key: "tab", handler: (*Model).paletteTab},
 		&binding{key: "J", handler: scroll(1)},
 		&binding{key: "K", handler: scroll(-1)},
 		&binding{key: "H", handler: scrollStep((*pane).scrollLeft)},

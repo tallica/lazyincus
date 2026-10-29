@@ -48,3 +48,13 @@ func TestHighlightKeepsColoursUnderTheBackground(t *testing.T) {
 	assert.Equal(t, "\x1b[44m\x1b[32mrun\x1b[0m\x1b[44m ok  \x1b[0m\x1b[44m\x1b[0m", line)
 	assert.Equal(t, 8, ansi.StringWidth(line))
 }
+
+func TestFrameSubtitleAsGocuiDrawsIt(t *testing.T) {
+	th := newTheme(config.GetDefaultConfig().Gui)
+
+	top := ansi.Strip(strings.Split(th.frame(frameSpec{title: "Commands", subtitle: "esc: close"}, 30, 3), "\n")[0])
+	assert.Equal(t, "╭─Commands────esc: close─────╮", top)
+
+	tooWide := ansi.Strip(strings.Split(th.frame(frameSpec{title: "T", subtitle: strings.Repeat("x", 30)}, 30, 3), "\n")[0])
+	assert.Equal(t, "╭─T──────────────────────────╮", tooWide)
+}

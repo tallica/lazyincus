@@ -9,12 +9,14 @@ import (
 
 // frameSpec is what a framed window shows; frame draws it at a size.
 type frameSpec struct {
-	prefix  string
-	title   string
-	tabs    []string
-	tab     int
-	body    []string
-	focused bool
+	prefix string
+	title  string
+	// subtitle is right-aligned on the top edge, five in from the corner.
+	subtitle string
+	tabs     []string
+	tab      int
+	body     []string
+	focused  bool
 	// colour is the frame's escape while unfocused, "" for the theme's.
 	colour string
 	// total and origin place the scrollbar: content lines, first one shown.
@@ -43,7 +45,12 @@ func (t theme) frame(s frameSpec, w, h int) string {
 	rule := strings.Repeat(r.h, max(w-3-ansi.StringWidth(heading), 0))
 
 	lines := make([]string, 0, h)
-	lines = append(lines, border+r.tl+r.h+reset+heading+border+rule+r.tr+reset)
+	top := border + r.tl + r.h + reset + heading + border + rule + r.tr + reset
+	// gocui's drawSubtitle skips one that would start left of the frame.
+	if sw := ansi.StringWidth(s.subtitle); s.subtitle != "" && w-6-sw >= 0 {
+		top = ansi.Truncate(top, w-6-sw, "") + reset + border + s.subtitle + strings.Repeat(r.h, 5) + r.tr + reset
+	}
+	lines = append(lines, top)
 
 	side := border + r.v + reset
 	start, end := scrollbar(s.total, h-2, s.origin)

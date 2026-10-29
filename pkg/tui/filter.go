@@ -140,6 +140,11 @@ func (m *Model) searchKey(key string) bool {
 }
 
 func (m *Model) escapeFilterPrompt() {
+	if m.paletteOpen() {
+		m.closeMenu()
+		return
+	}
+
 	search := m.filter.search
 	m.clearFilter()
 
@@ -151,7 +156,11 @@ func (m *Model) escapeFilterPrompt() {
 	m.returnFocus()
 }
 
-func (m *Model) commitFilter() {
+func (m *Model) commitFilter() tea.Cmd {
+	if m.paletteOpen() {
+		return m.pressMenu()
+	}
+
 	search := m.filter.search
 	if m.filter.input.Value() == "" {
 		m.clearFilter()
@@ -159,10 +168,12 @@ func (m *Model) commitFilter() {
 
 	if search {
 		m.leaveSearchPrompt()
-		return
+		return nil
 	}
 
 	m.returnFocus()
+
+	return nil
 }
 
 // leaveSearchPrompt is pkg/gui's: back to main, the prompt off the stack,
@@ -187,9 +198,21 @@ func (m *Model) clearFilter() {
 	m.refilter(name)
 }
 
+// filteredPanel is the list named, the palette's menu included.
+func (m *Model) filteredPanel(name string) *panel {
+	if name == menuView {
+		if mn := m.topMenu(); mn != nil {
+			return mn.list
+		}
+		return nil
+	}
+
+	return m.panelNamed(name)
+}
+
 // refilter is pkg/gui's ResetOrigin and RerenderList on a filtered list.
 func (m *Model) refilter(name string) {
-	p := m.panelNamed(name)
+	p := m.filteredPanel(name)
 	if p == nil {
 		return
 	}
@@ -201,7 +224,7 @@ func (m *Model) refilter(name string) {
 
 // moveFilteredSelection is pkg/gui's filteredPrevLine and filteredNextLine.
 func (m *Model) moveFilteredSelection(step int) {
-	if p := m.panelNamed(m.filter.panel); p != nil {
+	if p := m.filteredPanel(m.filter.panel); p != nil {
 		m.moveSelection(p, step)
 	}
 }
@@ -210,6 +233,10 @@ func (m *Model) moveFilteredSelection(step int) {
 // list is off the stack, a search once main is.
 func (m *Model) filterFollowsFocus() {
 	switch {
+	case m.paletteOpen():
+		if m.topMenu() == nil {
+			m.clearFilter()
+		}
 	case m.filter.panel != "" && !slices.Contains(m.focus, m.filter.panel):
 		m.clearFilter()
 	case m.filter.search && !slices.Contains(m.focus, mainView):
@@ -218,6 +245,10 @@ func (m *Model) filterFollowsFocus() {
 }
 
 func (m *Model) filterPrompt() string {
+	if m.paletteOpen() {
+		return m.tr.CommandPalettePrompt + ": "
+	}
+
 	if !m.filter.search {
 		return m.tr.FilterPrompt + ": "
 	}

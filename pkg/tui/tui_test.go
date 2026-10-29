@@ -107,6 +107,10 @@ func keyPress(name string) tea.KeyPressMsg {
 
 	if code, ok := namedKeys[rest]; ok {
 		msg.Code = code
+		// A terminal types space as it does any rune.
+		if code == tea.KeySpace && msg.Mod == 0 {
+			msg.Text = " "
+		}
 	} else {
 		msg.Code = []rune(rest)[0]
 		if msg.Mod == 0 {

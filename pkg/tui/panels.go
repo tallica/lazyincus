@@ -23,6 +23,9 @@ type panel struct {
 	flex  func() []utils.FlexColumn
 	// keep is pkg/gui's Filter: an item it refuses is never shown.
 	keep func(item int) bool
+	// fuzzy is pkg/gui's FuzzyFilter, matching filterText or the cells.
+	fuzzy      bool
+	filterText func(item int) string
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty    string
 	mainTabs func() []mainTab
@@ -71,9 +74,11 @@ func (p *panel) item() int {
 }
 
 // filter is pkg/gui's filterAndSort for a sorted list: matched as typed,
-// colour codes and all; the selection follows its item.
+// colour codes and all, the selection following its item; or fuzzily,
+// best first, the selection on the first.
 func (p *panel) filter(needle string, ignore []string) {
 	item := p.item()
+	fuzzy := p.fuzzy && needle != ""
 
 	contains := func(cells []string, s string) bool {
 		return slices.ContainsFunc(cells, func(cell string) bool { return strings.Contains(cell, s) })
@@ -87,17 +92,42 @@ func (p *panel) filter(needle string, ignore []string) {
 		if slices.ContainsFunc(ignore, func(s string) bool { return contains(cells, s) }) {
 			continue
 		}
-		if needle != "" && !contains(cells, needle) {
+		if needle != "" && !fuzzy && !contains(cells, needle) {
 			continue
 		}
 		p.shown = append(p.shown, i)
 	}
 	p.rowsWidth = -1
 
+	if fuzzy {
+		p.fuzzyFilter(needle)
+		return
+	}
+
 	if i := slices.Index(p.shown, item); item >= 0 && i >= 0 {
 		p.selected = i
 	}
 	p.selected = max(min(p.selected, len(p.shown)-1), 0)
+}
+
+func (p *panel) fuzzyFilter(needle string) {
+	texts := make([]string, len(p.shown))
+	for i, item := range p.shown {
+		if p.filterText != nil {
+			texts[i] = p.filterText(item)
+		}
+		if texts[i] == "" {
+			texts[i] = utils.Decolorise(strings.Join(p.cells[item], " "))
+		}
+	}
+
+	ranked := utils.FuzzyRank(texts, needle)
+	shown := make([]int, len(ranked))
+	for i, index := range ranked {
+		shown[i] = p.shown[index]
+	}
+	p.shown = shown
+	p.selected = 0
 }
 
 // fit renders the rows to width as pkg/gui's writeRows does, each cut row

@@ -21,8 +21,11 @@ type menuItem struct {
 	labelColumns []string
 	onPress      func(*Model) tea.Cmd
 	opensMenu    bool
+	// filterText is what the palette's filter matches; the columns when "".
+	filterText string
 	// hideUntilFiltered keeps the item out until the palette's filter has text.
 	hideUntilFiltered bool
+	onTab             func(*Model) tea.Cmd
 	keys              map[string]menuKey
 	checked           bool
 }
@@ -36,6 +39,7 @@ type menuKey struct {
 // menuOptions is pkg/gui's CreateMenuOptions.
 type menuOptions struct {
 	title      string
+	subtitle   string
 	items      []*menuItem
 	hideCancel bool
 	selected   int
@@ -69,10 +73,11 @@ func (m *Model) openMenu(opts menuOptions) {
 		item.labelColumns = append(item.labelColumns, make([]string, columns-len(item.labelColumns))...)
 	}
 
-	mn := &menu{menuOptions: opts, list: &panel{name: menuView}}
+	mn := &menu{menuOptions: opts, list: &panel{name: menuView, fuzzy: true}}
 	mn.list.keep = func(i int) bool { return !mn.items[i].hideUntilFiltered || m.menuNeedle() != "" }
+	mn.list.filterText = func(i int) string { return mn.items[i].filterText }
 	mn.list.selected = opts.selected
-	m.popups = append(m.popups, &popup{view: menuView, title: opts.title, menu: mn})
+	m.popups = append(m.popups, &popup{view: menuView, title: opts.title, subtitle: opts.subtitle, menu: mn})
 	m.rerenderMenu()
 }
 
@@ -140,6 +145,10 @@ func (m *Model) menuBindings() []*binding {
 
 // closeMenu is pkg/gui's handleMenuClose.
 func (m *Model) closeMenu() {
+	if m.paletteOpen() {
+		m.clearFilter()
+	}
+
 	m.closePopup()
 }
 

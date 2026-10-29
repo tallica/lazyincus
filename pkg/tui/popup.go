@@ -18,6 +18,10 @@ type popup struct {
 	asks     bool
 	bindings []*binding
 	menu     *menu
+	// subtitle is the hint as written, fittedSubtitle as drawn.
+	subtitle       string
+	fittedSubtitle string
+	heldWidth      int
 }
 
 func (m *Model) openError(message string) {
@@ -80,16 +84,38 @@ func popupRows(screenHeight, rows int) (int, int) {
 	return screenHeight/2 - rows/2 - rows%2 - 1, screenHeight/2 + rows/2
 }
 
-// popupLayout is pkg/gui's resizePopupPanel: p's rectangle and its lines.
-func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
-	minWidth := 0
-	if p.menu != nil && p.menu.wide {
+// popupFrameMargin is pkg/gui's: corners and rule around title and subtitle.
+const popupFrameMargin = 10
+
+// fitBeside is pkg/gui's: subtitle cut to the room beside title.
+func fitBeside(subtitle, title string, width int) string {
+	room := width - utils.DisplayWidth(title) - popupFrameMargin
+	if utils.DisplayWidth(subtitle) <= room {
+		return subtitle
+	}
+
+	if room < 4 {
+		return ""
+	}
+
+	return utils.Truncate(subtitle, room)
+}
+
+// popupX is where pkg/gui's resizePopupPanel puts p across the screen.
+func (m *Model) popupX(p *popup) (int, int) {
+	minWidth := p.heldWidth
+	if p.menu != nil && (p.menu.wide || m.paletteOpen()) {
 		minWidth = m.width * 3 / 4
 	}
-	x0, x1 = popupColumns(m.width, minWidth)
+
+	return popupColumns(m.width, minWidth)
+}
+
+// popupLayout is p's rectangle and its lines, as fitPopups left them.
+func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
+	x0, x1 = m.popupX(p)
 
 	if p.menu != nil {
-		p.menu.list.fit(x1 - x0 - 1)
 		lines = p.menu.list.rows
 	} else {
 		lines = strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n")
@@ -99,11 +125,19 @@ func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
 	return x0, y0, x1, y1, lines
 }
 
-// fitPopups fits each menu to its popup, its selection kept in sight.
+// fitPopups is pkg/gui's resizePopupPanel: a shorter subtitle mustn't
+// narrow the popup under the cursor, so its width only grows.
 func (m *Model) fitPopups() {
 	for _, p := range m.popups {
+		p.fittedSubtitle = fitBeside(p.subtitle, p.title, m.width-1)
+		if p.fittedSubtitle != "" {
+			p.heldWidth = max(p.heldWidth, utils.DisplayWidth(p.title)+utils.DisplayWidth(p.fittedSubtitle)+popupFrameMargin)
+		}
+
 		if p.menu != nil {
-			_, y0, _, y1, _ := m.popupLayout(p)
+			x0, x1 := m.popupX(p)
+			p.menu.list.fit(x1 - x0 - 1)
+			y0, y1 := popupRows(m.height, len(p.menu.list.rows))
 			p.menu.list.selectRow(p.menu.list.selected, y1-y0-1)
 		}
 	}

@@ -10,6 +10,10 @@ import (
 
 func typeText(m *Model, text string) {
 	for _, r := range text {
+		if r == ' ' {
+			press(m, "space")
+			continue
+		}
 		press(m, string(r))
 	}
 }
