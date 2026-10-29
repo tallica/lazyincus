@@ -404,3 +404,23 @@ func TestThePaletteListsRecreateOnStacks(t *testing.T) {
 	s.typeText(t, "recreate")
 	assert.Regexp(t, `U +Stacks +recreate`, s.settle(t, "run: recreate"))
 }
+
+// A search left on the main panel gives the prompt up to the palette.
+func TestThePaletteTakesOverFromASearch(t *testing.T) {
+	s := startScreen(t, 140, 40, nil)
+	s.ready(t)
+
+	s.pressKey(t, tcell.KeyEnter)
+	s.press(t, '/')
+	s.typeText(t, "Name")
+	s.pressKey(t, tcell.KeyEnter)
+	s.settle(t, "")
+
+	s.pressKey(t, tcell.KeyCtrlP)
+	s.settle(t, "Commands")
+	s.typeText(t, "stop")
+	screen := s.settle(t, "run: stop")
+
+	assert.False(t, onLoop(t, s, func() bool { return s.gui.State.Filter.search }))
+	assert.Regexp(t, `s +Instances +stop`, screen)
+}
