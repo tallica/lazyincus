@@ -48,6 +48,15 @@ func (m *Model) render() string {
 		place(informationView, tint(m.information(), "\x1b[32m"))
 	}
 
+	if _, ok := dims[filterPrefixView]; ok {
+		place(filterPrefixView, tint(m.filterPrompt(), promptColour))
+	}
+
+	if d, ok := dims[filterView]; ok {
+		w, _ := size(d)
+		place(filterView, m.filterLine(w))
+	}
+
 	for i, p := range m.popups {
 		x0, y0, x1, y1, lines := popupLayout(p, m.width, m.height)
 		spec := frameSpec{title: p.title, body: lines, focused: i == len(m.popups)-1, total: len(lines)}

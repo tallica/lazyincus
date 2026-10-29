@@ -37,6 +37,7 @@ type Model struct {
 	screenMode      screenMode
 	expandSidePanel bool
 	main            pane
+	filter          filter
 	appStatus       string
 
 	composeAvailable bool
@@ -66,6 +67,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		screenMode:       parseScreenMode(gui.ScreenMode),
 		expandSidePanel:  gui.ExpandFocusedSidePanel,
 		snapshotsShowAll: gui.ShowAllSnapshots,
+		filter:           filter{input: newFilterInput()},
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true
@@ -105,6 +107,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) fitViews() {
 	m.fitLists()
 	m.fitMain()
+	m.fitFilter()
 }
 
 func (m *Model) update(msg tea.Msg) tea.Cmd {
@@ -135,20 +138,39 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.fetchInstances()
 
 	case tea.KeyPressMsg:
-		return m.handleKey(msg.String())
+		return m.handleKey(msg)
+
+	case tea.PasteMsg:
+		if m.currentView() == filterView {
+			var cmd tea.Cmd
+			m.filter.input, cmd = m.filter.input.Update(msg)
+			m.onNeedle(m.filter.input.Value())
+			return cmd
+		}
 	}
 
 	return nil
 }
 
 // handleKey tries the top popup, then the focused view, then global keys.
-func (m *Model) handleKey(key string) tea.Cmd {
-	if len(m.popups) > 0 {
+func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
+	key := msg.String()
+
+	switch {
+	case len(m.popups) > 0:
 		if cmd, handled := m.popupKey(key); handled {
 			return cmd
 		}
-	} else if handled, cmd := m.viewKey(key); handled {
-		return cmd
+	case m.searchKey(key):
+		return nil
+	case m.currentView() == filterView:
+		if handled, cmd := m.filterKey(msg); handled {
+			return cmd
+		}
+	default:
+		if handled, cmd := m.viewKey(key); handled {
+			return cmd
+		}
 	}
 
 	return m.globalKey(key)
@@ -161,6 +183,8 @@ func (m *Model) viewKey(key string) (bool, tea.Cmd) {
 		switch key {
 		case "esc":
 			m.returnFocus()
+		case "/":
+			m.openSearch()
 		case "k", "up":
 			m.scrollMain(-1)
 		case "j", "down":
@@ -335,6 +359,10 @@ func (m *Model) clampLists() {
 func (m *Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
+
+	if d, ok := m.dims()[filterView]; ok && m.currentView() == filterView {
+		view.Cursor = tea.NewCursor(d.X0+m.filterCursorX()-m.filter.ox, d.Y0)
+	}
 
 	return view
 }

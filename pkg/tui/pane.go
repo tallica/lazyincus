@@ -126,21 +126,30 @@ type pane struct {
 	wrap       bool
 	autoscroll bool
 
-	lines []string
-	width int
-	ox    int
-	oy    int
+	lines  []string
+	width  int
+	height int
+	ox     int
+	oy     int
+	// cy is gocui's cursor row, relative to oy: where a search last
+	// focused, which a scroll doesn't move.
+	cy int
+
+	search search
 }
 
 // set takes new content, re-wrapping only when it or the width changed.
 func (p *pane) set(key, content string, wrap, autoscroll bool, width, height int) {
 	if key != p.key {
-		*p = pane{key: key, autoscroll: autoscroll}
+		// gocui's Clear leaves the view's search be.
+		*p = pane{key: key, autoscroll: autoscroll, search: p.search}
 	}
+	p.height = height
 
 	if content != p.content || wrap != p.wrap || width != p.width || p.lines == nil {
 		p.content, p.wrap, p.width = content, wrap, width
 		p.lines = viewLines(content, wrap, width)
+		p.refind()
 	}
 
 	// gocui's autoscroll skips trailing lines with no cells, but writing
@@ -203,7 +212,10 @@ func (p *pane) visible(height int) []string {
 	end := min(start+height, len(p.lines))
 
 	rows := make([]string, 0, max(end-start, 0))
-	for _, line := range p.lines[start:end] {
+	for y, line := range p.lines[start:end] {
+		if p.hasMatchOn(start + y) {
+			line = p.highlightMatches(line, start+y)
+		}
 		if p.ox > 0 && !p.wrap {
 			line = ansi.Cut(line, p.ox, p.ox+p.width)
 		}

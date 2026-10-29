@@ -178,12 +178,14 @@ func (m *Model) focusView(name string) {
 	}
 
 	m.focus = append(slices.DeleteFunc(m.focus, func(view string) bool { return view == name }), name)
+	m.filterFollowsFocus()
 }
 
 func (m *Model) returnFocus() {
 	if len(m.focus) > 1 {
 		m.focus = m.focus[:len(m.focus)-1]
 	}
+	m.filterFollowsFocus()
 }
 
 // stacksSwap is pkg/gui's stacksSwap.

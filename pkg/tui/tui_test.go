@@ -74,7 +74,7 @@ func start(t *testing.T, opts options, width, height int) *Model {
 // press types keys by name, as Update would take them from KeyPressMsg.
 func press(m *Model, keys ...string) {
 	for _, key := range keys {
-		cmd := m.handleKey(key)
+		cmd := m.handleKey(keyPress(key))
 		m.fitViews()
 		if cmd != nil {
 			if msg := cmd(); msg != nil {
@@ -82,6 +82,43 @@ func press(m *Model, keys ...string) {
 			}
 		}
 	}
+}
+
+var namedKeys = map[string]rune{
+	"esc": tea.KeyEscape, "enter": tea.KeyEnter, "tab": tea.KeyTab, "space": tea.KeySpace,
+	"backspace": tea.KeyBackspace, "delete": tea.KeyDelete,
+	"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
+	"home": tea.KeyHome, "end": tea.KeyEnd, "pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown,
+}
+
+// keyPress is the KeyPressMsg whose String is name: "x", "esc", "ctrl+u".
+func keyPress(name string) tea.KeyPressMsg {
+	msg := tea.KeyPressMsg{}
+	rest := name
+	for _, mod := range []struct {
+		prefix string
+		mod    tea.KeyMod
+	}{{"ctrl+", tea.ModCtrl}, {"alt+", tea.ModAlt}, {"shift+", tea.ModShift}} {
+		if after, ok := strings.CutPrefix(rest, mod.prefix); ok && after != "" {
+			msg.Mod |= mod.mod
+			rest = after
+		}
+	}
+
+	if code, ok := namedKeys[rest]; ok {
+		msg.Code = code
+	} else {
+		msg.Code = []rune(rest)[0]
+		if msg.Mod == 0 {
+			msg.Text = rest
+		}
+	}
+
+	if msg.String() != name {
+		panic("no KeyPressMsg reads " + name)
+	}
+
+	return msg
 }
 
 // screen is m's screen as plain text, each line padded to the width.
@@ -198,11 +235,11 @@ func TestMainPanelTakesFocusAndGivesItBack(t *testing.T) {
 func TestConfirmOnQuitAsks(t *testing.T) {
 	m := start(t, options{configure: func(c *config.UserConfig) { c.ConfirmOnQuit = true }}, 140, 40)
 
-	assert.Nil(t, m.handleKey("q"))
+	assert.Nil(t, m.handleKey(keyPress("q")))
 	require.Len(t, m.popups, 1)
 	assert.Contains(t, screen(m)[39], "n/esc: no, y/enter: yes")
 
-	cmd := m.handleKey("y")
+	cmd := m.handleKey(keyPress("y"))
 	require.NotNil(t, cmd)
 	assert.IsType(t, tea.QuitMsg{}, cmd())
 }

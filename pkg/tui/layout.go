@@ -58,7 +58,7 @@ func (m *Model) dimensions(width, height int, information, appStatus string) map
 	}
 
 	infoSize := 0
-	if m.cfg.UserConfig.Gui.ShowBottomLine {
+	if m.cfg.UserConfig.Gui.ShowBottomLine || m.filter.active {
 		infoSize = 1
 	}
 
@@ -73,7 +73,7 @@ func (m *Model) dimensions(width, height int, information, appStatus string) map
 					{Window: mainView, Weight: mainWeight},
 				},
 			},
-			{Direction: boxlayout.COLUMN, Size: infoSize, Children: infoChildren(information, appStatus)},
+			{Direction: boxlayout.COLUMN, Size: infoSize, Children: m.infoChildren(information, appStatus)},
 		},
 	}
 
@@ -99,13 +99,20 @@ func (m *Model) midSectionWeights() (int, int) {
 	return sideWeight, mainWeight
 }
 
-func infoChildren(information, appStatus string) []*boxlayout.Box {
+func (m *Model) infoChildren(information, appStatus string) []*boxlayout.Box {
 	children := []*boxlayout.Box{}
 	if appStatus != "" {
 		children = append(children, &boxlayout.Box{
 			Window: appStatusView,
 			Size:   ansi.StringWidth(appStatus) + ansi.StringWidth(infoSectionPadding),
 		})
+	}
+
+	if m.filter.active {
+		return append(children,
+			&boxlayout.Box{Window: filterPrefixView, Size: ansi.StringWidth(m.filterPrompt())},
+			&boxlayout.Box{Window: filterView, Weight: 1},
+		)
 	}
 
 	return append(children,
