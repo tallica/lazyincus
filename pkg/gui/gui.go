@@ -637,6 +637,7 @@ func (gui *Gui) run(g *gocui.Gui) error {
 				gui.Log.Warn().Err(err).Send()
 			}
 		}
+		gui.goEvery(time.Second*2, gui.refreshStacksIfEdited)
 	}()
 
 	err := g.MainLoop()

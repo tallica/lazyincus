@@ -79,6 +79,9 @@ type ComposeService struct {
 	Image    string
 	Replicas int
 
+	// Hash is `incus-compose config --hash` for the file as it stands.
+	Hash string
+
 	// The rest of what the compose file declares for this service, as the
 	// Info tab prints it: already rendered, since only display wants them.
 	Command   string
@@ -117,6 +120,28 @@ func (s *ComposeService) Status() string {
 	}
 
 	return RollUpStatus(statuses)
+}
+
+// ConfigChanged follows upstream: a missing hash is no change.
+func (s *ComposeService) ConfigChanged(instance *Instance) bool {
+	return configChanged(s.Hash, instance.ComposeHash())
+}
+
+func configChanged(current, created string) bool {
+	return current != "" && created != "" && created != current
+}
+
+// ChangedInstances are the instances `up` would recreate.
+func (s *ComposeService) ChangedInstances() []*Instance {
+	var changed []*Instance
+
+	for _, instance := range s.SortedInstances() {
+		if s.ConfigChanged(instance) {
+			changed = append(changed, instance)
+		}
+	}
+
+	return changed
 }
 
 // NamedVolumes are the compose volumes the service mounts, leaving out its

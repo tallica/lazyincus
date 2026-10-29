@@ -98,10 +98,12 @@ gui:
   # plus "replicas", which is blank unless the service has a different
   # number of instances from what the compose file declared. It counts what
   # exists, not what's running - the status column says what state they're
-  # in, and each replica has a row of its own saying which.
+  # in, and each replica has a row of its own saying which. "changed" marks
+  # what was created from an older compose config, which U can recreate.
   serviceColumns:
     - name
     - status
+    - changed
     - replicas
     - health
     - ipv4
