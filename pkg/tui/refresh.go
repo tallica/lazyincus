@@ -170,8 +170,9 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 }
 
 type refreshSeqs struct {
-	instances refreshSeq
-	images    refreshSeq
+	instances    refreshSeq
+	images       refreshSeq
+	imageUpdates refreshSeq
 }
 
 // refreshEnding is pkg/gui's: ends come off even when a fetch fails.

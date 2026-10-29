@@ -40,7 +40,9 @@ type Model struct {
 	mainTask        mainTask
 	// pendingMain starts the task fitMain queued, for Update to return.
 	pendingMain tea.Cmd
-	tasks       *tasks.TaskManager
+	// queued is what a fetch's apply started, which has no Cmd to return.
+	queued []tea.Cmd
+	tasks  *tasks.TaskManager
 	// runTask stands in for pkg/tasks in tests.
 	runTask func(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd
 	// mainParent is gocui's main ParentView: the panel enter came from.
@@ -62,9 +64,9 @@ type Model struct {
 	images     []*commands.Image
 	imagesSpan bool
 	// upstreams are the registry checks by image fingerprint, nil before the first.
-	upstreams   map[string]commands.UpstreamStatus
-	showProject bool
-	showStopped bool
+	upstreams     map[string]commands.UpstreamStatus
+	showProject   bool
+	showStopped   bool
 	instanceUsers *instanceUsers
 
 	refreshes refreshSeqs
@@ -78,6 +80,8 @@ type Model struct {
 	polledAt       map[refreshKind]time.Time
 	connectionLost bool
 	configModTime  time.Time
+	// checkUpstreams asks the registries; tests stand in for them.
+	checkUpstreams func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus
 	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
 	runIncus func(*exec.Cmd) (string, error)
 	// after stands in for tea.Tick in tests.
@@ -103,6 +107,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		tasks:            tasks.NewTaskManager(incus.Log, tr),
 		streamEvents:     true,
 		runIncus:         osCommand.RunExecutableWithOutput,
+		checkUpstreams:   commands.NewRegistryChecker().CheckAll,
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true
@@ -128,6 +133,9 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 
 func (m *Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{m.refreshAll(), m.pollers()}
+	if m.cfg.UserConfig.Gui.CheckImageUpdatesOnStart {
+		cmds = append(cmds, refreshQuiet(nil, m.imageUpdatesFetch(false)))
+	}
 	if m.streamEvents {
 		cmds = append(cmds, m.listen(), m.receive())
 	}
@@ -139,10 +147,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmd := m.update(msg)
 	m.fitViews()
 
-	main := m.pendingMain
-	m.pendingMain = nil
+	main, queued := m.pendingMain, m.queued
+	m.pendingMain, m.queued = nil, nil
 
-	return m, tea.Batch(cmd, main)
+	return m, tea.Batch(append(queued, cmd, main)...)
 }
 
 // fitViews fits the lists and main to their windows: View only reads them.
@@ -236,6 +244,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	}
 
 	return nil
+}
+
+func (m *Model) queue(cmd tea.Cmd) {
+	m.queued = append(m.queued, cmd)
 }
 
 func (m *Model) quit() tea.Cmd {

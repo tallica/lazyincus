@@ -108,6 +108,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "images", key: "c", description: m.tr.EditInEditor, mutates: true, handler: onImage((*Model).imageEdit)},
 		&binding{view: "images", key: "u", description: m.tr.ShowUsers, handler: onImage((*Model).imageUsers)},
 		&binding{view: "images", key: "D", description: m.tr.PruneImages, mutates: true, noSelection: true, handler: (*Model).pruneImages},
+		&binding{view: "images", key: "g", description: m.tr.CheckImageUpdates, noSelection: true, handler: (*Model).checkImageUpdates},
 		&binding{view: "images", key: "y", description: m.tr.Copy, handler: onImage((*Model).imageCopy)},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},

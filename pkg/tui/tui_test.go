@@ -62,6 +62,7 @@ func newTestModel(t *testing.T, opts options) *Model {
 	m.after = func(time.Duration, tea.Msg) tea.Cmd { return nil }
 	m.streamEvents = false
 	m.runTask = runTaskHere
+	m.checkUpstreams = func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus { return nil }
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
 	m.panels = m.newPanels()

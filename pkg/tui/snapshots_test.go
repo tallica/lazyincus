@@ -11,28 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
-	"github.com/tallica/lazyincus/pkg/utils"
 )
-
-func snapshotRows(m *Model) []string {
-	p := m.panelNamed("snapshots")
-	rows := make([]string, len(p.rows))
-	for i, row := range p.rows {
-		rows[i] = strings.Join(strings.Fields(utils.Decolorise(row)), " ")
-	}
-
-	return rows
-}
 
 func TestSnapshotsFollowTheSelectedInstanceNewestFirst(t *testing.T) {
 	m := start(t, options{fixture: true}, 140, 40)
 
-	assert.Empty(t, snapshotRows(m), "a-name-long-enough-to-be-cut-off has none")
+	assert.Empty(t, rowsOf(m, "snapshots"), "a-name-long-enough-to-be-cut-off has none")
 	press(m, "j")
 	require.Equal(t, "web", m.selectedInstance().Name)
 	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
 
-	rows := snapshotRows(m)
+	rows := rowsOf(m, "snapshots")
 	require.Len(t, rows, 2)
 	assert.True(t, strings.HasPrefix(rows[0], "daily-b "), rows[0])
 	assert.True(t, strings.HasPrefix(rows[1], "daily-a "), rows[1])
@@ -55,13 +44,13 @@ func TestESnapshotsListsEveryInstancesWithItsOwner(t *testing.T) {
 
 	press(m, "2", "e")
 	assert.Equal(t, "Snapshots (all)", m.snapshotsTitle())
-	rows := snapshotRows(m)
+	rows := rowsOf(m, "snapshots")
 	require.Len(t, rows, 2)
 	assert.True(t, strings.HasPrefix(rows[0], "daily-b web "), rows[0])
 
 	press(m, "e")
 	assert.Equal(t, "Snapshots (a-name-long-enough-to-be-cut-off)", m.snapshotsTitle(), "back to Instances' selection")
-	assert.Empty(t, snapshotRows(m))
+	assert.Empty(t, rowsOf(m, "snapshots"))
 }
 
 func TestTheSnapshotConfigTabNamesItsInstance(t *testing.T) {

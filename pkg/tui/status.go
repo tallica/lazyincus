@@ -45,6 +45,25 @@ func (m *Model) withWaitingStatusThen(name string, f func() error, then func(err
 	return tea.Batch(m.spin(), func() tea.Msg { return waitingDoneMsg{name: name, err: f(), then: then} })
 }
 
+// waitingRefresh is pkg/gui's WithWaitingStatus around a refresh: the status spans the fetches.
+func (m *Model) waitingRefresh(name string, fetches ...fetch) tea.Cmd {
+	var applies []func()
+
+	return m.withWaitingStatusThen(name, func() error {
+		var err error
+		applies, err = gather(fetches)
+		return err
+	}, func(err error) tea.Cmd {
+		for _, apply := range applies {
+			apply()
+		}
+		if err != nil {
+			m.handleError(err)
+		}
+		return nil
+	})
+}
+
 // withTransientStatus is pkg/gui's WithTransientStatus.
 func (m *Model) withTransientStatus(name string, duration time.Duration) tea.Cmd {
 	m.addStatus(appStatus{name: name})

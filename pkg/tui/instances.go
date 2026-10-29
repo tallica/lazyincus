@@ -140,7 +140,7 @@ func (m *Model) toggleStoppedInstances() {
 func (m *Model) instanceCells() [][]string {
 	cells := make([][]string, len(m.instances))
 	for i, instance := range m.instances {
-		cells[i] = presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, m.showProject, nil)
+		cells[i] = presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, m.showProject, m.upstreams)
 	}
 
 	return cells
