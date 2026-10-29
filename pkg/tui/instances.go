@@ -14,22 +14,22 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-type instancesMsg struct {
-	seq       int
-	instances []*commands.Instance
-	err       error
-}
-
 type execDoneMsg struct{ err error }
 
-func (m *Model) fetchInstances() tea.Cmd {
-	m.fetchSeq++
-	seq := m.fetchSeq
+func (m *Model) fetchInstances() fetch {
+	ticket := m.refreshes.instances.issue()
 
-	return func() tea.Msg {
+	return func() (func(), error) {
 		instances, err := m.incus.GetInstances()
+		if err != nil {
+			return nil, err
+		}
 
-		return instancesMsg{seq: seq, instances: instances, err: err}
+		return func() {
+			if m.refreshes.instances.admit(ticket) {
+				m.setInstances(instances)
+			}
+		}, nil
 	}
 }
 
@@ -59,6 +59,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	m.showProject = len(projects) > 1
 
 	p := m.panelNamed("instances")
+	p.awaiting = ""
 	p.cells = m.instanceCells()
 	m.filterList(p)
 	for row, item := range p.shown {

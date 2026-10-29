@@ -3,6 +3,7 @@ package tui
 import (
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -21,6 +22,8 @@ type options struct {
 	// fixture is pkg/gui's screen-test daemon in place of the small one.
 	fixture   bool
 	configure func(*config.UserConfig)
+	// server is the daemon, for a test that changes it, in place of either.
+	server *incustest.Server
 }
 
 func newTestModel(t *testing.T, opts options) *Model {
@@ -48,9 +51,14 @@ func newTestModel(t *testing.T, opts options) *Model {
 	if opts.fixture {
 		server = incustest.Fixture()
 	}
+	if opts.server != nil {
+		server = opts.server
+	}
 	incus := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, server, "fake")
 
 	m := NewModel(incus, osCommand, tr, appConfig)
+	// Ticks never fire on their own: a test sends the message itself.
+	m.after = func(time.Duration, tea.Msg) tea.Cmd { return nil }
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
 	m.panels = m.newPanels()
@@ -66,9 +74,33 @@ func start(t *testing.T, opts options, width, height int) *Model {
 
 	m := newTestModel(t, opts)
 	m.Update(tea.WindowSizeMsg{Width: width, Height: height})
-	m.Update(m.Init()())
+	run(m, m.Init())
 
 	return m
+}
+
+// run runs cmd and every Cmd its messages lead to, in order, as the program
+// would but on this goroutine.
+func run(m *Model, cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+
+	switch msg := cmd().(type) {
+	case nil:
+	case tea.BatchMsg:
+		for _, cmd := range msg {
+			run(m, cmd)
+		}
+	default:
+		_, next := m.Update(msg)
+		run(m, next)
+	}
+}
+
+// refreshInstances is a keypress's refresh of the instances, run to the end.
+func refreshInstances(m *Model) {
+	run(m, refresh(m.fetchInstances()))
 }
 
 // press types keys by name, as Update would take them from KeyPressMsg.
@@ -76,11 +108,7 @@ func press(m *Model, keys ...string) {
 	for _, key := range keys {
 		cmd := m.handleKey(keyPress(key))
 		m.fitViews()
-		if cmd != nil {
-			if msg := cmd(); msg != nil {
-				m.Update(msg)
-			}
-		}
+		run(m, cmd)
 	}
 }
 
@@ -159,19 +187,44 @@ func TestSelectionFollowsTheInstanceAcrossRefresh(t *testing.T) {
 	press(m, "j")
 	require.Equal(t, "web", m.selectedInstance().Name)
 
-	m.Update(m.fetchInstances()())
+	refreshInstances(m)
 	assert.Equal(t, "web", m.selectedInstance().Name)
 }
 
 func TestLateFetchIsDropped(t *testing.T) {
+	server := incustest.New(incustest.Server{Version: "7.4"})
+	server.SetInstances([]api.InstanceFull{{Instance: api.Instance{Name: "old", Project: "default", Status: "Running"}}})
+	m := start(t, options{server: server}, 90, 16)
+
+	late := refresh(m.fetchInstances())()
+	server.SetInstances([]api.InstanceFull{{Instance: api.Instance{Name: "new", Project: "default", Status: "Running"}}})
+	refreshInstances(m)
+	m.Update(late)
+
+	require.Len(t, m.instances, 1)
+	assert.Equal(t, "new", m.instances[0].Name)
+}
+
+func TestPanelsSayLoadingUntilRefreshAllLands(t *testing.T) {
 	m := newTestModel(t, options{})
 	m.Update(tea.WindowSizeMsg{Width: 90, Height: 16})
 
-	m.fetchInstances()
-	m.Update(m.fetchInstances()())
-	m.Update(instancesMsg{seq: 1})
+	assert.Contains(t, screen(m)[1], "Loading…")
+	run(m, m.refreshAll())
+	assert.Contains(t, screen(m)[1], "cache")
+	for _, p := range m.panels {
+		assert.Empty(t, p.awaiting, p.name)
+	}
+}
 
-	assert.Len(t, m.instances, 3)
+func TestAnUnreachableDaemonIsNoErrorPopup(t *testing.T) {
+	server := incustest.New(incustest.Server{Version: "7.4"})
+	m := start(t, options{server: server}, 90, 16)
+
+	server.SetDown(true)
+	refreshInstances(m)
+	assert.Empty(t, m.popups, "an unreachable daemon is the footer's to report")
+	assert.False(t, m.incus.IsConnected())
 }
 
 func TestExecRefusedOnReadOnlyInAnErrorPopup(t *testing.T) {

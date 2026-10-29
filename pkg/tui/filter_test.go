@@ -86,7 +86,7 @@ func TestARefreshKeepsTheFilter(t *testing.T) {
 
 	press(m, "/")
 	typeText(m, "web")
-	m.Update(m.fetchInstances()())
+	refreshInstances(m)
 	assert.Equal(t, 1, m.panelNamed("instances").count())
 }
 

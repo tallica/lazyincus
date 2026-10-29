@@ -27,7 +27,9 @@ type panel struct {
 	fuzzy      bool
 	filterText func(item int) string
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
-	empty    string
+	empty string
+	// awaiting stands in for the list, and in main, until its first answer.
+	awaiting string
 	mainTabs func() []mainTab
 	// itemKey is pkg/gui's GetItemContextCacheKey for the selected row.
 	itemKey func() string
@@ -156,6 +158,9 @@ func (p *panel) fit(width int) {
 
 	p.rows = nil
 	if len(cells) == 0 {
+		if p.awaiting != "" {
+			p.rows = []string{utils.Truncate(p.awaiting, width)}
+		}
 		return
 	}
 	for _, row := range strings.Split(table, "\n") {
@@ -185,7 +190,7 @@ func (m *Model) newPanels() []*panel {
 	tr := m.tr
 	static := func(s string) func() string { return func() string { return s } }
 
-	return []*panel{
+	panels := []*panel{
 		{name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks},
 		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
 		{
@@ -205,6 +210,11 @@ func (m *Model) newPanels() []*panel {
 		{name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks},
 		{name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles},
 	}
+	for _, p := range panels {
+		p.awaiting = tr.Loading
+	}
+
+	return panels
 }
 
 func (m *Model) composeUnavailable() bool {

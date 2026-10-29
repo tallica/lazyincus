@@ -50,10 +50,9 @@ type Model struct {
 	instances   []*commands.Instance
 	showProject bool
 
-	// fetchSeq and appliedSeq stop a late fetch undoing a newer one.
-	fetchSeq   int
-	appliedSeq int
-	loaded     bool
+	refreshes refreshSeqs
+	// after stands in for tea.Tick in tests.
+	after func(time.Duration, tea.Msg) tea.Cmd
 }
 
 func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) *Model {
@@ -91,11 +90,7 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 }
 
 func (m *Model) Init() tea.Cmd {
-	return m.fetchInstances()
-}
-
-func poll() tea.Cmd {
-	return tea.Tick(pollInterval, func(time.Time) tea.Msg { return pollMsg{} })
+	return tea.Batch(m.refreshAll(), m.tick(pollInterval, pollMsg{}))
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -119,26 +114,18 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		m.width, m.height = msg.Width, msg.Height
 		m.clampLists()
 
-	case instancesMsg:
-		// Each answer re-arms the poll, so one is in flight at most.
-		if msg.seq < m.appliedSeq {
-			return nil
-		}
-		m.appliedSeq = msg.seq
-		if msg.err == nil {
-			m.setInstances(msg.instances)
-			m.loaded = true
-		}
-		return poll()
+	case refreshMsg:
+		return m.applyRefresh(msg)
 
 	case pollMsg:
-		return m.fetchInstances()
+		// Re-armed by the answer, so one poll is in flight at most.
+		return refreshQuiet(m.tick(pollInterval, pollMsg{}), m.fetchInstances())
 
 	case execDoneMsg:
 		if msg.err != nil {
 			m.openError(msg.err.Error())
 		}
-		return m.fetchInstances()
+		return refresh(m.fetchInstances())
 
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
@@ -222,7 +209,11 @@ func (m *Model) fitMain() {
 
 	p := m.currentSidePanel()
 	if p.count() == 0 {
-		m.main.set(p.name, p.empty, m.cfg.UserConfig.Gui.WrapMainPanel, false, w-2, h-2)
+		message := p.empty
+		if p.awaiting != "" {
+			message = p.awaiting
+		}
+		m.main.set(p.name, message, m.cfg.UserConfig.Gui.WrapMainPanel, false, w-2, h-2)
 		return
 	}
 	if p.mainTabs == nil {
