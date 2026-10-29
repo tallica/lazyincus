@@ -81,7 +81,7 @@ func (gui *Gui) renderImageConfig(image *commands.Image) tasks.TaskFunc {
 
 func (gui *Gui) imageConfigStr(image *commands.Image, upstream string) string {
 	padding := identityPadding
-	output := gui.locationStr(gui.sessionLocation(image.Image.Project))
+	output := presentation.LocationLines(gui.sessionLocation(image.Image.Project))
 	output += utils.WithPadding("Alias: ", padding) + image.Alias() + "\n"
 	output += utils.WithPadding("Fingerprint: ", padding) + image.Fingerprint + "\n"
 	output += utils.WithPadding("Type: ", padding) + image.Image.Type + "\n"

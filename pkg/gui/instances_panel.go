@@ -133,15 +133,8 @@ func (gui *Gui) renderInstanceConfig(instance *commands.Instance) tasks.TaskFunc
 	return gui.NewSimpleRenderStringTask(func() string { return gui.instanceConfigStr(instance) })
 }
 
-// instanceConfigStr is the dump alone: what used to head it - name, type,
-// status, created, profiles - is the Info tab's identity block now.
 func (gui *Gui) instanceConfigStr(instance *commands.Instance) string {
-	data, err := utils.MarshalIntoYaml(instance.Instance)
-	if err != nil {
-		return fmt.Sprintf("Error marshalling instance details: %v", err)
-	}
-
-	return utils.ColoredYamlString(string(data))
+	return presentation.InstanceConfig(instance)
 }
 
 func (gui *Gui) fetchInstances() (func() error, error) {

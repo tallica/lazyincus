@@ -238,7 +238,7 @@ func (gui *Gui) operationInfoStr(operation *commands.Operation) string {
 		return utils.WithPadding(label+": ", identityPadding) + value + "\n"
 	}
 
-	output := gui.locationStr(gui.sessionLocation(operation.Project))
+	output := presentation.LocationLines(gui.sessionLocation(operation.Project))
 	output += line("Description", op.Description)
 	output += line("Status", presentation.OperationStatus(operation, gui.operations.retried(operation)))
 	if op.Err != "" {

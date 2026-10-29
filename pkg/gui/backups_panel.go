@@ -103,7 +103,7 @@ func (gui *Gui) backupInfoStr(stack *commands.ComposeStack, backup *commands.Com
 			remote = gui.IncusCommand.RemoteName()
 		}
 
-		output += gui.locationStr(location{remote: remote, project: stack.Name, stack: gui.stackLabel(remote, stack.Name)})
+		output += presentation.LocationLines(location{Remote: remote, Project: stack.Name, Stack: gui.stackLabel(remote, stack.Name)})
 	}
 
 	output += line("Name", backup.Name)

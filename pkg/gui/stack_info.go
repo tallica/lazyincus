@@ -165,8 +165,8 @@ func (gui *Gui) stackIdentityStr(stack *commands.ComposeStack) string {
 		snapshots += len(instance.Instance.Snapshots)
 	}
 
-	output += line("Created", localTime(created))
-	output += line("Last used", localTime(lastUsed))
+	output += line("Created", presentation.LocalTime(created))
+	output += line("Last used", presentation.LocalTime(lastUsed))
 
 	if len(instances) > 0 {
 		output += line("Snapshots", strconv.Itoa(snapshots))
@@ -324,14 +324,14 @@ func stackUsageStr(instances []*commands.Instance) string {
 		root.Usage += max(state.Disk["root"].Usage, 0)
 	}
 
-	rootUsage := formatDiskUsage(root)
+	rootUsage := presentation.FormatDiskUsage(root)
 	if root.Usage > 0 && len(instances) > 1 {
 		rootUsage += fmt.Sprintf(" over %d instances", len(instances))
 	}
 
 	disks := map[string]string{"root": rootUsage}
 	for volume, usage := range volumes {
-		disks[volume] = formatDiskUsage(usage)
+		disks[volume] = presentation.FormatDiskUsage(usage)
 	}
 
 	counts := map[string]string{}
@@ -346,8 +346,8 @@ func stackUsageStr(instances []*commands.Instance) string {
 		column = max(column, len("  ")+utils.DisplayWidth(label+": "))
 	}
 
-	output := utils.WithPadding("CPU: ", column) + formatCPUUsage(cpu) + "\n"
-	output += utils.WithPadding("Memory: ", column) + formatMemoryUsage(memory) + "\n"
+	output := utils.WithPadding("CPU: ", column) + presentation.FormatCPUUsage(cpu) + "\n"
+	output += utils.WithPadding("Memory: ", column) + presentation.FormatMemoryUsage(memory) + "\n"
 	output += utils.WithPadding("Processes: ", column) + strconv.FormatInt(processes, 10) + "\n"
 
 	output += "\nDisk:\n" + nestedLines(disks, append([]string{"root"}, slices.Sorted(maps.Keys(volumes))...), column)

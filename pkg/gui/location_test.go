@@ -167,7 +167,7 @@ func TestLocationFallbacks(t *testing.T) {
 	}, 5*time.Second, 20*time.Millisecond)
 
 	instance := &commands.Instance{Name: "api-1", Project: "shop", Instance: composeFixture("shop", "api-1", "api")}
-	assert.Equal(t, location{remote: "fake", project: "shop", stack: first.Dir, service: "api"},
+	assert.Equal(t, location{Remote: "fake", Project: "shop", Stack: first.Dir, Service: "api"},
 		s.gui.instanceLocation(instance))
 }
 

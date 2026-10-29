@@ -1,10 +1,8 @@
 package gui
 
 import (
-	"sort"
-	"strings"
-
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/tasks"
 )
 
@@ -15,21 +13,9 @@ func (gui *Gui) renderInstanceEnv(instance *commands.Instance) tasks.TaskFunc {
 }
 
 func (gui *Gui) instanceEnvStr(instance *commands.Instance) string {
-	const prefix = "environment."
-
-	vars := []string{}
-	for key, value := range instance.Instance.ExpandedConfig {
-		if !strings.HasPrefix(key, prefix) {
-			continue
-		}
-		vars = append(vars, strings.TrimPrefix(key, prefix)+"="+value)
+	if env := presentation.InstanceEnv(instance); env != "" {
+		return env
 	}
 
-	if len(vars) == 0 {
-		return gui.Tr.NothingToDisplay
-	}
-
-	sort.Strings(vars)
-
-	return strings.Join(vars, "\n")
+	return gui.Tr.NothingToDisplay
 }

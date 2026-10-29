@@ -3,54 +3,24 @@ package gui
 import (
 	"slices"
 
-	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/utils"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 )
 
-// location is where an item lives, broadest first, for the lines that head
-// its Info or Config tab: with several remotes, projects and stacks about,
-// the list it came from no longer says.
-type location struct {
-	remote  string
-	project string
-	// stack and service are a compose instance's, empty for anything else:
-	// the stack is where it's listed from, its name being the project's.
-	stack   string
-	service string
-}
-
-// locationStr is loc's lines, those it has no value for left out, and
-// those omit names too: a tab whose heading has already said them.
-func (gui *Gui) locationStr(loc location, omit ...string) string {
-	output := ""
-
-	for _, line := range [][2]string{
-		{"Remote", loc.remote},
-		{"Project", loc.project},
-		{"Stack", loc.stack},
-		{"Service", loc.service},
-	} {
-		if line[1] != "" && !lo.Contains(omit, line[0]) {
-			output += utils.WithPadding(line[0]+": ", identityPadding) + line[1] + "\n"
-		}
-	}
-
-	return output
-}
+type location = presentation.Location
 
 // sessionLocation is where an item the session's panels list lives: the
 // resources, which only ever show its remote.
 func (gui *Gui) sessionLocation(project string) location {
-	return location{remote: gui.IncusCommand.RemoteName(), project: project}
+	return location{Remote: gui.IncusCommand.RemoteName(), Project: project}
 }
 
 // instanceLocation is an instance's, its stack and service named when
 // incus-compose made it.
 func (gui *Gui) instanceLocation(instance *commands.Instance) location {
-	loc := location{remote: instance.Remote, project: instance.Project}
-	if loc.remote == "" {
-		loc.remote = gui.IncusCommand.RemoteName()
+	loc := location{Remote: instance.Remote, Project: instance.Project}
+	if loc.Remote == "" {
+		loc.Remote = gui.IncusCommand.RemoteName()
 	}
 
 	service := instance.ComposeService()
@@ -58,8 +28,8 @@ func (gui *Gui) instanceLocation(instance *commands.Instance) location {
 		return loc
 	}
 
-	loc.stack = gui.stackLabel(loc.remote, instance.Project)
-	loc.service = service
+	loc.Stack = gui.stackLabel(loc.Remote, instance.Project)
+	loc.Service = service
 
 	return loc
 }

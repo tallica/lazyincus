@@ -88,7 +88,7 @@ func (gui *Gui) renderVolumeConfig(volume *commands.Volume) tasks.TaskFunc {
 
 func (gui *Gui) volumeConfigStr(volume *commands.Volume) string {
 	padding := identityPadding
-	output := gui.locationStr(gui.sessionLocation(volume.Volume.Project))
+	output := presentation.LocationLines(gui.sessionLocation(volume.Volume.Project))
 	size := presentation.DisplayVolumeUsage(volume)
 	if size == "" {
 		size = gui.Tr.VolumeSizeUnknown

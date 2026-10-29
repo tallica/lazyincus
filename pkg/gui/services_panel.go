@@ -159,7 +159,7 @@ func (gui *Gui) serviceInfoStr(row *commands.ServiceRow) string {
 		remote = gui.IncusCommand.RemoteName()
 	}
 
-	output := gui.locationStr(location{remote: remote, project: service.Project, stack: gui.stackLabel(remote, service.Project)})
+	output := presentation.LocationLines(location{Remote: remote, Project: service.Project, Stack: gui.stackLabel(remote, service.Project)})
 	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
 	output += line("Registry", gui.upstreamVerdict(commands.MostTelling(gui.upstreams(), presentation.BaseImages(row.Instances())...)))
