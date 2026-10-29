@@ -19,8 +19,8 @@ func (m *Model) openPaletteKey() {
 
 // openPalette is pkg/gui's; scoped to item, only view's actions on it.
 func (m *Model) openPalette(view, item string) {
-	// A list's filter would be left applied with no way to clear it.
-	if m.filter.panel != "" {
+	// The palette takes the prompt over, from a list's filter or a search.
+	if m.filter.active {
 		m.clearFilter()
 	}
 

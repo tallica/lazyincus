@@ -164,3 +164,17 @@ func TestThePaletteFrame(t *testing.T) {
 	assert.Regexp(t, `^.{17}`+regexp.QuoteMeta("╭─Commands─"), top)
 	assert.Contains(t, top, "─"+m.tr.CommandPaletteHint+"─────╮")
 }
+
+func TestThePaletteTakesOverFromASearch(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+
+	press(m, "enter", "/")
+	typeText(m, "Name")
+	press(m, "enter")
+	openPaletteWith(m, "next tab")
+
+	assert.False(t, m.filter.search)
+	assert.False(t, m.main.searching())
+	assert.Contains(t, screen(m)[39], "run: next tab")
+	assert.Regexp(t, `\] +Instances +next tab`, strings.Join(screen(m), "\n"))
+}
