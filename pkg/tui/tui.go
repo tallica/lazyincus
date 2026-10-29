@@ -47,6 +47,8 @@ type Model struct {
 	mainParent string
 	filter     filter
 	appStatus  string
+	statuses   []appStatus
+	spinning   bool
 
 	composeAvailable bool
 	// stacksHere stays false: nothing loads stacks yet.
@@ -128,6 +130,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // fitViews fits the lists and main to their windows: View only reads them.
 func (m *Model) fitViews() {
+	m.fitStatus()
 	m.fitLists()
 	m.fitMain()
 	m.fitFilter()
@@ -145,6 +148,15 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case mainWriteMsg:
 		m.onMainWrite(msg)
+
+	case waitingDoneMsg:
+		m.onWaitingDone(msg)
+
+	case transientDoneMsg:
+		m.removeStatus(msg.name)
+
+	case spinnerMsg:
+		return m.onSpinner()
 
 	case received:
 		return tea.Batch(m.update(msg.msg), m.receive())

@@ -44,6 +44,11 @@ func (m *Model) render() string {
 		place(optionsView, fit(tint(m.options(), m.theme.options), w))
 	}
 
+	if d, ok := dims[appStatusView]; ok {
+		w, _ := size(d)
+		place(appStatusView, fit(tint(m.appStatus, "\x1b[36m"), w))
+	}
+
 	if _, ok := dims[informationView]; ok {
 		place(informationView, tint(m.information(), "\x1b[32m"))
 	}
