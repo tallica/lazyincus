@@ -11,8 +11,9 @@ import (
 type frameSpec struct {
 	prefix string
 	title  string
-	// subtitle is right-aligned on the top edge, five in from the corner.
+	// subtitle sits on the top edge five in from the corner, footer on the bottom one in.
 	subtitle string
+	footer   string
 	tabs     []string
 	tab      int
 	body     []string
@@ -66,7 +67,12 @@ func (t theme) frame(s frameSpec, w, h int) string {
 		lines = append(lines, side+line+right)
 	}
 
-	lines = append(lines, border+r.bl+strings.Repeat(r.h, inner)+r.br+reset)
+	bottom := border + r.bl + strings.Repeat(r.h, inner) + r.br + reset
+	// gocui's drawListFooter skips one that would start left of the frame.
+	if fw := ansi.StringWidth(s.footer); s.footer != "" && w-2-fw >= 1 {
+		bottom = border + r.bl + strings.Repeat(r.h, w-3-fw) + s.footer + r.h + r.br + reset
+	}
+	lines = append(lines, bottom)
 
 	return strings.Join(lines, "\n")
 }

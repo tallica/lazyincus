@@ -218,7 +218,7 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		switch {
 		case m.currentView() == filterView:
 			return m.editFilter(msg)
-		case m.topPrompt() != nil:
+		case m.topPrompt() != nil && m.currentView() == confirmationView:
 			return m.editPrompt(msg)
 		}
 	}
@@ -366,7 +366,7 @@ func (m *Model) View() tea.View {
 		view.Cursor = tea.NewCursor(d.X0+m.filterCursorX()-m.filter.ox, d.Y0)
 	}
 
-	if p := m.topPrompt(); p != nil {
+	if p := m.topPrompt(); p != nil && m.currentView() == confirmationView {
 		x0, y0, x1, _, _ := m.popupLayout(p)
 		row, col := promptCursor(p.input, max(x1-x0-1, 1))
 		view.Cursor = tea.NewCursor(x0+1+col, y0+1+row)

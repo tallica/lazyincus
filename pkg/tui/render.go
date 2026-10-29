@@ -70,8 +70,13 @@ func (m *Model) render() string {
 			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, m.theme.selectedBg)
 			spec.origin = p.menu.list.origin
 		}
+		id := p.view
+		if p.snapshot != nil {
+			id, spec.focused = confirmationView, spec.focused && p.view == confirmationView
+			layers = append(layers, lipgloss.NewLayer(m.snapshotOptionsFrame(p, x0, x1)).ID(snapshotOptionsView).X(x0).Y(y1+1).Z(i+1))
+		}
 		frame := m.theme.frame(spec, x1-x0+1, y1-y0+1)
-		layers = append(layers, lipgloss.NewLayer(frame).ID(p.view).X(x0).Y(y0).Z(i+1))
+		layers = append(layers, lipgloss.NewLayer(frame).ID(id).X(x0).Y(y0).Z(i+1))
 	}
 
 	return m.compose(layers)
@@ -202,6 +207,8 @@ func (m *Model) options() string {
 		switch {
 		case top.menu != nil:
 			options = m.menuOptionsMap(top.menu)
+		case top.view == snapshotOptionsView:
+			options = m.snapshotOptionsKeys()
 		case top.input != nil:
 			options = map[string]string{"esc": m.tr.Close, "enter": m.tr.Submit}
 		case top.asks:

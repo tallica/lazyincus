@@ -189,3 +189,49 @@ func TestYOffersASnapshotsNameAndReference(t *testing.T) {
 	require.NotNil(t, m.topMenu())
 	assert.Contains(t, strings.Join(screen(m), "\n"), "web/daily-b")
 }
+
+func TestNOnInstancesTakesASnapshotAndLandsOnIt(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+	press(m, "j")
+
+	press(m, "n")
+	require.NotNil(t, m.topPrompt())
+	assert.Equal(t, "New snapshot of web", m.topPrompt().title)
+	typeText(m, "manual")
+	press(m, "enter")
+
+	assert.Equal(t, "snapshots", m.currentView())
+	assert.Equal(t, "manual", m.selectedSnapshot().Name)
+	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
+}
+
+func TestTheSnapshotOptionsAreFieldsTabReaches(t *testing.T) {
+	m := onWebsNewest(t, options{})
+
+	press(m, "n", "tab")
+	assert.Equal(t, snapshotOptionsView, m.currentView())
+	assert.Contains(t, footer(m), "← →: change value")
+	assert.Contains(t, strings.Join(screen(m), "\n"), "<enter> or <ctrl+s> to create")
+
+	press(m, "l", "j", "space")
+	opts := m.popups[0].snapshot.options()
+	assert.True(t, opts.NoExpiry)
+	assert.True(t, opts.Stateful)
+	assert.Contains(t, strings.Join(screen(m), "\n"), "Stateful    ‹ yes ›")
+
+	press(m, "enter")
+	assert.Equal(t, confirmationView, m.currentView(), "no name yet: back to it")
+	press(m, "q")
+	assert.Equal(t, "q", m.topPrompt().input.Value(), "typed in the name, not closing")
+
+	press(m, "tab", "q")
+	assert.Empty(t, m.popups, "q closes from the options")
+}
+
+func TestNIsRefusedReadOnly(t *testing.T) {
+	m := onWebsNewest(t, options{readOnly: true})
+
+	press(m, "n")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, m.popups[0].message, "--read-only")
+}

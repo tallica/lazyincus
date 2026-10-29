@@ -20,14 +20,16 @@ func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) te
 }
 
 // selectSnapshot is pkg/gui's Select: the cursor onto the snapshot with key, if shown.
-func (m *Model) selectSnapshot(key string) {
+func (m *Model) selectSnapshot(key string) bool {
 	p := m.panelNamed("snapshots")
 	for row, item := range p.shown {
 		if m.snapshots[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
-			return
+			return true
 		}
 	}
+
+	return false
 }
 
 // snapshotOwnerName is pkg/gui's, for an instance's snapshot.

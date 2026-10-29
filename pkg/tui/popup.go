@@ -20,8 +20,9 @@ type popup struct {
 	asks     bool
 	bindings []*binding
 	menu     *menu
-	// input makes it a text prompt.
-	input *textinput.Model
+	// input makes it a text prompt; snapshot, the new-snapshot one.
+	input    *textinput.Model
+	snapshot *snapshotPrompt
 	// subtitle is the hint as written, fittedSubtitle as drawn.
 	subtitle       string
 	fittedSubtitle string
