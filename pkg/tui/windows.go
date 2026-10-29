@@ -172,6 +172,9 @@ func (m *Model) focusView(name string) {
 		if window := m.windowOf(name); window != name {
 			m.activeViews[window] = name
 		}
+	} else if len(m.focus) == 0 {
+		// gocui focuses the initial view at startup, under whatever follows.
+		m.focus = []string{m.initialView()}
 	}
 
 	m.focus = append(slices.DeleteFunc(m.focus, func(view string) bool { return view == name }), name)

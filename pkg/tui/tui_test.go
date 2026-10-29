@@ -232,3 +232,12 @@ func TestMainScrollKeys(t *testing.T) {
 	assert.False(t, m.main.autoscroll)
 	assert.Equal(t, len(m.main.lines)-6-step, m.main.oy)
 }
+
+func TestEscFromMainReturnsToTheFirstList(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+
+	press(m, "enter")
+	assert.Equal(t, mainView, m.currentView())
+	press(m, "esc")
+	assert.Equal(t, "instances", m.currentView())
+}
