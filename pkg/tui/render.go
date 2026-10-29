@@ -58,10 +58,15 @@ func (m *Model) render() string {
 	}
 
 	for i, p := range m.popups {
-		x0, y0, x1, y1, lines := popupLayout(p, m.width, m.height)
+		x0, y0, x1, y1, lines := m.popupLayout(p)
 		spec := frameSpec{title: p.title, body: lines, focused: i == len(m.popups)-1, total: len(lines)}
+		if p.menu != nil {
+			// gocui's menu highlights its selection focused or not.
+			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, m.theme.selectedBg)
+			spec.origin = p.menu.list.origin
+		}
 		frame := m.theme.frame(spec, x1-x0+1, y1-y0+1)
-		layers = append(layers, lipgloss.NewLayer(frame).ID(popupView).X(x0).Y(y0).Z(i+1))
+		layers = append(layers, lipgloss.NewLayer(frame).ID(p.view).X(x0).Y(y0).Z(i+1))
 	}
 
 	return m.compose(layers)
@@ -121,8 +126,6 @@ func (m *Model) sideTitle(p *panel, window string) string {
 
 // listBody is a list's visible rows, highlighted as gocui's onFocusChange.
 func (m *Model) listBody(p *panel, width, rows int) []string {
-	all := p.rows
-
 	bg := ""
 	switch {
 	case m.currentView() == p.name:
@@ -131,6 +134,11 @@ func (m *Model) listBody(p *panel, width, rows int) []string {
 		bg = m.theme.inactiveSelected
 	}
 
+	return m.rowsBody(p, width, rows, bg)
+}
+
+func (m *Model) rowsBody(p *panel, width, rows int, bg string) []string {
+	all := p.rows
 	end := min(p.origin+rows, len(all))
 	body := make([]string, 0, max(end-p.origin, 0))
 	for i := p.origin; i < end; i++ {
@@ -185,9 +193,14 @@ func (m *Model) options() string {
 	}
 
 	if len(m.popups) > 0 {
-		options = map[string]string{"esc/enter": m.tr.Close}
-		if m.popups[len(m.popups)-1].asks {
+		top := m.popups[len(m.popups)-1]
+		switch {
+		case top.menu != nil:
+			options = m.menuOptionsMap(top.menu)
+		case top.asks:
 			options = map[string]string{"n/esc": m.tr.No, "y/enter": m.tr.Yes}
+		default:
+			options = map[string]string{"esc/enter": m.tr.Close}
 		}
 	}
 

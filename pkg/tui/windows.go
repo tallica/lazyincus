@@ -138,7 +138,7 @@ func fitActiveTab(panels []*panel, active *panel, room int) []string {
 
 func (m *Model) currentView() string {
 	if len(m.popups) > 0 {
-		return popupView
+		return m.popups[len(m.popups)-1].view
 	}
 
 	return m.currentStaticView()

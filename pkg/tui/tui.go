@@ -110,6 +110,7 @@ func (m *Model) fitViews() {
 	m.fitLists()
 	m.fitMain()
 	m.fitFilter()
+	m.fitPopups()
 }
 
 func (m *Model) update(msg tea.Msg) tea.Cmd {

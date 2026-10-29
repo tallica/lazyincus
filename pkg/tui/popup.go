@@ -9,15 +9,15 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// popupView is what currentView names while a popup has the focus.
-const popupView = "popup"
-
 // popup is a message, or with asks a question; the top one has the keys.
 type popup struct {
+	// view is pkg/gui's view for it: confirmationView or menuView.
+	view     string
 	title    string
 	message  string
 	asks     bool
 	bindings []*binding
+	menu     *menu
 }
 
 func (m *Model) openError(message string) {
@@ -26,12 +26,12 @@ func (m *Model) openError(message string) {
 
 // openMessage is pkg/gui's createMessagePanel.
 func (m *Model) openMessage(title, message string) {
-	m.openPopup(&popup{title: title, message: message}, nil, nil)
+	m.openPopup(&popup{view: confirmationView, title: title, message: message}, nil, nil)
 }
 
 // openConfirmation is pkg/gui's createConfirmationPanel.
 func (m *Model) openConfirmation(title, message string, onYes func() tea.Cmd) {
-	m.openPopup(&popup{title: title, message: message, asks: true}, onYes, nil)
+	m.openPopup(&popup{view: confirmationView, title: title, message: message, asks: true}, onYes, nil)
 }
 
 // openPopup is pkg/gui's createPopupPanel: enter/y confirm, esc/n close.
@@ -51,7 +51,7 @@ func (m *Model) openPopup(p *popup, onConfirm, onClose func() tea.Cmd) {
 		key     string
 		handler func(*Model) tea.Cmd
 	}{{"enter", confirm}, {"y", confirm}, {"esc", closeIt}, {"n", closeIt}} {
-		p.bindings = append(p.bindings, &binding{view: popupView, key: k.key, handler: k.handler})
+		p.bindings = append(p.bindings, &binding{view: confirmationView, key: k.key, handler: k.handler})
 	}
 
 	m.popups = append(m.popups, p)
@@ -80,11 +80,31 @@ func popupRows(screenHeight, rows int) (int, int) {
 	return screenHeight/2 - rows/2 - rows%2 - 1, screenHeight/2 + rows/2
 }
 
-// popupLayout is p's rectangle on this screen, and its wrapped lines.
-func popupLayout(p *popup, width, height int) (x0, y0, x1, y1 int, lines []string) {
-	x0, x1 = popupColumns(width, 0)
-	lines = strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n")
-	y0, y1 = popupRows(height, len(lines))
+// popupLayout is pkg/gui's resizePopupPanel: p's rectangle and its lines.
+func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
+	minWidth := 0
+	if p.menu != nil && p.menu.wide {
+		minWidth = m.width * 3 / 4
+	}
+	x0, x1 = popupColumns(m.width, minWidth)
+
+	if p.menu != nil {
+		p.menu.list.fit(x1 - x0 - 1)
+		lines = p.menu.list.rows
+	} else {
+		lines = strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n")
+	}
+	y0, y1 = popupRows(m.height, len(lines))
 
 	return x0, y0, x1, y1, lines
+}
+
+// fitPopups fits each menu to its popup, its selection kept in sight.
+func (m *Model) fitPopups() {
+	for _, p := range m.popups {
+		if p.menu != nil {
+			_, y0, _, y1, _ := m.popupLayout(p)
+			p.menu.list.selectRow(p.menu.list.selected, y1-y0-1)
+		}
+	}
 }

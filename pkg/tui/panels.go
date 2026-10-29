@@ -21,6 +21,8 @@ type panel struct {
 	cells [][]string
 	shown []int
 	flex  func() []utils.FlexColumn
+	// keep is pkg/gui's Filter: an item it refuses is never shown.
+	keep func(item int) bool
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty    string
 	mainTabs func() []mainTab
@@ -79,6 +81,9 @@ func (p *panel) filter(needle string, ignore []string) {
 
 	p.shown = p.shown[:0]
 	for i, cells := range p.cells {
+		if p.keep != nil && !p.keep(i) {
+			continue
+		}
 		if slices.ContainsFunc(ignore, func(s string) bool { return contains(cells, s) }) {
 			continue
 		}

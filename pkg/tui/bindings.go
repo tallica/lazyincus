@@ -76,6 +76,11 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "ctrl+d", handler: scroll(1)},
 		&binding{key: "end", handler: do(func(m *Model) { m.main.autoscroll = true })},
 		&binding{key: "home", handler: do((*Model).jumpToTopMain)},
+		&binding{key: "x", handler: do((*Model).openOptionsMenu)},
+		&binding{key: "?", handler: do((*Model).openOptionsMenu)},
+	)
+	bindings = append(bindings, m.menuBindings()...)
+	bindings = append(bindings,
 		&binding{view: "instances", key: "E", description: m.tr.ExecShell, mutates: true, handler: (*Model).execShell},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
@@ -125,6 +130,14 @@ func (m *Model) bindings() []*binding {
 	for _, p := range m.panels {
 		upDown(p.name, do(func(m *Model) { m.moveSelection(p, -1) }), do(func(m *Model) { m.moveSelection(p, 1) }))
 	}
+	menuStep := func(step int) func(*Model) tea.Cmd {
+		return do(func(m *Model) {
+			if mn := m.topMenu(); mn != nil {
+				m.moveSelection(mn.list, step)
+			}
+		})
+	}
+	upDown(menuView, menuStep(-1), menuStep(1))
 	upDown(mainView, scroll(-1), scroll(1))
 
 	for _, p := range m.panels {
