@@ -20,6 +20,13 @@ type appStatus struct {
 type waitingDoneMsg struct {
 	name string
 	err  error
+	then func(error) tea.Cmd
+}
+
+// heldStatusMsg is what a waiting status's then led to, the status on until it lands.
+type heldStatusMsg struct {
+	name string
+	msg  tea.Msg
 }
 
 type transientDoneMsg struct{ name string }
@@ -28,9 +35,14 @@ type spinnerMsg struct{}
 
 // withWaitingStatus is pkg/gui's WithWaitingStatus, f run off the loop.
 func (m *Model) withWaitingStatus(name string, f func() error) tea.Cmd {
+	return m.withWaitingStatusThen(name, f, nil)
+}
+
+// withWaitingStatusThen runs then on the loop with f's error; the status waits for its Cmd too.
+func (m *Model) withWaitingStatusThen(name string, f func() error, then func(error) tea.Cmd) tea.Cmd {
 	m.addStatus(appStatus{name: name, waiting: true})
 
-	return tea.Batch(m.spin(), func() tea.Msg { return waitingDoneMsg{name: name, err: f()} })
+	return tea.Batch(m.spin(), func() tea.Msg { return waitingDoneMsg{name: name, err: f(), then: then} })
 }
 
 // withTransientStatus is pkg/gui's WithTransientStatus.
@@ -68,11 +80,29 @@ func (m *Model) onSpinner() tea.Cmd {
 	return m.spin()
 }
 
-func (m *Model) onWaitingDone(msg waitingDoneMsg) {
-	m.removeStatus(msg.name)
-	if msg.err != nil {
-		m.openError(msg.err.Error())
+func (m *Model) onWaitingDone(msg waitingDoneMsg) tea.Cmd {
+	if msg.then == nil {
+		m.removeStatus(msg.name)
+		if msg.err != nil {
+			m.openError(msg.err.Error())
+		}
+		return nil
 	}
+
+	next := msg.then(msg.err)
+	if next == nil {
+		m.removeStatus(msg.name)
+		return nil
+	}
+
+	return func() tea.Msg { return heldStatusMsg{name: msg.name, msg: next()} }
+}
+
+func (m *Model) onHeldStatus(msg heldStatusMsg) tea.Cmd {
+	cmd := m.update(msg.msg)
+	m.removeStatus(msg.name)
+
+	return cmd
 }
 
 // fitStatus is pkg/gui's getStatusString.

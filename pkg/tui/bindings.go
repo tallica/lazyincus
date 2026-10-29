@@ -82,6 +82,11 @@ func (m *Model) bindings() []*binding {
 	)
 	bindings = append(bindings, m.menuBindings()...)
 	bindings = append(bindings,
+		&binding{view: "instances", key: "S", description: m.tr.Start, mutates: true, handler: onInstance((*Model).instanceStart)},
+		&binding{view: "instances", key: "s", description: m.tr.Stop, mutates: true, handler: onInstance((*Model).instanceStop)},
+		&binding{view: "instances", key: "r", description: m.tr.Restart, mutates: true, handler: onInstance((*Model).instanceRestart)},
+		&binding{view: "instances", key: "p", description: m.tr.Pause, mutates: true, handler: onInstance((*Model).instancePauseResume)},
+		&binding{view: "instances", key: "d", description: m.tr.Remove, mutates: true, handler: onInstance((*Model).instanceDelete)},
 		&binding{view: "instances", key: "e", description: m.tr.HideStopped, noSelection: true, handler: do((*Model).toggleStoppedInstances)},
 		&binding{view: "instances", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewInstanceLogs)},
 		&binding{view: "instances", key: "E", description: m.tr.ExecShell, mutates: true, handler: (*Model).execShell},

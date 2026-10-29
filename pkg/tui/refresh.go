@@ -171,3 +171,17 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 type refreshSeqs struct {
 	instances refreshSeq
 }
+
+// refreshEnding is pkg/gui's: ends come off even when a fetch fails.
+func refreshEnding(ends []func(), fetches ...fetch) tea.Cmd {
+	return func() tea.Msg {
+		applies, err := gather(fetches)
+
+		return refreshMsg{applies: applies, err: err, ending: ends}
+	}
+}
+
+// instanceFetches is pkg/gui's, for the panels ported so far.
+func (m *Model) instanceFetches() []fetch {
+	return []fetch{m.fetchInstances()}
+}

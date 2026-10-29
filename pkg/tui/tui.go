@@ -152,7 +152,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		m.onMainWrite(msg)
 
 	case waitingDoneMsg:
-		m.onWaitingDone(msg)
+		return m.onWaitingDone(msg)
+
+	case heldStatusMsg:
+		return m.onHeldStatus(msg)
 
 	case transientDoneMsg:
 		m.removeStatus(msg.name)

@@ -2,10 +2,12 @@ package tui
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -122,4 +124,61 @@ func TestEHidesStoppedInstancesAndBringsThemBack(t *testing.T) {
 
 	press(m, "e")
 	assert.Equal(t, []string{"default/cache", "default/web", "default/db"}, shownInstances(m))
+}
+
+func rowOf(m *Model, name string) string {
+	for _, line := range screen(m) {
+		if strings.Contains(line, "│"+name+" ") {
+			return line
+		}
+	}
+
+	return ""
+}
+
+func TestStartingMarksTheRowUntilTheListingLands(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	press(m, "j", "j")
+	require.Equal(t, "db", m.selectedInstance().Name)
+
+	_, cmd := m.Update(keyPress("S"))
+	assert.Contains(t, rowOf(m, "db"), "starting")
+	assert.Regexp(t, `^starting `, footer(m))
+
+	run(m, cmd)
+	assert.Contains(t, rowOf(m, "db"), "running")
+	assert.NotContains(t, footer(m), "starting")
+}
+
+func TestStoppingAsksFirstNamingTheInstance(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+
+	press(m, "s")
+	require.Len(t, m.popups, 1)
+	assert.Equal(t, "Are you sure you want to stop instance cache?", ansi.Strip(m.popups[0].message))
+
+	press(m, "y")
+	assert.Contains(t, rowOf(m, "cache"), "stopped")
+}
+
+func TestAFailedActionTakesItsMarkOffAndSaysWhy(t *testing.T) {
+	server := instancesServer(nil, runningInstance("web", nil))
+	m := start(t, options{server: server}, 90, 16)
+	server.SetInstances(nil)
+
+	press(m, "r")
+	assert.NotContains(t, rowOf(m, "web"), "restarting")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, m.popups[0].message, "Instance not found")
+}
+
+func TestLifecycleKeysAreRefusedReadOnly(t *testing.T) {
+	m := start(t, options{readOnly: true}, 90, 16)
+
+	for _, key := range []string{"S", "s", "r", "p", "d"} {
+		press(m, key)
+		require.Len(t, m.popups, 1, key)
+		assert.Contains(t, m.popups[0].message, "--read-only", key)
+		press(m, "esc")
+	}
 }
