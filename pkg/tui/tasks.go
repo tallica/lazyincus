@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -48,6 +49,30 @@ func (w *mainWriter) write(kind mainWriteKind, content string) {
 }
 
 func (w *mainWriter) render(content string) { w.write(writeRender, content) }
+
+func (w *mainWriter) rerender(content string) { w.write(writeRerender, content) }
+
+func (w *mainWriter) clear() { w.write(writeClear, "") }
+
+// tickerTask is pkg/gui's NewTickerTask after clearMain.
+func tickerTask(interval time.Duration, content func() string) mainTaskFunc {
+	return func(ctx context.Context, w *mainWriter) {
+		w.clear()
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			w.rerender(content())
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}
+}
 
 // renderString is pkg/gui's NewSimpleRenderStringTask.
 func renderString(content func() string) mainTaskFunc {

@@ -259,6 +259,15 @@ func (m *Model) cycleMainTab(p *panel, step int) {
 	p.mainTab = wrap(p.mainTab+step, len(p.mainTabs()))
 }
 
+// setMainTab is pkg/gui's SetMainTab: the tab named key, if p has one.
+func (m *Model) setMainTab(p *panel, key string) {
+	for i, tab := range p.mainTabs() {
+		if tab.key == key {
+			p.mainTab = i
+		}
+	}
+}
+
 // scrollMain is pkg/gui's scrollUpMain (-1) and scrollDownMain (1).
 func (m *Model) scrollMain(direction int) {
 	step := m.cfg.UserConfig.Gui.ScrollHeight

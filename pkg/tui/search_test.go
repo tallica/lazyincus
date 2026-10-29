@@ -11,7 +11,7 @@ import (
 // The pkg/gui search tests, on the Config tab: Info has no "packets" yet.
 
 func searchMain(m *Model, text string) {
-	press(m, "]", "enter", "/")
+	press(m, "]", "]", "enter", "/")
 	for _, r := range text {
 		press(m, string(r))
 	}

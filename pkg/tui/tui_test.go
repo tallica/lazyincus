@@ -101,12 +101,15 @@ func run(m *Model, cmd tea.Cmd) {
 	}
 }
 
-// runTaskHere runs a main task to its end on the Cmd's goroutine, its
-// writes the messages that follow.
+// runTaskHere runs a main task's first pass on the Cmd's goroutine, its
+// writes the messages that follow: a ticker stops after its first.
 func runTaskHere(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd {
 	return func() tea.Msg {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
 		var writes tea.BatchMsg
-		task(context.Background(), func(msg tea.Msg) {
+		task(ctx, func(msg tea.Msg) {
 			writes = append(writes, func() tea.Msg { return msg })
 		})
 
@@ -191,7 +194,7 @@ func TestScreenFillsTheTerminal(t *testing.T) {
 	}
 
 	assert.Contains(t, lines[0], "[1]─Instances")
-	assert.Contains(t, lines[0], "Info - Config")
+	assert.Contains(t, lines[0], "Info - Logs - Config - Env - Top")
 	assert.Contains(t, lines[1], "cache", "running instances come first, by name")
 	assert.Contains(t, lines[3], "db")
 }
@@ -258,7 +261,7 @@ func TestTabsSwitchTheMainPanel(t *testing.T) {
 	m := start(t, options{}, 90, 16)
 
 	assert.Contains(t, strings.Join(screen(m), "\n"), "Name:")
-	press(m, "]")
+	press(m, "]", "]")
 	assert.Contains(t, strings.Join(screen(m), "\n"), "name: cache")
 }
 
@@ -324,7 +327,7 @@ func TestTooSmall(t *testing.T) {
 
 func TestMainScrollKeys(t *testing.T) {
 	m := start(t, options{}, 90, 9)
-	press(m, "]")
+	press(m, "]", "]")
 	step := m.cfg.UserConfig.Gui.ScrollHeight
 	require.Contains(t, screen(m)[1], "architecture:")
 
@@ -361,5 +364,5 @@ func TestAnEmptyListLeavesItsMessageToMain(t *testing.T) {
 
 	main := strings.Join(inside(screen(m), m.dims()[mainView]), "\n")
 	assert.Contains(t, main, "No snapshots")
-	assert.NotContains(t, screen(m)[0], "Info - Config", "an empty list's main has no tabs")
+	assert.NotContains(t, screen(m)[0], "Info - Logs - Config - Env - Top", "an empty list's main has no tabs")
 }

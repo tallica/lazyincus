@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -102,12 +103,16 @@ func (m *Model) instanceFlex() []utils.FlexColumn {
 	}}
 }
 
+// instanceMainTabs are pkg/gui's, in its order.
 func (m *Model) instanceMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
 	return []mainTab{
-		{title: m.tr.InfoTitle, task: m.instanceTask(instanceInfo), wrap: wrap},
-		{title: m.tr.ConfigTitle, task: m.instanceTask(instanceConfig), wrap: wrap},
+		{key: "info", title: m.tr.InfoTitle, task: m.instanceInfoTask, wrap: wrap},
+		{key: "logs", title: m.tr.LogsTitle, task: m.instanceLogsTask, wrap: wrap, autoscroll: true},
+		{key: "config", title: m.tr.ConfigTitle, task: m.instanceTask(presentation.InstanceConfig), wrap: wrap},
+		{key: "env", title: m.tr.EnvTitle, task: m.instanceTask(m.instanceEnv), wrap: wrap},
+		{key: "top", title: m.tr.TopTitle, task: m.instanceTopTask},
 	}
 }
 
@@ -120,6 +125,83 @@ func (m *Model) instanceTask(content func(*commands.Instance) string) func() mai
 	}
 }
 
+// instanceInfoTask redraws from the newest listing, asking the daemon nothing.
+func (m *Model) instanceInfoTask() mainTaskFunc {
+	instance := m.selectedInstance()
+	loc, host := m.instanceLocation(instance), m.publishHostFor(instance.Remote)
+
+	return tickerTask(time.Second, func() string {
+		return presentation.InstanceInfo(instance.Latest(), loc, host)
+	})
+}
+
+func (m *Model) instanceLogsTask() mainTaskFunc {
+	instance, log, nothing := m.selectedInstance(), m.incus.Log, m.tr.NothingToDisplay
+
+	return tickerTask(time.Second, func() string {
+		content, err := instance.TailConsoleLog()
+		if err != nil {
+			log.Warn().Err(err).Send()
+		}
+
+		if content == "" {
+			return nothing
+		}
+
+		return utils.ConsoleText(content)
+	})
+}
+
+// instanceTopTask polls slower than Info: each poll execs `ps` in the instance.
+func (m *Model) instanceTopTask() mainTaskFunc {
+	instance, tr := m.selectedInstance(), m.tr
+
+	return tickerTask(2*time.Second, func() string {
+		output, err := instance.Top()
+		switch {
+		case errors.Is(err, commands.ErrInstanceNotRunning):
+			return tr.CannotListProcessesStoppedInstance
+		case err != nil:
+			return tr.CannotListProcesses + "\n\n" + err.Error()
+		case output == "":
+			return tr.NothingToDisplay
+		}
+
+		return output
+	})
+}
+
+func (m *Model) instanceEnv(instance *commands.Instance) string {
+	if env := presentation.InstanceEnv(instance); env != "" {
+		return env
+	}
+
+	return m.tr.NothingToDisplay
+}
+
+// instanceLocation is pkg/gui's; no stack is listed until Stacks are ported.
+func (m *Model) instanceLocation(instance *commands.Instance) presentation.Location {
+	loc := presentation.Location{Remote: instance.Remote, Project: instance.Project}
+	if loc.Remote == "" {
+		loc.Remote = m.incus.RemoteName()
+	}
+
+	if service := instance.ComposeService(); service != "" {
+		loc.Stack, loc.Service = m.tr.StackNotListed, service
+	}
+
+	return loc
+}
+
+// publishHostFor is pkg/gui's for the session's remote, the only one connected yet.
+func (m *Model) publishHostFor(remote string) string {
+	if remote == "" || remote == m.incus.RemoteName() {
+		return m.incus.PublishHost()
+	}
+
+	return ""
+}
+
 func (m *Model) instanceKey() string {
 	instance := m.selectedInstance()
 	if instance == nil {
@@ -129,38 +211,10 @@ func (m *Model) instanceKey() string {
 	return instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
 }
 
-func instanceConfig(instance *commands.Instance) string {
-	data, err := utils.MarshalIntoYaml(instance.Instance)
-	if err != nil {
-		return err.Error()
-	}
-
-	return utils.ColoredYamlString(string(data))
-}
-
-// instanceInfo is a cut-down Info tab; the full one still lives on *gui.Gui.
-func instanceInfo(instance *commands.Instance) string {
-	label := func(name, value string) string {
-		if value == "" {
-			return ""
-		}
-		return utils.ColoredString(fmt.Sprintf("%-10s", name+":"), color.FgCyan) + " " + value + "\n"
-	}
-
-	info := label("Name", instance.Name) +
-		label("Type", presentation.InstanceType(instance)) +
-		label("Status", instance.Instance.Status) +
-		label("Project", instance.Project) +
-		label("Remote", instance.Remote) +
-		label("Image", instance.ComposeImage()) +
-		label("Created", instance.Instance.CreatedAt.Format(time.DateTime))
-
-	if state := instance.Instance.State; state != nil {
-		info += label("PID", fmt.Sprint(state.Pid)) +
-			label("Processes", fmt.Sprint(state.Processes))
-	}
-
-	return info
+// viewInstanceLogs is pkg/gui's handleInstanceViewLogs.
+func (m *Model) viewInstanceLogs() {
+	m.setMainTab(m.panelNamed("instances"), "logs")
+	m.enterMain()
 }
 
 // execShell is gui.instanceExecShell, refusing as guardReadOnly does.

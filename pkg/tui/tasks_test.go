@@ -17,7 +17,7 @@ func TestAWriteFromAReplacedTaskIsDropped(t *testing.T) {
 	m := start(t, options{}, 90, 16)
 	old := m.mainTask.generation
 
-	press(m, "]")
+	press(m, "]", "]")
 	require.Contains(t, mainText(m), "name: cache")
 
 	m.Update(mainWriteMsg{generation: old, number: 9, content: "stale"})
@@ -58,7 +58,12 @@ func TestTasksRunThroughPkgTasksAndTheInbox(t *testing.T) {
 	m.runTask = nil
 	t.Cleanup(m.tasks.Close)
 
-	press(m, "]")
-	deliver(t, m)
+	press(m, "]", "]")
+	// The Logs tab's writes may come through first, and be dropped.
+	for range 10 {
+		if deliver(t, m); strings.Contains(mainText(m), "name: cache") {
+			break
+		}
+	}
 	assert.Contains(t, mainText(m), "name: cache")
 }
