@@ -213,6 +213,10 @@ func (m *Model) paletteSources() map[string]paletteSource {
 		"images": m.sourceOf(m.panelNamed("images"),
 			func(item int) string { return m.images[item].Key() },
 			func(item int) string { return m.images[item].Label() }, nil),
+		"volumes": m.sourceOf(m.panelNamed("volumes"),
+			func(item int) string { return m.volumes[item].Key() },
+			func(item int) string { return m.volumes[item].Name },
+			func(item int) string { return m.volumes[item].Pool }),
 		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
 			func(item int) string { return m.snapshots[item].Key() },
 			func(item int) string {

@@ -84,6 +84,7 @@ func (m *Model) fetchGroups() [][]fetch {
 	return [][]fetch{
 		{m.fetchInstances()},
 		{m.fetchImages()},
+		{m.fetchVolumes()},
 	}
 }
 
@@ -172,6 +173,7 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 type refreshSeqs struct {
 	instances    refreshSeq
 	images       refreshSeq
+	volumes      refreshSeq
 	imageUpdates refreshSeq
 }
 

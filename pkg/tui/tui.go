@@ -60,9 +60,11 @@ type Model struct {
 	snapshotsSpan    snapshotsSpan
 	snapshots        []*commands.Snapshot
 
-	instances  []*commands.Instance
-	images     []*commands.Image
-	imagesSpan bool
+	instances   []*commands.Instance
+	images      []*commands.Image
+	imagesSpan  bool
+	volumes     []*commands.Volume
+	volumesSpan bool
 	// upstreams are the registry checks by image fingerprint, nil before the first.
 	upstreams     map[string]commands.UpstreamStatus
 	showProject   bool

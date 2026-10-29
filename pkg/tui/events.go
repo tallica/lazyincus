@@ -346,6 +346,10 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 		fetches = append(fetches, m.fetchImages())
 	}
 
+	if kinds&refreshVolumes != 0 {
+		fetches = append(fetches, m.fetchVolumes())
+	}
+
 	return fetches
 }
 

@@ -229,7 +229,10 @@ func (m *Model) newPanels() []*panel {
 			name: "images", title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,
 			flex: m.imageFlex, mainTabs: m.imageMainTabs, itemKey: m.imageKey,
 		},
-		{name: "volumes", title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes},
+		{
+			name: "volumes", title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
+			flex: m.volumeFlex, mainTabs: m.volumeMainTabs, itemKey: m.volumeKey,
+		},
 		{name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks},
 		{name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles},
 	}
