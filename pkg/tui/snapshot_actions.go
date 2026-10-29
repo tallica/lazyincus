@@ -32,9 +32,14 @@ func (m *Model) selectSnapshot(key string) bool {
 	return false
 }
 
-// snapshotOwnerName is pkg/gui's, for an instance's snapshot.
+// snapshotOwnerName is pkg/gui's.
 func (m *Model) snapshotOwnerName(snapshot *commands.Snapshot) string {
-	owner := m.qualified(snapshot.Owner, snapshot.Project, m.showProject || m.snapshotsSpan.projects)
+	spans := m.showProject || m.snapshotsSpan.projects
+	if snapshot.Volume != nil {
+		spans = m.volumesSpan
+	}
+
+	owner := m.qualified(snapshot.Owner, snapshot.Project, spans)
 	if snapshot.Instance != nil {
 		owner = m.onRemote(owner, snapshot.Instance.Remote)
 	}
@@ -59,6 +64,12 @@ func (m *Model) reportOr(next func() tea.Cmd) func(error) tea.Cmd {
 func (m *Model) snapshotRestore(snapshot *commands.Snapshot) tea.Cmd {
 	message := fmt.Sprintf(m.tr.RestoreSnapshot, m.snapshotOwnerName(snapshot), snapshot.Name)
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
+		if snapshot.Volume != nil {
+			return m.withWaitingStatusThen(m.tr.RestoringStatus, snapshot.Restore, m.reportOr(func() tea.Cmd {
+				return refresh(m.snapshotOwnerFetches(snapshot)...)
+			}))
+		}
+
 		return m.inTransition(m.tr.RestoringStatus, snapshot.Instance, "Restoring", snapshot.Restore)
 	})
 
@@ -69,7 +80,7 @@ func (m *Model) snapshotDelete(snapshot *commands.Snapshot) tea.Cmd {
 	message := fmt.Sprintf(m.tr.DeleteSnapshot, snapshot.Name, m.snapshotOwnerName(snapshot))
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, snapshot.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.instanceFetches()...)
+			return refresh(m.snapshotOwnerFetches(snapshot)...)
 		}))
 	})
 
@@ -84,10 +95,10 @@ func (m *Model) snapshotRename(snapshot *commands.Snapshot) tea.Cmd {
 			return nil
 		}
 
-		renamed := (&commands.Snapshot{Project: snapshot.Project, Owner: snapshot.Owner, Name: name}).Key()
+		renamed := (&commands.Snapshot{Project: snapshot.Project, Owner: snapshot.Owner, Name: name, Volume: snapshot.Volume}).Key()
 
 		return m.withWaitingStatusThen(m.tr.RenamingStatus, func() error { return snapshot.Rename(name) }, m.reportOr(func() tea.Cmd {
-			return refresh(append(m.instanceFetches(), func() (func(), error) {
+			return refresh(append(m.snapshotOwnerFetches(snapshot), func() (func(), error) {
 				return func() { m.selectSnapshot(renamed) }, nil
 			})...)
 		}))
@@ -134,6 +145,15 @@ func (m *Model) focusInstance(key string) {
 	if m.selectInstance(key) {
 		m.focusView("instances")
 	}
+}
+
+// snapshotOwnerFetches is pkg/gui's refreshSnapshotOwner: what carries the snapshot.
+func (m *Model) snapshotOwnerFetches(snapshot *commands.Snapshot) []fetch {
+	if snapshot.Volume != nil {
+		return []fetch{m.fetchVolumes()}
+	}
+
+	return m.instanceFetches()
 }
 
 func (m *Model) snapshotCopy(snapshot *commands.Snapshot) tea.Cmd {

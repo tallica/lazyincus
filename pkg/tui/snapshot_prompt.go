@@ -80,6 +80,22 @@ func (m *Model) snapshotCreatePrompt(instance *commands.Instance) tea.Cmd {
 	return nil
 }
 
+// volumeSnapshotCreatePrompt is pkg/gui's: the same popup for a custom volume.
+func (m *Model) volumeSnapshotCreatePrompt(volume *commands.Volume) tea.Cmd {
+	if !volume.IsCustom() {
+		m.openError(m.tr.CannotSnapshotInstanceVolume)
+		return nil
+	}
+
+	m.openSnapshotPrompt(volume.Name, &snapshotPrompt{
+		create: func(m *Model, name string, opts commands.SnapshotOptions) tea.Cmd {
+			return m.createVolumeSnapshot(volume, name, opts)
+		},
+	})
+
+	return nil
+}
+
 // openSnapshotPrompt is pkg/gui's; tab switches popup.view, which the keys follow.
 func (m *Model) openSnapshotPrompt(label string, sp *snapshotPrompt) {
 	input := newEditorInput()
@@ -206,11 +222,24 @@ func (m *Model) createSnapshot(instance *commands.Instance, name string, opts co
 		m.reportOr(func() tea.Cmd {
 			return refresh(append(m.instanceFetches(), func() (func(), error) {
 				return func() {
-					m.snapshotsFollow = snapshotsFollow{label: m.onRemote(instance.Name, instance.Remote), instances: []*commands.Instance{instance}}
-					m.setSnapshots()
+					m.followSnapshotsOf(snapshotsFollow{label: m.onRemote(instance.Name, instance.Remote), instances: []*commands.Instance{instance}})
 					m.focusSnapshot(key)
 				}, nil
 			})...)
+		}))
+}
+
+func (m *Model) createVolumeSnapshot(volume *commands.Volume, name string, opts commands.SnapshotOptions) tea.Cmd {
+	key := (&commands.Snapshot{Volume: volume, Name: name}).Key()
+
+	return m.withWaitingStatusThen(m.tr.SnapshottingStatus, func() error { return volume.CreateSnapshot(name, opts) },
+		m.reportOr(func() tea.Cmd {
+			return refresh(m.fetchVolumes(), func() (func(), error) {
+				return func() {
+					m.followSnapshotsOf(snapshotsFollow{label: volume.Name, volume: volume.Key()})
+					m.focusSnapshot(key)
+				}, nil
+			})
 		}))
 }
 
@@ -223,6 +252,10 @@ func (m *Model) focusSnapshot(key string) {
 
 // snapshotNew is pkg/gui's handleSnapshotCreate.
 func (m *Model) snapshotNew() tea.Cmd {
+	if volume := m.snapshotsVolume(); volume != nil {
+		return m.volumeSnapshotCreatePrompt(volume)
+	}
+
 	if m.snapshotsShowAll {
 		if snapshot := m.selectedSnapshot(); snapshot != nil && snapshot.Instance != nil {
 			return m.snapshotCreatePrompt(snapshot.Instance)

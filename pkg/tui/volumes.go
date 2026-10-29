@@ -38,6 +38,11 @@ func (m *Model) setVolumes(volumes []*commands.Volume) {
 
 		return cells
 	})
+
+	// A followed volume's snapshots come with the volumes.
+	if m.snapshotsVolume() != nil {
+		m.setSnapshots()
+	}
 }
 
 // sortVolumes is pkg/gui's: by pool, custom volumes ahead of Incus's own.

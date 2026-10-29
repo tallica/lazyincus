@@ -9,10 +9,12 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// snapshotsFollow is pkg/gui's SnapshotsLabel and SnapshotsInstances.
+// snapshotsFollow is pkg/gui's SnapshotsLabel, SnapshotsInstances and SnapshotsVolume.
 type snapshotsFollow struct {
 	label     string
 	instances []*commands.Instance
+	// volume is the custom volume's key, held by key: each refresh builds new values.
+	volume string
 }
 
 // snapshotsSpan is pkg/gui's.
@@ -23,10 +25,18 @@ type snapshotsSpan struct {
 
 // followSelection is pkg/gui's OnSelect into refreshSnapshotsFor.
 func (m *Model) followSelection() {
-	if m.currentSideView() != "instances" {
-		return
+	switch m.currentSideView() {
+	case "instances":
+		m.followInstance()
+	case "volumes":
+		// The other volumes' snapshots are their instance's.
+		if volume := m.selectedVolume(); volume != nil && volume.IsCustom() && volume.Key() != m.snapshotsFollow.volume {
+			m.followSnapshotsOf(snapshotsFollow{label: volume.Name, volume: volume.Key()})
+		}
 	}
+}
 
+func (m *Model) followInstance() {
 	instance := m.selectedInstance()
 	if instance == nil {
 		return
@@ -37,10 +47,30 @@ func (m *Model) followSelection() {
 		return
 	}
 
-	m.snapshotsFollow = snapshotsFollow{label: m.onRemote(instance.Name, instance.Remote), instances: []*commands.Instance{instance}}
+	m.followSnapshotsOf(snapshotsFollow{label: m.onRemote(instance.Name, instance.Remote), instances: []*commands.Instance{instance}})
+}
+
+// followSnapshotsOf is pkg/gui's refreshSnapshotsFor and refreshSnapshotsForVolume.
+func (m *Model) followSnapshotsOf(follow snapshotsFollow) {
+	m.snapshotsFollow = follow
 	if !m.snapshotsShowAll {
 		m.setSnapshots()
 	}
+}
+
+// snapshotsVolume is pkg/gui's: the followed volume as the newest refresh has it.
+func (m *Model) snapshotsVolume() *commands.Volume {
+	if m.snapshotsShowAll || m.snapshotsFollow.volume == "" {
+		return nil
+	}
+
+	for _, volume := range m.volumes {
+		if volume.Key() == m.snapshotsFollow.volume {
+			return volume
+		}
+	}
+
+	return nil
 }
 
 // setSnapshots is pkg/gui's renderSnapshots, the selection kept on its snapshot.
@@ -55,11 +85,15 @@ func (m *Model) setSnapshots() {
 		instances = m.instances
 	}
 
-	m.snapshotsSpan = snapshotsSpan{instances: len(instances) > 1, projects: spansProjects(instances, instanceProject)}
-
 	var snapshots []*commands.Snapshot
-	for _, instance := range instances {
-		snapshots = append(snapshots, instance.Latest().Snapshots()...)
+	if volume := m.snapshotsVolume(); volume != nil {
+		m.snapshotsSpan = snapshotsSpan{}
+		snapshots = volume.Snapshots()
+	} else {
+		m.snapshotsSpan = snapshotsSpan{instances: len(instances) > 1, projects: spansProjects(instances, instanceProject)}
+		for _, instance := range instances {
+			snapshots = append(snapshots, instance.Latest().Snapshots()...)
+		}
 	}
 	sort.SliceStable(snapshots, func(a, b int) bool { return sortSnapshots(snapshots[a], snapshots[b]) })
 	m.snapshots = snapshots
@@ -128,7 +162,10 @@ func (m *Model) snapshotMainTabs() []mainTab {
 func (m *Model) snapshotConfigTask() mainTaskFunc {
 	snapshot := m.selectedSnapshot()
 	loc := presentation.Location{}
-	if snapshot.Instance != nil {
+	switch {
+	case snapshot.Volume != nil:
+		loc = m.sessionLocation(snapshot.Project)
+	case snapshot.Instance != nil:
 		loc = m.instanceLocation(snapshot.Instance)
 	}
 
