@@ -17,8 +17,9 @@ type panel struct {
 	hidden     func() bool
 
 	// cells are the rows' columns; flex the columns that narrow to fit.
-	cells    [][]string
-	flex     func() []utils.FlexColumn
+	cells [][]string
+	flex  func() []utils.FlexColumn
+	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty    string
 	mainTabs func() []mainTab
 	// itemKey is pkg/gui's GetItemContextCacheKey for the selected row.

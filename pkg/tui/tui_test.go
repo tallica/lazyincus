@@ -278,3 +278,16 @@ func TestEscFromMainReturnsToTheFirstList(t *testing.T) {
 	press(m, "esc")
 	assert.Equal(t, "instances", m.currentView())
 }
+
+func TestAnEmptyListLeavesItsMessageToMain(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "2")
+
+	snapshots, ok := m.dims()[snapshotsWindow]
+	require.True(t, ok)
+	assert.NotContains(t, strings.Join(inside(screen(m), snapshots), ""), "No snapshots")
+
+	main := strings.Join(inside(screen(m), m.dims()[mainView]), "\n")
+	assert.Contains(t, main, "No snapshots")
+	assert.NotContains(t, screen(m)[0], "Info - Config", "an empty list's main has no tabs")
+}

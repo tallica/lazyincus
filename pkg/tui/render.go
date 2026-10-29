@@ -120,9 +120,6 @@ func (m *Model) sideTitle(p *panel, window string) string {
 // listBody is a list's visible rows, highlighted as gocui's onFocusChange.
 func (m *Model) listBody(p *panel, width, rows int) []string {
 	all := p.rows
-	if len(all) == 0 {
-		return []string{p.empty}
-	}
 
 	bg := ""
 	switch {
@@ -154,7 +151,7 @@ func (m *Model) mainFrame(d boxlayout.Dimensions) string {
 		colour:  remoteColour(m.cfg.UserConfig, m.incus.RemoteName()),
 	}
 
-	if p.mainTabs != nil {
+	if p.mainTabs != nil && p.count() > 0 {
 		tabs := p.mainTabs()
 		for _, tab := range tabs {
 			spec.tabs = append(spec.tabs, tab.title)

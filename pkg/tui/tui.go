@@ -308,6 +308,10 @@ func (m *Model) fitMain() {
 	w, h := size(d)
 
 	p := m.currentSidePanel()
+	if p.count() == 0 {
+		m.main.set(p.name, p.empty, m.cfg.UserConfig.Gui.WrapMainPanel, false, w-2, h-2)
+		return
+	}
 	if p.mainTabs == nil {
 		m.main.set(p.name, "", false, false, w-2, h-2)
 		return
