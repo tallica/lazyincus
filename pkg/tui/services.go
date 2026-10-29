@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -17,6 +18,10 @@ import (
 type composeHolder struct {
 	instances atomic.Pointer[presentation.StackInstances]
 	project   atomic.Pointer[commands.ComposeProject]
+}
+
+func (h *composeHolder) load() (*presentation.StackInstances, *commands.ComposeProject) {
+	return h.instances.Load(), h.project.Load()
 }
 
 // stackIdentity is what the services panel's contents depend on: which
@@ -193,6 +198,29 @@ func (m *Model) selectedServiceRow() *commands.ServiceRow {
 	}
 
 	return m.serviceRows[item]
+}
+
+// serviceKey is pkg/gui's GetItemContextCacheKey for the selected row.
+func (m *Model) serviceKey() string {
+	row := m.selectedServiceRow()
+	if row == nil {
+		return ""
+	}
+
+	// Each refresh builds new ComposeService values, so the instance count
+	// is part of the key: a replica coming or going must restart the tab.
+	key := "services-" + row.Key() + "-" + row.Service.Status() + "-" + strconv.Itoa(len(row.Service.Instances))
+
+	if row.Instance != nil {
+		key += "-" + row.Instance.Instance.Status
+	}
+
+	// The config of every instance the row stands for, so the tabs follow a change to one.
+	for _, instance := range row.Instances() {
+		key += "-" + instance.ConfigFingerprint()
+	}
+
+	return key
 }
 
 // servicesTitle names the compose project the panel acts on.

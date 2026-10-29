@@ -215,10 +215,13 @@ func (m *Model) newPanels() []*panel {
 	static := func(s string) func() string { return func() string { return s } }
 
 	panels := []*panel{
-		{name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks, itemKey: m.stackKey},
+		{
+			name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks,
+			mainTabs: m.stackMainTabs, itemKey: m.stackKey,
+		},
 		{
 			name: "services", title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
-			flex: m.serviceFlex, note: func() string { return m.servicesNote },
+			mainTabs: m.serviceMainTabs, itemKey: m.serviceKey, flex: m.serviceFlex, note: func() string { return m.servicesNote },
 		},
 		{
 			name: "instances", title: m.instancesTitle, empty: tr.NoInstances,

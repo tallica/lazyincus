@@ -124,6 +124,8 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "volumes", key: "u", description: m.tr.ShowUsers, handler: onVolume((*Model).volumeUsers)},
 		&binding{view: "volumes", key: "y", description: m.tr.Copy, handler: onVolume((*Model).volumeCopy)},
 		&binding{view: "volumes", key: "d", description: m.tr.Remove, mutates: true, handler: onVolume((*Model).volumeDelete)},
+		&binding{view: "stacks", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewStackLogs)},
+		&binding{view: "services", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewServiceLogs)},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
 		&binding{view: mainView, key: "left", handler: scrollStep((*pane).scrollLeft)},

@@ -184,10 +184,10 @@ func (m *Model) instanceMainTabs() []mainTab {
 
 	return []mainTab{
 		{key: "info", title: m.tr.InfoTitle, task: m.instanceInfoTask, wrap: wrap},
-		{key: "logs", title: m.tr.LogsTitle, task: m.instanceLogsTask, wrap: wrap, autoscroll: true},
+		{key: "logs", title: m.tr.LogsTitle, task: m.ofSelectedInstance(m.instanceLogsTask), wrap: wrap, autoscroll: true},
 		{key: "config", title: m.tr.ConfigTitle, task: m.instanceTask(presentation.InstanceConfig), wrap: wrap},
-		{key: "env", title: m.tr.EnvTitle, task: m.instanceTask(m.instanceEnv), wrap: wrap},
-		{key: "top", title: m.tr.TopTitle, task: m.instanceTopTask},
+		{key: "env", title: m.tr.EnvTitle, task: m.ofSelectedInstance(m.instanceEnvTask), wrap: wrap},
+		{key: "top", title: m.tr.TopTitle, task: m.ofSelectedInstance(m.instanceTopTask)},
 	}
 }
 
@@ -210,10 +210,23 @@ func (m *Model) instanceInfoTask() mainTaskFunc {
 	})
 }
 
-func (m *Model) instanceLogsTask() mainTaskFunc {
-	instance, log, nothing := m.selectedInstance(), m.incus.Log, m.tr.NothingToDisplay
+// ofSelectedInstance is a tab of the instance selected when its task starts.
+func (m *Model) ofSelectedInstance(task func(*commands.Instance) mainTaskFunc) func() mainTaskFunc {
+	return func() mainTaskFunc { return task(m.selectedInstance()) }
+}
 
-	return tickerTask(time.Second, func() string {
+func (m *Model) instanceLogsTask(instance *commands.Instance) mainTaskFunc {
+	logOf := m.instanceLogText()
+
+	return tickerTask(time.Second, func() string { return logOf(instance) })
+}
+
+// instanceLogText reads TailConsoleLog rather than ConsoleLog: a running
+// container's log drains on read, so a raw snapshot would blank the panel.
+func (m *Model) instanceLogText() func(*commands.Instance) string {
+	log, nothing := m.incus.Log, m.tr.NothingToDisplay
+
+	return func(instance *commands.Instance) string {
 		content, err := instance.TailConsoleLog()
 		if err != nil {
 			log.Warn().Err(err).Send()
@@ -224,12 +237,12 @@ func (m *Model) instanceLogsTask() mainTaskFunc {
 		}
 
 		return utils.ConsoleText(content)
-	})
+	}
 }
 
 // instanceTopTask polls slower than Info: each poll execs `ps` in the instance.
-func (m *Model) instanceTopTask() mainTaskFunc {
-	instance, tr := m.selectedInstance(), m.tr
+func (m *Model) instanceTopTask(instance *commands.Instance) mainTaskFunc {
+	tr := m.tr
 
 	return tickerTask(2*time.Second, func() string {
 		output, err := instance.Top()
@@ -244,6 +257,10 @@ func (m *Model) instanceTopTask() mainTaskFunc {
 
 		return output
 	})
+}
+
+func (m *Model) instanceEnvTask(instance *commands.Instance) mainTaskFunc {
+	return renderString(func() string { return m.instanceEnv(instance) })
 }
 
 func (m *Model) instanceEnv(instance *commands.Instance) string {
