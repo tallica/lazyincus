@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 	"sort"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -50,14 +51,9 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 		key = selected.Key()
 	}
 
-	sort.SliceStable(instances, func(a, b int) bool { return lessInstance(instances[a], instances[b]) })
+	sort.SliceStable(instances, func(a, b int) bool { return sortInstances(instances[a], instances[b]) })
 	m.instances = instances
-
-	projects := map[string]bool{}
-	for _, instance := range instances {
-		projects[instance.Project] = true
-	}
-	m.showProject = len(projects) > 1
+	m.showProject = spansProjects(instances)
 
 	p := m.panelNamed("instances")
 	p.awaiting = ""
@@ -79,12 +75,48 @@ func (m *Model) rerenderInstances() {
 	}
 }
 
-func lessInstance(a, b *commands.Instance) bool {
-	if a.IsRunning() != b.IsRunning() {
-		return a.IsRunning()
+// sortInstances is pkg/gui's.
+func sortInstances(a, b *commands.Instance) bool {
+	if a.Project != b.Project {
+		return a.Project < b.Project
+	}
+
+	if isStopped(a) != isStopped(b) {
+		return isStopped(b)
 	}
 
 	return a.Name < b.Name
+}
+
+func isStopped(instance *commands.Instance) bool {
+	return strings.EqualFold(instance.Status(), "Stopped")
+}
+
+// spansProjects is pkg/gui's spansMultipleProjects over the instances.
+func spansProjects(instances []*commands.Instance) bool {
+	seen := ""
+	for _, instance := range instances {
+		switch {
+		case instance.Project == "":
+		case seen == "":
+			seen = instance.Project
+		case instance.Project != seen:
+			return true
+		}
+	}
+
+	return false
+}
+
+// keepInstance is pkg/gui's instances Filter, for what's ported: e's.
+func (m *Model) keepInstance(item int) bool {
+	return m.showStopped || !isStopped(m.instances[item])
+}
+
+// toggleStoppedInstances is pkg/gui's handleHideStoppedInstances.
+func (m *Model) toggleStoppedInstances() {
+	m.showStopped = !m.showStopped
+	m.filterList(m.panelNamed("instances"))
 }
 
 func (m *Model) instanceCells() [][]string {

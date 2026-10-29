@@ -89,3 +89,37 @@ func TestATickerTaskRedrawsInPlaceUntilItStops(t *testing.T) {
 		assert.Equal(t, writeRerender, (<-sent).(mainWriteMsg).kind)
 	}
 }
+
+func instanceIn(project, name, status string) api.InstanceFull {
+	return api.InstanceFull{Instance: api.Instance{Name: name, Project: project, Status: status, Type: "container"}}
+}
+
+func shownInstances(m *Model) []string {
+	names := make([]string, 0, m.panelNamed("instances").count())
+	for _, item := range m.panelNamed("instances").shown {
+		names = append(names, m.instances[item].Project+"/"+m.instances[item].Name)
+	}
+
+	return names
+}
+
+func TestInstancesSortByProjectThenStoppedLast(t *testing.T) {
+	server := instancesServer(nil,
+		instanceIn("shop", "api", "Stopped"), instanceIn("shop", "web", "Running"),
+		instanceIn("default", "db", "Stopped"), instanceIn("default", "cache", "Running"))
+	m := start(t, options{server: server}, 90, 16)
+
+	assert.Equal(t, []string{"default/cache", "default/db", "shop/web", "shop/api"}, shownInstances(m))
+	assert.True(t, m.showProject)
+}
+
+func TestEHidesStoppedInstancesAndBringsThemBack(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+
+	press(m, "e")
+	assert.Equal(t, []string{"default/cache", "default/web"}, shownInstances(m))
+	assert.False(t, m.showProject)
+
+	press(m, "e")
+	assert.Equal(t, []string{"default/cache", "default/web", "default/db"}, shownInstances(m))
+}

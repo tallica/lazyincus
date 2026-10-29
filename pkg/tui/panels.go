@@ -197,7 +197,7 @@ func (m *Model) newPanels() []*panel {
 		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
 		{
 			name: "instances", title: static(tr.InstancesTitle), empty: tr.NoInstances,
-			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey,
+			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey, keep: m.keepInstance,
 		},
 		{
 			name: "snapshots", title: m.snapshotsTitle, window: snapshotsWindow,

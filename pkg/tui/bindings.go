@@ -82,6 +82,7 @@ func (m *Model) bindings() []*binding {
 	)
 	bindings = append(bindings, m.menuBindings()...)
 	bindings = append(bindings,
+		&binding{view: "instances", key: "e", description: m.tr.HideStopped, noSelection: true, handler: do((*Model).toggleStoppedInstances)},
 		&binding{view: "instances", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewInstanceLogs)},
 		&binding{view: "instances", key: "E", description: m.tr.ExecShell, mutates: true, handler: (*Model).execShell},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},

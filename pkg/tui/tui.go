@@ -57,6 +57,7 @@ type Model struct {
 
 	instances   []*commands.Instance
 	showProject bool
+	showStopped bool
 
 	refreshes refreshSeqs
 	events    events
@@ -82,6 +83,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		screenMode:       parseScreenMode(gui.ScreenMode),
 		expandSidePanel:  gui.ExpandFocusedSidePanel,
 		snapshotsShowAll: gui.ShowAllSnapshots,
+		showStopped:      true,
 		filter:           filter{input: newEditorInput()},
 		inbox:            make(chan tea.Msg, inboxSize),
 		tasks:            tasks.NewTaskManager(incus.Log, tr),
