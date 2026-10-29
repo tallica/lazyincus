@@ -130,6 +130,7 @@ func (m *Model) handleError(err error) {
 }
 
 // tick is tea.Tick unless a test has replaced it to fire ticks itself.
+// nolint:unparam
 func (m *Model) tick(d time.Duration, msg tea.Msg) tea.Cmd {
 	if m.after != nil {
 		return m.after(d, msg)

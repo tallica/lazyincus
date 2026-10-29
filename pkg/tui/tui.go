@@ -13,10 +13,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
-const pollInterval = 2 * time.Second
-
-type pollMsg struct{}
-
 // Model is the whole UI's state; Update is the only place it changes.
 type Model struct {
 	incus *commands.IncusCommand
@@ -50,7 +46,9 @@ type Model struct {
 	instances   []*commands.Instance
 	showProject bool
 
-	refreshes refreshSeqs
+	refreshes      refreshSeqs
+	connectionLost bool
+	configModTime  time.Time
 	// after stands in for tea.Tick in tests.
 	after func(time.Duration, tea.Msg) tea.Cmd
 }
@@ -90,7 +88,7 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.refreshAll(), m.tick(pollInterval, pollMsg{}))
+	return tea.Batch(m.refreshAll(), m.pollers())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -118,8 +116,16 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.applyRefresh(msg)
 
 	case pollMsg:
-		// Re-armed by the answer, so one poll is in flight at most.
-		return refreshQuiet(m.tick(pollInterval, pollMsg{}), m.fetchInstances())
+		return m.pollInstances()
+
+	case syncConnectionMsg:
+		m.syncConnection()
+
+	case configPollMsg:
+		return m.statConfig()
+
+	case configStatMsg:
+		return m.onConfigStat(msg.modTime)
 
 	case execDoneMsg:
 		if msg.err != nil {
