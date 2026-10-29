@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"slices"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -267,6 +268,10 @@ func (m *Model) onEvent(msg eventMsg) tea.Cmd {
 		return m.onInstanceUpdated()
 	}
 
+	if strings.HasPrefix(event.Action, "network-forward-") || strings.HasPrefix(event.Action, "network-acl-") {
+		m.networkTabs++
+	}
+
 	return m.queueRefresh(eventRefreshes[event.Action])
 }
 
@@ -348,6 +353,10 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshVolumes != 0 {
 		fetches = append(fetches, m.fetchVolumes())
+	}
+
+	if kinds&refreshNetworks != 0 {
+		fetches = append(fetches, m.fetchNetworks())
 	}
 
 	return fetches

@@ -85,6 +85,7 @@ func (m *Model) fetchGroups() [][]fetch {
 		{m.fetchInstances()},
 		{m.fetchImages()},
 		{m.fetchVolumes()},
+		{m.fetchNetworks()},
 	}
 }
 
@@ -174,6 +175,7 @@ type refreshSeqs struct {
 	instances    refreshSeq
 	images       refreshSeq
 	volumes      refreshSeq
+	networks     refreshSeq
 	imageUpdates refreshSeq
 }
 

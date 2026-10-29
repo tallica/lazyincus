@@ -233,7 +233,10 @@ func (m *Model) newPanels() []*panel {
 			name: "volumes", title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
 			flex: m.volumeFlex, mainTabs: m.volumeMainTabs, itemKey: m.volumeKey,
 		},
-		{name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks},
+		{
+			name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks,
+			mainTabs: m.networkMainTabs, itemKey: m.networkKey, keep: m.keepNetwork,
+		},
 		{name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles},
 	}
 	for _, p := range panels {

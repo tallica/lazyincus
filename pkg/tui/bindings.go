@@ -110,6 +110,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "images", key: "D", description: m.tr.PruneImages, mutates: true, noSelection: true, handler: (*Model).pruneImages},
 		&binding{view: "images", key: "g", description: m.tr.CheckImageUpdates, noSelection: true, handler: (*Model).checkImageUpdates},
 		&binding{view: "images", key: "y", description: m.tr.Copy, handler: onImage((*Model).imageCopy)},
+		&binding{view: "networks", key: "e", description: m.tr.HideUnmanagedNetworks, noSelection: true, handler: do((*Model).toggleUnmanagedNetworks)},
 		&binding{view: "volumes", key: "n", description: m.tr.NewSnapshot, mutates: true, handler: onVolume((*Model).volumeSnapshotCreatePrompt)},
 		&binding{view: "volumes", key: "c", description: m.tr.EditInEditor, mutates: true, handler: onVolume((*Model).volumeEdit)},
 		&binding{view: "volumes", key: "u", description: m.tr.ShowUsers, handler: onVolume((*Model).volumeUsers)},

@@ -60,11 +60,16 @@ type Model struct {
 	snapshotsSpan    snapshotsSpan
 	snapshots        []*commands.Snapshot
 
-	instances   []*commands.Instance
-	images      []*commands.Image
-	imagesSpan  bool
-	volumes     []*commands.Volume
-	volumesSpan bool
+	instances     []*commands.Instance
+	images        []*commands.Image
+	imagesSpan    bool
+	volumes       []*commands.Volume
+	volumesSpan   bool
+	networks      []*commands.Network
+	networksSpan  bool
+	showUnmanaged bool
+	// networkTabs is pkg/gui's: the forward and ACL events, which the networks' tabs show.
+	networkTabs uint64
 	// upstreams are the registry checks by image fingerprint, nil before the first.
 	upstreams     map[string]commands.UpstreamStatus
 	showProject   bool
