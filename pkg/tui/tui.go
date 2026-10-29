@@ -58,15 +58,23 @@ type Model struct {
 	snapshotsSpan    snapshotsSpan
 	snapshots        []*commands.Snapshot
 
-	instances   []*commands.Instance
+	instances  []*commands.Instance
+	images     []*commands.Image
+	imagesSpan bool
+	// upstreams are the registry checks by image fingerprint, nil before the first.
+	upstreams   map[string]commands.UpstreamStatus
 	showProject bool
 	showStopped bool
 
 	refreshes refreshSeqs
 	events    events
 	// inbox is what goroutines outside the program send it.
-	inbox          chan tea.Msg
-	streamEvents   bool
+	inbox        chan tea.Msg
+	streamEvents bool
+	// eventsLive is whether an event stream is open: the slow polls wait on it.
+	eventsLive bool
+	// polledAt is when each slow poll last asked the daemon.
+	polledAt       map[refreshKind]time.Time
 	connectionLost bool
 	configModTime  time.Time
 	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
@@ -195,6 +203,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case pollMsg:
 		return m.pollInstances()
+
+	case slowPollMsg:
+		return m.slowPoll(msg.kind)
 
 	case syncConnectionMsg:
 		m.syncConnection()

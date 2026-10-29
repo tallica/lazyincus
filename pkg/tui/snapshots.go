@@ -55,7 +55,7 @@ func (m *Model) setSnapshots() {
 		instances = m.instances
 	}
 
-	m.snapshotsSpan = snapshotsSpan{instances: len(instances) > 1, projects: spansProjects(instances)}
+	m.snapshotsSpan = snapshotsSpan{instances: len(instances) > 1, projects: spansProjects(instances, instanceProject)}
 
 	var snapshots []*commands.Snapshot
 	for _, instance := range instances {

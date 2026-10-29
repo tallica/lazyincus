@@ -46,7 +46,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 
 	sort.SliceStable(instances, func(a, b int) bool { return sortInstances(instances[a], instances[b]) })
 	m.instances = instances
-	m.showProject = spansProjects(instances)
+	m.showProject = spansProjects(instances, instanceProject)
 
 	p := m.panelNamed("instances")
 	p.awaiting = ""
@@ -101,21 +101,23 @@ func isStopped(instance *commands.Instance) bool {
 	return strings.EqualFold(instance.Status(), "Stopped")
 }
 
-// spansProjects is pkg/gui's spansMultipleProjects over the instances.
-func spansProjects(instances []*commands.Instance) bool {
+// spansProjects is pkg/gui's spansMultipleProjects over items' projects.
+func spansProjects[T any](items []T, project func(T) string) bool {
 	seen := ""
-	for _, instance := range instances {
-		switch {
-		case instance.Project == "":
+	for _, item := range items {
+		switch p := project(item); {
+		case p == "":
 		case seen == "":
-			seen = instance.Project
-		case instance.Project != seen:
+			seen = p
+		case p != seen:
 			return true
 		}
 	}
 
 	return false
 }
+
+func instanceProject(instance *commands.Instance) string { return instance.Project }
 
 // keepInstance is pkg/gui's instances Filter, for what's ported: e's.
 func (m *Model) keepInstance(item int) bool {

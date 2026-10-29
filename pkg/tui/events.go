@@ -207,6 +207,7 @@ func (m *Model) onEventsOpened(msg eventsOpenedMsg) tea.Cmd {
 	}
 
 	m.incus.Log.Debug().Str("scope", m.scopeName()).Msg("event stream open")
+	m.eventsLive = true
 
 	return m.queueRefresh(usedBy | refreshOperations)
 }
@@ -225,6 +226,7 @@ func (m *Model) onEventsClosed(msg eventsClosedMsg) tea.Cmd {
 		return nil
 	}
 
+	m.eventsLive = false
 	// No event will say how the operations under way end.
 	cmd := m.endOperations(m.takeOperations(""))
 
@@ -338,6 +340,10 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshInstances != 0 {
 		fetches = append(fetches, m.fetchInstances())
+	}
+
+	if kinds&refreshImages != 0 {
+		fetches = append(fetches, m.fetchImages())
 	}
 
 	return fetches

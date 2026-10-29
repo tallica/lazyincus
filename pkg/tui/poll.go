@@ -12,9 +12,16 @@ import (
 const (
 	instancesPollInterval = 2 * time.Second
 	configPollInterval    = 2 * time.Second
+	// resourcesPollInterval and watchedPollInterval are pkg/gui's
+	// pollUnlessWatched (docs/Incus.md, "Events").
+	resourcesPollInterval = 10 * time.Second
+	watchedPollInterval   = time.Minute
 )
 
 type pollMsg struct{}
+
+// slowPollMsg is a resource list's poll, by its refresh kind.
+type slowPollMsg struct{ kind refreshKind }
 
 type configPollMsg struct{}
 
@@ -22,7 +29,27 @@ type configStatMsg struct{ modTime time.Time }
 
 // pollers start once the startup read is under way, as pkg/gui's do.
 func (m *Model) pollers() tea.Cmd {
-	return tea.Batch(m.tick(instancesPollInterval, pollMsg{}), m.tick(configPollInterval, configPollMsg{}))
+	return tea.Batch(
+		m.tick(instancesPollInterval, pollMsg{}),
+		m.tick(configPollInterval, configPollMsg{}),
+		m.tick(resourcesPollInterval, slowPollMsg{refreshImages}),
+	)
+}
+
+// slowPoll is pkg/gui's pollUnlessWatched: while the event stream is open,
+// once a minute rather than every tick.
+func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
+	next := m.tick(resourcesPollInterval, slowPollMsg{kind})
+	if m.eventsLive && time.Since(m.polledAt[kind]) < watchedPollInterval {
+		return next
+	}
+
+	if m.polledAt == nil {
+		m.polledAt = map[refreshKind]time.Time{}
+	}
+	m.polledAt[kind] = time.Now()
+
+	return refreshQuiet(next, m.fetchesFor(kind)...)
 }
 
 // pollInstances is pkg/gui's refreshInstancesQuiet, the connection check too.

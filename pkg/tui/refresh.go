@@ -83,6 +83,7 @@ func (m *Model) refreshAll() tea.Cmd {
 func (m *Model) fetchGroups() [][]fetch {
 	return [][]fetch{
 		{m.fetchInstances()},
+		{m.fetchImages()},
 	}
 }
 
@@ -170,6 +171,7 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 
 type refreshSeqs struct {
 	instances refreshSeq
+	images    refreshSeq
 }
 
 // refreshEnding is pkg/gui's: ends come off even when a fetch fails.

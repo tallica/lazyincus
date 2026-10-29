@@ -170,6 +170,23 @@ func (p *panel) fit(width int) {
 	}
 }
 
+// refill is pkg/gui's SetItems and RerenderList: replace swaps the items
+// and returns their cells, the selection kept on the item key named.
+func (m *Model) refill(p *panel, key func(item int) string, replace func() [][]string) {
+	selected := ""
+	if item := p.item(); item >= 0 && item < len(p.cells) {
+		selected = key(item)
+	}
+
+	p.awaiting = ""
+	p.cells = replace()
+	m.filterList(p)
+	if row := slices.IndexFunc(p.shown, func(item int) bool { return key(item) == selected }); selected != "" && row >= 0 {
+		p.selected = row
+	}
+	p.selectRow(p.selected, m.listRows(p))
+}
+
 // selectRow clamps the selection and scrolls just enough to show it.
 func (p *panel) selectRow(row, rows int) {
 	p.selected = max(min(row, p.count()-1), 0)
@@ -208,7 +225,10 @@ func (m *Model) newPanels() []*panel {
 			name: "backups", title: static(tr.BackupsTitle), hidden: m.backupsAway, window: snapshotsWindow,
 			plainTitle: tr.BackupsTitle, shortTitle: tr.BackupsShort, empty: tr.NoBackups,
 		},
-		{name: "images", title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages},
+		{
+			name: "images", title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,
+			flex: m.imageFlex, mainTabs: m.imageMainTabs, itemKey: m.imageKey,
+		},
 		{name: "volumes", title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes},
 		{name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks},
 		{name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles},

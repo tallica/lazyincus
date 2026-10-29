@@ -210,6 +210,9 @@ func (m *Model) paletteSources() map[string]paletteSource {
 			func(item int) string { return m.instances[item].Key() },
 			func(item int) string { return m.onRemote(m.instances[item].Name, m.instances[item].Remote) },
 			func(item int) string { return m.instances[item].Project }),
+		"images": m.sourceOf(m.panelNamed("images"),
+			func(item int) string { return m.images[item].Key() },
+			func(item int) string { return m.images[item].Label() }, nil),
 		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
 			func(item int) string { return m.snapshots[item].Key() },
 			func(item int) string {
