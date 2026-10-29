@@ -69,7 +69,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		screenMode:       parseScreenMode(gui.ScreenMode),
 		expandSidePanel:  gui.ExpandFocusedSidePanel,
 		snapshotsShowAll: gui.ShowAllSnapshots,
-		filter:           filter{input: newFilterInput()},
+		filter:           filter{input: newEditorInput()},
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true
@@ -144,8 +144,11 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.handleKey(msg)
 
 	case tea.PasteMsg:
-		if m.currentView() == filterView {
+		switch {
+		case m.currentView() == filterView:
 			return m.editFilter(msg)
+		case m.topPrompt() != nil:
+			return m.editPrompt(msg)
 		}
 	}
 
@@ -276,6 +279,12 @@ func (m *Model) View() tea.View {
 
 	if d, ok := m.dims()[filterView]; ok && m.currentView() == filterView {
 		view.Cursor = tea.NewCursor(d.X0+m.filterCursorX()-m.filter.ox, d.Y0)
+	}
+
+	if p := m.topPrompt(); p != nil {
+		x0, y0, x1, _, _ := m.popupLayout(p)
+		row, col := promptCursor(p.input, max(x1-x0-1, 1))
+		view.Cursor = tea.NewCursor(x0+1+col, y0+1+row)
 	}
 
 	return view

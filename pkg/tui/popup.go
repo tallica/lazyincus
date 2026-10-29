@@ -3,6 +3,8 @@ package tui
 import (
 	"strings"
 
+	"charm.land/bubbles/v2/textinput"
+
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/fatih/color"
@@ -18,6 +20,8 @@ type popup struct {
 	asks     bool
 	bindings []*binding
 	menu     *menu
+	// input makes it a text prompt.
+	input *textinput.Model
 	// subtitle is the hint as written, fittedSubtitle as drawn.
 	subtitle       string
 	fittedSubtitle string
@@ -115,9 +119,12 @@ func (m *Model) popupX(p *popup) (int, int) {
 func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
 	x0, x1 = m.popupX(p)
 
-	if p.menu != nil {
+	switch {
+	case p.menu != nil:
 		lines = p.menu.list.rows
-	} else {
+	case p.input != nil:
+		lines = wrapLine(p.input.Value(), max(x1-x0-1, 1))
+	default:
 		lines = strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n")
 	}
 	y0, y1 = popupRows(m.height, len(lines))

@@ -172,7 +172,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	}
 
 	view := m.currentView()
-	editable := view == filterView
+	editable := view == filterView || (view == confirmationView && m.topPrompt() != nil)
 	// An editable view types a rune, so no binding of one matches it.
 	typed := editable && hasRune(key)
 	// gocui hands an editable view's ctrl+u, ctrl+a and ctrl+e to its editor.
@@ -201,8 +201,10 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	switch {
 	case parent != nil:
 		return run(parent)
-	case editable && isEditorKey(msg):
+	case editable && isEditorKey(msg) && view == filterView:
 		return m.editFilter(msg)
+	case editable && isEditorKey(msg):
+		return m.editPrompt(msg)
 	case global != nil:
 		return run(global)
 	}

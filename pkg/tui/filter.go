@@ -28,7 +28,8 @@ type filter struct {
 	ox int
 }
 
-func newFilterInput() textinput.Model {
+// newEditorInput is a gocui view with DefaultEditor, SimpleEditor.
+func newEditorInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
 	input.SetVirtualCursor(false)

@@ -57,38 +57,9 @@ func wrapLine(line string, columns int) []string {
 
 	cs := cells(line)
 	var pieces [][]cell
-	n, offset, lastSpace := 0, 0, -1
-
-	for i, c := range cs {
-		n += c.width
-		if n > columns {
-			switch {
-			case c.chr == " ":
-				pieces = append(pieces, cs[offset:i])
-				offset, n = i+1, 0
-			case c.chr == "-":
-				pieces = append(pieces, cs[offset:i])
-				offset, n = i, c.width
-			case lastSpace != -1:
-				end := lastSpace
-				if cs[lastSpace].chr == "-" {
-					end++
-				}
-				pieces = append(pieces, cs[offset:end])
-				offset, n = lastSpace+1, 0
-				for _, rest := range cs[offset : i+1] {
-					n += rest.width
-				}
-			default:
-				pieces = append(pieces, cs[offset:i])
-				offset, n = i, c.width
-			}
-			lastSpace = -1
-		} else if c.chr == " " || c.chr == "-" {
-			lastSpace = i
-		}
+	for _, r := range wrapRanges(cs, columns) {
+		pieces = append(pieces, cs[r[0]:r[1]])
 	}
-	pieces = append(pieces, cs[offset:])
 
 	lines := make([]string, len(pieces))
 	active := ""
@@ -104,6 +75,44 @@ func wrapLine(line string, columns int) []string {
 	}
 
 	return lines
+}
+
+// wrapRanges are where wrapLine breaks cs, as [start, end) cell indices.
+func wrapRanges(cs []cell, columns int) [][2]int {
+	var ranges [][2]int
+	n, offset, lastSpace := 0, 0, -1
+
+	for i, c := range cs {
+		n += c.width
+		if n > columns {
+			switch {
+			case c.chr == " ":
+				ranges = append(ranges, [2]int{offset, i})
+				offset, n = i+1, 0
+			case c.chr == "-":
+				ranges = append(ranges, [2]int{offset, i})
+				offset, n = i, c.width
+			case lastSpace != -1:
+				end := lastSpace
+				if cs[lastSpace].chr == "-" {
+					end++
+				}
+				ranges = append(ranges, [2]int{offset, end})
+				offset, n = lastSpace+1, 0
+				for _, rest := range cs[offset : i+1] {
+					n += rest.width
+				}
+			default:
+				ranges = append(ranges, [2]int{offset, i})
+				offset, n = i, c.width
+			}
+			lastSpace = -1
+		} else if c.chr == " " || c.chr == "-" {
+			lastSpace = i
+		}
+	}
+
+	return append(ranges, [2]int{offset, len(cs)})
 }
 
 // carry is the escapes in force after escapes: those since the last reset.

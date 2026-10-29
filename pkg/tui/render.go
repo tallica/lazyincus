@@ -197,6 +197,8 @@ func (m *Model) options() string {
 		switch {
 		case top.menu != nil:
 			options = m.menuOptionsMap(top.menu)
+		case top.input != nil:
+			options = map[string]string{"esc": m.tr.Close, "enter": m.tr.Submit}
 		case top.asks:
 			options = map[string]string{"n/esc": m.tr.No, "y/enter": m.tr.Yes}
 		default:
