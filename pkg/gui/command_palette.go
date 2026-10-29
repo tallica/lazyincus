@@ -26,9 +26,8 @@ func (gui *Gui) handleCommandPalette(g *gocui.Gui, v *gocui.View) error {
 // openPalette opens the palette from v; scoped to item, it holds only the
 // actions of v's panel, on item, which v's panel has selected.
 func (gui *Gui) openPalette(g *gocui.Gui, v *gocui.View, item string) error {
-	// A panel's own filter would otherwise be left applied with no way to
-	// clear it, the palette taking the filter prompt over.
-	if gui.State.Filter.panel != nil {
+	// The palette takes the prompt over, from a list's filter or a search.
+	if gui.State.Filter.active {
 		if err := gui.clearFilter(); err != nil {
 			return err
 		}
