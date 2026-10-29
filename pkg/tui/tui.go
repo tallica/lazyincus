@@ -69,6 +69,8 @@ type Model struct {
 	streamEvents   bool
 	connectionLost bool
 	configModTime  time.Time
+	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
+	runIncus func(*exec.Cmd) (string, error)
 	// after stands in for tea.Tick in tests.
 	after func(time.Duration, tea.Msg) tea.Cmd
 }
@@ -91,6 +93,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		inbox:            make(chan tea.Msg, inboxSize),
 		tasks:            tasks.NewTaskManager(incus.Log, tr),
 		streamEvents:     true,
+		runIncus:         osCommand.RunExecutableWithOutput,
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true

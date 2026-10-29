@@ -65,14 +65,16 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 }
 
 // selectInstance is pkg/gui's Select: the cursor onto the instance with key, if shown.
-func (m *Model) selectInstance(key string) {
+func (m *Model) selectInstance(key string) bool {
 	p := m.panelNamed("instances")
 	for row, item := range p.shown {
 		if m.instances[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
-			return
+			return true
 		}
 	}
+
+	return false
 }
 
 // rerenderInstances shows the rows' marks, which their status reads.

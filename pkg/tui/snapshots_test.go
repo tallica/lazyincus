@@ -1,11 +1,16 @@
 package tui
 
 import (
+	"errors"
+	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
+	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -67,4 +72,120 @@ func TestTheSnapshotConfigTabNamesItsInstance(t *testing.T) {
 	assert.Contains(t, text, "Instance:     web")
 	assert.Contains(t, text, "Name:         daily-b")
 	assert.Contains(t, text, "Full details:")
+}
+
+// onWebsNewest has Snapshots focused on web's daily-b.
+func onWebsNewest(t *testing.T, opts options) *Model {
+	t.Helper()
+
+	opts.fixture = opts.server == nil
+	m := start(t, opts, 140, 40)
+	press(m, "j", "2")
+	require.Equal(t, "daily-b", m.selectedSnapshot().Name)
+
+	return m
+}
+
+func TestRestoringASnapshotAsksThenMarksItsInstance(t *testing.T) {
+	m := onWebsNewest(t, options{})
+
+	press(m, "r")
+	require.Len(t, m.popups, 1)
+	assert.Equal(t, "Are you sure you want to restore web to snapshot daily-b? Anything changed since is lost.",
+		ansi.Strip(m.popups[0].message))
+
+	_, cmd := m.Update(keyPress("y"))
+	assert.Contains(t, rowOf(m, "web"), "restoring")
+	run(m, cmd)
+	assert.Contains(t, rowOf(m, "web"), "running")
+}
+
+func TestDeletingASnapshotNamesItsInstance(t *testing.T) {
+	m := onWebsNewest(t, options{})
+
+	press(m, "d")
+	require.Len(t, m.popups, 1)
+	assert.Equal(t, "Are you sure you want to delete snapshot daily-b of web?", ansi.Strip(m.popups[0].message))
+}
+
+func TestSnapshotKeysAreRefusedReadOnly(t *testing.T) {
+	m := onWebsNewest(t, options{readOnly: true})
+
+	for _, key := range []string{"r", "d"} {
+		press(m, key)
+		require.Len(t, m.popups, 1, key)
+		assert.Contains(t, m.popups[0].message, "--read-only", key)
+		press(m, "esc")
+	}
+}
+
+func TestRenamingASnapshotFollowsIt(t *testing.T) {
+	m := onWebsNewest(t, options{})
+
+	run(m, onSnapshot((*Model).snapshotRename)(m))
+	require.NotNil(t, m.topPrompt())
+	assert.Equal(t, "Rename snapshot daily-b of web", m.topPrompt().title)
+	press(m, "ctrl+u")
+	typeText(m, "weekly")
+	press(m, "enter")
+
+	assert.Equal(t, "weekly", m.selectedSnapshot().Name)
+}
+
+func TestANewInstanceFromASnapshotIsCopiedAndFocused(t *testing.T) {
+	server := incustest.Fixture()
+	m := onWebsNewest(t, options{server: server})
+
+	var ran []string
+	m.runIncus = func(cmd *exec.Cmd) (string, error) {
+		copied := incustest.Fixture().Instances[0]
+		copied.Name, copied.Status, copied.Snapshots = "web-daily-b", "Stopped", nil
+		server.SetInstances(append(incustest.Fixture().Instances, copied))
+		ran = cmd.Args
+
+		return "", nil
+	}
+
+	run(m, onSnapshot((*Model).snapshotNewInstance)(m))
+	assert.Equal(t, "New instance from web/daily-b", m.topPrompt().title)
+	press(m, "enter")
+
+	assert.Equal(t, []string{"incus", "--project", "default", "copy", "web/daily-b", "web-daily-b"}, ran)
+	assert.Equal(t, "instances", m.currentView())
+	assert.Equal(t, "web-daily-b", m.selectedInstance().Name)
+	assert.Equal(t, "Snapshots (web-daily-b)", m.snapshotsTitle())
+}
+
+func TestANewInstanceFromASnapshotSaysWhyItFailed(t *testing.T) {
+	m := onWebsNewest(t, options{})
+	m.runIncus = func(*exec.Cmd) (string, error) {
+		return "", errors.New(`Error: Instance name "web-daily-b" already in use`)
+	}
+
+	run(m, onSnapshot((*Model).snapshotNewInstance)(m))
+	press(m, "enter")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, m.popups[0].message, "already in use")
+}
+
+// A compose instance's copy would keep its service label and join the service.
+func TestANewInstanceFromAComposeSnapshotIsRefused(t *testing.T) {
+	api1 := incustest.Fixture().Instances[0]
+	api1.Name = "api-1"
+	api1.ExpandedConfig = map[string]string{"user.label.incus-compose.service": "api"}
+	api1.Snapshots = []api.InstanceSnapshot{{Name: "api-1/nightly"}}
+	m := start(t, options{server: incustest.New(incustest.Server{Instances: []api.InstanceFull{api1}})}, 140, 40)
+	press(m, "2")
+
+	run(m, onSnapshot((*Model).snapshotNewInstance)(m))
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, m.popups[0].message, "api-1 belongs to a compose stack")
+}
+
+func TestYOffersASnapshotsNameAndReference(t *testing.T) {
+	m := onWebsNewest(t, options{})
+
+	press(m, "y")
+	require.NotNil(t, m.topMenu())
+	assert.Contains(t, strings.Join(screen(m), "\n"), "web/daily-b")
 }
