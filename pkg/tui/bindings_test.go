@@ -74,10 +74,10 @@ func TestTheOptionsListNamesOnlyKeysItCanLabel(t *testing.T) {
 	for _, b := range m.bindings() {
 		if b.listed() {
 			labels[b.label()] = true
+			assert.False(t, b.key != "" && b.label() == "", "%s has no label", b.key)
 		}
 	}
 
 	assert.True(t, labels["◄"])
 	assert.True(t, labels["E"])
-	assert.False(t, labels[""], "home and end have no label")
 }

@@ -2,21 +2,14 @@ package tui
 
 import (
 	"errors"
-	"fmt"
-	"io"
-	"os/exec"
 	"sort"
 	"strings"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
-	"github.com/fatih/color"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
-
-type execDoneMsg struct{ err error }
 
 func (m *Model) fetchInstances() fetch {
 	ticket := m.refreshes.instances.issue()
@@ -66,6 +59,17 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 		}
 	}
 	p.selectRow(p.selected, m.listRows(p))
+}
+
+// selectInstance is pkg/gui's Select: the cursor onto the instance with key, if shown.
+func (m *Model) selectInstance(key string) {
+	p := m.panelNamed("instances")
+	for row, item := range p.shown {
+		if m.instances[item].Key() == key {
+			p.selectRow(row, m.listRows(p))
+			return
+		}
+	}
 }
 
 // rerenderInstances shows the rows' marks, which their status reads.
@@ -248,48 +252,3 @@ func (m *Model) viewInstanceLogs() {
 	m.setMainTab(m.panelNamed("instances"), "logs")
 	m.enterMain()
 }
-
-// execShell is gui.instanceExecShell, refusing as guardReadOnly does.
-func (m *Model) execShell() tea.Cmd {
-	instance := m.selectedInstance()
-	if instance == nil {
-		return nil
-	}
-
-	if !instance.IsRunning() {
-		m.openError(m.tr.CannotExecStoppedInstanceError)
-		return nil
-	}
-
-	args := []string{}
-	if instance.Project != "" {
-		args = append(args, "--project", instance.Project)
-	}
-	args = append(args, "exec", instance.Name, "--", "sh", "-c",
-		"exec $(command -v bash || command -v ash || command -v sh)")
-
-	cmd := commands.WithRemote(m.os.NewCmd("incus", args...), instance.Remote)
-
-	return tea.Exec(&announcedCmd{cmd: cmd, message: m.tr.ExitShellToReturn}, func(err error) tea.Msg {
-		return execDoneMsg{err: err}
-	})
-}
-
-// announcedCmd prints its message first, after a reset: the last frame's
-// attributes are still in force on the released terminal.
-type announcedCmd struct {
-	cmd     *exec.Cmd
-	message string
-}
-
-func (c *announcedCmd) Run() error {
-	if c.cmd.Stdout != nil {
-		fmt.Fprintln(c.cmd.Stdout, reset+utils.ColoredString(c.message, color.FgBlue))
-	}
-
-	return c.cmd.Run()
-}
-
-func (c *announcedCmd) SetStdin(r io.Reader)  { c.cmd.Stdin = r }
-func (c *announcedCmd) SetStdout(w io.Writer) { c.cmd.Stdout = w }
-func (c *announcedCmd) SetStderr(w io.Writer) { c.cmd.Stderr = w }

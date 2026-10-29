@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -181,4 +182,85 @@ func TestLifecycleKeysAreRefusedReadOnly(t *testing.T) {
 		assert.Contains(t, m.popups[0].message, "--read-only", key)
 		press(m, "esc")
 	}
+}
+
+func rename(m *Model, to string) {
+	run(m, onInstance((*Model).instanceRename)(m))
+	press(m, "ctrl+u")
+	typeText(m, to)
+	press(m, "enter")
+}
+
+func TestRenamingAStoppedInstanceFollowsItToItsNewName(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	press(m, "j", "j")
+
+	rename(m, "archive")
+	assert.Equal(t, "archive", m.selectedInstance().Name)
+	assert.Equal(t, []string{"default/cache", "default/web", "default/archive"}, shownInstances(m))
+}
+
+func TestRenamingARunningInstanceStopsItOnceConfirmed(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+
+	rename(m, "redis")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "Stop cache, rename it to redis and start it again?")
+
+	press(m, "y")
+	assert.Equal(t, "redis", m.selectedInstance().Name)
+	assert.Contains(t, rowOf(m, "redis"), "running")
+}
+
+func TestTheDescriptionIsSavedFromItsPrompt(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+
+	run(m, onInstance((*Model).instanceEditDescription)(m))
+	typeText(m, "the cache")
+	press(m, "enter")
+	assert.Equal(t, "the cache", m.selectedInstance().Instance.Description)
+}
+
+func TestACopyLandsAsATransientStatus(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+
+	press(m, "y")
+	require.NotNil(t, m.topMenu())
+	assert.Contains(t, strings.Join(screen(m), "\n"), "cache")
+
+	press(m, "esc")
+	m.Update(copiedMsg{value: "cache"})
+	assert.Regexp(t, `^copied to clipboard: cache `, footer(m))
+}
+
+func TestShellAndConsoleRefuseAStoppedInstance(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	press(m, "j", "j")
+
+	for key, message := range map[string]string{
+		"E": m.tr.CannotExecStoppedInstanceError, "a": m.tr.CannotAttachStoppedInstanceError,
+	} {
+		press(m, key)
+		require.Len(t, m.popups, 1, key)
+		assert.Equal(t, message, ansi.Strip(m.popups[0].message), key)
+		press(m, "esc")
+	}
+}
+
+func TestASubprocessIsEchoedAndWaitsForEnter(t *testing.T) {
+	m := newTestModel(t, options{})
+	var out strings.Builder
+
+	s := &subprocess{
+		cmd: exec.Command("echo", "hi"), message: "bye", os: m.os, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
+	}
+	s.SetStdin(strings.NewReader("\n"))
+	s.SetStdout(&out)
+	require.NoError(t, s.Run())
+
+	text := ansi.Strip(out.String())
+	assert.Contains(t, text, "+ echo hi\n")
+	assert.Contains(t, text, "bye")
+	assert.Contains(t, text, "hi\n")
+	assert.True(t, strings.HasSuffix(text, m.tr.PressEnterToReturn))
 }

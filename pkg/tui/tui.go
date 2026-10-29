@@ -199,10 +199,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.onConfigStat(msg.modTime)
 
 	case execDoneMsg:
-		if msg.err != nil {
-			m.openError(msg.err.Error())
-		}
-		return refresh(m.fetchInstances())
+		return m.onExecDone(msg)
+
+	case copiedMsg:
+		return m.onCopied(msg)
 
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
