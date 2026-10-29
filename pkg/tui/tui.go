@@ -13,6 +13,8 @@ import (
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
+const inboxSize = 256
+
 // Model is the whole UI's state; Update is the only place it changes.
 type Model struct {
 	incus *commands.IncusCommand
@@ -46,7 +48,11 @@ type Model struct {
 	instances   []*commands.Instance
 	showProject bool
 
-	refreshes      refreshSeqs
+	refreshes refreshSeqs
+	events    events
+	// inbox is what goroutines outside the program send it.
+	inbox          chan tea.Msg
+	streamEvents   bool
 	connectionLost bool
 	configModTime  time.Time
 	// after stands in for tea.Tick in tests.
@@ -67,6 +73,8 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		expandSidePanel:  gui.ExpandFocusedSidePanel,
 		snapshotsShowAll: gui.ShowAllSnapshots,
 		filter:           filter{input: newEditorInput()},
+		inbox:            make(chan tea.Msg, inboxSize),
+		streamEvents:     true,
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true
@@ -82,13 +90,20 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	// owns the terminal, so the answer is always yes.
 	color.NoColor = false
 
-	_, err := tea.NewProgram(NewModel(incus, osCommand, tr, cfg)).Run()
+	m := NewModel(incus, osCommand, tr, cfg)
+	_, err := tea.NewProgram(m).Run()
+	m.stopEvents()
 
 	return err
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.refreshAll(), m.pollers())
+	cmds := []tea.Cmd{m.refreshAll(), m.pollers()}
+	if m.streamEvents {
+		cmds = append(cmds, m.listen(), m.receive())
+	}
+
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -114,6 +129,29 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case refreshMsg:
 		return m.applyRefresh(msg)
+
+	case received:
+		return tea.Batch(m.update(msg.msg), m.receive())
+
+	case eventsOpenedMsg:
+		return m.onEventsOpened(msg)
+
+	case eventMsg:
+		return m.onEvent(msg)
+
+	case eventsClosedMsg:
+		return m.onEventsClosed(msg)
+
+	case reopenEventsMsg:
+		if msg.stream == m.events.stream {
+			return m.listen()
+		}
+
+	case flushEventsMsg:
+		return m.flushEvents()
+
+	case instanceUpdatedMsg:
+		return m.refreshUpdated()
 
 	case pollMsg:
 		return m.pollInstances()

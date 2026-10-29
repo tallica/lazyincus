@@ -19,6 +19,8 @@ type refreshMsg struct {
 	round *int
 	// next runs whatever the fetches found: a poll re-arming.
 	next tea.Cmd
+	// ending is the operations' marks to take off once the listing lands.
+	ending []func()
 }
 
 // refresh is pkg/gui's refresh as a Cmd.
@@ -89,6 +91,13 @@ func (m *Model) applyRefresh(msg refreshMsg) tea.Cmd {
 		apply()
 	}
 
+	if len(msg.ending) > 0 {
+		for _, end := range msg.ending {
+			end()
+		}
+		m.rerenderInstances()
+	}
+
 	if msg.round != nil {
 		*msg.round--
 		if *msg.round == 0 {
@@ -130,7 +139,6 @@ func (m *Model) handleError(err error) {
 }
 
 // tick is tea.Tick unless a test has replaced it to fire ticks itself.
-// nolint:unparam
 func (m *Model) tick(d time.Duration, msg tea.Msg) tea.Cmd {
 	if m.after != nil {
 		return m.after(d, msg)

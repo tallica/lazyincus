@@ -90,9 +90,7 @@ func (m *Model) reloadConfig() error {
 	}
 
 	m.theme = newTheme(m.cfg.UserConfig.Gui)
-	if m.instances != nil {
-		m.setInstances(m.instances)
-	}
+	m.rerenderInstances()
 
 	return nil
 }

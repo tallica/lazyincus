@@ -71,6 +71,13 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	p.selectRow(p.selected, m.listRows(p))
 }
 
+// rerenderInstances shows the rows' marks, which their status reads.
+func (m *Model) rerenderInstances() {
+	if m.instances != nil {
+		m.setInstances(m.instances)
+	}
+}
+
 func lessInstance(a, b *commands.Instance) bool {
 	if a.IsRunning() != b.IsRunning() {
 		return a.IsRunning()

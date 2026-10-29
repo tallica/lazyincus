@@ -59,6 +59,7 @@ func newTestModel(t *testing.T, opts options) *Model {
 	m := NewModel(incus, osCommand, tr, appConfig)
 	// Ticks never fire on their own: a test sends the message itself.
 	m.after = func(time.Duration, tea.Msg) tea.Cmd { return nil }
+	m.streamEvents = false
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
 	m.panels = m.newPanels()
@@ -98,8 +99,8 @@ func run(m *Model, cmd tea.Cmd) {
 	}
 }
 
-// refreshInstances is a keypress's refresh of the instances, run to the end.
-func refreshInstances(m *Model) {
+// refreshNow is a keypress's refresh of the instances, run to the end.
+func refreshNow(m *Model) {
 	run(m, refresh(m.fetchInstances()))
 }
 
@@ -187,7 +188,7 @@ func TestSelectionFollowsTheInstanceAcrossRefresh(t *testing.T) {
 	press(m, "j")
 	require.Equal(t, "web", m.selectedInstance().Name)
 
-	refreshInstances(m)
+	refreshNow(m)
 	assert.Equal(t, "web", m.selectedInstance().Name)
 }
 
@@ -198,7 +199,7 @@ func TestLateFetchIsDropped(t *testing.T) {
 
 	late := refresh(m.fetchInstances())()
 	server.SetInstances([]api.InstanceFull{{Instance: api.Instance{Name: "new", Project: "default", Status: "Running"}}})
-	refreshInstances(m)
+	refreshNow(m)
 	m.Update(late)
 
 	require.Len(t, m.instances, 1)
@@ -222,7 +223,7 @@ func TestAnUnreachableDaemonIsNoErrorPopup(t *testing.T) {
 	m := start(t, options{server: server}, 90, 16)
 
 	server.SetDown(true)
-	refreshInstances(m)
+	refreshNow(m)
 	assert.Empty(t, m.popups, "an unreachable daemon is the footer's to report")
 	assert.False(t, m.incus.IsConnected())
 }
