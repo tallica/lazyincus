@@ -66,6 +66,18 @@ func (m *Model) activeInWindow(window string) *panel {
 	return panels[0]
 }
 
+// windowTitle is pkg/gui's: what the number key's description names.
+func (m *Model) windowTitle(window string) string {
+	switch window {
+	case resourcesWindow:
+		return m.tr.ResourcesTitle
+	case snapshotsWindow:
+		return m.tr.SnapshotsTitle
+	}
+
+	return m.windowPanels(window)[0].title()
+}
+
 func titlePrefix(index int) string {
 	return fmt.Sprintf("[%d]", index+1)
 }
@@ -166,6 +178,9 @@ func (m *Model) focusView(name string) {
 	}
 
 	m.popups = nil
+	if m.currentStaticView() == mainView && name != mainView {
+		m.mainParent = ""
+	}
 
 	if m.isSideView(name) {
 		m.focus = nil
@@ -182,6 +197,9 @@ func (m *Model) focusView(name string) {
 }
 
 func (m *Model) returnFocus() {
+	if m.currentStaticView() == mainView {
+		m.mainParent = ""
+	}
 	if len(m.focus) > 1 {
 		m.focus = m.focus[:len(m.focus)-1]
 	}

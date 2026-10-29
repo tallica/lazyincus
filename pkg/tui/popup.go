@@ -12,45 +12,53 @@ import (
 // popupView is what currentView names while a popup has the focus.
 const popupView = "popup"
 
-// popup is a message, or with onYes a question; the top one has the keys.
+// popup is a message, or with asks a question; the top one has the keys.
 type popup struct {
-	title   string
-	message string
-	onYes   func() tea.Cmd
+	title    string
+	message  string
+	asks     bool
+	bindings []*binding
 }
 
 func (m *Model) openError(message string) {
-	m.popups = append(m.popups, &popup{
-		title:   m.tr.ErrorTitle,
-		message: utils.ColoredString(strings.TrimSpace(message), color.FgRed),
-	})
+	m.openMessage(m.tr.ErrorTitle, utils.ColoredString(strings.TrimSpace(message), color.FgRed))
 }
 
+// openMessage is pkg/gui's createMessagePanel.
+func (m *Model) openMessage(title, message string) {
+	m.openPopup(&popup{title: title, message: message}, nil, nil)
+}
+
+// openConfirmation is pkg/gui's createConfirmationPanel.
 func (m *Model) openConfirmation(title, message string, onYes func() tea.Cmd) {
-	m.popups = append(m.popups, &popup{title: title, message: message, onYes: onYes})
+	m.openPopup(&popup{title: title, message: message, asks: true}, onYes, nil)
+}
+
+// openPopup is pkg/gui's createPopupPanel: enter/y confirm, esc/n close.
+func (m *Model) openPopup(p *popup, onConfirm, onClose func() tea.Cmd) {
+	closing := func(f func() tea.Cmd) func(*Model) tea.Cmd {
+		return func(m *Model) tea.Cmd {
+			m.closePopup()
+			if f == nil {
+				return nil
+			}
+			return f()
+		}
+	}
+
+	confirm, closeIt := closing(onConfirm), closing(onClose)
+	for _, k := range []struct {
+		key     string
+		handler func(*Model) tea.Cmd
+	}{{"enter", confirm}, {"y", confirm}, {"esc", closeIt}, {"n", closeIt}} {
+		p.bindings = append(p.bindings, &binding{view: popupView, key: k.key, handler: k.handler})
+	}
+
+	m.popups = append(m.popups, p)
 }
 
 func (m *Model) closePopup() {
 	m.popups = m.popups[:len(m.popups)-1]
-}
-
-// popupKey reports whether the top popup took key; gocui passes the rest on.
-func (m *Model) popupKey(key string) (tea.Cmd, bool) {
-	top := m.popups[len(m.popups)-1]
-
-	switch {
-	case top.onYes == nil && (key == "esc" || key == "enter"):
-		m.closePopup()
-		return nil, true
-	case top.onYes != nil && (key == "n" || key == "esc"):
-		m.closePopup()
-		return nil, true
-	case top.onYes != nil && (key == "y" || key == "enter"):
-		m.closePopup()
-		return top.onYes(), true
-	}
-
-	return nil, false
 }
 
 // popupColumns and popupRows are pkg/gui's.

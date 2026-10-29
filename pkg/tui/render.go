@@ -186,7 +186,7 @@ func (m *Model) options() string {
 
 	if len(m.popups) > 0 {
 		options = map[string]string{"esc/enter": m.tr.Close}
-		if m.popups[len(m.popups)-1].onYes != nil {
+		if m.popups[len(m.popups)-1].asks {
 			options = map[string]string{"n/esc": m.tr.No, "y/enter": m.tr.Yes}
 		}
 	}

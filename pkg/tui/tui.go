@@ -37,8 +37,10 @@ type Model struct {
 	screenMode      screenMode
 	expandSidePanel bool
 	main            pane
-	filter          filter
-	appStatus       string
+	// mainParent is gocui's main ParentView: the panel enter came from.
+	mainParent string
+	filter     filter
+	appStatus  string
 
 	composeAvailable bool
 	// stacksHere stays false: nothing loads stacks yet.
@@ -142,143 +144,44 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case tea.PasteMsg:
 		if m.currentView() == filterView {
-			var cmd tea.Cmd
-			m.filter.input, cmd = m.filter.input.Update(msg)
-			m.onNeedle(m.filter.input.Value())
-			return cmd
+			return m.editFilter(msg)
 		}
 	}
 
 	return nil
 }
 
-// handleKey tries the top popup, then the focused view, then global keys.
-func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
-	key := msg.String()
-
-	switch {
-	case len(m.popups) > 0:
-		if cmd, handled := m.popupKey(key); handled {
-			return cmd
-		}
-	case m.searchKey(key):
+func (m *Model) quit() tea.Cmd {
+	if m.cfg.UserConfig.ConfirmOnQuit {
+		m.openConfirmation("", m.tr.ConfirmQuit, func() tea.Cmd { return tea.Quit })
 		return nil
-	case m.currentView() == filterView:
-		if handled, cmd := m.filterKey(msg); handled {
-			return cmd
-		}
-	default:
-		if handled, cmd := m.viewKey(key); handled {
-			return cmd
-		}
 	}
 
-	return m.globalKey(key)
+	return tea.Quit
 }
 
-func (m *Model) viewKey(key string) (bool, tea.Cmd) {
-	view := m.currentView()
-
-	if view == mainView {
-		switch key {
-		case "esc":
-			m.returnFocus()
-		case "/":
-			m.openSearch()
-		case "k", "up":
-			m.scrollMain(-1)
-		case "j", "down":
-			m.scrollMain(1)
-		case "h", "left":
-			m.main.scrollLeft(m.cfg.UserConfig.Gui.ScrollHeight)
-		case "l", "right":
-			m.main.scrollRight(m.cfg.UserConfig.Gui.ScrollHeight)
-		default:
-			return false, nil
-		}
-		return true, nil
+// escape is pkg/gui's, for esc where no view takes it.
+func (m *Model) escape() {
+	if m.filter.active {
+		m.clearFilter()
 	}
-
-	p := m.panelNamed(view)
-	if p == nil {
-		return false, nil
-	}
-
-	switch key {
-	case "k", "up":
-		m.moveSelection(p, -1)
-	case "j", "down":
-		m.moveSelection(p, 1)
-	case "enter":
-		m.focusView(mainView)
-	case "/":
-		m.openFilter(p)
-	case "[":
-		m.cycleMainTab(p, -1)
-	case "]":
-		m.cycleMainTab(p, 1)
-	case "E":
-		if p.name != "instances" {
-			return false, nil
-		}
-		return true, m.execShell()
-	default:
-		return false, nil
-	}
-
-	return true, nil
 }
 
-func (m *Model) globalKey(key string) tea.Cmd {
-	switch key {
-	case "q", "ctrl+c":
-		if m.cfg.UserConfig.ConfirmOnQuit {
-			m.openConfirmation("", m.tr.ConfirmQuit, func() tea.Cmd { return tea.Quit })
-			return nil
-		}
-		return tea.Quit
-	case "esc":
-		if m.filter.active {
-			m.clearFilter()
-		}
-	case "pgup", "ctrl+u", "K":
-		m.scrollMain(-1)
-	case "pgdown", "ctrl+d", "J":
-		m.scrollMain(1)
-	case "H":
-		m.main.scrollLeft(m.cfg.UserConfig.Gui.ScrollHeight)
-	case "L":
-		m.main.scrollRight(m.cfg.UserConfig.Gui.ScrollHeight)
-	case "home":
-		m.main.autoscroll = false
-		m.main.ox, m.main.oy = 0, 0
-	case "end":
-		m.main.autoscroll = true
-	case "tab":
-		m.cycleWindows(1)
-	case "shift+tab":
-		m.cycleWindows(-1)
-	case "h", "left":
-		m.cycleViews(-1)
-	case "l", "right":
-		m.cycleViews(1)
-	case "+":
-		m.nextScreenMode(1)
-	case "_":
-		m.nextScreenMode(-1)
-	case "=":
-		m.expandSidePanel = !m.expandSidePanel
-	default:
-		if len(key) == 1 && key[0] >= '1' && key[0] <= '9' {
-			if windows := m.windowNames(); int(key[0]-'1') < len(windows) {
-				m.goToWindow(windows[key[0]-'1'])
-			}
-		}
-	}
+func (m *Model) jumpToTopMain() {
+	m.main.autoscroll = false
+	m.main.ox, m.main.oy = 0, 0
+}
 
-	m.clampLists()
+// enterMain is pkg/gui's handleEnterMain.
+func (m *Model) enterMain() {
+	parent := m.currentView()
+	m.focusView(mainView)
+	m.mainParent = parent
+}
 
-	return nil
+func (m *Model) exitMain() {
+	m.mainParent = ""
+	m.returnFocus()
 }
 
 func (m *Model) moveSelection(p *panel, step int) {

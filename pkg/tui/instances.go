@@ -163,19 +163,7 @@ func (m *Model) execShell() tea.Cmd {
 		return nil
 	}
 
-	remote := instance.Remote
-	if remote == "" {
-		remote = m.incus.RemoteName()
-	}
-
-	switch {
-	case m.cfg.ReadOnly:
-		m.openError(m.tr.ReadOnlySession)
-		return nil
-	case m.cfg.UserConfig.Remotes[remote].ReadOnly:
-		m.openError(fmt.Sprintf(m.tr.ReadOnlyRemote, remote))
-		return nil
-	case !instance.IsRunning():
+	if !instance.IsRunning() {
 		m.openError(m.tr.CannotExecStoppedInstanceError)
 		return nil
 	}

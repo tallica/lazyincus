@@ -91,31 +91,12 @@ func (m *Model) openSearch() {
 	m.focusView(filterView)
 }
 
-func (m *Model) filterKey(msg tea.KeyPressMsg) (bool, tea.Cmd) {
-	switch msg.String() {
-	case "enter":
-		m.commitFilter()
-	case "esc":
-		m.escapeFilterPrompt()
-	case "up":
-		m.moveFilteredSelection(-1)
-	case "down":
-		m.moveFilteredSelection(1)
-	case "tab":
-		m.cycleWindows(1)
-	default:
-		if !isEditorKey(msg) {
-			return false, nil
-		}
+func (m *Model) editFilter(msg tea.Msg) tea.Cmd {
+	var cmd tea.Cmd
+	m.filter.input, cmd = m.filter.input.Update(msg)
+	m.onNeedle(m.filter.input.Value())
 
-		var cmd tea.Cmd
-		m.filter.input, cmd = m.filter.input.Update(msg)
-		m.onNeedle(m.filter.input.Value())
-
-		return true, cmd
-	}
-
-	return true, nil
+	return cmd
 }
 
 // onNeedle is pkg/gui's onNewFilterNeedle, which runs on every key the
