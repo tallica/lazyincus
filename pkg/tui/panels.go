@@ -210,7 +210,7 @@ func (m *Model) newPanels() []*panel {
 	static := func(s string) func() string { return func() string { return s } }
 
 	panels := []*panel{
-		{name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks},
+		{name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks, itemKey: m.stackKey},
 		{name: "services", title: static(tr.ServicesTitle), hidden: m.composeUnavailable, empty: tr.NoServices},
 		{
 			name: "instances", title: m.instancesTitle, empty: tr.NoInstances,

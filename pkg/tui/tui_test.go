@@ -2,6 +2,11 @@ package tui
 
 import (
 	"context"
+	"errors"
+	"maps"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +30,11 @@ type options struct {
 	configure func(*config.UserConfig)
 	// server is the daemon, for a test that changes it, in place of either.
 	server *incustest.Server
+	// localStack is the stack lazyincus started in, savedStacks those in state.yml.
+	localStack  *commands.ComposeStack
+	savedStacks []*commands.ComposeStack
+	// remotes are other daemons by CLI remote name; "down" is known but never answers.
+	remotes map[string]*incustest.Server
 }
 
 func newTestModel(t *testing.T, opts options) *Model {
@@ -67,6 +77,10 @@ func newTestModel(t *testing.T, opts options) *Model {
 	m.composeAvailable = opts.compose
 	m.panels = m.newPanels()
 	m.focus = nil
+	if opts.compose {
+		withStacks(t, m, opts.localStack, opts.savedStacks...)
+		withRemotes(m, server, opts.remotes)
+	}
 	m.landOffStacks()
 
 	return m
@@ -366,4 +380,83 @@ func TestAnEmptyListLeavesItsMessageToMain(t *testing.T) {
 	main := strings.Join(inside(screen(m), m.dims()[mainView]), "\n")
 	assert.Contains(t, main, "No snapshots")
 	assert.NotContains(t, screen(m)[0], "Info - Logs - Config - Env - Top", "an empty list's main has no tabs")
+}
+
+// testStack is a stack in a directory of its own under root, named for its
+// Incus project and declaring services.
+func testStack(t *testing.T, root, project string, services ...string) *commands.ComposeStack {
+	t.Helper()
+
+	dir := filepath.Join(root, project)
+	require.NoError(t, os.Mkdir(dir, 0o755))
+
+	stack := &commands.ComposeStack{Dir: dir, Name: project}
+	for _, service := range services {
+		stack.Services = append(stack.Services, commands.ComposeService{Name: service, Replicas: 1})
+	}
+
+	return stack
+}
+
+// withStacks lists stacks without incus-compose: local is the stack
+// lazyincus started in, nil for none, and saved are in state.yml. A
+// directory neither names reads as having no compose file.
+func withStacks(t *testing.T, m *Model, local *commands.ComposeStack, saved ...*commands.ComposeStack) {
+	t.Helper()
+
+	byDir := map[string]*commands.ComposeStack{}
+
+	m.localStackDir, m.localStackExplicit = "", false
+	if local != nil {
+		m.localStackDir = local.Dir
+		byDir[local.Dir] = local
+	}
+
+	for _, stack := range saved {
+		require.NoError(t, m.cfg.AddStack(stack.Ref()))
+		byDir[stack.Dir] = stack
+	}
+
+	m.loadStack = func(dir string) *commands.ComposeStack {
+		if stack, ok := byDir[dir]; ok {
+			loaded := *stack
+			return &loaded
+		}
+
+		return &commands.ComposeStack{Dir: dir, Err: errors.New("no compose.yaml found")}
+	}
+}
+
+// withRemotes stands each server in for the CLI remote it's keyed by, the
+// session's own for "fake", and "down" for a remote that's known but
+// doesn't answer.
+func withRemotes(m *Model, session *incustest.Server, servers map[string]*incustest.Server) {
+	servers = maps.Clone(servers)
+	if servers == nil {
+		servers = map[string]*incustest.Server{}
+	}
+	servers["fake"] = session
+
+	names := append(slices.Sorted(maps.Keys(servers)), "down")
+	slices.Sort(names)
+
+	m.remotes.names = func() []string { return names }
+	m.remotes.known = func(remote string) bool { return slices.Contains(names, remote) }
+	m.remotes.connect = func(remote string) (*commands.IncusCommand, error) {
+		server, ok := servers[remote]
+		if !ok {
+			return nil, &commands.ConnectError{Remote: remote, Err: errors.New("no answer")}
+		}
+
+		return commands.NewIncusCommandWithClient(m.incus.Log, m.incus.OSCommand, m.incus.Tr, m.incus.Config, server, remote), nil
+	}
+}
+
+// composeFixture is a fixture instance of project that incus-compose made for service.
+func composeFixture(project, name, service string) api.InstanceFull {
+	instance := incustest.Fixture().Instances[0]
+	instance.Name, instance.Project = name, project
+	instance.ExpandedConfig = map[string]string{"user.label.incus-compose.service": service}
+
+	return instance
 }

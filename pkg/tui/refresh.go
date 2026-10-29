@@ -82,7 +82,7 @@ func (m *Model) refreshAll() tea.Cmd {
 // fetchGroups is pkg/gui's, for the panels ported so far.
 func (m *Model) fetchGroups() [][]fetch {
 	return [][]fetch{
-		{m.fetchInstances()},
+		{m.fetchStacks(), m.fetchInstances()},
 		{m.fetchImages()},
 		{m.fetchVolumes()},
 		{m.fetchNetworks()},
@@ -173,6 +173,7 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 }
 
 type refreshSeqs struct {
+	stacks       refreshSeq
 	instances    refreshSeq
 	images       refreshSeq
 	volumes      refreshSeq
@@ -192,5 +193,5 @@ func refreshEnding(ends []func(), fetches ...fetch) tea.Cmd {
 
 // instanceFetches is pkg/gui's, for the panels ported so far.
 func (m *Model) instanceFetches() []fetch {
-	return []fetch{m.fetchInstances()}
+	return []fetch{m.fetchStacks(), m.fetchInstances()}
 }

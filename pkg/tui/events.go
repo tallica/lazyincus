@@ -12,7 +12,7 @@ import (
 )
 
 // refreshKind is a set of lists an event can have changed.
-type refreshKind uint8
+type refreshKind uint16
 
 const (
 	refreshInstances refreshKind = 1 << iota
@@ -23,6 +23,8 @@ const (
 	refreshWarnings
 	// refreshOperations is the stream opening: what changed while it was shut.
 	refreshOperations
+	refreshStacks
+	refreshBackups
 )
 
 // usedBy is every list that counts what uses it.
@@ -344,7 +346,11 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	var fetches []fetch
 
 	if kinds&refreshInstances != 0 {
-		fetches = append(fetches, m.fetchInstances())
+		fetches = append(fetches, m.instanceFetches()...)
+	}
+
+	if kinds&refreshStacks != 0 {
+		fetches = append(fetches, m.fetchStacks())
 	}
 
 	if kinds&refreshImages != 0 {

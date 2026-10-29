@@ -234,6 +234,18 @@ func (m *Model) landOffStacks() {
 	}
 }
 
+// leaveHiddenView is pkg/gui's: the focus leaves a side panel that has just been hidden.
+func (m *Model) leaveHiddenView() {
+	p := m.panelNamed(m.currentSideView())
+	if p == nil || !p.isHidden() {
+		return
+	}
+
+	popups := m.popups
+	m.focusView(m.activeInWindow(p.windowName()).name)
+	m.popups = popups
+}
+
 // goToWindow is pkg/gui's handleGoToWindow.
 func (m *Model) goToWindow(window string) {
 	if len(m.popups) == 0 && m.windowOf(m.currentView()) == window {

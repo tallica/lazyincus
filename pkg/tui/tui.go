@@ -4,6 +4,7 @@ package tui
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"time"
 
@@ -53,12 +54,34 @@ type Model struct {
 	spinning   bool
 
 	composeAvailable bool
-	// stacksHere stays false: nothing loads stacks yet.
-	stacksHere       bool
-	snapshotsShowAll bool
-	snapshotsFollow  snapshotsFollow
-	snapshotsSpan    snapshotsSpan
-	snapshots        []*commands.Snapshot
+	// localStackDir and localStackExplicit are pkg/gui's: where the local stack comes from, set once.
+	localStackDir      string
+	localStackExplicit bool
+	// loadStack reads a stack's compose config; tests stand in for incus-compose.
+	loadStack func(dir string) *commands.ComposeStack
+	// stackCache and remotes synchronise themselves: the fetches use them off the loop.
+	stackCache *stackCache
+	remotes    *remoteCommands
+	// notifyRemotes tells the loop a remote connected or its statuses changed.
+	notifyRemotes func()
+	home          string
+	stacks        []*commands.ComposeStack
+	stacksHere    bool
+	// stacksElsewhere is whether any listed stack is on another remote.
+	stacksElsewhere bool
+	// landing is pkg/gui's State.Landing: the first stacks read of a scope leaves Stacks if none is here.
+	landing bool
+	// stackDirs and stackRemotes are pkg/gui's, for the tabs naming a compose instance's stack.
+	stackDirs     map[string]string
+	stackRemotes  []string
+	stackServices map[string]map[string]bool
+	// selectedStack is what Services and Backups follow; nil for none.
+	selectedStack      *commands.ComposeStack
+	showStackInstances bool
+	snapshotsShowAll   bool
+	snapshotsFollow    snapshotsFollow
+	snapshotsSpan      snapshotsSpan
+	snapshots          []*commands.Snapshot
 
 	instances     []*commands.Instance
 	images        []*commands.Image
@@ -121,8 +144,22 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	if _, err := exec.LookPath("incus-compose"); err == nil {
 		m.composeAvailable = true
 	}
+	m.home, _ = os.UserHomeDir()
+	m.localStackDir, m.localStackExplicit = localStackDir()
+	m.loadStack = incus.LoadComposeStack
+	m.stackCache = &stackCache{}
+	m.stacksHere, m.landing = true, true
+	m.notifyRemotes = func() {
+		select {
+		case m.inbox <- remotesChangedMsg{}:
+		default: // a full inbox: the next poll asks again
+		}
+	}
+	m.remotes = &remoteCommands{
+		connect: incus.ConnectRemote, known: incus.IsInstanceRemote,
+		names: incus.InstanceRemoteNames, connected: m.notifyRemotes,
+	}
 	m.panels = m.newPanels()
-	m.landOffStacks()
 
 	return m
 }
@@ -131,6 +168,10 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	// fatih/color decides once, from stdout, whether to colour; Bubble Tea
 	// owns the terminal, so the answer is always yes.
 	color.NoColor = false
+
+	if err := cfg.PinStacks(incus.RemoteName()); err != nil {
+		incus.Log.Warn().Err(err).Send()
+	}
 
 	m := NewModel(incus, osCommand, tr, cfg)
 	_, err := tea.NewProgram(m).Run()
@@ -218,6 +259,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case instanceUpdatedMsg:
 		return m.refreshUpdated()
+
+	case remotesChangedMsg:
+		return refreshQuiet(nil, m.fetchStacks())
 
 	case pollMsg:
 		return m.pollInstances()

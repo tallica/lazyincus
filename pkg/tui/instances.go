@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -49,7 +50,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 
 	sort.SliceStable(instances, func(a, b int) bool { return sortInstances(instances[a], instances[b]) })
 	m.instances = instances
-	m.showProject = spansProjects(instances, instanceProject)
+	m.setInstancesSpan()
 
 	p := m.panelNamed("instances")
 	p.awaiting = ""
@@ -128,7 +129,31 @@ func (m *Model) keepInstance(item int) bool {
 		return m.instanceUsers.uses(m.instances[item])
 	}
 
-	return m.showStopped || !isStopped(m.instances[item])
+	if !m.showStopped && isStopped(m.instances[item]) {
+		return false
+	}
+
+	return m.showStackInstances || !m.isStackInstance(m.instances[item])
+}
+
+// isStackInstance is pkg/gui's: a listed stack's service claims the instance.
+func (m *Model) isStackInstance(instance *commands.Instance) bool {
+	return m.stackServices[instance.Project][instance.ComposeService()]
+}
+
+// setInstancesSpan is pkg/gui's: computed over the instances Instances shows.
+func (m *Model) setInstancesSpan() {
+	standalone := lo.Reject(m.instances, func(instance *commands.Instance, _ int) bool {
+		return !m.showStackInstances && m.isStackInstance(instance)
+	})
+
+	m.showProject = spansProjects(standalone, instanceProject)
+}
+
+// toggleStackInstances is pkg/gui's handleToggleStackInstances.
+func (m *Model) toggleStackInstances() {
+	m.showStackInstances = !m.showStackInstances
+	m.rerenderInstances()
 }
 
 // toggleStoppedInstances is pkg/gui's handleHideStoppedInstances.
@@ -229,7 +254,7 @@ func (m *Model) instanceEnv(instance *commands.Instance) string {
 	return m.tr.NothingToDisplay
 }
 
-// instanceLocation is pkg/gui's; no stack is listed until Stacks are ported.
+// instanceLocation is pkg/gui's.
 func (m *Model) instanceLocation(instance *commands.Instance) presentation.Location {
 	loc := presentation.Location{Remote: instance.Remote, Project: instance.Project}
 	if loc.Remote == "" {
@@ -237,19 +262,10 @@ func (m *Model) instanceLocation(instance *commands.Instance) presentation.Locat
 	}
 
 	if service := instance.ComposeService(); service != "" {
-		loc.Stack, loc.Service = m.tr.StackNotListed, service
+		loc.Stack, loc.Service = m.stackLabel(loc.Remote, instance.Project), service
 	}
 
 	return loc
-}
-
-// publishHostFor is pkg/gui's for the session's remote, the only one connected yet.
-func (m *Model) publishHostFor(remote string) string {
-	if remote == "" || remote == m.incus.RemoteName() {
-		return m.incus.PublishHost()
-	}
-
-	return ""
 }
 
 func (m *Model) instanceKey() string {
@@ -305,11 +321,15 @@ func (m *Model) clearInstanceUsers() {
 	}
 }
 
-// instancesTitle is pkg/gui's instancesPanelTitle, for what's ported.
+// instancesTitle is pkg/gui's instancesPanelTitle.
 func (m *Model) instancesTitle() string {
 	if m.instanceUsers != nil {
 		return fmt.Sprintf(m.tr.InstancesUsing, m.instanceUsers.label)
 	}
 
-	return m.tr.InstancesTitle
+	if len(m.stackServices) == 0 || m.showStackInstances {
+		return m.tr.InstancesTitle
+	}
+
+	return m.tr.StandaloneInstancesTitle
 }

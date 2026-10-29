@@ -206,6 +206,9 @@ type paletteEntry struct {
 // paletteSources is pkg/gui's, for the panels ported so far.
 func (m *Model) paletteSources() map[string]paletteSource {
 	return map[string]paletteSource{
+		"stacks": m.sourceOf(m.panelNamed("stacks"),
+			func(item int) string { return m.stacks[item].Ref() },
+			func(item int) string { return m.onRemote(m.stacks[item].Name, m.stacks[item].Remote) }, nil),
 		"instances": m.sourceOf(m.panelNamed("instances"),
 			func(item int) string { return m.instances[item].Key() },
 			func(item int) string { return m.onRemote(m.instances[item].Name, m.instances[item].Remote) },

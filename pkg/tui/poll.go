@@ -36,6 +36,7 @@ func (m *Model) pollers() tea.Cmd {
 		m.tick(resourcesPollInterval, slowPollMsg{refreshVolumes}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshNetworks}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshProfiles}),
+		m.tick(resourcesPollInterval, slowPollMsg{refreshStacks}),
 	)
 }
 
@@ -43,7 +44,8 @@ func (m *Model) pollers() tea.Cmd {
 // once a minute rather than every tick.
 func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 	next := m.tick(resourcesPollInterval, slowPollMsg{kind})
-	if m.eventsLive && time.Since(m.polledAt[kind]) < watchedPollInterval {
+	// The session's stream says nothing of another remote's stacks.
+	if m.eventsLive && (kind != refreshStacks || !m.stacksElsewhere) && time.Since(m.polledAt[kind]) < watchedPollInterval {
 		return next
 	}
 

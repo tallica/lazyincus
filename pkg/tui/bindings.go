@@ -153,6 +153,10 @@ func (m *Model) bindings() []*binding {
 		bindings = append(bindings, &binding{key: key, description: m.tr.NextList, handler: do(func(m *Model) { m.cycleViews(1) })})
 	}
 
+	if m.composeAvailable {
+		bindings = append(bindings, &binding{view: "instances", key: "C", description: m.tr.ToggleStackInstances, noSelection: true, handler: do((*Model).toggleStackInstances)})
+	}
+
 	for index, window := range m.windowNames() {
 		bindings = append(bindings, &binding{
 			key:         fmt.Sprintf("%d", index+1),
@@ -278,8 +282,13 @@ func (m *Model) guardReadOnly(b *binding) {
 
 // actionRemote is pkg/gui's, for the panels ported so far.
 func (m *Model) actionRemote(view string) string {
-	if view == "snapshots" {
+	switch view {
+	case "snapshots":
 		return m.snapshotsRemote()
+	case "stacks", "services", "backups":
+		if stack := m.selectedStack; stack != nil && stack.Remote != "" {
+			return stack.Remote
+		}
 	}
 
 	return m.incus.RemoteName()
