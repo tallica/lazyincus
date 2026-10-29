@@ -66,18 +66,7 @@ func (gui *Gui) getProfilesPanel() *panels.SideListPanel[*commands.Profile] {
 }
 
 func (gui *Gui) renderProfileDevices(profile *commands.Profile) tasks.TaskFunc {
-	return gui.NewSimpleRenderStringTask(func() string {
-		if len(profile.Profile.Devices) == 0 {
-			return gui.Tr.NoDevices
-		}
-
-		table, err := utils.RenderTable(presentation.GetDeviceRows(profile.Profile.Devices))
-		if err != nil {
-			return err.Error()
-		}
-
-		return table
-	})
+	return gui.NewSimpleRenderStringTask(func() string { return presentation.ProfileDevices(profile, gui.Tr) })
 }
 
 func (gui *Gui) renderProfileConfig(profile *commands.Profile) tasks.TaskFunc {
@@ -85,19 +74,7 @@ func (gui *Gui) renderProfileConfig(profile *commands.Profile) tasks.TaskFunc {
 }
 
 func (gui *Gui) profileConfigStr(profile *commands.Profile) string {
-	padding := identityPadding
-	output := presentation.LocationLines(gui.sessionLocation(profile.Profile.Project))
-	output += utils.WithPadding("Name: ", padding) + profile.Name + "\n"
-	output += utils.WithPadding("Used by: ", padding) + fmt.Sprint(profile.UsedByCount()) + "\n"
-
-	data, err := utils.MarshalIntoYaml(profile.Profile)
-	if err != nil {
-		return fmt.Sprintf("Error marshalling profile details: %v", err)
-	}
-
-	output += fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
-
-	return output
+	return presentation.ProfileConfig(profile, gui.sessionLocation(profile.Profile.Project))
 }
 
 func (gui *Gui) fetchProfiles() (func() error, error) {

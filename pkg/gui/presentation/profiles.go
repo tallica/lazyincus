@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -63,4 +65,30 @@ func GetDeviceRows(devices map[string]map[string]string) [][]string {
 	}
 
 	return rows
+}
+
+func ProfileDevices(profile *commands.Profile, tr *i18n.TranslationSet) string {
+	if len(profile.Profile.Devices) == 0 {
+		return tr.NoDevices
+	}
+
+	table, err := utils.RenderTable(GetDeviceRows(profile.Profile.Devices))
+	if err != nil {
+		return err.Error()
+	}
+
+	return table
+}
+
+func ProfileConfig(profile *commands.Profile, loc Location) string {
+	output := LocationLines(loc)
+	output += utils.WithPadding("Name: ", IdentityPadding) + profile.Name + "\n"
+	output += utils.WithPadding("Used by: ", IdentityPadding) + fmt.Sprint(profile.UsedByCount()) + "\n"
+
+	data, err := utils.MarshalIntoYaml(profile.Profile)
+	if err != nil {
+		return fmt.Sprintf("Error marshalling profile details: %v", err)
+	}
+
+	return output + fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
 }
