@@ -2,7 +2,6 @@ package gui
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/lxc/incus/v7/shared/units"
@@ -80,26 +79,7 @@ func (gui *Gui) renderImageConfig(image *commands.Image) tasks.TaskFunc {
 }
 
 func (gui *Gui) imageConfigStr(image *commands.Image, upstream string) string {
-	padding := identityPadding
-	output := presentation.LocationLines(gui.sessionLocation(image.Image.Project))
-	output += utils.WithPadding("Alias: ", padding) + image.Alias() + "\n"
-	output += utils.WithPadding("Fingerprint: ", padding) + image.Fingerprint + "\n"
-	output += utils.WithPadding("Type: ", padding) + image.Image.Type + "\n"
-	output += utils.WithPadding("Architecture: ", padding) + image.Image.Architecture + "\n"
-	output += utils.WithPadding("Uploaded: ", padding) + image.Image.UploadedAt.String() + "\n"
-	output += utils.WithPadding("Last used: ", padding) + image.Image.LastUsedAt.String() + "\n"
-	output += utils.WithPadding("Cached: ", padding) + fmt.Sprint(image.Image.Cached) + "\n"
-	output += utils.WithPadding("Used by: ", padding) + gui.imageUsersStr(image) + "\n"
-	output += upstream
-
-	data, err := utils.MarshalIntoYaml(image.Image)
-	if err != nil {
-		return fmt.Sprintf("Error marshalling image details: %v", err)
-	}
-
-	output += fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
-
-	return output
+	return presentation.ImageConfig(image, gui.sessionLocation(image.Image.Project), upstream, gui.Tr)
 }
 
 func (gui *Gui) fetchImages() (func() error, error) {
@@ -136,37 +116,6 @@ func (gui *Gui) refreshImagesQuiet() error {
 	}
 
 	return nil
-}
-
-// imageUsersStr names the instances, grouped by project, which is how they
-// read in the instances panel.
-func (gui *Gui) imageUsersStr(image *commands.Image) string {
-	if image.UsersUnknown {
-		return gui.Tr.ImageUsersUnknown
-	}
-
-	if image.IsUnused() {
-		return gui.Tr.UsedByNothing
-	}
-
-	byProject := lo.GroupBy(image.UsedBy, func(user string) string {
-		project, _, _ := strings.Cut(user, "/")
-		return project
-	})
-
-	projects := lo.Keys(byProject)
-	slices.Sort(projects)
-
-	groups := lo.Map(projects, func(project string, _ int) string {
-		names := lo.Map(byProject[project], func(user string, _ int) string {
-			_, name, _ := strings.Cut(user, "/")
-			return name
-		})
-
-		return fmt.Sprintf("%s (%s)", strings.Join(names, ", "), project)
-	})
-
-	return strings.Join(groups, "; ")
 }
 
 // handlePruneImages offers the two sizes of prune: the images Incus cached
