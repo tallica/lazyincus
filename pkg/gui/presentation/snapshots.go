@@ -1,6 +1,8 @@
 package presentation
 
 import (
+	"fmt"
+
 	"github.com/fatih/color"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -56,4 +58,28 @@ func displaySnapshotStateful(snapshot *commands.Snapshot) string {
 	}
 
 	return ""
+}
+
+// SnapshotConfig is the snapshot's Config tab, loc being what it was taken of.
+func SnapshotConfig(snapshot *commands.Snapshot, loc Location) string {
+	output := LocationLines(loc)
+	if snapshot.Volume != nil {
+		output += utils.WithPadding("Volume: ", IdentityPadding) + snapshot.Owner + " (" + snapshot.Volume.Pool + ")\n"
+	} else {
+		output += utils.WithPadding("Instance: ", IdentityPadding) + snapshot.Owner + "\n"
+	}
+
+	output += utils.WithPadding("Name: ", IdentityPadding) + snapshot.Name + "\n"
+	output += utils.WithPadding("Taken at: ", IdentityPadding) + snapshot.CreatedAt().String() + "\n"
+
+	if snapshot.Volume == nil {
+		output += utils.WithPadding("Stateful: ", IdentityPadding) + fmt.Sprint(snapshot.IsStateful()) + "\n"
+	}
+
+	data, err := utils.MarshalIntoYaml(snapshot.Details())
+	if err != nil {
+		return fmt.Sprintf("Error marshalling snapshot details: %v", err)
+	}
+
+	return output + fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
 }

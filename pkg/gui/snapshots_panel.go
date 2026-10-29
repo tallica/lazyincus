@@ -77,34 +77,19 @@ func (gui *Gui) renderSnapshotConfig(snapshot *commands.Snapshot) tasks.TaskFunc
 }
 
 func (gui *Gui) snapshotConfigStr(snapshot *commands.Snapshot) string {
-	padding := identityPadding
-	output := ""
-	if snapshot.Volume != nil {
-		output += presentation.LocationLines(gui.sessionLocation(snapshot.Project))
-		output += utils.WithPadding("Volume: ", padding) + snapshot.Owner + " (" + snapshot.Volume.Pool + ")\n"
-	} else {
-		if snapshot.Instance != nil {
-			output += presentation.LocationLines(gui.instanceLocation(snapshot.Instance))
-		}
+	return presentation.SnapshotConfig(snapshot, gui.snapshotLocation(snapshot))
+}
 
-		output += utils.WithPadding("Instance: ", padding) + snapshot.Owner + "\n"
+// snapshotLocation is where what the snapshot was taken of lives.
+func (gui *Gui) snapshotLocation(snapshot *commands.Snapshot) location {
+	switch {
+	case snapshot.Volume != nil:
+		return gui.sessionLocation(snapshot.Project)
+	case snapshot.Instance != nil:
+		return gui.instanceLocation(snapshot.Instance)
+	default:
+		return location{}
 	}
-
-	output += utils.WithPadding("Name: ", padding) + snapshot.Name + "\n"
-	output += utils.WithPadding("Taken at: ", padding) + snapshot.CreatedAt().String() + "\n"
-
-	if snapshot.Volume == nil {
-		output += utils.WithPadding("Stateful: ", padding) + fmt.Sprint(snapshot.IsStateful()) + "\n"
-	}
-
-	data, err := utils.MarshalIntoYaml(snapshot.Details())
-	if err != nil {
-		return fmt.Sprintf("Error marshalling snapshot details: %v", err)
-	}
-
-	output += fmt.Sprintf("\nFull details:\n\n%s", utils.ColoredYamlString(string(data)))
-
-	return output
 }
 
 // renderSnapshots lists the snapshots of what the panel follows, as the
