@@ -44,8 +44,9 @@ type panel struct {
 }
 
 type mainTab struct {
-	title      string
-	content    func() string
+	title string
+	// task makes, on the loop, the task that writes the tab off it.
+	task       func() mainTaskFunc
 	wrap       bool
 	autoscroll bool
 }

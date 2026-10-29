@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -60,6 +61,7 @@ func newTestModel(t *testing.T, opts options) *Model {
 	// Ticks never fire on their own: a test sends the message itself.
 	m.after = func(time.Duration, tea.Msg) tea.Cmd { return nil }
 	m.streamEvents = false
+	m.runTask = runTaskHere
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
 	m.panels = m.newPanels()
@@ -99,6 +101,19 @@ func run(m *Model, cmd tea.Cmd) {
 	}
 }
 
+// runTaskHere runs a main task to its end on the Cmd's goroutine, its
+// writes the messages that follow.
+func runTaskHere(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd {
+	return func() tea.Msg {
+		var writes tea.BatchMsg
+		task(context.Background(), func(msg tea.Msg) {
+			writes = append(writes, func() tea.Msg { return msg })
+		})
+
+		return writes
+	}
+}
+
 // refreshNow is a keypress's refresh of the instances, run to the end.
 func refreshNow(m *Model) {
 	run(m, refresh(m.fetchInstances()))
@@ -107,8 +122,7 @@ func refreshNow(m *Model) {
 // press types keys by name, as Update would take them from KeyPressMsg.
 func press(m *Model, keys ...string) {
 	for _, key := range keys {
-		cmd := m.handleKey(keyPress(key))
-		m.fitViews()
+		_, cmd := m.Update(keyPress(key))
 		run(m, cmd)
 	}
 }

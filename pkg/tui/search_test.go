@@ -87,7 +87,7 @@ func TestMatchesAreHighlighted(t *testing.T) {
 
 func TestSearchIsCaseSensitiveOnlyWithACapital(t *testing.T) {
 	var p pane
-	p.set("k", "Error\nerror\nERROR", false, false, 20, 4)
+	setPane(&p, "Error\nerror\nERROR", false, false, 20, 4)
 
 	p.find("error")
 	assert.Len(t, p.search.matches, 3)
@@ -97,7 +97,7 @@ func TestSearchIsCaseSensitiveOnlyWithACapital(t *testing.T) {
 
 func TestSearchNeverMatchesAcrossAWrap(t *testing.T) {
 	var p pane
-	p.set("k", "abcdef", true, false, 3, 4)
+	setPane(&p, "abcdef", true, false, 3, 4)
 
 	p.find("cd")
 	assert.Empty(t, p.search.matches)
@@ -105,7 +105,7 @@ func TestSearchNeverMatchesAcrossAWrap(t *testing.T) {
 
 func TestAMatchOutOfViewComesToTheMiddle(t *testing.T) {
 	var p pane
-	p.set("k", numbered(20)+"\nneedle\n"+numbered(20), false, false, 20, 6)
+	setPane(&p, numbered(20)+"\nneedle\n"+numbered(20), false, false, 20, 6)
 
 	p.find("needle")
 	assert.Equal(t, 17, p.oy)
@@ -114,13 +114,13 @@ func TestAMatchOutOfViewComesToTheMiddle(t *testing.T) {
 
 func TestNewContentKeepsTheSearchAndMovesOffAGoneMatch(t *testing.T) {
 	var p pane
-	p.set("a", "x\nx\nx", false, false, 20, 4)
+	setPane(&p, "x\nx\nx", false, false, 20, 4)
 	p.find("x")
 	p.nextMatch(1)
 	p.nextMatch(1)
 	assert.Equal(t, 2, p.search.current)
 
-	p.set("b", "x\ny", false, false, 20, 4)
+	setPane(&p, "x\ny", false, false, 20, 4)
 	assert.Equal(t, "x", p.search.needle, "a new item keeps the search")
 	assert.Equal(t, 0, p.search.current, "the nearest to the cursor, back at the top")
 }

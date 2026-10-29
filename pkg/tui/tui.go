@@ -3,6 +3,7 @@
 package tui
 
 import (
+	"context"
 	"os/exec"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
+	"github.com/tallica/lazyincus/pkg/tasks"
 )
 
 const inboxSize = 256
@@ -35,6 +37,12 @@ type Model struct {
 	screenMode      screenMode
 	expandSidePanel bool
 	main            pane
+	mainTask        mainTask
+	// pendingMain starts the task fitMain queued, for Update to return.
+	pendingMain tea.Cmd
+	tasks       *tasks.TaskManager
+	// runTask stands in for pkg/tasks in tests.
+	runTask func(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd
 	// mainParent is gocui's main ParentView: the panel enter came from.
 	mainParent string
 	filter     filter
@@ -74,6 +82,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		snapshotsShowAll: gui.ShowAllSnapshots,
 		filter:           filter{input: newEditorInput()},
 		inbox:            make(chan tea.Msg, inboxSize),
+		tasks:            tasks.NewTaskManager(incus.Log, tr),
 		streamEvents:     true,
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
@@ -93,6 +102,7 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	m := NewModel(incus, osCommand, tr, cfg)
 	_, err := tea.NewProgram(m).Run()
 	m.stopEvents()
+	m.tasks.Close()
 
 	return err
 }
@@ -110,7 +120,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmd := m.update(msg)
 	m.fitViews()
 
-	return m, cmd
+	main := m.pendingMain
+	m.pendingMain = nil
+
+	return m, tea.Batch(cmd, main)
 }
 
 // fitViews fits the lists and main to their windows: View only reads them.
@@ -129,6 +142,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case refreshMsg:
 		return m.applyRefresh(msg)
+
+	case mainWriteMsg:
+		m.onMainWrite(msg)
 
 	case received:
 		return tea.Batch(m.update(msg.msg), m.receive())
@@ -243,13 +259,14 @@ func (m *Model) scrollMain(direction int) {
 	m.main.scrollDown(step, h-2, m.cfg.UserConfig.Gui.ScrollPastBottom)
 }
 
-// fitMain refreshes the main pane from the tab on show.
+// fitMain sizes main and queues the task for what it should show.
 func (m *Model) fitMain() {
 	d, ok := m.dims()[mainView]
 	if !ok {
 		return
 	}
 	w, h := size(d)
+	m.main.fit(w-2, h-2)
 
 	p := m.currentSidePanel()
 	if p.count() == 0 {
@@ -257,11 +274,11 @@ func (m *Model) fitMain() {
 		if p.awaiting != "" {
 			message = p.awaiting
 		}
-		m.main.set(p.name, message, m.cfg.UserConfig.Gui.WrapMainPanel, false, w-2, h-2)
+		m.queueMain(p.name+"\x00"+message, m.cfg.UserConfig.Gui.WrapMainPanel, false, renderString(func() string { return message }))
 		return
 	}
 	if p.mainTabs == nil {
-		m.main.set(p.name, "", false, false, w-2, h-2)
+		m.queueMain(p.name, false, false, renderString(func() string { return "" }))
 		return
 	}
 
@@ -270,7 +287,7 @@ func (m *Model) fitMain() {
 	if p.itemKey != nil {
 		key += "\x00" + p.itemKey()
 	}
-	m.main.set(key, tab.content(), tab.wrap, tab.autoscroll, w-2, h-2)
+	m.queueMain(key, tab.wrap, tab.autoscroll, tab.task())
 }
 
 func (m *Model) listRows(p *panel) int {

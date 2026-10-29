@@ -44,6 +44,13 @@ func TestScrollbarAsGocui(t *testing.T) {
 	assert.Greater(t, start, end, "none when it all fits")
 }
 
+// setPane is a task's first write to a pane sized width by height.
+func setPane(p *pane, content string, wrap, autoscroll bool, width, height int) {
+	p.fit(width, height)
+	p.begin(wrap, autoscroll)
+	p.render(content)
+}
+
 func numbered(n int) string {
 	lines := make([]string, n)
 	for i := range lines {
@@ -55,14 +62,14 @@ func numbered(n int) string {
 
 func TestPaneAutoscrollKeepsTrailingBlankLinesInView(t *testing.T) {
 	var p pane
-	p.set("k", numbered(10)+"\n\n\n", false, true, 20, 4)
+	setPane(&p, numbered(10)+"\n\n\n", false, true, 20, 4)
 
 	assert.Equal(t, []string{"8", "9", "", ""}, p.visible(4))
 }
 
 func TestPaneScrollingStopsAtTheEnds(t *testing.T) {
 	var p pane
-	p.set("k", numbered(10), false, false, 20, 4)
+	setPane(&p, numbered(10), false, false, 20, 4)
 
 	p.scrollDown(4, 4, false)
 	p.scrollDown(4, 4, false)
@@ -78,7 +85,7 @@ func TestPaneScrollingStopsAtTheEnds(t *testing.T) {
 
 func TestPaneScrollsSidewaysToTheWidestLine(t *testing.T) {
 	var p pane
-	p.set("k", "short\n"+strings.Repeat("x", 12)+"y", false, false, 8, 4)
+	setPane(&p, "short\n"+strings.Repeat("x", 12)+"y", false, false, 8, 4)
 
 	p.scrollRight(4)
 	p.scrollRight(4)
@@ -93,22 +100,23 @@ func TestPaneScrollsSidewaysToTheWidestLine(t *testing.T) {
 
 func TestWrappedPaneNeverScrollsSideways(t *testing.T) {
 	var p pane
-	p.set("k", "abcdefghij", true, false, 4, 4)
+	setPane(&p, "abcdefghij", true, false, 4, 4)
 	p.ox = 4
 
 	assert.Equal(t, []string{"abcd", "efgh", "ij"}, p.visible(4))
 }
 
-func TestPaneKeepsItsPlaceUntilTheKeyChanges(t *testing.T) {
+func TestPaneKeepsItsPlaceUntilRenderedAfresh(t *testing.T) {
 	var p pane
-	p.set("a", numbered(10), false, false, 20, 4)
+	setPane(&p, numbered(10), false, false, 20, 4)
 	p.scrollDown(3, 4, false)
 
-	p.set("a", numbered(12), false, false, 20, 4)
-	assert.Equal(t, 3, p.oy, "new content for the same item")
+	p.rerender(numbered(12))
+	assert.Equal(t, 3, p.oy, "a ticker redrawing the same thing")
 
-	p.set("b", numbered(12), false, true, 20, 4)
-	assert.Equal(t, 8, p.oy, "a new item starts afresh, its own autoscroll on")
+	p.begin(false, true)
+	p.render(numbered(12))
+	assert.Equal(t, 8, p.oy, "a new task starts afresh, its own autoscroll on")
 }
 
 func TestPaneContentAsGocuiWritesIt(t *testing.T) {
@@ -119,7 +127,7 @@ func TestPaneContentAsGocuiWritesIt(t *testing.T) {
 
 func TestPaneShowsTheLastLineWhenScrolledPastIt(t *testing.T) {
 	var p pane
-	p.set("k", numbered(3), false, false, 20, 4)
+	setPane(&p, numbered(3), false, false, 20, 4)
 	p.oy = 7
 
 	assert.Equal(t, []string{"2"}, p.visible(4))

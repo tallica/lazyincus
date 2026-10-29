@@ -106,8 +106,17 @@ func (m *Model) instanceMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
 	return []mainTab{
-		{title: m.tr.InfoTitle, content: m.instanceInfo, wrap: wrap},
-		{title: m.tr.ConfigTitle, content: m.instanceConfig, wrap: wrap},
+		{title: m.tr.InfoTitle, task: m.instanceTask(instanceInfo), wrap: wrap},
+		{title: m.tr.ConfigTitle, task: m.instanceTask(instanceConfig), wrap: wrap},
+	}
+}
+
+// instanceTask renders content for the instance selected when it starts.
+func (m *Model) instanceTask(content func(*commands.Instance) string) func() mainTaskFunc {
+	return func() mainTaskFunc {
+		instance := m.selectedInstance()
+
+		return renderString(func() string { return content(instance) })
 	}
 }
 
@@ -120,12 +129,7 @@ func (m *Model) instanceKey() string {
 	return instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
 }
 
-func (m *Model) instanceConfig() string {
-	instance := m.selectedInstance()
-	if instance == nil {
-		return ""
-	}
-
+func instanceConfig(instance *commands.Instance) string {
 	data, err := utils.MarshalIntoYaml(instance.Instance)
 	if err != nil {
 		return err.Error()
@@ -135,12 +139,7 @@ func (m *Model) instanceConfig() string {
 }
 
 // instanceInfo is a cut-down Info tab; the full one still lives on *gui.Gui.
-func (m *Model) instanceInfo() string {
-	instance := m.selectedInstance()
-	if instance == nil {
-		return ""
-	}
-
+func instanceInfo(instance *commands.Instance) string {
 	label := func(name, value string) string {
 		if value == "" {
 			return ""

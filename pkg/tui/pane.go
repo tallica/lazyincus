@@ -129,8 +129,6 @@ func carry(active, escapes string) string {
 
 // pane is the main panel's content as gocui's main view holds it.
 type pane struct {
-	// key is what the content belongs to; a new one starts afresh.
-	key        string
 	content    string
 	wrap       bool
 	autoscroll bool
@@ -147,24 +145,51 @@ type pane struct {
 	search search
 }
 
-// set takes new content, re-wrapping only when it or the width changed.
-func (p *pane) set(key, content string, wrap, autoscroll bool, width, height int) {
-	if key != p.key {
-		// gocui's Clear leaves the view's search be.
-		*p = pane{key: key, autoscroll: autoscroll, search: p.search}
-	}
+// fit sizes the pane, re-wrapping only when the width changed.
+func (p *pane) fit(width, height int) {
 	p.height = height
-
-	if content != p.content || wrap != p.wrap || width != p.width || p.lines == nil {
-		p.content, p.wrap, p.width = content, wrap, width
-		p.lines = viewLines(content, wrap, width)
-		p.refind()
+	if width != p.width {
+		p.width = width
+		p.relayout()
 	}
+	p.follow()
+}
 
-	// gocui's autoscroll skips trailing lines with no cells, but writing
-	// gives every line at least one.
-	if p.autoscroll && len(p.lines) > height {
-		p.oy = len(p.lines) - height
+// begin is a new task's first write setting the view up for it.
+func (p *pane) begin(wrap, autoscroll bool) {
+	p.wrap, p.autoscroll = wrap, autoscroll
+}
+
+// render is pkg/gui's renderMain: the content, from the top.
+func (p *pane) render(content string) {
+	p.ox, p.oy, p.cy = 0, 0, 0
+	p.rerender(content)
+}
+
+// rerender is pkg/gui's reRenderMain: the content, where it's scrolled to.
+func (p *pane) rerender(content string) {
+	p.content = content
+	p.relayout()
+	p.follow()
+}
+
+// clear is pkg/gui's clearMain.
+func (p *pane) clear() {
+	p.content, p.lines = "", nil
+	p.ox, p.oy, p.cy = 0, 0, 0
+	p.refind()
+}
+
+func (p *pane) relayout() {
+	p.lines = viewLines(p.content, p.wrap, p.width)
+	p.refind()
+}
+
+// follow keeps the last line in view while autoscrolling: gocui's skips
+// trailing lines with no cells, but writing gives every line at least one.
+func (p *pane) follow() {
+	if p.autoscroll && len(p.lines) > p.height {
+		p.oy = len(p.lines) - p.height
 	}
 }
 
