@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -670,6 +671,18 @@ func (s *Server) RenameInstanceSnapshot(instance, snapshot string, renamed api.I
 	}
 
 	return op, err
+}
+
+// CreateInstanceSnapshot adds the snapshot to what the listings return.
+func (s *Server) CreateInstanceSnapshot(instance string, post api.InstanceSnapshotsPost) (incus.Operation, error) {
+	return s.updateInstance(instance, func(full *api.InstanceFull) {
+		// A copy: the listings handed out share the old one.
+		snapshot := api.InstanceSnapshot{Name: instance + "/" + post.Name, CreatedAt: time.Now(), Stateful: post.Stateful}
+		if post.ExpiresAt != nil {
+			snapshot.ExpiresAt = *post.ExpiresAt
+		}
+		full.Snapshots = append(slices.Clone(full.Snapshots), snapshot)
+	})
 }
 
 // RenameInstance renames the instance in what the listings return.
