@@ -1,9 +1,7 @@
 package gui
 
 import (
-	"cmp"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/fatih/color"
@@ -72,7 +70,7 @@ func (gui *Gui) refreshWarningsQuiet() error {
 func (gui *Gui) showWarnings(warnings []*commands.Warning) error {
 	selected := gui.daemonSelected(daemonWarnings)
 
-	sortWarnings(warnings)
+	presentation.SortWarnings(warnings)
 	gui.State.Warnings = warnings
 
 	newCount := 0
@@ -89,26 +87,6 @@ func (gui *Gui) showWarnings(warnings []*commands.Warning) error {
 	}
 
 	return gui.redrawDaemon(daemonWarnings, selected)
-}
-
-// sortWarnings puts new ones first, then the most severe, then the most
-// recently seen.
-func sortWarnings(warnings []*commands.Warning) {
-	slices.SortStableFunc(warnings, func(a, b *commands.Warning) int {
-		if a.IsNew() != b.IsNew() {
-			if a.IsNew() {
-				return -1
-			}
-
-			return 1
-		}
-
-		if bySeverity := cmp.Compare(presentation.WarningSeverityRank(b), presentation.WarningSeverityRank(a)); bySeverity != 0 {
-			return bySeverity
-		}
-
-		return b.Warning.LastSeenAt.Compare(a.Warning.LastSeenAt)
-	})
 }
 
 // warningItems are the popup's rows.

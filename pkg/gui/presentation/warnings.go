@@ -1,6 +1,8 @@
 package presentation
 
 import (
+	"cmp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -21,6 +23,26 @@ func WarningSeverityRank(warning *commands.Warning) int {
 	default:
 		return 0
 	}
+}
+
+// SortWarnings puts new ones first, then the most severe, then the most
+// recently seen.
+func SortWarnings(warnings []*commands.Warning) {
+	slices.SortStableFunc(warnings, func(a, b *commands.Warning) int {
+		if a.IsNew() != b.IsNew() {
+			if a.IsNew() {
+				return -1
+			}
+
+			return 1
+		}
+
+		if bySeverity := cmp.Compare(WarningSeverityRank(b), WarningSeverityRank(a)); bySeverity != 0 {
+			return bySeverity
+		}
+
+		return b.Warning.LastSeenAt.Compare(a.Warning.LastSeenAt)
+	})
 }
 
 // GetWarningDisplayStrings leads with the severity, whether it's been
