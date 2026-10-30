@@ -65,6 +65,11 @@ func (m *Model) render() string {
 	for i, p := range m.popups {
 		x0, y0, x1, y1, lines := m.popupLayout(p)
 		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
+		if p.menu == nil && p.input == nil && p.snapshot == nil && spec.focused && len(lines) > 0 {
+			// gocui's cursor row is bold and bright.
+			spec.body = slices.Clone(lines)
+			spec.body[0] = highlight(lines[0], x1-x0-1, "")
+		}
 		if p.menu != nil {
 			// gocui's menu highlights its selection focused or not.
 			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, true, m.theme.selectedBg)

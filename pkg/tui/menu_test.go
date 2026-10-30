@@ -203,3 +203,17 @@ func TestAWrappedErrorKeepsItsColourOnEveryLine(t *testing.T) {
 		assert.True(t, strings.HasPrefix(line, "\x1b[31m"), "%q", line)
 	}
 }
+
+func TestAMessageDrawsItsFirstLineBold(t *testing.T) {
+	m := start(t, options{}, 80, 24)
+	m.openMessage("Title", "hello\nworld")
+
+	for _, line := range strings.Split(m.render(), "\n") {
+		if strings.Contains(line, "hello") {
+			assert.NotContains(t, line, "\x1b[mhello", "bold carries on from the border")
+		}
+		if strings.Contains(line, "world") {
+			assert.Contains(t, line, "\x1b[mworld", "the second line is plain")
+		}
+	}
+}
