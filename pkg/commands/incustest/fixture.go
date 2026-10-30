@@ -6,7 +6,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 )
 
-// Fixture is the daemon the golden screens in pkg/gui/testdata were drawn from.
+// Fixture is the daemon the golden screens in pkg/tui/testdata were drawn from.
 func Fixture() *Server {
 	running := func(project, name, ipv4 string, snapshots int) api.InstanceFull {
 		instance := api.InstanceFull{

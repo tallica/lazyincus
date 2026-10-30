@@ -13,25 +13,22 @@ the upstream commit this port pins.
 | `DockerCommand` | `IncusCommand` |
 | `pkg/commands/docker.go` | `pkg/commands/incus.go` |
 | `pkg/commands/container.go` | `pkg/commands/instance.go` |
-| `pkg/gui/containers_panel.go` | `pkg/gui/instances_panel.go` |
-| `pkg/gui/container_logs.go` | `pkg/gui/instance_logs.go` |
-| `pkg/gui/presentation/containers.go` | `pkg/gui/presentation/instances.go` |
+| `pkg/gui/containers_panel.go` | `pkg/tui/instances.go` |
+| `pkg/gui/presentation/containers.go` | `pkg/presentation/instances.go` |
 | `~/.config/lazydocker` | `~/.config/lazyincus` (via `xdg.New("", "lazyincus")`) |
 | `docker rm` / `docker exec` shell-outs | `incus exec` shell-outs |
 
-`pkg/tasks`, `pkg/log`, `pkg/utils`, the generic half of `pkg/gui` and the
-list-panel machinery in `pkg/gui/panels` started as close to line-for-line
-ports, none of that code being Docker-specific. They've since moved apart
-where lazydocker's design raced its own main loop — refreshes and
-main-panel tasks now hand every view change to the loop (see CLAUDE.md's
-Panels section) — and gocui is on master rather than lazydocker's 2024 pin,
-so an upstream bugfix wants checking against both before it's copied.
+`pkg/tasks`, `pkg/log` and `pkg/utils` started as close to line-for-line
+ports, none of that code being Docker-specific. lazydocker's `pkg/gui`,
+built on gocui, has no counterpart: `pkg/tui` is a Bubble Tea rewrite, so
+an upstream bugfix in that layer is a behaviour to check here, not a patch
+to carry over.
 
 ## Package map
 
 ```
 main.go                        CLI entry point (flaggy flags, boots pkg/app)
-pkg/app/app.go                 wires config -> log -> i18n -> OSCommand -> IncusCommand -> Gui
+pkg/app/app.go                 wires config -> log -> i18n -> OSCommand -> IncusCommand -> tui
 pkg/config/                    YAML user config, defaults, theme; the app's own state.yml and history.yml
 pkg/log/                       zerolog setup (console or JSON, file-based when --debug/DEBUG=TRUE)
 pkg/i18n/                      TranslationSet; English only
@@ -56,39 +53,30 @@ pkg/commands/
   completion.go                `incus __complete` for `tab`, and incus-compose's verbs, which it can't be asked for
   os.go, os_default_platform.go  subprocess/open-file/open-link helpers (linux/darwin only)
   errors.go, dummies.go        error wrapping; NewDummy* constructors for tests
-pkg/gui/
-  gui.go                       Gui struct, Run() main loop, background polls, config reload
-  refresh.go                   fetch off the main loop, apply on it; the sequence guard between fetches
+pkg/tui/
+  tui.go                       Model, Run(), Update's message dispatch
+  panels.go                    the ordered side panel definitions; number keys, tab and arrow cycling
+  windows.go                   shared slots: the Resources panel's lists as tabs of one window; focus
+  layout.go                    boxlayout-driven positioning, including the expand option
+  render.go, frame.go, pane.go, popup.go  drawing: list bodies, titled borders, the scrollable main pane, popup placement
+  theme.go, mouse.go           the config's colours as escapes; clicks and the wheel
+  bindings.go                  all key bindings, their routing, and the read-only guard
+  refresh.go, poll.go          fetch off the loop, apply on it; the sequence guard; the pollers
   events.go                    which events refresh what, batching, operation marks, reconnecting
-  tasks_adapter.go             main-panel tasks, and the numbered writes that keep them on the main loop
-  side_panels.go               the ordered side panel definitions; number keys, tab and arrow cycling
-  window.go                    shared slots: the Resources panel's lists as tabs of one window
-  views.go                     view creation (createAllViews) and styling (styleAllViews)
-  layout.go, arrangement.go    boxlayout-driven positioning, including the expand option
-  keybindings.go               all key bindings
-  focus.go, view_helpers.go    view-stack/focus management, shared render helpers
-  *_panel.go                   one per side panel: stacks, services, instances, snapshots, backups, images, volumes, networks, profiles
-  stacks_actions.go            the Stacks panel's compose verbs, over the whole stack
-  stack_info.go                the stack's Info tab: identity, endpoints, usage, drift
+  tasks.go                     main-panel tasks, and the numbered writes that keep them in order
+  status.go                    the waiting status and spinner an action shows
+  stacks.go, services.go, instances.go, snapshots.go, backups.go, images.go, volumes.go, networks.go, profiles.go  one per side panel, with *_actions.go for its keys
+  stack_tabs.go, service_tabs.go  the Stacks and Services panels' main-panel tabs
+  compose.go, stack_actions.go, service_actions.go  the compose verbs, over a stack or a service
   copy.go                      the `y` menu: what each kind of item offers to copy
-  location.go                  where an item lives - remote, project, stack, service - heading its Info and Config tabs
-  services_actions.go          the services panel's compose verbs
-  instance_*.go                per-tab rendering for the instance main panel: info, logs, env, top
-  projects.go                  project scope menu (all projects, or one), and the reload after any change of scope
-  remotes.go                   the `R` menu and switching remote; connecting to the remotes stacks are on, in the background
+  scope.go, remotes.go         the project scope menu and the `R` menu; connecting to the remotes stacks are on, in the background
   daemon_popup.go              the `W` popup: operations.go, the session's operation history, and warnings.go, its lists
-  command_palette.go           `ctrl+p`: every panel's keys and every listed item, from paletteSources
+  palette.go                   `ctrl+p`: every panel's keys and every listed item, from paletteSources
   typed_command.go             `:` and `;`: an incus or incus-compose command typed into a prompt, scoped by the selected row, and its history
-  prompt_completion.go         `tab` in those prompts: the word before the cursor, completed off the main loop
-  read_only.go, remote_color.go  the remote a key acts on: refusing it there when read-only, and its colour
-  panels/                      generic ListPanel/SideListPanel/FilteredList/ContextState[T]
-  presentation/                table-cell rendering, one file per side panel and per `W` list, plus menu rows
+  prompt_completion.go         `tab` in those prompts: the word before the cursor, completed off the loop
+  prompt.go, filter.go, search.go, menu.go  the one-line text prompt, the list filter, the main-panel search, and menus
+  failure_watch.go             a typed or compose command's failure, shown once it ends
+  subprocess.go                handing the terminal to `exec`, an editor or a typed command
+pkg/presentation/              table-cell rendering, one file per side panel and per `W` list, plus menu rows
+pkg/types/                     the menu item types
 ```
-
-Everything in `pkg/gui` not listed above (`confirmation_panel.go`,
-`menu_panel.go`, `options_menu_panel.go`, `filtering.go`, `main_panel.go`,
-`app_status_manager.go`, `subprocess.go`, `theme.go`, `gocui.go`,
-`panels.go`) is generic gocui plumbing, ported near-verbatim;
-`connection.go` is the connection-lost modal, and `prompt_panel.go` the
-one-line text prompt every single-line ask uses: a stack's directory, a
-name, a description, a typed command.

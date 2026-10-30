@@ -12,8 +12,9 @@ This is a port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by [Jesse Duffield](https://github.com/jesseduffield) — the excellent Docker
 TUI this project's UI, keybindings, and overall structure are lifted from.
 Full credit for the original design goes to Jesse and the lazydocker
-contributors. The framework underneath is [gocui](https://github.com/jroimartin/gocui)
-by Roi Martin, used here through [Jesse's fork](https://github.com/jesseduffield/gocui).
+contributors. The terminal UI underneath is rebuilt on
+[Bubble Tea](https://github.com/charmbracelet/bubbletea) by Charm, where
+lazydocker's is [gocui](https://github.com/jesseduffield/gocui).
 See [LICENSE](LICENSE) (MIT, same as upstream),
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party
 attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
@@ -442,5 +443,5 @@ or via the Makefile (`make build`, `make vet`, `make test`, `make lint`,
 MIT — see [LICENSE](LICENSE). This project carries forward the original
 lazydocker copyright notice as required by its MIT license, since much of
 the code here is ported/adapted from it. Third-party dependency licenses
-(gocui, the Incus client library, etc.) are listed in
+(Bubble Tea, the Incus client library, etc.) are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

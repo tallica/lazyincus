@@ -45,13 +45,13 @@ gateway with its prefix, and labelled as such rather than as the subnet.
 
 ## Searching the main panel
 
-`/` with the main panel focused searches whatever tab it shows, with
-gocui's own search (`View.Search`): case-insensitive unless the text has
-a capital, and found again on every write, so a ticking tab or one
-switched to keeps its matches. The prompt is the filter's bottom line, so
-a list filter still applied is cleared by it, as the command palette
-clears one. Starting a search stops the panel following new output, as
-scrolling up does. Focus leaving the main panel ends the search.
+`/` with the main panel focused searches whatever tab it shows, with the
+panel's own search (`pkg/tui/search.go`): case-insensitive unless the text
+has a capital, and found again on every write, so a ticking tab or one
+switched to keeps its matches. The prompt is the filter's bottom line, so a
+list filter still applied is cleared by it, as the command palette clears
+one. Starting a search stops the panel following new output, as scrolling
+up does. Focus leaving the main panel ends the search.
 
 ## Typed commands
 
@@ -110,7 +110,7 @@ Two things keep the screen current: the daemon's event stream, which
 refreshes a list the moment something changes, and polls, for what no
 event reports. Why each event counts, and the daemon's quirks, are in
 [docs/Incus.md](Incus.md), "Events"; `eventRefreshes` in
-`pkg/gui/events.go` is the full list.
+`pkg/tui/events.go` is the full list.
 
 The lists. A burst of events is gathered over 200ms into one refresh, and
 an `instance-updated` refreshes at most every 10s.
@@ -216,7 +216,7 @@ replaces an entry in place (`ReplaceStack`), through `a`'s prompt
 pre-filled and its checks, and `D` removes from it, re-reading the file
 before each write so two sessions don't undo each other, and replacing it
 by rename. `a` takes a path through `openTextPrompt`, a one-line prompt in
-the confirmation view (`pkg/gui/prompt_panel.go`), and keeps it only once
+the confirmation popup (`pkg/tui/prompt.go`), and keeps it only once
 `incus-compose config` has read a project out of it: `~` and a relative
 path are resolved, and a path that's missing, not a directory, holds no
 compose project or is already listed is refused.
@@ -245,10 +245,10 @@ another remote, below - `connecting` or `unreachable`. The path column
 writes home as `~`.
 
 `followStack` is how the services panel follows the selection, the way
-Snapshots follows the instances panel's. Stacks' `OnSelect` calls it, and
+Snapshots follows the instances panel's. Stacks' selection calls it, and
 so does every Stacks refresh, the selection being the first row until
-someone moves it. It keeps the stack in `gui.selectedStack`, an atomic
-pointer, since `fetchServices` reads it off the main loop. A different
+someone moves it. It keeps the stack in `Model.selectedStack`, which
+`fetchServices` reads on the loop before it asks the daemon. A different
 stack — a different directory or remote, or a project the compose file now
 names differently — invalidates the services `refreshSeq`, empties the
 panel, retitles it and fetches for the new one. The stack is swapped
@@ -280,7 +280,7 @@ Main panel tabs:
   volume shared by replicas counted once; and **Drift**, compose instances
   whose service the file no longer declares and declared services with
   none. Everything past the services count comes from
-  `gui.composeInstances` and `gui.composeProject`, which `fetchServices`
+  `Model.composeState` (a `composeHolder`), which `fetchServices`
   fills for the selected stack, so the tab ticks until they arrive.
 - **Logs** — every instance's console log, services in name order, each
   under a heading naming its replica, or its service when it has only the
@@ -308,8 +308,8 @@ session's is asked only where it matters (`onSessionRemote`), so starting
 on another `--remote` never changes what's saved, and a remote that's
 known but doesn't answer is still added: it's the remote's to fix.
 
-`gui.commandFor` gives a stack on another remote an `IncusCommand` of its
-own (`pkg/gui/remotes.go`), through which its statuses, its services and
+`commandFor` gives a stack on another remote an `IncusCommand` of its
+own (`pkg/tui/remotes.go`), through which its statuses, its services and
 the Info tab's `PublishHost` go. Nothing a poll runs waits on another
 server: the first ask starts connecting in the background and answers
 `errConnecting`, the row reading `connecting`; a failed connect isn't
@@ -458,8 +458,8 @@ behind them (`snapshotCreatePrompt`, `instanceCopy`) take the instance
 rather than reading the selection. The menu is left for a service's own
 row, that row meaning all of its replicas.
 
-Columns work the way the instances panel's do: `gui.serviceColumns` over
-`serviceColumnRenderers` in `pkg/gui/presentation/services.go`, taking the
+Columns work the way the instances panel's do: `serviceColumns` over
+`serviceColumnRenderers` in `pkg/presentation/services.go`, taking the
 instance column names rendered from the service's instances rolled up,
 plus `replicas`. That one is blank unless the service has a different
 number of instances from what the compose file declared —
@@ -498,8 +498,8 @@ Main panel tabs:
   always, plus health for a lone instance. The compose fields are parsed
   with the stack's config by `parseComposeConfig` and stored rendered,
   only display wanting them; the Healthcheck line is the project's, from
-  `gui.composeProject` (`GetComposeProject` fetches it in `fetchServices`,
-  so rendering makes no API call; the tab renders off the main loop, so
+  `Model.composeState` (`GetComposeProject` fetches it in `fetchServices`,
+  so rendering makes no API call; the tab renders off the loop, so
   it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
   running instance's reference before the compose file's, whose own value
   may carry no registry host. Each refresh builds new `ComposeService`
@@ -579,7 +579,7 @@ more; `Instance.Image`, which the Info tab shows, falls back to the
 (20260825_13:00)") and then to the short `volatile.base_image` fingerprint.
 `presentation.GetInstanceDisplayStrings` looks up
 each configured name in the `instanceColumnRenderers` map
-(`pkg/gui/presentation/instances.go`) and skips anything unrecognized, so a
+(`pkg/presentation/instances.go`) and skips anything unrecognized, so a
 new column means one entry in that map plus the default/valid-values list in
 `pkg/config/app_config.go`.
 
@@ -672,22 +672,19 @@ under the prompt instead of being centred.
 
 The options are fields rather than a list of actions: a row shows a value
 that `← →` cycle in place, and enter means create wherever the focus is.
-Modelling them as actions put a cursor on a checkbox, which reads as
-though the row were a thing to run. The selected row is the view's cursor
-line, so gocui's own highlight marks it while the options have focus; its
-value is also bracketed, which is what identifies the field `← →` would
-change when focus is in the name field and nothing is highlighted. Hints
-live in the borders the way lazygit does it - `Subtitle` on the top,
-`Footer` on the bottom, the latter needing gocui's `ShowListFooter` and
-skipped entirely on a view with no lines, which is why the empty name
-field carries only a subtitle. A popup with a subtitle widens, still
-centred, to fit it beside the title (`popupFrameWidth`): gocui
-right-aligns the subtitle on the border the title starts, and the middle
-half of a narrow screen ran the two together. Stateful is a field of its
-own, flipped by `← →` like the rest, rather than another choice beside the
-expiries: the two are independent, and a flat list of both reads as though
-picking an expiry rules out stateful. Restore is an instance update
-carrying `Restore: <name>`, not a snapshot operation.
+Modelling them as actions put a cursor on a checkbox, which reads as though
+the row were a thing to run. The selected row is highlighted as a list's is
+while the options have focus; its value is also bracketed, which is what
+identifies the field `← →` would change when focus is in the name field and
+nothing is highlighted. Hints live in the borders - a subtitle on the top,
+a footer on the bottom. A popup with a subtitle widens, still centred, to
+fit it beside the title (`popupColumns`): the subtitle is right-aligned on
+the border the title starts, and the middle half of a narrow screen ran the
+two together. Stateful is a field of its own, flipped by `← →` like the
+rest, rather than another choice beside the expiries: the two are
+independent, and a flat list of both reads as though picking an expiry
+rules out stateful. Restore is an instance update carrying `Restore:
+<name>`, not a snapshot operation.
 
 A custom volume selected in the volumes panel is followed the same way,
 its title naming the volume, and `n` there or here snapshots it. A
@@ -747,20 +744,19 @@ do, so its own progress and refusals are what you read:
 ## Resources
 
 Images, volumes, networks and profiles are four panels sharing one window:
-a `window` on their defs puts them in the same slot, and `window.go` is
-what knows about it. The views are stacked at the same position and the
-layout shows the window's active one, which is whichever was focused there
-last (`switchFocusAux` notes it). Their titles are gocui `Tabs` - the same
-list on each, each with its own `TabIndex` - so the title reads as the
-window's rather than the list's. When the names don't fit the title,
-`fitWindowTabs` swaps in each def's `shortTitle` (`Images - Vol - Net -
-Prof`) on the layout pass, so a resize refits them: a tab cut off the end
-is a list nobody knows is there. A tab that names whose list it is -
-Snapshots, Backups - does so only while on show (its def's `plainTitle`
-otherwise), and the tab on show keeps its full name longest, cut with an
-ellipsis before it's shortened too. Number keys, `tab` and the side
-column's split all count windows, so the four take one number and one
-share of the height; they read something far less often than instances do.
+a `window` on their panels puts them in the same slot, and `windows.go` is
+what knows about it. The layout shows the window's active one, which is
+whichever was focused there last. Their titles are the window's tab strip -
+the same list on each - so the title reads as the window's rather than the
+list's. When the names don't fit the title, `windowTabs` swaps in each
+panel's `shortTitle` (`Images - Vol - Net - Prof`) on the layout pass, so a
+resize refits them: a tab cut off the end is a list nobody knows is there.
+A tab that names whose list it is - Snapshots, Backups - does so only while
+on show (its panel's `plainTitle` otherwise), and the tab on show keeps its
+full name longest, cut with an ellipsis before it's shortened too. Number
+keys, `tab` and the side column's split all count windows, so the four take
+one number and one share of the height; they read something far less often
+than instances do.
 
 `←`/`→` and `h`/`l` step list by list, lazydocker's way, so the four are
 stops of their own there, where `tab` and the number keys stop at the
@@ -879,7 +875,8 @@ users, through each instance's expanded devices - and then every one of
 those ACLs' rules, ingress and egress. Rendered once, not polled: ACLs
 change when someone edits one, and a `network-acl-*` event says so -
 forwards and ACLs being no part of the network, the event bumps
-`gui.networkTabs`, which the cache key carries, and the tab is drawn again.
+`Model.networkTabs`, which the cache key carries, and the tab is drawn
+again.
 
 Forwards is `incus network forward list` a port to a row: the listen
 address, protocol and port, where it goes - the target port defaulting to

@@ -15,7 +15,7 @@ The comparison below was made against lazydocker at the commit this port
 pins ([`7e7aadc`](https://github.com/jesseduffield/lazydocker/commit/7e7aadc2071d58031bf2daafca1fbd4093efc23f)),
 reading its `pkg/gui` file list and its generated
 `docs/keybindings/Keybindings_en.md` cheatsheet, then diffing that against
-what's actually wired up in `pkg/gui/keybindings.go` here. Re-run that
+what's actually wired up in `pkg/tui/bindings.go` here. Re-run that
 comparison if the pin ever moves.
 
 ## Missing vs lazydocker
@@ -49,7 +49,7 @@ Instances". See [incus-compose integration](#incus-compose-integration).
       one, "open `http://<ipv4>`" is the obvious translation, and
       `OSCommand.OpenLink` already exists. The same doubt that kept a
       stack's ports from being links applies: nothing says a port speaks
-      HTTP. See [Clickable links](#what-gocui-master-makes-possible).
+      HTTP. See [Clickable links](#what-bubble-tea-makes-possible).
 
 Not planned:
 
@@ -163,23 +163,68 @@ Deliberately deferred (don't re-pitch unprompted):
   `runSubprocessWithMessage`, mirroring `instanceExecShell`. That also shows
   image-download progress natively, which a `WithWaitingStatus` spinner would
   hide. A copy from a snapshot went the other way: `incus copy` in the
-  background through `Gui.runIncus`, under the spinner.
+  background through `Model.runIncus`, under the spinner.
 
-### What gocui master makes possible
+### What Bubble Tea makes possible
 
-Available since the move off lazydocker's 2024 pin; none of it wired up.
+Available since the move to Bubble Tea v2; none of it wired up.
 
-- [ ] **Clickable links** - `View.AutoRenderHyperLinks` on the main view
-      turns URLs into terminal hyperlinks. Not for a stack's published
-      ports: a port says nothing of its protocol, so an `http://` link
-      would be a guess for anything that isn't a web server. `y` on the
-      stack copies a port's address instead.
-- [ ] **Double-click** - `ViewMouseBindingOpts.IsDoubleClick`. A double
-      click on a row could do what enter does, focusing the main panel.
-- [ ] **Recentre on scroll** - `View.FocusPoint` keeps the selection in the
-      middle once it leaves the view, the way lazygit scrolls; lazyincus
-      moves a line at a time, as lazydocker does. A UX choice to make, not
-      a gap.
+- [ ] **Clickable links** - terminal hyperlinks (OSC 8) on URLs in the
+      main panel. Not for a stack's published ports: a port says nothing
+      of its protocol, so an `http://` link would be a guess for anything
+      that isn't a web server. `y` on the stack copies a port's address
+      instead.
+- [ ] **Double-click** - a double click on a row could do what enter does,
+      focusing the main panel.
+- [ ] **Recentre on scroll** - keep the selection in the middle once it
+      leaves the view, the way lazygit scrolls; lazyincus moves a line at a
+      time, as lazydocker does. A UX choice to make, not a gap.
+- [ ] **Copy over SSH** - `tea.SetClipboard` (OSC 52) copies through the
+      terminal itself; today's copy menu shells out to `pbcopy`,
+      `wl-copy`, `xclip` or `xsel` and fails on a remote shell with none.
+      Fall back to it when `os.copyToClipboardCommand` isn't set.
+- [ ] **Window title** - name the remote and project, so the terminal tab
+      says which daemon it's pointed at; worth it next to a read-only
+      production remote.
+- [ ] **Terminal progress bar** - `View.ProgressBar` (OSC 9;4) for a long
+      operation, such as an export, a backup or an image pull, in the tab
+      or taskbar while you're in another window.
+- [ ] **Polling while away** - `View.ReportFocus` sends focus and blur:
+      slow the pollers while the terminal isn't focused, catch up on focus.
+- [ ] **Light or dark default theme** - `tea.RequestBackgroundColor`
+      reports the terminal's background, so the default theme can suit a
+      light terminal without configuration.
+- [ ] **Suggestions in prompts** - `textinput` has them built in: the list
+      filter could offer names from the list, and a typed command could
+      offer history as you type.
+- [ ] **Bindings the old library couldn't express** - with keyboard
+      enhancements, `shift+enter`, `ctrl+i` apart from `tab`, and key
+      release become bindable, if any action wants them.
+
+Known rough edges, carried over from the gocui version:
+
+- In full-screen mode with main focused, `/` hides main while you type:
+  the layout counts the prompt as a window other than main. Keep main on
+  show while its search prompt is up.
+- Moving the cursor in the search prompt searches again and jumps back to
+  the first match. Search only when the text changes.
+- After a main-panel search, main stops passing the keys it doesn't take
+  (`[`, `]`, `E`) to the panel it was entered from, until `esc` and
+  `enter` again. Keep the parent across the search.
+- A main-panel search doesn't find a needle split by a wrapped line's
+  break.
+- `sortVolumes`, and any other sort that can call two rows equal, should
+  end on the project, so same-named items in different projects sort the
+  same way everywhere.
+- Search highlight colours are fixed, black on yellow and cyan; they could
+  come from the theme.
+- The list filter (`/` on a list) matches the raw cells as typed:
+  case-sensitive, and colour codes included, so `Web` finds nothing and a
+  needle like `[3` can match inside an escape. Match the decoloured text,
+  case-folded unless the needle has a capital, as the main-panel search
+  does.
+- `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do
+  nothing in a prompt, as the text input has neither.
 
 ### Typed commands
 
