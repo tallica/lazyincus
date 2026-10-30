@@ -164,6 +164,8 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "K", handler: scroll(-1)},
 		&binding{key: "H", handler: scrollStep((*pane).scrollLeft)},
 		&binding{key: "L", handler: scrollStep((*pane).scrollRight)},
+		&binding{key: "o", description: m.tr.OpenConfig, handler: (*Model).openConfig},
+		&binding{key: "O", description: m.tr.EditConfig, handler: (*Model).editConfig},
 		&binding{key: "P", description: m.tr.SwitchProject, handler: (*Model).switchProjectMenu},
 		&binding{key: "W", description: m.tr.ShowWarnings, handler: (*Model).openDaemonKey},
 		&binding{key: "R", description: m.tr.SwitchRemote, handler: (*Model).switchRemoteMenu},

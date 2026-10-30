@@ -134,6 +134,8 @@ type Model struct {
 	runIncus func(*exec.Cmd) (string, error)
 	// runOnTerminal runs a compose or backup verb on the terminal; tests record it.
 	runOnTerminal func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd
+	// openFile opens a path with the OS; tests stand in for it.
+	openFile func(string) error
 	// failures synchronises itself: the event listeners note into it.
 	failures *failureWatch
 	// after stands in for tea.Tick in tests.
@@ -160,6 +162,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		tasks:            tasks.NewTaskManager(incus.Log, tr),
 		streamEvents:     true,
 		runIncus:         osCommand.RunExecutableWithOutput,
+		openFile:         osCommand.OpenFile,
 		checkUpstreams:   commands.NewRegistryChecker().CheckAll,
 	}
 	if _, err := exec.LookPath("incus-compose"); err == nil {
@@ -318,6 +321,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case execDoneMsg:
 		return m.onExecDone(msg)
+
+	case openedConfigMsg:
+		m.onOpenedConfig(msg)
 
 	case copiedMsg:
 		return m.onCopied(msg)
