@@ -121,6 +121,20 @@ func cliVerb(args []string) string {
 	return ""
 }
 
+func cliProject(args []string) string {
+	project := ""
+
+	for i, arg := range args {
+		if arg == "--project" && i+1 < len(args) {
+			project = args[i+1]
+		} else if value, ok := strings.CutPrefix(arg, "--project="); ok {
+			project = value
+		}
+	}
+
+	return project
+}
+
 // eventsCover is pkg/gui's: the session's open stream hears project.
 func (m *Model) eventsCover(project string) bool {
 	scope := m.incus.ProjectName()

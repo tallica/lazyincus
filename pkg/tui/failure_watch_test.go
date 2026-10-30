@@ -116,16 +116,30 @@ func TestCLIVerb(t *testing.T) {
 	assert.Equal(t, "logs", cliVerb([]string{"logs", "--follow"}))
 }
 
+func TestCLIProject(t *testing.T) {
+	for _, args := range [][]string{
+		{"--project", "dns", "exec", "web", "--", "sh"},
+		{"--project=dns", "exec", "web"},
+		{"-q", "exec", "--project", "dns", "web"},
+	} {
+		assert.Equal(t, "dns", cliProject(args), args)
+	}
+
+	assert.Empty(t, cliProject([]string{"start", "web"}))
+}
+
 // A start from either panel that fails on the daemon says why once the
 // terminal hands the screen back, the failure arriving before the verb exits
 // or just after, and from a stack on another remote too.
 func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
-	for _, remote := range []string{"", "pve01"} {
-		for _, view := range []string{"stacks", "services"} {
-			for name, late := range map[string]bool{"during": false, "after exit": true} {
-				t.Run(cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
-					failedStart(t, failedStartCase{remote: remote, view: view, late: late})
-				})
+	for _, how := range []string{"key", ":"} {
+		for _, remote := range []string{"", "pve01"} {
+			for _, view := range []string{"stacks", "services"} {
+				for name, late := range map[string]bool{"during": false, "after exit": true} {
+					t.Run(how+"/"+cmp.Or(remote, "session")+"/"+view+"/"+name, func(t *testing.T) {
+						failedStart(t, failedStartCase{remote: remote, view: view, late: late, how: how})
+					})
+				}
 			}
 		}
 	}
@@ -151,6 +165,8 @@ type failedStartCase struct {
 	view   string
 	// late has the failure arrive after the verb exits.
 	late bool
+	// how starts it: "key", or typed at ":"; "" is "key".
+	how string
 	// project narrows the session to it, if it's not "".
 	project string
 	// sessionStream opens the session's event stream; without it the verb opens its own.
@@ -220,7 +236,14 @@ func failedStart(t *testing.T, c failedStartCase) {
 
 	press(m, map[string]string{"stacks": "1", "services": "2"}[c.view])
 	require.Equal(t, c.view, m.currentView())
-	press(m, "S")
+	switch c.how {
+	case ":":
+		press(m, ":")
+		typeText(m, "start web")
+		press(m, "enter")
+	default:
+		press(m, "S")
+	}
 
 	want := "Starting instance web: port 53 is taken"
 	if c.remote != "" {

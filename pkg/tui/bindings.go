@@ -79,6 +79,7 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "x", handler: do((*Model).openOptionsMenu)},
 		&binding{key: "?", handler: do((*Model).openOptionsMenu)},
 		&binding{key: "ctrl+p", description: m.tr.CommandPalette, handler: do((*Model).openPaletteKey)},
+		&binding{key: ":", description: m.tr.TypedCommand, mutates: true, noSelection: true, handler: (*Model).typedCommand},
 	)
 	bindings = append(bindings, m.menuBindings()...)
 	bindings = append(bindings,
