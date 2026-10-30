@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `W`'s popup filters by name with `/`, and `f` shows only the failed or succeeded operations.
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed.
 
+### Changed
+- The interface is rebuilt on Bubble Tea in place of gocui. Panels, keys and screens are as before; the differences below are the ones to notice.
+- In a prompt, `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do nothing, and the cursor is a block rather than your terminal's own.
+- With `NO_COLOR` or a terminal without colour, the selected row is shown in reverse video and the focused panel's border in bold.
+
 ### Fixed
 - `ctrl+p` after a main-panel search now filters the palette as you type, instead of starting from the search's text and searching the main panel.
 - Being killed with SIGTERM or SIGHUP, as by `make run` being stopped, now restores the terminal instead of leaving it broken.
@@ -28,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A command typed at `:` that fails on the daemon shows its error in a popup too.
 - With `gui.returnImmediately`, a compose verb or `:` line that fails says so in a popup even when nothing failed on the daemon.
 - The lists keep refreshing after the screen fails to come back from a subprocess, instead of freezing for the rest of the session.
+- A long line in a prompt puts the cursor where the next character goes, not at the end of the first row.
+- Rows that sort equal keep the daemon's order, instead of swapping places between refreshes.
 
 ### Security
 - Built with Go 1.27.3, fixing GO-2026-6809: `crypto/x509` trusted compromised intermediate certificates when verifying a server.
