@@ -337,6 +337,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 
+	case tea.MouseMsg:
+		return m.onMouse(msg)
+
 	case tea.PasteMsg:
 		switch {
 		case m.currentView() == filterView:
@@ -493,6 +496,9 @@ func (m *Model) clampLists() {
 func (m *Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
+	if !m.cfg.UserConfig.Gui.IgnoreMouseEvents {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
 
 	if d, ok := m.dims()[filterView]; ok && m.currentView() == filterView {
 		view.Cursor = tea.NewCursor(d.X0+m.filterCursorX()-m.filter.ox, d.Y0)

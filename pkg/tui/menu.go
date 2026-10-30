@@ -210,6 +210,11 @@ func (m *Model) pressMenu() tea.Cmd {
 		return mn.onConfirm(picked)
 	}
 
+	return m.pressItem(mn)
+}
+
+// pressItem is pkg/gui's onMenuPress.
+func (m *Model) pressItem(mn *menu) tea.Cmd {
 	item := mn.selectedItem()
 	if item == nil {
 		return nil
