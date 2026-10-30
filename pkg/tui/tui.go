@@ -9,6 +9,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/fatih/color"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -20,11 +21,12 @@ const inboxSize = 256
 
 // Model is the whole UI's state; Update is the only place it changes.
 type Model struct {
-	incus *commands.IncusCommand
-	os    *commands.OSCommand
-	tr    *i18n.TranslationSet
-	cfg   *config.AppConfig
-	theme theme
+	incus      *commands.IncusCommand
+	os         *commands.OSCommand
+	tr         *i18n.TranslationSet
+	cfg        *config.AppConfig
+	theme      theme
+	monochrome bool
 
 	width, height int
 
@@ -247,6 +249,10 @@ func (m *Model) fitViews() {
 
 func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
+	case tea.ColorProfileMsg:
+		m.monochrome = msg.Profile <= colorprofile.ASCII
+		m.applyTheme()
+
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.clampLists()

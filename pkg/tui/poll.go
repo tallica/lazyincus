@@ -124,7 +124,7 @@ func (m *Model) reloadConfig() error {
 		return err
 	}
 
-	m.theme = newTheme(m.cfg.UserConfig.Gui)
+	m.applyTheme()
 	m.rerenderInstances()
 
 	return nil

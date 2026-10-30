@@ -101,6 +101,14 @@ func newTheme(gui config.GuiConfig) theme {
 	}
 }
 
+// applyTheme: with no colour for a selection, tcell fell back to reverse.
+func (m *Model) applyTheme() {
+	m.theme = newTheme(m.cfg.UserConfig.Gui)
+	if m.monochrome {
+		m.theme.selectedBg, m.theme.inactiveSelected = "\x1b[7m", "\x1b[7m"
+	}
+}
+
 // frameRunes: horizontal, vertical, then corners clockwise from top left.
 type frameRunes struct {
 	h, v, tl, tr, br, bl string
