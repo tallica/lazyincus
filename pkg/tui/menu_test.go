@@ -227,3 +227,14 @@ func TestAnErrorReplacesAnOpenConfirmation(t *testing.T) {
 	press(m, "esc")
 	assert.Empty(t, m.popups, "pkg/gui has one confirmation view: the question is gone")
 }
+
+func TestAPromptDrawsItsTextBold(t *testing.T) {
+	m := start(t, options{}, 80, 24)
+	m.openTextPrompt("Title", "hint", "typed", func(*Model, string) tea.Cmd { return nil })
+
+	for _, line := range strings.Split(m.render(), "\n") {
+		if strings.Contains(line, "typed") {
+			assert.NotContains(t, line, "\x1b[mtyped", "bold carries on from the border")
+		}
+	}
+}
