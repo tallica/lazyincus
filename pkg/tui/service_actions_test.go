@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -20,10 +19,7 @@ func replicaModel(t *testing.T) (*Model, *[]*exec.Cmd) {
 
 	var ran []*exec.Cmd
 
-	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd {
-		ran = append(ran, cmd)
-		return then()
-	}
+	m.runOnTerminal = finishing(&ran)
 
 	press(m, "2")
 	require.Equal(t, "web", m.selectedServiceRow().Key())

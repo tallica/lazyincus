@@ -12,6 +12,18 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
+// finishing stands in for the terminal: it records cmd and has it succeed at once.
+func finishing(ran *[]*exec.Cmd) func(*exec.Cmd, func(error), func(error) tea.Cmd) tea.Cmd {
+	return func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd {
+		*ran = append(*ran, cmd)
+		if after != nil {
+			after(nil)
+		}
+
+		return then(nil)
+	}
+}
+
 // composeModel lists one stack, "default", with a runOnTerminal that records
 // the commands it is asked to run and finishes them at once.
 func composeModel(t *testing.T, opts options) (*Model, *[]*exec.Cmd, *int) {
@@ -29,10 +41,7 @@ func composeModel(t *testing.T, opts options) (*Model, *[]*exec.Cmd, *int) {
 		loads++
 		return load(dir)
 	}
-	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd {
-		ran = append(ran, cmd)
-		return then()
-	}
+	m.runOnTerminal = finishing(&ran)
 
 	press(m, "1")
 

@@ -133,7 +133,9 @@ type Model struct {
 	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
 	runIncus func(*exec.Cmd) (string, error)
 	// runOnTerminal runs a compose or backup verb on the terminal; tests record it.
-	runOnTerminal func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd
+	runOnTerminal func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd
+	// failures synchronises itself: the event listeners note into it.
+	failures *failureWatch
 	// after stands in for tea.Tick in tests.
 	after func(time.Duration, tea.Msg) tea.Cmd
 }
@@ -154,6 +156,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		showStopped:      true,
 		filter:           filter{input: newEditorInput()},
 		inbox:            make(chan tea.Msg, inboxSize),
+		failures:         &failureWatch{},
 		tasks:            tasks.NewTaskManager(incus.Log, tr),
 		streamEvents:     true,
 		runIncus:         osCommand.RunExecutableWithOutput,
@@ -168,7 +171,9 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	m.loadBackups = (*commands.IncusCommand).ComposeBackups
 	m.stackCache = &stackCache{}
 	m.composeState = &composeHolder{}
-	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd { return m.runSubprocess(cmd, "", then) }
+	m.runOnTerminal = func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd {
+		return m.runSubprocessReturning(cmd, "", after, then)
+	}
 	m.stacksHere, m.landing = true, true
 	m.notifyRemotes = func() {
 		select {
@@ -307,6 +312,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case configStatMsg:
 		return m.onConfigStat(msg.modTime)
+
+	case watchReadyMsg:
+		return msg.start()
 
 	case execDoneMsg:
 		return m.onExecDone(msg)

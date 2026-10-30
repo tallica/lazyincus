@@ -17,14 +17,23 @@ import (
 
 type execDoneMsg struct {
 	err  error
-	then func() tea.Cmd
+	then func(error) tea.Cmd
 }
 
 // runSubprocess is pkg/gui's runSubprocessWithMessage on tea.Exec.
 func (m *Model) runSubprocess(cmd *exec.Cmd, message string, then func() tea.Cmd) tea.Cmd {
+	if then == nil {
+		return m.runSubprocessReturning(cmd, message, nil, nil)
+	}
+
+	return m.runSubprocessReturning(cmd, message, nil, func(error) tea.Cmd { return then() })
+}
+
+// runSubprocessReturning is pkg/gui's: after runs before the screen comes back, so its wait doesn't hold the TUI.
+func (m *Model) runSubprocessReturning(cmd *exec.Cmd, message string, after func(error), then func(error) tea.Cmd) tea.Cmd {
 	s := &subprocess{
 		cmd: cmd, message: message, os: m.os, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
-		returnImmediately: m.cfg.UserConfig.Gui.ReturnImmediately,
+		returnImmediately: m.cfg.UserConfig.Gui.ReturnImmediately, after: after,
 	}
 
 	return tea.Exec(s, func(err error) tea.Msg { return execDoneMsg{err: err, then: then} })
@@ -40,7 +49,7 @@ func (m *Model) onExecDone(msg execDoneMsg) tea.Cmd {
 		return nil
 	}
 
-	return msg.then()
+	return msg.then(msg.err)
 }
 
 // subprocess is pkg/gui's runCommand.
@@ -51,6 +60,7 @@ type subprocess struct {
 	os                *commands.OSCommand
 	log               *zerolog.Logger
 	pressEnter        string
+	after             func(error)
 	stdin             io.Reader
 	stdout            io.Writer
 }
@@ -84,6 +94,10 @@ func (s *subprocess) Run() error {
 	}
 
 	err := s.cmd.Run()
+
+	if s.after != nil {
+		s.after(err)
+	}
 
 	if !s.returnImmediately {
 		fmt.Fprintf(s.stdout, "\n\n%s", utils.ColoredString(s.pressEnter, color.FgGreen))

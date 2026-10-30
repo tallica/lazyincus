@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
@@ -46,10 +45,7 @@ func updatesModel(t *testing.T, states map[string]commands.UpstreamState) (*Mode
 
 	var ran []*exec.Cmd
 
-	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd {
-		ran = append(ran, cmd)
-		return then()
-	}
+	m.runOnTerminal = finishing(&ran)
 
 	press(m, "1")
 	require.Len(t, m.composeServices(), 3)

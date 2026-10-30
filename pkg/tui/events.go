@@ -178,7 +178,7 @@ func (m *Model) listen() tea.Cmd {
 	ctx, cancel := context.WithCancel(context.Background())
 	m.events.cancel = cancel
 
-	incus, inbox := m.incus, m.inbox
+	incus, inbox, failures := m.incus, m.inbox, m.failures
 	send := func(msg tea.Msg) {
 		select {
 		case inbox <- msg:
@@ -189,6 +189,8 @@ func (m *Model) listen() tea.Cmd {
 	return func() tea.Msg {
 		opened := time.Now()
 		err := incus.ListenForEvents(ctx, eventTypes, func() { send(eventsOpenedMsg{stream}) }, func(event commands.Event) {
+			// Before the inbox: while a verb has the terminal, Update isn't running.
+			failures.note(event)
 			send(eventMsg{stream, event})
 		})
 		send(eventsClosedMsg{stream, err, time.Since(opened)})

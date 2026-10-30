@@ -80,10 +80,10 @@ func TestNewBackupIsSelected(t *testing.T) {
 	m, ran := backupsModel(t, &backups, &failure)
 
 	run := m.runOnTerminal
-	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd {
+	m.runOnTerminal = func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd {
 		backups = []*commands.ComposeBackup{testBackup("2026-10-07T21:59:00Z", "test", "db"), old}
 
-		return run(cmd, then)
+		return run(cmd, after, then)
 	}
 
 	press(m, "B", "n", "enter", "enter")

@@ -52,15 +52,16 @@ func (m *Model) composeCmd(target composeTarget, args ...string) *exec.Cmd {
 	return commands.WithRemote(m.incus.ComposeCmd(target.dir, args...), target.remote)
 }
 
-// composeRun is pkg/gui's, without its failure watch (the W phase).
+// composeRun is pkg/gui's.
 func (m *Model) composeRun(target composeTarget, args ...string) tea.Cmd {
 	return m.composeRunThen(target, args, nil)
 }
 
 // composeRunThen is composeRun with after run alongside the refresh it ends in.
 func (m *Model) composeRunThen(target composeTarget, args []string, after func() tea.Cmd) tea.Cmd {
-	return m.runOnTerminal(m.composeCmd(target, args...), func() tea.Cmd {
+	return m.runWatched(m.composeCmd(target, args...), target.remote, target.project, func(failures []daemonFailure) tea.Cmd {
 		m.stackCache.forget(target.dir)
+		m.showFailures(failures, target.remote)
 
 		next := refresh(m.fetchInstances(), m.fetchStacks(), m.fetchServices())
 		if after == nil {
