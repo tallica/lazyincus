@@ -162,6 +162,11 @@ func (m *Model) setServices(rows []*commands.ServiceRow) {
 	})
 }
 
+// rerenderServices shows the rows' marks, which their status reads.
+func (m *Model) rerenderServices() {
+	m.refill(m.panelNamed("services"), func(item int) string { return m.serviceRows[item].Key() }, m.serviceCells)
+}
+
 // sortServiceRows is pkg/gui's: by name, a service's replicas after it, in order.
 func sortServiceRows(a, b *commands.ServiceRow) bool {
 	if a.Service.Name != b.Service.Name {

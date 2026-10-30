@@ -268,6 +268,11 @@ func (m *Model) stackCells() [][]string {
 	return cells
 }
 
+// rerenderStacks shows the stacks' marks, which the registry checks feed.
+func (m *Model) rerenderStacks() {
+	m.refill(m.panelNamed("stacks"), func(item int) string { return m.stacks[item].Ref() }, m.stackCells)
+}
+
 func (m *Model) selectedStackRow() *commands.ComposeStack {
 	item := m.panelNamed("stacks").item()
 	if item < 0 || item >= len(m.stacks) {

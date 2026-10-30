@@ -47,6 +47,11 @@ func (m *Model) withWaitingStatusThen(name string, f func() error, then func(err
 
 // waitingRefresh is pkg/gui's WithWaitingStatus around a refresh: the status spans the fetches.
 func (m *Model) waitingRefresh(name string, fetches ...fetch) tea.Cmd {
+	return m.waitingRefreshThen(name, nil, fetches...)
+}
+
+// waitingRefreshThen is waitingRefresh running then once the fetches have landed.
+func (m *Model) waitingRefreshThen(name string, then func() tea.Cmd, fetches ...fetch) tea.Cmd {
 	var applies []func()
 
 	return m.withWaitingStatusThen(name, func() error {
@@ -60,7 +65,10 @@ func (m *Model) waitingRefresh(name string, fetches ...fetch) tea.Cmd {
 		if err != nil {
 			m.handleError(err)
 		}
-		return nil
+		if then == nil {
+			return nil
+		}
+		return then()
 	})
 }
 
