@@ -51,7 +51,11 @@ func (m *Model) windowAt(at mouseAt) (string, boxlayout.Dimensions, bool) {
 	return "", boxlayout.Dimensions{}, false
 }
 
-// topMenuAt: a popup takes every click and wheel, one outside it nothing.
+// modal is ShouldHandleMouseEvent: a popup takes the mouse unless the filter prompt has the focus.
+func (m *Model) modal() bool {
+	return len(m.popups) > 0 && m.currentView() != filterView
+}
+
 func (m *Model) topMenuAt(at mouseAt) (*menu, int, int, bool) {
 	if len(m.popups) == 0 {
 		return nil, 0, 0, false
@@ -68,11 +72,11 @@ func (m *Model) topMenuAt(at mouseAt) (*menu, int, int, bool) {
 
 // wheel is pkg/gui's: a list moves its selection, main scrolls.
 func (m *Model) wheel(at mouseAt, step int) {
-	if len(m.popups) > 0 {
-		if mn, _, _, ok := m.topMenuAt(at); ok {
-			m.moveSelection(mn.list, step)
-		}
-
+	if mn, _, _, ok := m.topMenuAt(at); ok {
+		m.moveSelection(mn.list, step)
+		return
+	}
+	if m.modal() {
 		return
 	}
 
@@ -88,13 +92,18 @@ func (m *Model) wheel(at mouseAt, step int) {
 
 // click is pkg/gui's left click.
 func (m *Model) click(at mouseAt) tea.Cmd {
-	if len(m.popups) > 0 {
+	if _, _, _, ok := m.topMenuAt(at); ok {
+		return m.clickMenu(at)
+	}
+	if m.modal() {
 		if p := m.topPrompt(); p != nil {
 			m.clickPrompt(p, at)
-			return nil
 		}
 
-		return m.clickMenu(at)
+		return nil
+	}
+	if m.clickFilter(at) {
+		return nil
 	}
 
 	window, d, ok := m.windowAt(at)
@@ -128,17 +137,32 @@ func (m *Model) clickPrompt(p *popup, at mouseAt) {
 		return
 	}
 
-	left := max(at.x-x0-1, 0)
+	p.input.SetCursor(cursorAt(p.input.Value(), at.x-x0-1))
+}
+
+// clickFilter moves the prompt's cursor even unfocused, as gocui does for an editable view.
+func (m *Model) clickFilter(at mouseAt) bool {
+	d, ok := m.dims()[filterView]
+	if !ok || !m.filter.active || !at.within(d.X0, d.Y0, d.X1, d.Y1) {
+		return false
+	}
+
+	m.filter.input.SetCursor(cursorAt(m.filter.input.Value(), at.x-d.X0+m.filter.ox))
+
+	return true
+}
+
+func cursorAt(value string, col int) int {
 	position := 0
-	for _, c := range cells(p.input.Value()) {
-		if left <= 0 {
+	for _, c := range cells(value) {
+		if col <= 0 {
 			break
 		}
-		left -= c.width
+		col -= c.width
 		position += len([]rune(c.chr))
 	}
 
-	p.input.SetCursor(position)
+	return position
 }
 
 func (m *Model) clickWindow(window string, at mouseAt, d boxlayout.Dimensions) {

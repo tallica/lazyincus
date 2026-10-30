@@ -184,3 +184,69 @@ func TestClickOutsideAPromptDoesNothing(t *testing.T) {
 	assert.Equal(t, before, m.popups[0].input.Position())
 	assert.Len(t, m.popups, 1)
 }
+
+func TestClickInTheFilterPromptMovesItsCursor(t *testing.T) {
+	m := start(t, options{fixture: true}, 120, 40)
+	press(m, "/")
+	typeText(m, "web")
+	d := m.dims()[filterView]
+
+	mouseClick(m, d.X0+1, d.Y0)
+	assert.Equal(t, 1, m.filter.input.Position())
+	assert.Equal(t, filterView, m.currentView())
+
+	press(m, "enter")
+	mouseClick(m, d.X0+2, d.Y0)
+	assert.Equal(t, 2, m.filter.input.Position(), "unfocused too")
+	assert.NotEqual(t, filterView, m.currentView())
+}
+
+func TestClickOnTheFilteredListKeepsTheFilterAnotherDropsIt(t *testing.T) {
+	m := start(t, options{fixture: true}, 120, 40)
+	press(m, "/")
+	typeText(m, "e")
+
+	d := m.dims()["instances"]
+	mouseClick(m, d.X0+3, d.Y0+1)
+	assert.Equal(t, "instances", m.currentView())
+	assert.True(t, m.filter.active)
+
+	press(m, "/")
+	d = m.dims()[mainView]
+	mouseClick(m, d.X0+3, d.Y0+3)
+	assert.Equal(t, mainView, m.currentView())
+	assert.True(t, m.filter.active, "main keeps it, as pkg/gui does")
+
+	window := m.windowNames()[2]
+	d = m.dims()[window]
+	mouseClick(m, d.X0+3, d.Y0+1)
+	assert.Equal(t, m.activeInWindow(window).name, m.currentView())
+	assert.False(t, m.filter.active)
+}
+
+func TestClickOutsideThePaletteIsAnOrdinaryClick(t *testing.T) {
+	m := start(t, options{fixture: true}, 120, 40)
+	openPaletteWith(m, "stop")
+	require.True(t, m.paletteOpen())
+	x0, y0, x1, y1, _ := m.popupLayout(m.popups[0])
+
+	d := m.dims()["instances"]
+	require.False(t, mouseAt{d.X0 + 3, d.Y0 + 2}.within(x0, y0, x1, y1))
+	mouseClick(m, d.X0+3, d.Y0+2)
+
+	assert.False(t, m.paletteOpen())
+	assert.Empty(t, m.popups)
+	assert.Equal(t, "instances", m.currentView())
+	assert.Equal(t, 1, m.panelNamed("instances").selected)
+}
+
+func TestClickInThePalettePromptMovesItsCursor(t *testing.T) {
+	m := start(t, options{fixture: true}, 120, 40)
+	openPaletteWith(m, "stop")
+	d := m.dims()[filterView]
+
+	mouseClick(m, d.X0+1, d.Y0)
+
+	assert.Equal(t, 1, m.filter.input.Position())
+	assert.True(t, m.paletteOpen())
+}
