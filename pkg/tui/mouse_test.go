@@ -156,3 +156,31 @@ func TestClickedTab(t *testing.T) {
 	assert.Equal(t, 0, clickedTab("", []string{"Logs"}, 40))
 	assert.Equal(t, -1, clickedTab("", nil, 3))
 }
+
+func TestClickInAPromptMovesTheCursor(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	openPrompt(m, "héllo wörld")
+	x0, y0, x1, _, _ := m.popupLayout(m.popups[0])
+
+	mouseClick(m, x0+1+4, y0+1)
+	assert.Equal(t, 4, m.popups[0].input.Position())
+
+	mouseClick(m, x1-1, y0+1)
+	assert.Equal(t, 11, m.popups[0].input.Position(), "past the end is the end")
+
+	mouseClick(m, x0, y0)
+	assert.Equal(t, 0, m.popups[0].input.Position(), "the border is the start")
+
+	typeText(m, "X")
+	assert.Equal(t, "Xhéllo wörld", m.popups[0].input.Value())
+}
+
+func TestClickOutsideAPromptDoesNothing(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	openPrompt(m, "db")
+	before := m.popups[0].input.Position()
+
+	mouseClick(m, 0, 0)
+	assert.Equal(t, before, m.popups[0].input.Position())
+	assert.Len(t, m.popups, 1)
+}

@@ -89,6 +89,11 @@ func (m *Model) wheel(at mouseAt, step int) {
 // click is pkg/gui's left click.
 func (m *Model) click(at mouseAt) tea.Cmd {
 	if len(m.popups) > 0 {
+		if p := m.topPrompt(); p != nil {
+			m.clickPrompt(p, at)
+			return nil
+		}
+
 		return m.clickMenu(at)
 	}
 
@@ -114,6 +119,26 @@ func (m *Model) clickMenu(at mouseAt) tea.Cmd {
 	mn.list.selectRow(mn.list.origin+at.y-y0-1, rows)
 
 	return m.pressItem(mn)
+}
+
+// clickPrompt is gocui's SetCursor2D: the column counts along the text's first line, whatever the row.
+func (m *Model) clickPrompt(p *popup, at mouseAt) {
+	x0, y0, x1, y1, _ := m.popupLayout(p)
+	if !at.within(x0, y0, x1, y1) {
+		return
+	}
+
+	left := max(at.x-x0-1, 0)
+	position := 0
+	for _, c := range cells(p.input.Value()) {
+		if left <= 0 {
+			break
+		}
+		left -= c.width
+		position += len([]rune(c.chr))
+	}
+
+	p.input.SetCursor(position)
 }
 
 func (m *Model) clickWindow(window string, at mouseAt, d boxlayout.Dimensions) {
