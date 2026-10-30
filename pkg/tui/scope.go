@@ -4,6 +4,7 @@ import (
 	"os"
 	"slices"
 	"sort"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -190,8 +191,7 @@ func (m *Model) switchToProject(name string) tea.Cmd {
 
 // reloadAfterScopeChange drops what the panels hold of the scope just left,
 // so the next refresh can't match new items against stale ones by key, and
-// reads everything again. The W phase's operations and warnings are left
-// to it.
+// reads everything again.
 func (m *Model) reloadAfterScopeChange() tea.Cmd {
 	// The stacks are directories, which the read below lists again.
 	for _, p := range m.panels {
@@ -213,6 +213,12 @@ func (m *Model) reloadAfterScopeChange() tea.Cmd {
 	m.mainTask.key = ""
 	m.jumpToTopMain()
 	m.panelNamed("instances").selected = 0
+
+	// The history is the scope's, and a remote's warnings its own.
+	m.operations.clear()
+	m.operationsSeenAt = time.Now()
+	m.countOperations()
+	m.warnings, m.newWarnings = nil, 0
 
 	m.refreshes.invalidateAll()
 

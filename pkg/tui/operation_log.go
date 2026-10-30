@@ -149,3 +149,7 @@ func (l *operationLog) retried(failure *commands.Operation) bool {
 
 	return false
 }
+
+func (l *operationLog) clear() {
+	l.entries = nil
+}

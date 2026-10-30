@@ -227,7 +227,7 @@ type refreshSeqs struct {
 // invalidateAll turns away every fetch in flight but the image check, which
 // a change of scope doesn't concern.
 func (s *refreshSeqs) invalidateAll() {
-	for _, seq := range []*refreshSeq{&s.stacks, &s.services, &s.backups, &s.instances, &s.images, &s.volumes, &s.networks, &s.profiles} {
+	for _, seq := range []*refreshSeq{&s.stacks, &s.services, &s.backups, &s.instances, &s.images, &s.volumes, &s.networks, &s.profiles, &s.operations, &s.warnings} {
 		seq.invalidate()
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/lxc/incus/v7/shared/api"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -114,4 +115,39 @@ func TestWarningsArePolled(t *testing.T) {
 	server.SetWarnings([]api.Warning{{UUID: "kvm", WarningPut: api.WarningPut{Status: "new"}}})
 	run(m, m.pollWarnings())
 	assert.Contains(t, footer(m), "1 warning ")
+}
+
+// The history is the scope's: a switch empties it.
+func TestASwitchOfProjectClearsTheLog(t *testing.T) {
+	m := start(t, options{server: eventServer()}, 140, 16)
+	m.recordOperation(&commands.Operation{Operation: liveOperation("failed", api.Failure), Project: "default"})
+	require.Contains(t, footer(m), "1 failed")
+
+	run(m, m.switchToProject("default"))
+	assert.Empty(t, m.operations.list())
+	assert.NotContains(t, footer(m), "failed")
+}
+
+// A remote's warnings are its own: the footer counts the new one's.
+func TestASwitchOfRemoteRecountsTheWarnings(t *testing.T) {
+	t.Setenv("INCUS_REMOTE", "fake")
+
+	pve01 := incustest.New(incustest.Server{Version: "7.5"})
+	pve01.SetWarnings([]api.Warning{{UUID: "pve", WarningPut: api.WarningPut{Status: "new"}}})
+	m := start(t, options{server: warningsServer(), compose: true, remotes: map[string]*incustest.Server{"pve01": pve01}}, 140, 40)
+	require.Contains(t, footer(m), "2 warnings")
+
+	run(m, m.switchToRemote("pve01"))
+	assert.Contains(t, footer(m), "1 warning ")
+	assert.Equal(t, []string{"pve"}, lo.Map(m.warnings, func(w *commands.Warning, _ int) string { return w.Key() }))
+}
+
+// A fetch asked of the scope left, landing after the switch, is turned away.
+func TestAScopeChangeTurnsAwayOperationsAndWarningsInFlight(t *testing.T) {
+	var seqs refreshSeqs
+	operations, warnings := seqs.operations.issue(), seqs.warnings.issue()
+
+	seqs.invalidateAll()
+	assert.False(t, seqs.operations.admit(operations))
+	assert.False(t, seqs.warnings.admit(warnings))
 }
