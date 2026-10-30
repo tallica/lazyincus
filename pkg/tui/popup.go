@@ -25,6 +25,8 @@ type popup struct {
 	// input makes it a text prompt; snapshot, the new-snapshot one.
 	input    *textinput.Model
 	snapshot *snapshotPrompt
+	// hint, when set, is what an edit puts back in the subtitle.
+	hint string
 	// subtitle is the hint as written, fittedSubtitle as drawn.
 	subtitle       string
 	fittedSubtitle string

@@ -39,6 +39,7 @@ func (m *Model) typedCommand() tea.Cmd {
 
 			return m.runTyped(cmd, line, config.IncusHistory, remote, nil)
 		})
+	m.bindPromptCompletion(m.incusCompleter(remote, seed))
 	m.bindPromptHistory(config.IncusHistory, initial)
 
 	return nil
@@ -62,6 +63,7 @@ func typedComposeCommand(m *Model, target composeTarget) tea.Cmd {
 		return m.runTyped(cmd, line, config.ComposeHistory, target.remote, &target)
 	})
 	m.topPrompt().input.CursorStart()
+	m.bindPromptCompletion(m.composeCompleter(target))
 	m.bindPromptHistory(config.ComposeHistory, initial)
 
 	return nil
@@ -123,9 +125,7 @@ func (m *Model) bindPromptHistory(history config.History, initial string) {
 
 // historyPrefix is what a line must start with to be stepped to, and the draft after the cursor.
 func historyPrefix(input *textinput.Model, draft, initial string) (string, string) {
-	runes := []rune(draft)
-	at := min(input.Position(), len(runes))
-	before, after := string(runes[:at]), string(runes[at:])
+	before, after := splitAtCursor(input, draft)
 
 	if typed := strings.TrimSpace(before); typed == "" || typed == strings.TrimSpace(initial) {
 		return "", after

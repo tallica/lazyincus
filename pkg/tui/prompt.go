@@ -69,8 +69,14 @@ func (m *Model) topPrompt() *popup {
 func (m *Model) editPrompt(msg tea.Msg) tea.Cmd {
 	p := m.topPrompt()
 
+	before := p.input.Value()
+
 	var cmd tea.Cmd
 	*p.input, cmd = p.input.Update(msg)
+
+	if p.hint != "" && p.input.Value() != before {
+		p.subtitle = p.hint
+	}
 
 	return cmd
 }
