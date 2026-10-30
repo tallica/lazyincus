@@ -263,6 +263,10 @@ func (m *Model) onEvent(msg eventMsg) tea.Cmd {
 	m.logEvent(event)
 
 	if event.Type == api.EventTypeOperation {
+		if event.Details != nil && !event.Details.IsToken() {
+			m.recordOperation(event.Details)
+		}
+
 		return m.onOperation(event)
 	}
 
@@ -341,7 +345,7 @@ func (m *Model) flushEvents() tea.Cmd {
 	}
 }
 
-// fetchesFor is pkg/gui's, for the kinds ported so far.
+// fetchesFor is pkg/gui's.
 func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	var fetches []fetch
 
@@ -372,6 +376,14 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 
 	if kinds&refreshProfiles != 0 {
 		fetches = append(fetches, m.fetchProfiles())
+	}
+
+	if kinds&refreshWarnings != 0 {
+		fetches = append(fetches, m.fetchWarnings())
+	}
+
+	if kinds&refreshOperations != 0 {
+		fetches = append(fetches, m.fetchOperations())
 	}
 
 	return fetches

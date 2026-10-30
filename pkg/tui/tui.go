@@ -110,6 +110,14 @@ type Model struct {
 
 	refreshes refreshSeqs
 	events    events
+	// operations is the session's history; operationCounts its footer's running and failed.
+	operations        operationLog
+	operationCounts   [2]int
+	operationsRecount bool
+	// operationsSeenAt is when operations were last on screen: failures since are news.
+	operationsSeenAt time.Time
+	warnings         []*commands.Warning
+	newWarnings      int
 	// inbox is what goroutines outside the program send it.
 	inbox        chan tea.Msg
 	streamEvents bool
@@ -283,6 +291,12 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case slowPollMsg:
 		return m.slowPoll(msg.kind)
+
+	case warningsPollMsg:
+		return m.pollWarnings()
+
+	case operationsRecountMsg:
+		m.onOperationsRecount()
 
 	case syncConnectionMsg:
 		m.syncConnection()

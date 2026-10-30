@@ -98,7 +98,7 @@ func (m *Model) refreshGroups(status string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// fetchGroups is pkg/gui's, for the panels ported so far.
+// fetchGroups is pkg/gui's.
 func (m *Model) fetchGroups() [][]fetch {
 	return [][]fetch{
 		{m.fetchStacks(), m.fetchInstances(), m.fetchServices()},
@@ -106,6 +106,8 @@ func (m *Model) fetchGroups() [][]fetch {
 		{m.fetchVolumes()},
 		{m.fetchNetworks()},
 		{m.fetchProfiles()},
+		{m.fetchOperations()},
+		{m.fetchWarnings()},
 	}
 }
 
@@ -218,6 +220,8 @@ type refreshSeqs struct {
 	networks     refreshSeq
 	profiles     refreshSeq
 	imageUpdates refreshSeq
+	operations   refreshSeq
+	warnings     refreshSeq
 }
 
 // invalidateAll turns away every fetch in flight but the image check, which

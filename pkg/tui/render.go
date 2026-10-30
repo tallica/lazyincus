@@ -230,9 +230,9 @@ func (m *Model) options() string {
 	return strings.Join(pairs, ", ")
 }
 
-// information is pkg/gui's getInformationContent, not yet counting ops.
+// information is pkg/gui's getInformationContent.
 func (m *Model) information() string {
-	return infoSectionPadding + m.incusStatus() + m.cfg.Version
+	return infoSectionPadding + m.operationsStatus() + m.warningsStatus() + m.incusStatus() + m.cfg.Version
 }
 
 func (m *Model) incusStatus() string {

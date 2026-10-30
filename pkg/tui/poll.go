@@ -38,6 +38,8 @@ func (m *Model) pollers() tea.Cmd {
 		m.tick(resourcesPollInterval, slowPollMsg{refreshProfiles}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshStacks}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshBackups}),
+		m.tick(resourcesPollInterval, slowPollMsg{refreshOperations}),
+		m.tick(warningsPollInterval, warningsPollMsg{}),
 	)
 }
 
