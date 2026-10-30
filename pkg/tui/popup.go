@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -88,8 +87,8 @@ func (m *Model) openPopup(p *popup, onConfirm, onClose func() tea.Cmd) {
 		p.bindings = append(p.bindings, &binding{view: confirmationView, key: k.key, handler: k.handler})
 	}
 
-	// pkg/gui's onNewPopupPanel hides the menu.
-	m.popups = slices.DeleteFunc(m.popups, func(p *popup) bool { return p.menu != nil })
+	// pkg/gui's onNewPopupPanel hides the menu and any confirmation.
+	m.popups = m.popups[:0]
 	m.popups = append(m.popups, p)
 }
 

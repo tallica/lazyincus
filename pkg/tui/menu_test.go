@@ -217,3 +217,13 @@ func TestAMessageDrawsItsFirstLineBold(t *testing.T) {
 		}
 	}
 }
+
+func TestAnErrorReplacesAnOpenConfirmation(t *testing.T) {
+	m := start(t, options{}, 80, 24)
+	m.openConfirmation("Confirm", "Sure?", func() tea.Cmd { return nil })
+	m.openError("boom")
+
+	assert.Len(t, m.popups, 1)
+	press(m, "esc")
+	assert.Empty(t, m.popups, "pkg/gui has one confirmation view: the question is gone")
+}
