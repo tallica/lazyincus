@@ -146,6 +146,11 @@ func (m *Model) escapeFilterPrompt() {
 		return
 	}
 
+	if m.daemon.filtering {
+		m.clearFilter()
+		return
+	}
+
 	search := m.filter.search
 	m.clearFilter()
 
@@ -165,6 +170,11 @@ func (m *Model) commitFilter() tea.Cmd {
 	search := m.filter.search
 	if m.filter.input.Value() == "" {
 		m.clearFilter()
+	}
+
+	if m.daemon.filtering {
+		m.daemon.filtering = false
+		return nil
 	}
 
 	if search {
@@ -191,6 +201,7 @@ func (m *Model) clearFilter() {
 
 	m.filter.active = false
 	m.filter.search = false
+	m.daemon.filtering = false
 	m.filter.input.Reset()
 	m.filter.ox = 0
 
@@ -234,7 +245,7 @@ func (m *Model) moveFilteredSelection(step int) {
 // list is off the stack, a search once main is.
 func (m *Model) filterFollowsFocus() {
 	switch {
-	case m.paletteOpen():
+	case m.filter.panel == menuView:
 		if m.topMenu() == nil {
 			m.clearFilter()
 		}

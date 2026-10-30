@@ -25,8 +25,9 @@ func (m *Model) fetchOperations() fetch {
 
 		return func() {
 			if m.refreshes.operations.admit(ticket) {
+				selected := m.daemonSelected(daemonOperations)
 				m.operations.reconcile(operations, asked, time.Now())
-				m.countOperations()
+				m.showOperations(selected)
 			}
 		}, nil
 	}
@@ -34,8 +35,9 @@ func (m *Model) fetchOperations() fetch {
 
 // recordOperation takes an operation event into the log; a closed stream's never reaches it.
 func (m *Model) recordOperation(operation *commands.Operation) {
+	selected := m.daemonSelected(daemonOperations)
 	m.operations.record(operation, time.Now())
-	m.countOperations()
+	m.showOperations(selected)
 }
 
 // countOperations recounts the footer's operations, again once the next running one has lasted.

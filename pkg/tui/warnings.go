@@ -35,6 +35,7 @@ func (m *Model) fetchWarnings() fetch {
 }
 
 func (m *Model) showWarnings(warnings []*commands.Warning) {
+	selected := m.daemonSelected(daemonWarnings)
 	presentation.SortWarnings(warnings)
 	m.warnings = warnings
 
@@ -44,6 +45,8 @@ func (m *Model) showWarnings(warnings []*commands.Warning) {
 			m.newWarnings++
 		}
 	}
+
+	m.redrawDaemon(daemonWarnings, selected)
 }
 
 func (m *Model) pollWarnings() tea.Cmd {

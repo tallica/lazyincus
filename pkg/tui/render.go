@@ -64,11 +64,12 @@ func (m *Model) render() string {
 
 	for i, p := range m.popups {
 		x0, y0, x1, y1, lines := m.popupLayout(p)
-		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1, total: len(lines)}
+		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
 		if p.menu != nil {
 			// gocui's menu highlights its selection focused or not.
 			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, m.theme.selectedBg)
 			spec.origin = p.menu.list.origin
+			spec.tabs, spec.tab = p.menu.tabs, p.menu.tabIndex
 		}
 		id := p.view
 		if p.snapshot != nil {

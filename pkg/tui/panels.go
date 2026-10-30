@@ -24,7 +24,9 @@ type panel struct {
 	// keep is pkg/gui's Filter: an item it refuses is never shown.
 	keep func(item int) bool
 	// fuzzy is pkg/gui's FuzzyFilter, matching filterText or the cells.
-	fuzzy      bool
+	fuzzy bool
+	// keepsOrder is pkg/gui's FilterKeepsOrder: fuzzy matches stay in list order.
+	keepsOrder bool
 	filterText func(item int) string
 	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
 	empty string
@@ -107,7 +109,9 @@ func (p *panel) filter(needle string, ignore []string) {
 
 	if fuzzy {
 		p.fuzzyFilter(needle)
-		return
+		if !p.keepsOrder {
+			return
+		}
 	}
 
 	if i := slices.Index(p.shown, item); item >= 0 && i >= 0 {
@@ -128,6 +132,9 @@ func (p *panel) fuzzyFilter(needle string) {
 	}
 
 	ranked := utils.FuzzyRank(texts, needle)
+	if p.keepsOrder {
+		slices.Sort(ranked)
+	}
 	shown := make([]int, len(ranked))
 	for i, index := range ranked {
 		shown[i] = p.shown[index]

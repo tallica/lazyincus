@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/gui/presentation"
@@ -17,6 +18,8 @@ const (
 
 // menuItem is pkg/gui's types.MenuItem with handlers that return a Cmd.
 type menuItem struct {
+	// key is pkg/gui's MenuItem.Key: W's popup keeps the cursor on it.
+	key          string
 	label        string
 	labelColumns []string
 	onPress      func(*Model) tea.Cmd
@@ -44,6 +47,12 @@ type menuOptions struct {
 	hideCancel bool
 	selected   int
 	wide       bool
+	// tabs, if any, stand in for the title, tabs[tabIndex] the one on show.
+	tabs        []string
+	tabIndex    int
+	flexColumns []utils.FlexColumn
+	// daemon is pkg/gui's State.DaemonPopup: the menu is W's.
+	daemon bool
 	// onConfirm makes the menu a checklist, handed the rows ticked on enter.
 	onConfirm func(picked []*menuItem) tea.Cmd
 }
@@ -58,9 +67,36 @@ func (m *Model) openMenu(opts menuOptions) {
 	if !opts.hideCancel && opts.onConfirm == nil {
 		opts.items = append(opts.items, &menuItem{labelColumns: []string{m.tr.Cancel}, onPress: func(*Model) tea.Cmd { return nil }})
 	}
+	padMenuItems(opts.items)
 
+	mn := &menu{menuOptions: opts, list: &panel{name: menuView, fuzzy: true, keepsOrder: opts.daemon}}
+	mn.list.keep = func(i int) bool { return !mn.items[i].hideUntilFiltered || m.menuNeedle() != "" }
+	mn.list.filterText = func(i int) string { return mn.items[i].filterText }
+	mn.list.flex = func() []utils.FlexColumn { return mn.flexColumns }
+	// Or a filter matching nothing would shrink W's popup to its frame.
+	mn.list.note = func() string {
+		if mn.daemon && m.menuNeedle() != "" {
+			return m.tr.NoMatches
+		}
+
+		return ""
+	}
+	mn.list.selected = opts.selected
+
+	// pkg/gui has one menu view: a menu opened replaces the one open.
+	m.popups = slices.DeleteFunc(m.popups, func(p *popup) bool { return p.menu != nil })
+
+	title := opts.title
+	if len(opts.tabs) > 0 {
+		title = strings.Join(opts.tabs, " - ")
+	}
+	m.popups = append(m.popups, &popup{view: menuView, title: title, subtitle: opts.subtitle, menu: mn})
+	m.renderMenu(mn)
+}
+
+func padMenuItems(items []*menuItem) {
 	columns := 1
-	for _, item := range opts.items {
+	for _, item := range items {
 		if item.labelColumns == nil {
 			item.labelColumns = []string{item.label}
 		}
@@ -69,16 +105,9 @@ func (m *Model) openMenu(opts menuOptions) {
 		}
 		columns = max(columns, len(item.labelColumns))
 	}
-	for _, item := range opts.items {
+	for _, item := range items {
 		item.labelColumns = append(item.labelColumns, make([]string, columns-len(item.labelColumns))...)
 	}
-
-	mn := &menu{menuOptions: opts, list: &panel{name: menuView, fuzzy: true}}
-	mn.list.keep = func(i int) bool { return !mn.items[i].hideUntilFiltered || m.menuNeedle() != "" }
-	mn.list.filterText = func(i int) string { return mn.items[i].filterText }
-	mn.list.selected = opts.selected
-	m.popups = append(m.popups, &popup{view: menuView, title: opts.title, subtitle: opts.subtitle, menu: mn})
-	m.rerenderMenu()
 }
 
 // menuNeedle is pkg/gui's FilterString for the menu: the palette's.
@@ -100,11 +129,12 @@ func (m *Model) topMenu() *menu {
 
 // rerenderMenu is the menu panel's RerenderList.
 func (m *Model) rerenderMenu() {
-	mn := m.topMenu()
-	if mn == nil {
-		return
+	if mn := m.topMenu(); mn != nil {
+		m.renderMenu(mn)
 	}
+}
 
+func (m *Model) renderMenu(mn *menu) {
 	checklist := mn.onConfirm != nil
 	mn.list.cells = make([][]string, len(mn.items))
 	for i, item := range mn.items {
@@ -125,7 +155,7 @@ func (mn *menu) selectedItem() *menuItem {
 // menuBindings are pkg/gui's on the menu view.
 func (m *Model) menuBindings() []*binding {
 	return []*binding{
-		{view: menuView, key: "esc", handler: do((*Model).closeMenu)},
+		{view: menuView, key: "esc", handler: do((*Model).escapeMenu)},
 		{view: menuView, key: "q", handler: do((*Model).closeMenu)},
 		{view: menuView, key: "space", handler: (*Model).toggleMenuItem},
 		{view: menuView, key: "enter", handler: (*Model).pressMenu},
@@ -140,12 +170,26 @@ func (m *Model) menuBindings() []*binding {
 		}},
 		{view: menuView, key: "d", handler: func(m *Model) tea.Cmd { return m.menuItemKey("d") }},
 		{view: menuView, key: "o", handler: func(m *Model) tea.Cmd { return m.menuItemKey("o") }},
+		{view: menuView, key: "[", handler: do(func(m *Model) { m.switchDaemonTab(-1) })},
+		{view: menuView, key: "]", handler: do(func(m *Model) { m.switchDaemonTab(1) })},
+		{view: menuView, key: "/", handler: do((*Model).openDaemonFilter)},
+		{view: menuView, key: "f", handler: do((*Model).cycleOperationsShown)},
 	}
+}
+
+// escapeMenu is pkg/gui's handleMenuEscape: W's filter goes before the popup.
+func (m *Model) escapeMenu() {
+	if mn := m.topMenu(); mn != nil && mn.daemon && m.menuNeedle() != "" {
+		m.clearFilter()
+		return
+	}
+
+	m.closeMenu()
 }
 
 // closeMenu is pkg/gui's handleMenuClose.
 func (m *Model) closeMenu() {
-	if m.paletteOpen() {
+	if m.filter.panel == menuView {
 		m.clearFilter()
 	}
 
@@ -231,6 +275,11 @@ func (m *Model) menuItemKey(key string) tea.Cmd {
 // menuOptionsMap is pkg/gui's renderMenuOptions.
 func (m *Model) menuOptionsMap(mn *menu) map[string]string {
 	options := map[string]string{"esc": m.tr.Close, "↑ ↓": m.tr.Navigate, "enter": m.tr.Execute}
+
+	if mn.daemon {
+		options["[ ]"] = m.tr.SwitchList
+		options["/"] = m.tr.LcFilter
+	}
 
 	if mn.onConfirm != nil {
 		options["space"] = m.tr.Toggle

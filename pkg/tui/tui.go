@@ -118,6 +118,7 @@ type Model struct {
 	operationsSeenAt time.Time
 	warnings         []*commands.Warning
 	newWarnings      int
+	daemon           daemonState
 	// inbox is what goroutines outside the program send it.
 	inbox        chan tea.Msg
 	streamEvents bool

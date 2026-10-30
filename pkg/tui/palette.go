@@ -38,11 +38,17 @@ func (m *Model) openPalette(view, item string) {
 }
 
 func (m *Model) paletteOpen() bool {
-	return m.filter.panel == menuView
+	mn := m.topMenu()
+
+	return m.filter.panel == menuView && (mn == nil || !mn.daemon)
 }
 
 // paletteTab is pkg/gui's: the selected item's actions, else tab's own.
 func (m *Model) paletteTab() tea.Cmd {
+	if m.daemon.filtering {
+		return nil
+	}
+
 	if !m.paletteOpen() {
 		m.cycleWindows(1)
 		return nil

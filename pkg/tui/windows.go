@@ -138,8 +138,8 @@ func fitActiveTab(panels []*panel, active *panel, room int) []string {
 
 func (m *Model) currentView() string {
 	if len(m.popups) > 0 {
-		// The palette's prompt has the focus over its menu.
-		if m.paletteOpen() && m.topMenu() != nil {
+		// The palette's prompt has the focus over its menu, W's filter over W's.
+		if (m.paletteOpen() || m.daemon.filtering) && m.topMenu() != nil {
 			return filterView
 		}
 		return m.popups[len(m.popups)-1].view
