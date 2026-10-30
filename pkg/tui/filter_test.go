@@ -142,3 +142,23 @@ func TestAltLetterTypesTheLetterInAPrompt(t *testing.T) {
 	press(m, "alt+x")
 	assert.Equal(t, "xwe", m.filter.input.Value(), "alt+b moves a word back, and alt+x types at the cursor")
 }
+
+func TestKittyCtrlKeysActAsTheKeysTheyShare(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+
+	press(m, "/")
+	typeText(m, "web")
+	press(m, "ctrl+h")
+	assert.Equal(t, "we", m.filter.input.Value())
+
+	press(m, "ctrl+m")
+	assert.Equal(t, "instances", m.currentView(), "ctrl+m is enter")
+
+	press(m, "ctrl+i")
+	require.NotEqual(t, "instances", m.currentView(), "ctrl+i is tab")
+
+	view := m.currentView()
+	press(m, "/")
+	press(m, "ctrl+[")
+	assert.Equal(t, view, m.currentView(), "ctrl+[ is esc")
+}

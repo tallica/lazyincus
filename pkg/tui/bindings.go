@@ -245,6 +245,7 @@ func (m *Model) bindings() []*binding {
 // handleKey is gocui's execKeybindings: search keys, the view's binding,
 // main's parent's, the editor, then a global one.
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
+	msg = legacyKey(msg)
 	key := msg.String()
 	if m.searchKey(key) {
 		return nil
@@ -334,4 +335,26 @@ func (m *Model) actionRemote(view string) string {
 
 func (m *Model) isReadOnly(remote string) bool {
 	return m.cfg.ReadOnly || m.cfg.UserConfig.Remotes[remote].ReadOnly
+}
+
+// legacyKey folds the ctrl+letter that kitty-protocol terminals report apart
+// from tab, enter, esc and backspace back into them, as every terminal did
+// for gocui.
+func legacyKey(msg tea.KeyPressMsg) tea.KeyPressMsg {
+	if msg.Mod != tea.ModCtrl {
+		return msg
+	}
+
+	switch msg.Code {
+	case 'i':
+		return tea.KeyPressMsg{Code: tea.KeyTab}
+	case 'm':
+		return tea.KeyPressMsg{Code: tea.KeyEnter}
+	case '[':
+		return tea.KeyPressMsg{Code: tea.KeyEscape}
+	case 'h':
+		return tea.KeyPressMsg{Code: tea.KeyBackspace}
+	}
+
+	return msg
 }
