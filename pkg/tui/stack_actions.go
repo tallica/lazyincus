@@ -9,7 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // onStackRow is pkg/gui's onSelected on Stacks: the key acts on the selected stack.

@@ -8,7 +8,7 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/types"
 )
 
 // handleSwitchProject re-scopes the instance list to another Incus project.

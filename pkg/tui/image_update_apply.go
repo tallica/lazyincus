@@ -9,7 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // serviceUpdate is a service with a newer build of an image it runs.

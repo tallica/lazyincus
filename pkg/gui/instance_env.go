@@ -2,7 +2,7 @@ package gui
 
 import (
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 	"github.com/tallica/lazyincus/pkg/tasks"
 )
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/presentation"
+	"github.com/tallica/lazyincus/pkg/types"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 

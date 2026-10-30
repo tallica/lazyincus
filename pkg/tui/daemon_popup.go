@@ -10,7 +10,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 

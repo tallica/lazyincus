@@ -3,7 +3,7 @@ package gui
 import (
 	"github.com/jesseduffield/gocui"
 	"github.com/samber/lo"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/types"
 )
 
 func (gui *Gui) getBindings(v *gocui.View) []*Binding {

@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/types"
 )
 
 // n on Snapshots snapshots what the panel follows, not whatever Instances

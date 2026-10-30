@@ -8,7 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 func onBackup(action func(*Model, *commands.ComposeBackup) tea.Cmd) func(*Model) tea.Cmd {

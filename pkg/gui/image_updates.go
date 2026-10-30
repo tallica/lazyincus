@@ -8,7 +8,7 @@ import (
 
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // imageUpdateTimeout bounds one check of every image against the registries.

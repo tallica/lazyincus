@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/types"
 )
 
 func (s *screen) typeText(t *testing.T, text string) {

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // serviceMainTabs are pkg/gui's, in its order.

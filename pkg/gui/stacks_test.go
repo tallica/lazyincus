@@ -19,7 +19,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // testStack is a stack in a directory of its own under root, named for its

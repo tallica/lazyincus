@@ -11,7 +11,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 // localStackDir is pkg/gui's: the directory the local stack comes from, and

@@ -10,9 +10,9 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/gui/panels"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
-	"github.com/tallica/lazyincus/pkg/gui/types"
+	"github.com/tallica/lazyincus/pkg/presentation"
 	"github.com/tallica/lazyincus/pkg/tasks"
+	"github.com/tallica/lazyincus/pkg/types"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/gui/presentation"
+	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
 func warningStatuses(server *incustest.Server) map[string]string {
