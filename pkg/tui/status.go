@@ -72,6 +72,43 @@ func (m *Model) waitingRefreshThen(name string, then func() tea.Cmd, fetches ...
 	})
 }
 
+// waitingActionThen is pkg/gui's WithWaitingStatus around act and a refresh: act's error is reported and ends it.
+func (m *Model) waitingActionThen(name string, act func() error, then func() tea.Cmd, fetches ...fetch) tea.Cmd {
+	var acted bool
+
+	var applies []func()
+
+	return m.withWaitingStatusThen(name, func() error {
+		if err := act(); err != nil {
+			return err
+		}
+
+		acted = true
+
+		var err error
+		applies, err = gather(fetches)
+
+		return err
+	}, func(err error) tea.Cmd {
+		if !acted {
+			m.openError(err.Error())
+			return nil
+		}
+
+		for _, apply := range applies {
+			apply()
+		}
+		if err != nil {
+			m.handleError(err)
+		}
+		if then == nil {
+			return nil
+		}
+
+		return then()
+	})
+}
+
 // withTransientStatus is pkg/gui's WithTransientStatus.
 func (m *Model) withTransientStatus(name string, duration time.Duration) tea.Cmd {
 	m.addStatus(appStatus{name: name})

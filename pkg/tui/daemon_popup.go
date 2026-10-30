@@ -198,6 +198,10 @@ func (m *Model) operationItems() []*menuItem {
 			key:          operation.Key(),
 			labelColumns: presentation.GetOperationDisplayStrings(operation, m.daemon.spansProjects, m.operations.retried(operation)),
 			filterText:   operationLabel(operation) + " " + operation.Project,
+			onPress:      func(m *Model) tea.Cmd { return m.showOperation(operation) },
+			keys: map[string]menuKey{
+				"d": {handler: func(m *Model) tea.Cmd { return m.operationCancel(operation) }, mutates: true},
+			},
 		})
 	}
 
@@ -220,6 +224,11 @@ func (m *Model) warningItems() []*menuItem {
 			key:          warning.Key(),
 			labelColumns: presentation.GetWarningDisplayStrings(warning),
 			filterText:   warning.Warning.Type + " " + warning.Warning.LastMessage,
+			onPress:      func(m *Model) tea.Cmd { return m.showWarning(warning) },
+			keys: map[string]menuKey{
+				"a": {handler: func(m *Model) tea.Cmd { return m.acknowledgeWarning(warning) }, mutates: true},
+				"d": {handler: func(m *Model) tea.Cmd { return m.deleteWarning(warning) }, mutates: true},
+			},
 		})
 	}
 
