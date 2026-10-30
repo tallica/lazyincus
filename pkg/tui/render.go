@@ -67,7 +67,7 @@ func (m *Model) render() string {
 		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
 		if p.menu != nil {
 			// gocui's menu highlights its selection focused or not.
-			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, m.theme.selectedBg)
+			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, true, m.theme.selectedBg)
 			spec.origin = p.menu.list.origin
 			spec.tabs, spec.tab = p.menu.tabs, p.menu.tabIndex
 		}
@@ -137,23 +137,22 @@ func (m *Model) sideTitle(p *panel, window string) string {
 
 // listBody is a list's visible rows, highlighted as gocui's onFocusChange.
 func (m *Model) listBody(p *panel, width, rows int) []string {
-	bg := ""
 	switch {
 	case m.currentView() == p.name:
-		bg = m.theme.selectedBg
+		return m.rowsBody(p, width, rows, true, m.theme.selectedBg)
 	case m.currentSideView() == p.name:
-		bg = m.theme.inactiveSelected
+		return m.rowsBody(p, width, rows, true, m.theme.inactiveSelected)
 	}
 
-	return m.rowsBody(p, width, rows, bg)
+	return m.rowsBody(p, width, rows, false, "")
 }
 
-func (m *Model) rowsBody(p *panel, width, rows int, bg string) []string {
+func (m *Model) rowsBody(p *panel, width, rows int, lit bool, bg string) []string {
 	all := p.rows
 	end := min(p.origin+rows, len(all))
 	body := make([]string, 0, max(end-p.origin, 0))
 	for i := p.origin; i < end; i++ {
-		if i == p.selected {
+		if lit && i == p.selected {
 			body = append(body, highlight(all[i], width, bg))
 			continue
 		}

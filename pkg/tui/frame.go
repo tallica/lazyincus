@@ -2,6 +2,8 @@ package tui
 
 import (
 	"math"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
@@ -139,14 +141,34 @@ func fit(line string, width int) string {
 	return line + reset
 }
 
+var sgrSequence = regexp.MustCompile(`\x1b\[([0-9;]*)m`)
+
+// brighten turns line's 8-colour foregrounds bright, as gocui does on a selected row.
+func brighten(line string) string {
+	return sgrSequence.ReplaceAllStringFunc(line, func(seq string) string {
+		params := strings.Split(sgrSequence.FindStringSubmatch(seq)[1], ";")
+		for i := 0; i < len(params); i++ {
+			code, err := strconv.Atoi(params[i])
+			switch {
+			case err != nil:
+			case code == 38 || code == 48:
+				i += 2
+				if i-1 < len(params) && params[i-1] == "2" {
+					i += 2
+				}
+			case code >= 30 && code <= 37:
+				params[i] = strconv.Itoa(code + 60)
+			}
+		}
+
+		return "\x1b[" + strings.Join(params, ";") + "m"
+	})
+}
+
 // highlight puts bg behind line, bold, re-asserting both after each reset inside.
 func highlight(line string, width int, bg string) string {
-	if bg == "" {
-		return fit(line, width)
-	}
-
 	bg += bold
-	line = strings.ReplaceAll(fit(line, width), reset, reset+bg)
+	line = strings.ReplaceAll(brighten(fit(line, width)), reset, reset+bg)
 
 	return bg + line + reset
 }
