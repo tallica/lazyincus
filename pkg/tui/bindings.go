@@ -281,9 +281,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	case parent != nil:
 		return run(parent)
 	case editable && isEditorKey(msg) && view == filterView:
-		return m.editFilter(msg)
+		return m.editFilter(typedKey(msg))
 	case editable && isEditorKey(msg):
-		return m.editPrompt(msg)
+		return m.editPrompt(typedKey(msg))
 	case global != nil:
 		return run(global)
 	}

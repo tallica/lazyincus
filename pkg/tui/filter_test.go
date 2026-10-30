@@ -130,3 +130,15 @@ func TestTheFilterTextIsBoldAndBright(t *testing.T) {
 	press(m, "enter")
 	assert.Equal(t, "\x1b[32mweb\x1b[0m", m.filterLine(3))
 }
+
+func TestAltLetterTypesTheLetterInAPrompt(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+
+	press(m, "/")
+	press(m, "alt+w", "alt+e")
+	assert.Equal(t, "we", m.filter.input.Value())
+
+	press(m, "alt+b")
+	press(m, "alt+x")
+	assert.Equal(t, "xwe", m.filter.input.Value(), "alt+b moves a word back, and alt+x types at the cursor")
+}

@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"slices"
+	"unicode"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
@@ -55,10 +56,20 @@ func editorKeys() textinput.KeyMap {
 	return keys
 }
 
+// altLetter is SimpleEditor typing alt+letter, bar the word keys.
+func altLetter(msg tea.KeyPressMsg) (tea.KeyPressMsg, bool) {
+	if msg.Mod != tea.ModAlt || msg.Text != "" || !unicode.IsPrint(msg.Code) ||
+		key.Matches(msg, editorKeys().WordForward, editorKeys().WordBackward) {
+		return msg, false
+	}
+
+	return tea.KeyPressMsg{Code: msg.Code, Text: string(msg.Code)}, true
+}
+
 // isEditorKey is whether SimpleEditor takes msg: a key it doesn't falls
 // through to the global bindings.
 func isEditorKey(msg tea.KeyPressMsg) bool {
-	if msg.Text != "" {
+	if _, ok := altLetter(msg); ok || msg.Text != "" {
 		return true
 	}
 
@@ -316,4 +327,9 @@ func (m *Model) filterList(p *panel) {
 	}
 
 	p.filter(needle, m.cfg.UserConfig.Ignore)
+}
+
+func typedKey(msg tea.KeyPressMsg) tea.KeyPressMsg {
+	letter, _ := altLetter(msg)
+	return letter
 }
