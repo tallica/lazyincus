@@ -19,7 +19,10 @@ var colourCodes = map[string]int{
 
 var attributeCodes = map[string]int{"bold": 1, "underline": 4, "reverse": 7}
 
-const reset = "\x1b[0m"
+const (
+	reset = "\x1b[0m"
+	bold  = "\x1b[1m"
+)
 
 // sgr is the escape for what keys name, "" for nothing or "default".
 func sgr(keys []string, background bool) string {

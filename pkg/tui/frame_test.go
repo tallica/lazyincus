@@ -42,10 +42,10 @@ func TestFrameBorders(t *testing.T) {
 	}
 }
 
-func TestHighlightKeepsColoursUnderTheBackground(t *testing.T) {
+func TestHighlightKeepsColoursAndBoldUnderTheBackground(t *testing.T) {
 	line := highlight("\x1b[32mrun\x1b[0m ok", 8, "\x1b[44m")
 
-	assert.Equal(t, "\x1b[44m\x1b[32mrun\x1b[0m\x1b[44m ok  \x1b[0m\x1b[44m\x1b[0m", line)
+	assert.Equal(t, "\x1b[44m\x1b[1m\x1b[32mrun\x1b[0m\x1b[44m\x1b[1m ok  \x1b[0m\x1b[44m\x1b[1m\x1b[0m", line)
 	assert.Equal(t, 8, ansi.StringWidth(line))
 }
 

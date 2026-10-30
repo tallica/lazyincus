@@ -139,12 +139,13 @@ func fit(line string, width int) string {
 	return line + reset
 }
 
-// highlight puts bg behind line, re-asserting it after each reset inside.
+// highlight puts bg behind line, bold, re-asserting both after each reset inside.
 func highlight(line string, width int, bg string) string {
 	if bg == "" {
 		return fit(line, width)
 	}
 
+	bg += bold
 	line = strings.ReplaceAll(fit(line, width), reset, reset+bg)
 
 	return bg + line + reset
