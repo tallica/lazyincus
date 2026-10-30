@@ -301,9 +301,12 @@ func (m *Model) fitFilter() {
 }
 
 func (m *Model) filterLine(width int) string {
-	value := m.filter.input.Value()
+	text := ansi.Cut(m.filter.input.Value(), m.filter.ox, m.filter.ox+width)
+	if m.currentView() == filterView {
+		return bold + brighten(promptColour) + text + reset
+	}
 
-	return tint(ansi.Cut(value, m.filter.ox, m.filter.ox+width), promptColour)
+	return tint(text, promptColour)
 }
 
 func (m *Model) filterList(p *panel) {

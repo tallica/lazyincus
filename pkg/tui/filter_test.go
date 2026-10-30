@@ -118,3 +118,15 @@ func TestIgnoredStringsHideRows(t *testing.T) {
 	assert.Equal(t, 2, m.panelNamed("instances").count())
 	assert.NotEqual(t, "cache", m.selectedInstance().Name)
 }
+
+func TestTheFilterTextIsBoldAndBright(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+
+	press(m, "/")
+	typeText(m, "web")
+
+	assert.Equal(t, "\x1b[1m\x1b[92mweb\x1b[0m", m.filterLine(3))
+
+	press(m, "enter")
+	assert.Equal(t, "\x1b[32mweb\x1b[0m", m.filterLine(3))
+}
