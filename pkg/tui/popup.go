@@ -153,11 +153,22 @@ func (m *Model) popupLayout(p *popup) (x0, y0, x1, y1 int, lines []string) {
 	case p.input != nil:
 		lines = wrapLine(p.input.Value(), max(x1-x0-1, 1))
 	default:
-		lines = strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n")
+		lines = keepEscapes(strings.Split(ansi.Wrap(p.message, max(x1-x0-1, 1), ""), "\n"))
 	}
 	y0, y1 = popupRows(m.height, len(lines))
 
 	return x0, y0, x1, y1, lines
+}
+
+// keepEscapes starts each line with the escapes still in force, as ansi.Wrap leaves them.
+func keepEscapes(lines []string) []string {
+	active := ""
+	for i, line := range lines {
+		lines[i] = active + line
+		active = carry(active, strings.Join(sgrSequence.FindAllString(line, -1), ""))
+	}
+
+	return lines
 }
 
 // fitPopups is pkg/gui's resizePopupPanel: a shorter subtitle mustn't

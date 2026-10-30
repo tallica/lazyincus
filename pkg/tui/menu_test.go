@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/fatih/color"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -186,4 +187,19 @@ func TestALongMenuScrollsToItsSelection(t *testing.T) {
 
 	press(m, "k")
 	assert.Equal(t, 29, m.topMenu().list.selected)
+}
+
+func TestAWrappedErrorKeepsItsColourOnEveryLine(t *testing.T) {
+	color.NoColor = false
+	t.Cleanup(func() { color.NoColor = true })
+
+	m := start(t, options{}, 80, 24)
+	m.openError(strings.Repeat("word ", 30))
+
+	_, _, _, _, lines := m.popupLayout(m.popups[0])
+
+	assert.Greater(t, len(lines), 1)
+	for _, line := range lines {
+		assert.True(t, strings.HasPrefix(line, "\x1b[31m"), "%q", line)
+	}
 }
