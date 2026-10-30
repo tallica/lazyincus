@@ -142,7 +142,6 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "stacks", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewStackLogs)},
 		&binding{view: "stacks", key: "M", description: m.tr.ComposeLogs, handler: onStackTarget(composeVerb("", "logs", "--follow"))},
 		&binding{view: "stacks", key: "y", description: m.tr.Copy, handler: onStackRow((*Model).stackCopy)},
-		&binding{view: "services", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewServiceLogs)},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
 		&binding{view: mainView, key: "left", handler: scrollStep((*pane).scrollLeft)},
@@ -166,6 +165,8 @@ func (m *Model) bindings() []*binding {
 		&binding{key: "tab", description: m.tr.NextPanel, handler: do(func(m *Model) { m.cycleWindows(1) })},
 		&binding{key: "shift+tab", description: m.tr.PrevPanel, handler: do(func(m *Model) { m.cycleWindows(-1) })},
 	)
+
+	bindings = append(bindings, m.serviceBindings()...)
 
 	for _, key := range []string{"left", "h"} {
 		bindings = append(bindings, &binding{key: key, description: m.tr.PreviousList, handler: do(func(m *Model) { m.cycleViews(-1) })})
