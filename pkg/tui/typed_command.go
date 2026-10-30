@@ -42,6 +42,28 @@ func (m *Model) typedCommand() tea.Cmd {
 	return nil
 }
 
+// typedComposeCommand is pkg/gui's: a service's name is offered after the cursor, for the verb typed before it.
+func typedComposeCommand(m *Model, target composeTarget) tea.Cmd {
+	initial := ""
+	if target.service != "" {
+		initial = " " + target.service
+	}
+
+	title := m.onRemote(fmt.Sprintf(m.tr.TypedComposeCommandTitle, target.project), target.remote)
+	m.textPrompt(title, m.tr.TypedCommandHint, initial, typedLineCheck(initial), func(m *Model, line string) tea.Cmd {
+		cmd, err := m.typedComposeCmd(line, target)
+		if err != nil {
+			m.openError(err.Error())
+			return nil
+		}
+
+		return m.runTyped(cmd, line, config.ComposeHistory, target.remote, &target)
+	})
+	m.topPrompt().input.CursorStart()
+
+	return nil
+}
+
 // runTyped is pkg/gui's.
 func (m *Model) runTyped(cmd *exec.Cmd, line string, history config.History, remote string, stack *composeTarget) tea.Cmd {
 	if cmd == nil {
@@ -156,6 +178,20 @@ func (m *Model) typedCommandCmd(line, remote string, seed []string) (*exec.Cmd, 
 	}
 
 	return commands.WithRemote(m.os.NewCmd("incus", args...), remote), nil
+}
+
+// typedComposeCmd is line in target's stack; no seed, the service is offered after the line.
+func (m *Model) typedComposeCmd(line string, target composeTarget) (*exec.Cmd, error) {
+	args, err := typedArgs(line, nil, "incus-compose")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(args) == 0 {
+		return nil, nil
+	}
+
+	return commands.WithRemote(m.incus.ComposeCmd(target.dir, args...), target.remote), nil
 }
 
 // typedCommandProject is pkg/gui's: the row's, else the session's on its own remote.

@@ -132,7 +132,7 @@ func TestCLIProject(t *testing.T) {
 // terminal hands the screen back, the failure arriving before the verb exits
 // or just after, and from a stack on another remote too.
 func TestAFailedStartShowsTheDaemonsError(t *testing.T) {
-	for _, how := range []string{"key", ":"} {
+	for _, how := range []string{"key", ";", ":"} {
 		for _, remote := range []string{"", "pve01"} {
 			for _, view := range []string{"stacks", "services"} {
 				for name, late := range map[string]bool{"during": false, "after exit": true} {
@@ -165,7 +165,7 @@ type failedStartCase struct {
 	view   string
 	// late has the failure arrive after the verb exits.
 	late bool
-	// how starts it: "key", or typed at ":"; "" is "key".
+	// how starts it: "key", or typed at ";" or ":"; "" is "key".
 	how string
 	// project narrows the session to it, if it's not "".
 	project string
@@ -237,6 +237,10 @@ func failedStart(t *testing.T, c failedStartCase) {
 	press(m, map[string]string{"stacks": "1", "services": "2"}[c.view])
 	require.Equal(t, c.view, m.currentView())
 	switch c.how {
+	case ";":
+		press(m, ";")
+		typeText(m, "start")
+		press(m, "enter")
 	case ":":
 		press(m, ":")
 		typeText(m, "start web")

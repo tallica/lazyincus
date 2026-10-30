@@ -185,6 +185,7 @@ func (m *Model) serviceBindings() []*binding {
 		{view: "services", key: "G", description: m.tr.ComposeUpdateImages, mutates: true, noSelection: true, handler: onStack(updateImages)},
 		service("M", m.serviceScopedDescription(m.tr.ComposeLogs), false, onServiceTarget(composeVerb("", "logs", "--follow"))),
 		{view: "services", key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), noSelection: true, handler: (*Model).goToBackups},
+		service(";", m.tr.TypedComposeCommand, true, onServiceTarget(typedComposeCommand)),
 	}
 
 	order := "udUSsrpfbgmMnEy"

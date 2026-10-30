@@ -150,6 +150,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "stacks", key: "M", description: m.tr.ComposeLogs, handler: onStackTarget(composeVerb("", "logs", "--follow"))},
 		&binding{view: "stacks", key: "y", description: m.tr.Copy, handler: onStackRow((*Model).stackCopy)},
 		&binding{view: "stacks", key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), handler: (*Model).goToBackups},
+		&binding{view: "stacks", key: ";", description: m.tr.TypedComposeCommand, mutates: true, handler: onStackTarget(typedComposeCommand)},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
 		&binding{view: mainView, key: "left", handler: scrollStep((*pane).scrollLeft)},

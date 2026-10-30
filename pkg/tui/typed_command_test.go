@@ -220,3 +220,66 @@ func TestSplitArgsRefusesAnUnclosedQuote(t *testing.T) {
 	_, err = splitArgs(`exec web -- echo don't`)
 	assert.ErrorContains(t, err, "unterminated")
 }
+
+// ; on a service offers its name after the cursor, for the verb before it.
+func TestTypedComposeCommandOffersTheService(t *testing.T) {
+	m, ran, _ := composeModel(t, options{})
+
+	press(m, "2", ";")
+
+	require.NotNil(t, m.topPrompt())
+	assert.Equal(t, "incus-compose: default", m.topPrompt().title)
+	assert.Equal(t, " web", m.topPrompt().input.Value())
+	assert.Equal(t, 0, m.topPrompt().input.Position())
+
+	typeText(m, "logs")
+	assert.Equal(t, "logs web", m.topPrompt().input.Value())
+
+	press(m, "enter")
+	require.Len(t, *ran, 1)
+	assert.Equal(t, []string{"incus-compose", "logs", "web"}, (*ran)[0].Args)
+	assert.Empty(t, m.popups)
+
+	lines, err := m.cfg.LoadHistory(config.ComposeHistory)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"logs web"}, lines)
+}
+
+func TestTypedComposeCommandOnAStackOffersNoService(t *testing.T) {
+	m, _, _ := composeModel(t, options{})
+
+	press(m, ";")
+
+	require.NotNil(t, m.topPrompt())
+	assert.Empty(t, m.topPrompt().input.Value())
+}
+
+func TestTypedComposeCommandRefusedOnAReadOnlyRemote(t *testing.T) {
+	m, _, _ := composeModel(t, options{configure: func(c *config.UserConfig) {
+		c.Remotes = map[string]config.RemoteConfig{"fake": {ReadOnly: true}}
+	}})
+
+	for _, view := range []string{"1", "2"} {
+		press(m, view, ";")
+
+		assert.Nil(t, m.topPrompt())
+		assert.Contains(t, popupText(m), "fake is read-only", view)
+		press(m, "esc")
+	}
+}
+
+// Run in the stack's directory, on its remote.
+func TestTypedComposeCmd(t *testing.T) {
+	m := newTestModel(t, options{})
+	target := composeTarget{remote: "pve01", dir: "/srv/shop", project: "shop"}
+
+	cmd, err := m.typedComposeCmd(`incus-compose logs --tail 5 web`, target)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"incus-compose", "logs", "--tail", "5", "web"}, cmd.Args)
+	assert.Equal(t, "/srv/shop", cmd.Dir)
+	assert.Contains(t, cmd.Env, "INCUS_REMOTE=pve01")
+
+	cmd, err = m.typedComposeCmd("incus-compose", target)
+	assert.NoError(t, err)
+	assert.Nil(t, cmd)
+}
