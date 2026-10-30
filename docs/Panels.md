@@ -172,32 +172,29 @@ list has focus, so a tab being read follows too.
 
 ## Stacks
 
-One row per compose stack, a stack being a directory with a compose file
-in it: the local one, and every one saved with `a`. Stacks and Services are
-there whenever `incus-compose` is on `PATH` — `Run` asks `exec.LookPath`
-once, ahead of `createAllViews` — and then Stacks is `[1]`, with the focus
-when a stack is on the session's remote, and Services `[2]`. Without it
-neither panel exists and the layout is what it always was.
-`SideListPanel.Hide` is what removes them, and the layout already copes:
-`setViewFromDimensions` marks a view with no box invisible.
+One row per compose stack, a stack being a directory with a compose file in
+it: the local one, and every one saved with `a`. Stacks and Services are
+there whenever `incus-compose` is on `PATH` — `NewModel` asks
+`exec.LookPath` once — and then Stacks is `[1]`, with the focus when a
+stack is on the session's remote, and Services `[2]`. Without it neither
+panel exists and the layout is what it always was. A panel's `hidden` func
+(`composeUnavailable`) removes them, and the layout gives a hidden panel no
+box.
 
-That gate means panel numbering can't index `sidePanelDefs()` — a hidden
-first panel would leave a hole at `[1]`. `visibleSidePanelDefs` is what the
-number keys, the title prefixes, `sideWindowNames` and the startup focus all
-run over instead. Hidden-ness is a `hidden` func on the def rather than the
-panel's own `Hide`, because views are styled and keys bound before
-`setPanels` has built any panel to ask; and it's fixed for the session,
-the number keys being bound once.
+That gate means panel numbering can't index `newPanels()` — a hidden first
+panel would leave a hole at `[1]`. `visiblePanels` is what the number keys,
+the title prefixes, `windowNames` and the startup focus all run over
+instead; it's fixed for the session.
 
-A remote with no stack listed on it - every stack pinned elsewhere, or
-none at all - keeps both panels but collapses them to their titles
-(`State.StacksHere`, set by each Stacks refresh), Stacks counting what it
-lists and Services leaving out the stack (`titleStacks`). Focusing either
+A remote with no stack listed on it - every stack pinned elsewhere, or none
+at all - keeps both panels but collapses them to their titles
+(`Model.stacksHere`, set by each Stacks refresh), Stacks counting what it
+lists and Services leaving out the stack (`sideTitle`). Focusing either
 expands both and collapses Instances instead (`stacksCollapsed`), counting
 what it lists the way Stacks does, and focus crossing that swap lands on
 the panel's first main-panel tab (`stacksSwap`). Their numbers don't move:
 a hidden panel would renumber everything by remote. The Stacks refresh
-after startup or a remote switch (`State.Landing`) also moves the focus
+after startup or a remote switch (`Model.landing`) also moves the focus
 from either one to Instances - or, when a popup opened first has it, the
 focus the popup hands back on closing; adding or removing a stack changes
 only the layout. All of it hangs on `stacksAway`, which
@@ -222,20 +219,20 @@ path are resolved, and a path that's missing, not a directory, holds no
 compose project or is already listed is refused.
 
 A stack's config is one `incus-compose config --format json` in its
-directory (`LoadComposeStack`), read in `fetchStacks` rather than before
-the views exist, and cached by directory (`stackCache`): a subprocess per
-stack on every refresh would be most of the cost of one. The cache forgets
-a stack whenever a compose verb runs on it, so a compose file edited and
-then brought up shows its new services - and after `c`, which opens the
-file compose-go would pick (`ComposeFile`): the first of `compose.yaml`,
-`compose.yml`, `docker-compose.yml`, `docker-compose.yaml`, in the
-directory or the nearest one above with one. An override file or `-f` in
-the environment isn't followed. A read that failed is tried again
-on each refresh — the directory may come back — except the working
-directory's. `ComposeCmd` is how every incus-compose subprocess is made: in
-the stack's directory, with `INCUS_COMPOSE_PROJECT_DIRECTORY` set to it as
-well, since `-P` sets that for the whole process and would otherwise point
-every stack at the one it names.
+directory (`LoadComposeStack`), read in `fetchStacks`, and cached by
+directory (`stackCache`): a subprocess per stack on every refresh would be
+most of the cost of one. The cache forgets a stack whenever a compose verb
+runs on it, so a compose file edited and then brought up shows its new
+services - and after `c`, which opens the file compose-go would pick
+(`ComposeFile`): the first of `compose.yaml`, `compose.yml`,
+`docker-compose.yml`, `docker-compose.yaml`, in the directory or the
+nearest one above with one. An override file or `-f` in the environment
+isn't followed. A read that failed is tried again on each refresh — the
+directory may come back — except the working directory's. `ComposeCmd` is
+how every incus-compose subprocess is made: in the stack's directory, with
+`INCUS_COMPOSE_PROJECT_DIRECTORY` set to it as well, since `-P` sets that
+for the whole process and would otherwise point every stack at the one it
+names.
 
 The status column rolls up every compose-labelled instance in the stack's
 project the way a service rolls up its replicas (`RollUpStatus`): theirs
@@ -336,7 +333,7 @@ connection its status has usually opened already: a key rather than the
 selection, since a switch reloads every panel.
 
 A remote column leads the Stacks rows whenever one is on a remote other
-than the session's (`State.StacksElsewhere`), the session's marked `*` in
+than the session's (`Model.stacksElsewhere`), the session's marked `*` in
 green as the `R` menu marks it - the project columns' rule, a column only
 where the rows would otherwise read alike. The local stack sorts first
 when it's saved nowhere, then each saved remote's stacks together, each by
@@ -365,16 +362,16 @@ instance whose label names no declared service — a one-off from
 
 A service with more than one instance lists its replicas under it, one row
 each: the panel's item is a `commands.ServiceRow`, either a service or one
-of its replicas, and `ServiceRows` lays them out. `SideListPanel` is
-generic over the row type, so this is a row type rather than a tree — the
-list stays flat. `ServiceRow.SelectedInstance` is the one answer to "which
-instance does this row mean": the replica, or a lone service's only
-instance, and none from a service's own row, which means all of them. That
-last case is what every tab, the snapshots panel and `withServiceInstance`
-branch on. `ServiceRow.Instances` is the same split for the tabs that show an
-instance each. Rows are rebuilt on every refresh, so the panel's `SameItem`
-is what keeps the cursor on the row it was on; without it the selection
-holds an index, which by then belongs to a different replica.
+of its replicas, and `ServiceRows` lays them out. This is a row type rather
+than a tree — the list stays flat. `ServiceRow.SelectedInstance` is the one
+answer to "which instance does this row mean": the replica, or a lone
+service's only instance, and none from a service's own row, which means all
+of them. That last case is what every tab, the snapshots panel and
+`withServiceInstance` branch on. `ServiceRow.Instances` is the same split
+for the tabs that show an instance each. Rows are rebuilt on every refresh,
+so the panel's `SameItem` is what keeps the cursor on the row it was on;
+without it the selection holds an index, which by then belongs to a
+different replica.
 
 `ComposeService.Status` is an instance status — the daemon's own spelling,
 rendered by the instances panel's own `presentation.DisplayStatus`, a
@@ -503,7 +500,7 @@ Main panel tabs:
   it's an atomic pointer). The image is `ComposeService.ResolvedImage`, a
   running instance's reference before the compose file's, whose own value
   may carry no registry host. Each refresh builds new `ComposeService`
-  values, so the instance count is part of `GetItemContextCacheKey` —
+  values, so the instance count is part of the panel's `itemKey` —
   otherwise the ticker goes on rendering the service object the tab opened
   with. A replica's row adds its own status to that key, the way the
   instances panel does, so a restart re-reads the log.
@@ -628,7 +625,7 @@ up:
 
 ## Snapshots
 
-Follows whichever list you're in: the instances panel's `OnSelect` hands
+Follows whichever list you're in: the instances panel's selection hands
 over its instance, the services panel's whatever its row stands for — a
 replica's own, and every replica's from a service's row above them, the
 service's snapshots being all of theirs. Stacks hands over nothing, which
@@ -636,17 +633,15 @@ empties it. The view title names what the rows belong to, the instance or
 the service - and its remote, when that isn't the session's - since the
 rows alone don't say; a panel holding more than one instance's snapshots
 grows a column naming the replica each came from, and groups the list by
-instance before ordering it newest-first, replicas being snapshotted
-alike. Each panel hands its selection over rather than `renderSnapshots`
-reading the focused view, because that read takes `ViewStackMutex`, which
-`switchFocus` holds while it runs an `OnSelect`: reading it there
-deadlocks the app. The rows are the `InstanceFull.Snapshots` the instance
-listing already carries, so moving through a list asks the daemon for
-nothing; create, delete, rename and restore re-run that listing, which
-is what shows their result at once, a renamed snapshot keeping the
-cursor. Snapshot names can come back prefixed with the instance
-(`alpine/snap0`); every other call wants the bare name, which
-`snapshotName` strips.
+instance before ordering it newest-first, replicas being snapshotted alike.
+Each panel hands its selection over (`followSnapshotsOf`) rather than
+Snapshots reading the focused view. The rows are the
+`InstanceFull.Snapshots` the instance listing already carries, so moving
+through a list asks the daemon for nothing; create, delete, rename and
+restore re-run that listing, which is what shows their result at once, a
+renamed snapshot keeping the cursor. Snapshot names can come back prefixed
+with the instance (`alpine/snap0`); every other call wants the bare name,
+which `snapshotName` strips.
 
 `e` swaps the selection for every instance the instances panel holds, the
 stacks' replicas included (`gui.showAllSnapshots` picks which way a
