@@ -14,10 +14,12 @@ import (
 // popup is a message, or with asks a question; the top one has the keys.
 type popup struct {
 	// view is pkg/gui's view for it: confirmationView or menuView.
-	view     string
-	title    string
-	message  string
-	asks     bool
+	view    string
+	title   string
+	message string
+	asks    bool
+	// skipID is the confirmation `a` stops asking, kept in state.yml.
+	skipID   string
 	bindings []*binding
 	menu     *menu
 	// input makes it a text prompt; snapshot, the new-snapshot one.
@@ -41,6 +43,28 @@ func (m *Model) openMessage(title, message string) {
 // openConfirmation is pkg/gui's createConfirmationPanel.
 func (m *Model) openConfirmation(title, message string, onYes func() tea.Cmd) {
 	m.openPopup(&popup{view: confirmationView, title: title, message: message, asks: true}, onYes, nil)
+}
+
+// openSkippableConfirmation is pkg/gui's createSkippableConfirmationPanel.
+func (m *Model) openSkippableConfirmation(id, title, message string, onYes func() tea.Cmd) tea.Cmd {
+	if m.cfg.SkipsConfirm(id) {
+		return onYes()
+	}
+
+	p := &popup{view: confirmationView, title: title, message: message, asks: true, skipID: id}
+	m.openPopup(p, onYes, nil)
+	p.bindings = append(p.bindings, &binding{view: confirmationView, key: "a", handler: func(m *Model) tea.Cmd {
+		m.closePopup()
+
+		if err := m.cfg.SkipConfirm(id); err != nil {
+			m.openError(err.Error())
+			return nil
+		}
+
+		return onYes()
+	}})
+
+	return nil
 }
 
 // openPopup is pkg/gui's createPopupPanel: enter/y confirm, esc/n close.

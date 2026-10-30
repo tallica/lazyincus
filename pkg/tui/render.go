@@ -213,6 +213,9 @@ func (m *Model) options() string {
 			options = map[string]string{"esc": m.tr.Close, "enter": m.tr.Submit}
 		case top.asks:
 			options = map[string]string{"n/esc": m.tr.No, "y/enter": m.tr.Yes}
+			if top.skipID != "" {
+				options["a"] = m.tr.YesAlways
+			}
 		default:
 			options = map[string]string{"esc/enter": m.tr.Close}
 		}

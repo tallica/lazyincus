@@ -119,6 +119,8 @@ type Model struct {
 	checkUpstreams func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus
 	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
 	runIncus func(*exec.Cmd) (string, error)
+	// runOnTerminal runs a compose or backup verb on the terminal; tests record it.
+	runOnTerminal func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd
 	// after stands in for tea.Tick in tests.
 	after func(time.Duration, tea.Msg) tea.Cmd
 }
@@ -152,6 +154,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	m.loadStack = incus.LoadComposeStack
 	m.stackCache = &stackCache{}
 	m.composeState = &composeHolder{}
+	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd { return m.runSubprocess(cmd, "", then) }
 	m.stacksHere, m.landing = true, true
 	m.notifyRemotes = func() {
 		select {
