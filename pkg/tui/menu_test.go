@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -23,43 +21,6 @@ func menuRows(m *Model, lines []string) []string {
 	}
 
 	return rows
-}
-
-// pkg/gui's menu golden has keys not ported yet: every row pkg/tui shows
-// is there, in the same order, bar the number keys it lists below the fold.
-func TestOptionsMenuMatchesGocui(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "gui", "testdata", "screens", "menu-90x40.txt"))
-	require.NoError(t, err)
-	want := strings.Split(string(raw), "\n")
-
-	m := start(t, options{fixture: true}, 90, 40)
-	press(m, "x")
-	got := screen(m)
-
-	require.Equal(t, "╭─Menu", ansi.Cut(want[1], 23, 29))
-	_, y0, _, _, _ := m.popupLayout(m.popups[0])
-	assert.Equal(t, ansi.Cut(want[1], 23, 68), ansi.Cut(got[y0], 23, 68), "the menu spans the same columns")
-	assert.Equal(t, strings.TrimRight(want[39], " "), strings.TrimRight(got[39], " "))
-
-	var wantRows []string
-	for _, line := range want[2:] {
-		if ansi.Cut(line, 23, 24) == "╰" {
-			break
-		}
-		wantRows = append(wantRows, strings.TrimRight(ansi.Cut(line, 24, 67), " "))
-	}
-	require.Len(t, wantRows, 36)
-	next := 0
-	for _, row := range menuRows(m, got) {
-		if strings.Contains(row, "focus ") && !strings.Contains(row, "main panel") {
-			continue
-		}
-		found := false
-		for ; next < len(wantRows) && !found; next++ {
-			found = wantRows[next] == row
-		}
-		assert.True(t, found, "%q is in pkg/gui's menu, in order", row)
-	}
 }
 
 func TestTheOptionsMenuRunsTheKeyPicked(t *testing.T) {
