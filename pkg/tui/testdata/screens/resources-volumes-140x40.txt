@@ -1,0 +1,40 @@
+╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
+│a-name-long-enough-to-be-cut-off running  co…││Remote:       fake                                                                         │
+│web                              running  co…││Project:      default                                                                      │
+│db                               stopped  co…││Name:         data                                                                         │
+│                                             ││Pool:         default (dir)                                                                │
+│                                             ││Pool space:   5.00GiB of 50.00GiB used (10%)                                               │
+│                                             ││Type:         custom                                                                       │
+│                                             ││Content type:                                                                              │
+│                                             ││Size:         512.00MiB                                                                    │
+│                                             ││Used by:      nothing                                                                      │
+│                                             ││                                                                                           │
+│                                             ││Full details:                                                                              │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[2]─Snapshots (data)────────────────────────╮│config: null                                                                               │
+│before-migration 2026/09/22 06:00 UTC        ││description: ""                                                                            │
+│                                             ││name: data                                                                                 │
+│                                             ││type: custom                                                                               │
+│                                             ││used_by: null                                                                              │
+│                                             ││location: ""                                                                               │
+│                                             ││content_type: ""                                                                           │
+│                                             ││project: default                                                                           │
+│                                             ││created_at: "0001-01-01T00:00:00Z"                                                         │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯│                                                                                           │
+╭─[3]─Images - Volumes - Networks - Profiles──╮│                                                                                           │
+│data 0 512.00MiB default custom              ││                                                                                           │
+│web  1           default container           ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+│                                             ││                                                                                           │
+╰─────────────────────────────────────────────╯╰───────────────────────────────────────────────────────────────────────────────────────────╯
+PgUp/PgDn: scroll, q: quit, x: menu, ← → ↑ ↓: navigate                                                Incus v7.4 (fake/all projects) ●  test

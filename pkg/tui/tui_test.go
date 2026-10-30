@@ -35,6 +35,8 @@ type options struct {
 	savedStacks []*commands.ComposeStack
 	// remotes are other daemons by CLI remote name; "down" is known but never answers.
 	remotes map[string]*incustest.Server
+	// home is what the stacks' directories are shown relative to.
+	home string
 }
 
 func newTestModel(t *testing.T, opts options) *Model {
@@ -75,6 +77,9 @@ func newTestModel(t *testing.T, opts options) *Model {
 	m.checkUpstreams = func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus { return nil }
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
+	if opts.home != "" {
+		m.home = opts.home
+	}
 	m.panels = m.newPanels()
 	m.focus = nil
 	if opts.compose {
