@@ -10,12 +10,10 @@ require (
 	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/fatih/color v1.19.0
-	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-containerregistry v0.22.1
 	github.com/integrii/flaggy v1.8.0
-	github.com/jesseduffield/gocui v0.3.1-0.20260331125330-c81715e95462
 	github.com/jesseduffield/kill v0.0.0-20250101124109-e216ddbe133a
 	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996
 	github.com/lxc/incus/v7 v7.5.1
@@ -49,7 +47,6 @@ require (
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/flosch/pongo2/v6 v6.1.0 // indirect
-	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.5 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

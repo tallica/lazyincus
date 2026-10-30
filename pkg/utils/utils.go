@@ -21,8 +21,7 @@ import (
 
 // DisplayWidth is how many terminal columns str takes, colour escapes
 // taking none. Every width lazyincus lays out goes through here, measured
-// by grapheme cluster with uniseg the way gocui draws - tcell sets
-// uniseg's ambiguous width for an East Asian locale for both of us.
+// by grapheme cluster with uniseg.
 func DisplayWidth(str string) int {
 	return uniseg.StringWidth(Decolorise(str))
 }

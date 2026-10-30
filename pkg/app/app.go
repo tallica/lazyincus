@@ -3,8 +3,10 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/sasha-s/go-deadlock"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
@@ -24,6 +26,9 @@ type App struct {
 // NewApp bootstraps a new application
 func NewApp(config *config.AppConfig) (*App, error) {
 	app := &App{Config: config}
+
+	deadlock.Opts.Disable = !config.Debug
+	deadlock.Opts.DeadlockTimeout = 10 * time.Second
 	var err error
 	app.Log = log.NewLogger(config)
 	app.Tr, err = i18n.NewTranslationSetFromConfig(app.Log, config.UserConfig.Gui.Language)
