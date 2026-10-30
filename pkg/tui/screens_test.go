@@ -6,7 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lxc/incus/v7/shared/api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -153,4 +157,78 @@ func pve01() map[string]*incustest.Server {
 	return map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{
 		Instances: []api.InstanceFull{composeFixture("shop", "api-1", "api")},
 	})}
+}
+
+// The arrows step through every list, the resources' included, and wrap.
+func TestArrowsStepThroughEveryList(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+
+	for _, want := range []string{"snapshots", "images", "volumes", "networks", "profiles", "instances"} {
+		press(m, "right")
+		assert.Equal(t, want, m.currentView())
+	}
+
+	press(m, "left")
+	assert.Equal(t, "profiles", m.currentView())
+	press(m, "left")
+	assert.Equal(t, "networks", m.currentView())
+	assert.Contains(t, strings.Join(screen(m), "\n"), "Leases")
+}
+
+// y offers what an instance has to copy, and nothing it hasn't.
+func TestCopyMenuLeavesOutWhatTheInstanceHasNot(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+
+	press(m, "j", "y")
+	text := strings.Join(screen(m), "\n")
+	assert.Contains(t, text, "╭─Copy")
+	assert.Regexp(t, `│name +web `, text)
+	assert.Regexp(t, `│IPv4 +192\.0\.2\.10 `, text)
+	assert.NotContains(t, text, "IPv6", "web has no IPv6 address")
+	assert.NotContains(t, text, "all addresses", "nor more than one")
+}
+
+// A prompt names the item's project only when its list holds several
+// projects', and what the daemon would refuse is said without asking.
+func TestDeletePromptsNameTheProjectOnlyWhenListsSpanSeveral(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+
+	shows := func(spans bool, open func() tea.Cmd, want string) {
+		t.Helper()
+
+		m.showProject, m.imagesSpan, m.volumesSpan, m.networksSpan, m.profilesSpan = spans, spans, spans, spans, spans
+		open()
+		require.Len(t, m.popups, 1, want)
+		assert.Contains(t, ansi.Strip(m.popups[0].message), want)
+		press(m, "esc")
+	}
+
+	profile := func(name string, usedBy ...string) *commands.Profile {
+		return &commands.Profile{Name: name, Profile: api.Profile{Name: name, Project: "stack", UsedBy: usedBy}}
+	}
+	network := &commands.Network{Name: "br0", Network: api.Network{Name: "br0", Project: "stack", Managed: true}}
+	busy := &commands.Network{Name: "br1", Network: api.Network{
+		Name: "br1", Project: "stack", Managed: true, UsedBy: []string{"/1.0/profiles/default"},
+	}}
+	volume := &commands.Volume{Pool: "default", Name: "data", Volume: api.StorageVolume{
+		Name: "data", Type: "custom", Project: "stack", UsedBy: []string{"/1.0/instances/db?project=stack"},
+	}}
+	image := &commands.Image{Fingerprint: "0123456789abcdef", Image: api.Image{
+		Project: "stack", Aliases: []api.ImageAlias{{Name: "nginx:alpine"}},
+	}}
+	instance := &commands.Instance{Name: "web", Project: "stack"}
+
+	shows(false, func() tea.Cmd { return m.profileDelete(profile("web-only")) }, "delete profile web-only?")
+	shows(true, func() tea.Cmd { return m.profileDelete(profile("web-only")) }, "delete profile web-only in project stack?")
+	shows(true, func() tea.Cmd { return m.profileDelete(profile("default")) }, "default profile can't be deleted")
+	shows(false, func() tea.Cmd { return m.profileDelete(profile("web-only", "/1.0/instances/web")) },
+		"Profile web-only is still in use (used by: 1)")
+
+	shows(false, func() tea.Cmd { return m.networkDelete(network) }, "delete network br0?")
+	shows(true, func() tea.Cmd { return m.networkDelete(busy) }, "Network br1 in project stack is still in use")
+	shows(false, func() tea.Cmd { return m.volumeDelete(volume) }, "Volume data is still in use")
+
+	shows(true, func() tea.Cmd { return m.imageDelete(image) }, "delete image nginx:alpine in project stack?")
+	shows(true, func() tea.Cmd { return m.instanceDelete(instance) }, "delete instance web in project stack?")
+	shows(false, func() tea.Cmd { return m.instanceStop(instance) }, "stop instance web?")
 }
