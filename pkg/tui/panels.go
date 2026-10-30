@@ -8,7 +8,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// panel is pkg/gui's sidePanelDef as data, plus its list's state.
+// panel is a side panel as data, plus its list's state.
 type panel struct {
 	name string
 	// window, plainTitle and shortTitle are as on sidePanelDef.
@@ -22,23 +22,22 @@ type panel struct {
 	cells [][]string
 	shown []int
 	flex  func() []utils.FlexColumn
-	// keep is pkg/gui's Filter: an item it refuses is never shown.
+	// keep: an item it refuses is never shown.
 	keep func(item int) bool
-	// fuzzy is pkg/gui's FuzzyFilter, matching filterText or the cells.
+	// fuzzy: matching filterText or the cells.
 	fuzzy bool
-	// keepsOrder is pkg/gui's FilterKeepsOrder: fuzzy matches stay in list order.
+	// keepsOrder: fuzzy matches stay in list order.
 	keepsOrder bool
 	filterText func(item int) string
-	// empty is pkg/gui's NoItemsMessage: main shows it, the list nothing.
+	// empty: main shows it, the list nothing.
 	empty string
-	// note is pkg/gui's EmptyNote: a line the list shows while it has no rows.
+	// note: a line the list shows while it has no rows.
 	note func() string
 	// awaiting stands in for the list, and in main, until its first answer.
 	awaiting string
 	mainTabs func() []mainTab
-	// itemKey is pkg/gui's GetItemContextCacheKey for the selected row.
-	itemKey func() string
-	project func() string
+	itemKey  func() string
+	project  func() string
 
 	// rows are cells rendered at rowsWidth, -1 once cells change.
 	rows      []string
@@ -83,7 +82,7 @@ func (p *panel) item() int {
 	return p.shown[p.selected]
 }
 
-// filter is pkg/gui's filterAndSort for a sorted list: matched as typed,
+// filter is a sorted list's filter: matched as typed,
 // colour codes and all, the selection following its item; or fuzzily,
 // best first, the selection on the first.
 func (p *panel) filter(needle string, ignore []string) {
@@ -145,7 +144,7 @@ func (p *panel) fuzzyFilter(needle string) {
 	p.selected = 0
 }
 
-// fit renders the rows to width as pkg/gui's writeRows does, each cut row
+// fit renders the rows to width, each cut row
 // marked with an ellipsis; a no-op at the width they're already at.
 func (p *panel) fit(width int) {
 	if width == p.rowsWidth {
@@ -184,7 +183,7 @@ func (p *panel) fit(width int) {
 	}
 }
 
-// refill is pkg/gui's SetItems and RerenderList: replace swaps the items
+// refill sets and redraws a list: replace swaps the items
 // and returns their cells, the selection kept on the item key named.
 func (m *Model) refill(p *panel, key func(item int) string, replace func() [][]string) {
 	selected := ""
@@ -218,7 +217,7 @@ const (
 	resourcesWindow = "resources"
 )
 
-// newPanels is pkg/gui's sidePanelDefs, in its order.
+// newPanels are the side panels, in order.
 func (m *Model) newPanels() []*panel {
 	tr := m.tr
 	static := func(s string) func() string { return func() string { return s } }
@@ -304,7 +303,6 @@ func (m *Model) backupsAway() bool {
 	return m.composeUnavailable() || m.stacksAway()
 }
 
-// stacksAway is pkg/gui's stacksAway.
 func (m *Model) stacksAway() bool {
 	return !m.stacksHere && m.cfg.UserConfig.Gui.CollapseStacksElsewhere
 }

@@ -21,7 +21,7 @@ type completedMsg struct {
 	err               error
 }
 
-// bindPromptCompletion is pkg/gui's: tab completes the word before the cursor, and an edit puts the hint back.
+// bindPromptCompletion: tab completes the word before the cursor, and an edit puts the hint back.
 func (m *Model) bindPromptCompletion(complete completer) {
 	p := m.topPrompt()
 	p.hint = m.tr.TypedCommandHint

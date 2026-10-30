@@ -66,12 +66,12 @@ func (m *Model) render() string {
 		x0, y0, x1, y1, lines := m.popupLayout(p)
 		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
 		if p.menu == nil && p.snapshot == nil && spec.focused && len(lines) > 0 {
-			// gocui's cursor row is bold and bright.
+			// The cursor row is bold and bright.
 			spec.body = slices.Clone(lines)
 			spec.body[0] = highlight(lines[0], x1-x0-1, "")
 		}
 		if p.menu != nil {
-			// gocui's menu highlights its selection focused or not.
+			// A menu highlights its selection focused or not.
 			spec.body = m.rowsBody(p.menu.list, x1-x0-1, y1-y0-1, true, m.theme.selectedBg)
 			spec.origin = p.menu.list.origin
 			spec.tabs, spec.tab = p.menu.tabs, p.menu.tabIndex
@@ -122,7 +122,7 @@ func (m *Model) windowFrame(window string, index int, d boxlayout.Dimensions) st
 	return m.theme.frame(spec, w, h)
 }
 
-// sideTitle is pkg/gui's titleStacks: collapsed, Stacks and Instances count.
+// sideTitle: collapsed, Stacks and Instances count.
 func (m *Model) sideTitle(p *panel, window string) string {
 	if !m.stacksCollapsed(window, m.windowOf(m.currentSideView())) {
 		return p.title()
@@ -140,7 +140,7 @@ func (m *Model) sideTitle(p *panel, window string) string {
 	return p.title()
 }
 
-// listBody is a list's visible rows, highlighted as gocui's onFocusChange.
+// listBody is a list's visible rows, the selected one highlighted.
 func (m *Model) listBody(p *panel, width, rows int) []string {
 	switch {
 	case m.currentView() == p.name:
@@ -189,7 +189,7 @@ func (m *Model) mainFrame(d boxlayout.Dimensions) string {
 	return m.theme.frame(spec, w, h)
 }
 
-// tint is a gocui view's FgColor: a reset in s returns to it, not default.
+// tint is s in colour: a reset in s returns to it, not default.
 func tint(s, colour string) string {
 	if colour == "" {
 		return s
@@ -198,7 +198,7 @@ func tint(s, colour string) string {
 	return colour + strings.ReplaceAll(s, reset, reset+colour) + reset
 }
 
-// options are the footer's key hints, as pkg/gui's optionsMapToString.
+// options are the footer's key hints.
 func (m *Model) options() string {
 	options := map[string]string{
 		"PgUp/PgDn": m.tr.Scroll,
@@ -235,7 +235,6 @@ func (m *Model) options() string {
 	return strings.Join(pairs, ", ")
 }
 
-// information is pkg/gui's getInformationContent.
 func (m *Model) information() string {
 	return infoSectionPadding + m.operationsStatus() + m.warningsStatus() + m.incusStatus() + m.cfg.Version
 }

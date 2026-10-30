@@ -12,8 +12,8 @@ import (
 const (
 	instancesPollInterval = 2 * time.Second
 	configPollInterval    = 2 * time.Second
-	// resourcesPollInterval and watchedPollInterval are pkg/gui's
-	// pollUnlessWatched (docs/Incus.md, "Events").
+	// resourcesPollInterval and watchedPollInterval: see
+	// docs/Incus.md, "Events".
 	resourcesPollInterval = 10 * time.Second
 	watchedPollInterval   = time.Minute
 )
@@ -27,7 +27,7 @@ type configPollMsg struct{}
 
 type configStatMsg struct{ modTime time.Time }
 
-// pollers start once the startup read is under way, as pkg/gui's do.
+// pollers start once the startup read is under way.
 func (m *Model) pollers() tea.Cmd {
 	return tea.Batch(
 		m.tick(instancesPollInterval, pollMsg{}),
@@ -43,7 +43,7 @@ func (m *Model) pollers() tea.Cmd {
 	)
 }
 
-// slowPoll is pkg/gui's pollUnlessWatched: while the event stream is open,
+// slowPoll polls while the event stream is open,
 // once a minute rather than every tick.
 func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 	next := m.tick(resourcesPollInterval, slowPollMsg{kind})
@@ -60,7 +60,7 @@ func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 	return refreshQuiet(next, m.fetchesFor(kind)...)
 }
 
-// pollInstances is pkg/gui's refreshInstancesQuiet, the connection check too.
+// pollInstances refreshes the instances quietly, the connection check too.
 func (m *Model) pollInstances() tea.Cmd {
 	return refreshQuiet(tea.Batch(syncConnection, m.tick(instancesPollInterval, pollMsg{})), m.fetchInstances(), m.fetchServices())
 }
@@ -69,7 +69,7 @@ type syncConnectionMsg struct{}
 
 func syncConnection() tea.Msg { return syncConnectionMsg{} }
 
-// syncConnection is pkg/gui's; never raised over a popup already up.
+// syncConnection raises the connection-lost popup, never over one already up.
 func (m *Model) syncConnection() {
 	if m.incus.IsConnected() {
 		m.connectionLost = false
@@ -86,7 +86,7 @@ func (m *Model) syncConnection() {
 	m.openMessage(m.tr.ConnectionLostTitle, fmt.Sprintf(m.tr.ConnectionLost, m.incus.RemoteName()))
 }
 
-// statConfig is pkg/gui's configReloader, the file's time read off the loop.
+// statConfig reads the file's time off the loop.
 func (m *Model) statConfig() tea.Cmd {
 	filename := m.cfg.ConfigFilename()
 
@@ -118,7 +118,7 @@ func (m *Model) onConfigStat(modTime time.Time) tea.Cmd {
 	return next
 }
 
-// reloadConfig is pkg/gui's: only what the model caches is re-applied.
+// reloadConfig re-applies only what the model caches.
 func (m *Model) reloadConfig() error {
 	if err := m.cfg.ReloadUserConfig(); err != nil {
 		return err

@@ -23,7 +23,6 @@ type refreshMsg struct {
 	ending []func()
 }
 
-// refresh is pkg/gui's refresh as a Cmd.
 func refresh(fetches ...fetch) tea.Cmd {
 	return func() tea.Msg {
 		applies, err := gather(fetches)
@@ -98,7 +97,6 @@ func (m *Model) refreshGroups(status string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// fetchGroups is pkg/gui's.
 func (m *Model) fetchGroups() [][]fetch {
 	return [][]fetch{
 		{m.fetchStacks(), m.fetchInstances(), m.fetchServices()},
@@ -163,7 +161,7 @@ func (m *Model) stopAwaiting() {
 	}
 }
 
-// handleError is pkg/gui's: an unreachable daemon is the footer's to report.
+// handleError: an unreachable daemon is the footer's to report.
 func (m *Model) handleError(err error) {
 	m.incus.Log.Error().Err(err).Send()
 
@@ -232,7 +230,7 @@ func (s *refreshSeqs) invalidateAll() {
 	}
 }
 
-// refreshEnding is pkg/gui's: ends come off even when a fetch fails.
+// refreshEnding: ends come off even when a fetch fails.
 func refreshEnding(ends []func(), fetches ...fetch) tea.Cmd {
 	return func() tea.Msg {
 		applies, err := gather(fetches)
@@ -241,7 +239,7 @@ func refreshEnding(ends []func(), fetches ...fetch) tea.Cmd {
 	}
 }
 
-// instanceFetches is pkg/gui's, for the panels ported so far.
+// instanceFetches: for the panels ported so far.
 func (m *Model) instanceFetches() []fetch {
 	return []fetch{m.fetchStacks(), m.fetchInstances(), m.fetchServices()}
 }

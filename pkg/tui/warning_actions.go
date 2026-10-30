@@ -10,7 +10,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// showWarning is pkg/gui's: closing it goes back to the list.
+// showWarning: closing it goes back to the list.
 func (m *Model) showWarning(warning *commands.Warning) tea.Cmd {
 	back := m.backToDaemon(daemonWarnings, warning.Key())
 	m.openPopup(&popup{view: confirmationView, title: m.tr.WarningTitle, message: m.warningDetails(warning)}, back, back)

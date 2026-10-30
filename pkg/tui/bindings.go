@@ -8,7 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-// binding is pkg/gui's Binding: a key on a view, "" for every view.
+// binding is a key on a view, "" for every view.
 type binding struct {
 	view string
 	// key is Bubble Tea's name for it; "" is offered by the palette alone.
@@ -21,7 +21,7 @@ type binding struct {
 	handler     func(*Model) tea.Cmd
 }
 
-// keyLabels are pkg/gui's, for the keys without a rune it can name.
+// keyLabels name the keys that have no rune.
 var keyLabels = map[string]string{
 	"tab": "tab", "shift+tab": "shift+tab", "esc": "esc", "enter": "enter", "space": "space",
 	"right": "►", "left": "◄", "up": "▲", "down": "▼", "pgup": "PgUp", "pgdown": "PgDn", "ctrl+p": "ctrl+p",
@@ -35,12 +35,12 @@ func (b *binding) label() string {
 	return keyLabels[b.key]
 }
 
-// listed is pkg/gui's: offered by the options menu and the palette.
+// listed is whether the options menu and the palette offer the binding.
 func (b *binding) listed() bool {
 	return b.description != "" && (b.key == "" || b.label() != "")
 }
 
-// hasRune is whether gocui binds key by its rune, which a prompt types.
+// hasRune is whether key is a single rune, which a prompt types.
 func hasRune(key string) bool {
 	return utf8.RuneCountInString(key) == 1
 }
@@ -52,7 +52,7 @@ func do(f func(*Model)) func(*Model) tea.Cmd {
 	}
 }
 
-// bindings is pkg/gui's GetInitialKeybindings for what's ported, the top popup's first.
+// bindings are every binding in play, the top popup's first.
 func (m *Model) bindings() []*binding {
 	var bindings []*binding
 	if len(m.popups) > 0 {
@@ -242,7 +242,7 @@ func (m *Model) bindings() []*binding {
 	return bindings
 }
 
-// handleKey is gocui's execKeybindings: search keys, the view's binding,
+// handleKey tries search keys, the view's binding,
 // main's parent's, the editor, then a global one.
 func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	msg = legacyKey(msg)
@@ -255,7 +255,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	editable := view == filterView || (view == confirmationView && m.topPrompt() != nil)
 	// An editable view types a rune, so no binding of one matches it.
 	typed := editable && hasRune(key)
-	// gocui hands an editable view's ctrl+u, ctrl+a and ctrl+e to its editor.
+	// An editable view's editor takes ctrl+u, ctrl+a and ctrl+e.
 	globalOK := !typed && (!editable || (key != "ctrl+u" && key != "ctrl+a" && key != "ctrl+e"))
 
 	run := func(b *binding) tea.Cmd {
@@ -271,7 +271,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		case b.view == view && !typed:
 			return run(b)
 		case b.view != "" && b.view == m.mainParent && view == mainView:
-			// gocui keeps the last match for the parent.
+			// The last match wins for the parent.
 			parent = b
 		case global == nil && b.view == "" && globalOK:
 			global = b
@@ -292,7 +292,7 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	return nil
 }
 
-// guardReadOnly is pkg/gui's: b refuses, saying why, on a read-only remote.
+// guardReadOnly refuses b, saying why, on a read-only remote.
 func (m *Model) guardReadOnly(b *binding) {
 	handler := b.handler
 	b.handler = func(m *Model) tea.Cmd {
@@ -319,7 +319,7 @@ func (m *Model) focusPanelDescription(title string) string {
 	return fmt.Sprintf(m.tr.FocusPanel, strings.ToLower(title))
 }
 
-// actionRemote is pkg/gui's, for the panels ported so far.
+// actionRemote is the remote a key on view acts on.
 func (m *Model) actionRemote(view string) string {
 	switch view {
 	case "snapshots":
@@ -338,8 +338,8 @@ func (m *Model) isReadOnly(remote string) bool {
 }
 
 // legacyKey folds the ctrl+letter that kitty-protocol terminals report apart
-// from tab, enter, esc and backspace back into them, as every terminal did
-// for gocui.
+// from tab, enter, esc and backspace back into them, as every other
+// terminal reports them.
 func legacyKey(msg tea.KeyPressMsg) tea.KeyPressMsg {
 	if msg.Mod != tea.ModCtrl {
 		return msg

@@ -14,7 +14,7 @@ import (
 const (
 	filterView       = "filter"
 	filterPrefixView = "filterPrefix"
-	// promptColour is the FgColor pkg/gui gives the filter views.
+	// promptColour is the foreground of the filter views.
 	promptColour = "\x1b[32m"
 )
 
@@ -25,11 +25,11 @@ type filter struct {
 	// panel is the list being filtered, "" while searching.
 	panel string
 	input textinput.Model
-	// ox is the gocui view origin that keeps the cursor in sight.
+	// ox is the view origin that keeps the cursor in sight.
 	ox int
 }
 
-// newEditorInput is a gocui view with DefaultEditor, SimpleEditor.
+// newEditorInput is the input a prompt types into.
 func newEditorInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
@@ -40,7 +40,7 @@ func newEditorInput() textinput.Model {
 	return input
 }
 
-// editorKeys are gocui's SimpleEditor's, as far as textinput has them;
+// editorKeys are the line editor's, as far as textinput has them;
 // its yank (ctrl+y) and overwrite (insert) it hasn't.
 func editorKeys() textinput.KeyMap {
 	keys := textinput.DefaultKeyMap()
@@ -84,14 +84,13 @@ func isEditorKey(msg tea.KeyPressMsg) bool {
 	return key.Matches(msg, bindings...)
 }
 
-// openFilter is pkg/gui's handleOpenFilter; what was typed before stays.
+// openFilter: what was typed before stays.
 func (m *Model) openFilter(p *panel) {
 	m.filter.active = true
 	m.filter.panel = p.name
 	m.focusView(filterView)
 }
 
-// openSearch is pkg/gui's handleOpenSearch.
 func (m *Model) openSearch() {
 	if m.filter.active {
 		m.clearFilter()
@@ -111,7 +110,7 @@ func (m *Model) editFilter(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-// onNeedle is pkg/gui's onNewFilterNeedle, which runs on every key the
+// onNeedle runs on every key the
 // editor takes, so even moving the cursor searches afresh.
 func (m *Model) onNeedle(needle string) {
 	if !m.filter.search {
@@ -127,7 +126,7 @@ func (m *Model) onNeedle(needle string) {
 	m.main.find(needle)
 }
 
-// searchKey is gocui's own n, N and esc for a view being searched, ahead
+// searchKey is n, N and esc for a view being searched, ahead
 // of any binding.
 func (m *Model) searchKey(key string) bool {
 	if m.currentView() != mainView || !m.main.searching() {
@@ -198,7 +197,7 @@ func (m *Model) commitFilter() tea.Cmd {
 	return nil
 }
 
-// leaveSearchPrompt is pkg/gui's: back to main, the prompt off the stack,
+// leaveSearchPrompt: back to main, the prompt off the stack,
 // or main's esc would return to it.
 func (m *Model) leaveSearchPrompt() {
 	m.focusView(mainView)
@@ -233,7 +232,7 @@ func (m *Model) filteredPanel(name string) *panel {
 	return m.panelNamed(name)
 }
 
-// refilter is pkg/gui's ResetOrigin and RerenderList on a filtered list.
+// refilter resets a filtered list's origin and draws it again.
 func (m *Model) refilter(name string) {
 	p := m.filteredPanel(name)
 	if p == nil {
@@ -245,14 +244,13 @@ func (m *Model) refilter(name string) {
 	p.selectRow(p.selected, m.listRows(p))
 }
 
-// moveFilteredSelection is pkg/gui's filteredPrevLine and filteredNextLine.
 func (m *Model) moveFilteredSelection(step int) {
 	if p := m.filteredPanel(m.filter.panel); p != nil {
 		m.moveSelection(p, step)
 	}
 }
 
-// filterFollowsFocus is pkg/gui's switchFocus ending a filter once its
+// filterFollowsFocus ends a filter once its
 // list is off the stack, a search once main is.
 func (m *Model) filterFollowsFocus() {
 	switch {
@@ -294,7 +292,7 @@ func (m *Model) filterCursorX() int {
 	return ansi.StringWidth(string(value[:m.filter.input.Position()]))
 }
 
-// fitFilter is gocui's updatedCursorAndOrigin.
+// fitFilter keeps the filter prompt's cursor in sight.
 func (m *Model) fitFilter() {
 	d, ok := m.dims()[filterView]
 	if !ok {

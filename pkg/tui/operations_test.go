@@ -14,7 +14,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
-// operationEvent is pkg/gui's: an operation event carrying what incustest.Operation leaves out.
+// operationEvent: an operation event carrying what incustest.Operation leaves out.
 func operationEvent(t *testing.T, operation api.Operation) api.Event {
 	t.Helper()
 

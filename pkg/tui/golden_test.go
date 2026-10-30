@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// goldenScreen is m's screen the way pkg/gui's goldens hold it: no trailing
+// goldenScreen is m's screen the way the goldens hold it: no trailing
 // blanks, a newline at the end.
 func goldenScreen(m *Model) string {
 	lines := screen(m)

@@ -30,7 +30,7 @@ const (
 // usedBy is every list that counts what uses it.
 const usedBy = refreshInstances | refreshImages | refreshVolumes | refreshNetworks | refreshProfiles
 
-// eventRefreshes is pkg/gui's (docs/Incus.md, "Events").
+// eventRefreshes is what each event refreshes (docs/Incus.md, "Events").
 var eventRefreshes = map[string]refreshKind{
 	api.EventLifecycleInstanceCreated:         usedBy,
 	api.EventLifecycleInstanceDeleted:         usedBy,
@@ -123,7 +123,7 @@ const (
 	finishedKept = 100
 )
 
-// events is pkg/gui's eventBatch and the stream's state, without the mutex.
+// events is the batch of daemon events and the stream's state.
 type events struct {
 	// stream numbers the listeners, so a closed one's messages are dropped.
 	stream uint64
@@ -225,7 +225,7 @@ func (m *Model) scopeName() string {
 	return "all projects"
 }
 
-// onEventsClosed is the end of pkg/gui's watchEvents loop.
+// onEventsClosed is the end of an event listener's loop.
 func (m *Model) onEventsClosed(msg eventsClosedMsg) tea.Cmd {
 	if msg.stream != m.events.stream {
 		return nil
@@ -347,7 +347,6 @@ func (m *Model) flushEvents() tea.Cmd {
 	}
 }
 
-// fetchesFor is pkg/gui's.
 func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	var fetches []fetch
 

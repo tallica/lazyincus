@@ -7,7 +7,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// onSnapshot is pkg/gui's onSelected for the snapshots panel.
 func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		snapshot := m.selectedSnapshot()
@@ -19,7 +18,7 @@ func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) te
 	}
 }
 
-// selectSnapshot is pkg/gui's Select: the cursor onto the snapshot with key, if shown.
+// selectSnapshot: the cursor onto the snapshot with key, if shown.
 func (m *Model) selectSnapshot(key string) bool {
 	p := m.panelNamed("snapshots")
 	for row, item := range p.shown {
@@ -32,7 +31,6 @@ func (m *Model) selectSnapshot(key string) bool {
 	return false
 }
 
-// snapshotOwnerName is pkg/gui's.
 func (m *Model) snapshotOwnerName(snapshot *commands.Snapshot) string {
 	spans := m.showProject || m.snapshotsSpan.projects
 	if snapshot.Volume != nil {
@@ -59,7 +57,7 @@ func (m *Model) reportOr(next func() tea.Cmd) func(error) tea.Cmd {
 	}
 }
 
-// snapshotRestore is pkg/gui's; Incus restarts a running instance to
+// snapshotRestore: Incus restarts a running instance to
 // restore it, so the row reads restoring until it's listed again.
 func (m *Model) snapshotRestore(snapshot *commands.Snapshot) tea.Cmd {
 	message := fmt.Sprintf(m.tr.RestoreSnapshot, m.snapshotOwnerName(snapshot), snapshot.Name)
@@ -87,7 +85,7 @@ func (m *Model) snapshotDelete(snapshot *commands.Snapshot) tea.Cmd {
 	return nil
 }
 
-// snapshotRename is pkg/gui's, the cursor following the snapshot to where its new name sorts.
+// snapshotRename: the cursor following the snapshot to where its new name sorts.
 func (m *Model) snapshotRename(snapshot *commands.Snapshot) tea.Cmd {
 	title := fmt.Sprintf(m.tr.RenameSnapshotPrompt, snapshot.Name, m.snapshotOwnerName(snapshot))
 	m.openTextPrompt(title, m.tr.RenameHint, snapshot.Name, func(m *Model, name string) tea.Cmd {
@@ -107,7 +105,7 @@ func (m *Model) snapshotRename(snapshot *commands.Snapshot) tea.Cmd {
 	return nil
 }
 
-// snapshotNewInstance is pkg/gui's: `incus copy`, which drops the source's
+// snapshotNewInstance: `incus copy`, which drops the source's
 // volatile keys by rules internal to Incus, then the new instance focused.
 func (m *Model) snapshotNewInstance(snapshot *commands.Snapshot) tea.Cmd {
 	if snapshot.Instance == nil {
@@ -140,14 +138,14 @@ func (m *Model) snapshotNewInstance(snapshot *commands.Snapshot) tea.Cmd {
 	return nil
 }
 
-// focusInstance is pkg/gui's Select then switchFocus, nothing while it's hidden.
+// focusInstance: nothing while it's hidden.
 func (m *Model) focusInstance(key string) {
 	if m.selectInstance(key) {
 		m.focusView("instances")
 	}
 }
 
-// snapshotOwnerFetches is pkg/gui's refreshSnapshotOwner: what carries the snapshot.
+// snapshotOwnerFetches: what carries the snapshot.
 func (m *Model) snapshotOwnerFetches(snapshot *commands.Snapshot) []fetch {
 	if snapshot.Volume != nil {
 		return []fetch{m.fetchVolumes()}

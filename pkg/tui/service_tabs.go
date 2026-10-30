@@ -7,7 +7,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
-// serviceMainTabs are pkg/gui's, in its order.
 func (m *Model) serviceMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
@@ -102,7 +101,6 @@ func (m *Model) serviceInstanceTab(task func(*commands.Instance) mainTaskFunc) f
 	}
 }
 
-// viewServiceLogs is pkg/gui's handleServiceViewLogs.
 func (m *Model) viewServiceLogs() {
 	m.setMainTab(m.panelNamed("services"), "logs")
 	m.enterMain()

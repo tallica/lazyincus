@@ -32,7 +32,7 @@ func TestNetworksLeaveTheHostsInterfacesToE(t *testing.T) {
 	assert.Len(t, rowsOf(m, "networks"), 2)
 }
 
-func TestTheNetworkTabsInPkgGuisOrder(t *testing.T) {
+func TestTheNetworkTabsInTheirOrder(t *testing.T) {
 	m := onNetworks(t, options{})
 
 	press(m, "]")

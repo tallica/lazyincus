@@ -37,7 +37,7 @@ func TestWarningKeys(t *testing.T) {
 	press(m, "d")
 	assert.Contains(t, popupText(m), "delete this warning")
 	assert.Contains(t, popupText(m), "Storage pool almost full")
-	assert.Nil(t, m.daemonPopup(), "a confirmation hides the menu, as pkg/gui's does")
+	assert.Nil(t, m.daemonPopup(), "a confirmation hides the menu")
 	press(m, "n")
 	require.NotNil(t, m.daemonPopup())
 	assert.Equal(t, "disk", m.daemonPopup().menu.selectedItem().key)

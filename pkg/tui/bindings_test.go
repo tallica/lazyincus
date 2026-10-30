@@ -20,7 +20,7 @@ func TestMainPassesKeysItDoesntTakeToItsPanel(t *testing.T) {
 	assert.Equal(t, 0, m.panelNamed("instances").selected, "main's own j scrolls rather than moving the list")
 }
 
-// gocui forgets main's parent once the search prompt has had focus.
+// Main forgets its panel once the search prompt has had focus.
 func TestMainForgetsItsPanelAfterASearch(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 
@@ -63,7 +63,7 @@ func TestGlobalKeysReachAPopup(t *testing.T) {
 	m.openError("boom")
 
 	press(m, "3")
-	assert.Empty(t, m.popups, "focusing a panel drops the popup, as gocui's switchFocus does")
+	assert.Empty(t, m.popups, "focusing a panel drops the popup")
 	assert.Equal(t, "images", m.currentView())
 }
 

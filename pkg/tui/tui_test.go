@@ -25,7 +25,7 @@ import (
 type options struct {
 	readOnly bool
 	compose  bool
-	// fixture is pkg/gui's screen-test daemon in place of the small one.
+	// fixture is the screen tests' daemon in place of the small one.
 	fixture   bool
 	configure func(*config.UserConfig)
 	// server is the daemon, for a test that changes it, in place of either.

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// The footer pkg/gui's screen test draws under WithTransientStatus.
-func TestATransientStatusLeadsTheFooterAsInPkgGui(t *testing.T) {
+// The footer under a transient status.
+func TestATransientStatusLeadsTheFooter(t *testing.T) {
 	m := start(t, options{fixture: true}, 90, 16)
 
 	m.withTransientStatus("Copied", time.Second)

@@ -11,7 +11,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// onImage is pkg/gui's onSelected for the images panel.
 func onImage(action func(*Model, *commands.Image) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		image := m.selectedImage()
@@ -23,7 +22,7 @@ func onImage(action func(*Model, *commands.Image) tea.Cmd) func(*Model) tea.Cmd 
 	}
 }
 
-// editInIncus is pkg/gui's: `incus ... edit` on the terminal, then the lists it changed.
+// editInIncus: `incus ... edit` on the terminal, then the lists it changed.
 func (m *Model) editInIncus(project string, fetches func() []fetch, args ...string) tea.Cmd {
 	cmd := m.os.NewCmd("incus", append(projectCLIArgs(project), args...)...)
 
@@ -45,7 +44,6 @@ func (m *Model) imageDelete(image *commands.Image) tea.Cmd {
 	return nil
 }
 
-// pruneImages is pkg/gui's handlePruneImages.
 func (m *Model) pruneImages() tea.Cmd {
 	unused := lo.Filter(m.images, func(image *commands.Image, _ int) bool { return image.IsUnused() })
 	cached := lo.Filter(unused, func(image *commands.Image, _ int) bool { return image.Image.Cached })

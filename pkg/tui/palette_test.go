@@ -153,7 +153,7 @@ func TestThePaletteWontActOnAnotherSelection(t *testing.T) {
 	assert.Contains(t, m.popups[0].message, "cache isn't selected any more")
 }
 
-// pkg/gui's palette is three quarters of the screen, its hint right-aligned
+// The palette is three quarters of the screen, its hint right-aligned
 // on the top edge.
 func TestThePaletteFrame(t *testing.T) {
 	m := start(t, options{}, 140, 40)

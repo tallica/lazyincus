@@ -10,7 +10,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// onInstance is pkg/gui's onSelected for the instances panel.
 func onInstance(action func(*Model, *commands.Instance) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		instance := m.selectedInstance()
@@ -22,7 +21,7 @@ func onInstance(action func(*Model, *commands.Instance) tea.Cmd) func(*Model) te
 	}
 }
 
-// qualified is pkg/gui's: the project named when the list holds several.
+// qualified: the project named when the list holds several.
 func (m *Model) qualified(name, project string, spans bool) string {
 	if !spans || project == "" {
 		return name
@@ -35,7 +34,7 @@ func (m *Model) qualifiedInstance(instance *commands.Instance) string {
 	return m.onRemote(m.qualified(instance.Name, instance.Project, m.showProject), instance.Remote)
 }
 
-// inTransition is pkg/gui's: the row's mark comes off once the refresh after action lands.
+// inTransition: the row's mark comes off once the refresh after action lands.
 func (m *Model) inTransition(waiting string, instance *commands.Instance, status string, action func() error) tea.Cmd {
 	end := instance.BeginTransition(status)
 	m.rerenderInstances()
@@ -68,7 +67,7 @@ func (m *Model) instanceRestart(instance *commands.Instance) tea.Cmd {
 	return m.inTransition(m.tr.RestartingStatus, instance, "Restarting", instance.Restart)
 }
 
-// instancePauseResume is pkg/gui's: pause or resume, whichever the state calls for.
+// instancePauseResume: pause or resume, whichever the state calls for.
 func (m *Model) instancePauseResume(instance *commands.Instance) tea.Cmd {
 	if instance.Instance.Status == "Frozen" {
 		return m.inTransition(m.tr.ResumingStatus, instance, "Unfreezing", instance.Unfreeze)
@@ -77,7 +76,7 @@ func (m *Model) instancePauseResume(instance *commands.Instance) tea.Cmd {
 	return m.inTransition(m.tr.PausingStatus, instance, "Freezing", instance.Freeze)
 }
 
-// instanceDelete is pkg/gui's, offering to force it when Incus refuses a running one.
+// instanceDelete: offering to force it when Incus refuses a running one.
 func (m *Model) instanceDelete(instance *commands.Instance) tea.Cmd {
 	m.openConfirmation(m.tr.Confirm, fmt.Sprintf(m.tr.DeleteInstance, m.qualifiedInstance(instance)), func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, instance.Delete, func(err error) tea.Cmd {
@@ -110,7 +109,7 @@ func (m *Model) promptToForceDeleteInstance(instance *commands.Instance) {
 	})
 }
 
-// instanceCmd is pkg/gui's: `incus` on the instance's remote and project.
+// instanceCmd: `incus` on the instance's remote and project.
 func (m *Model) instanceCmd(instance *commands.Instance, args ...string) *exec.Cmd {
 	cmd := m.os.NewCmd("incus", append(projectCLIArgs(instance.Project), args...)...)
 
@@ -125,7 +124,7 @@ func projectCLIArgs(project string) []string {
 	return []string{"--project", project}
 }
 
-// instanceEdit is pkg/gui's: `incus config edit`, then the lists it changed.
+// instanceEdit: `incus config edit`, then the lists it changed.
 func (m *Model) instanceEdit(instance *commands.Instance) tea.Cmd {
 	return m.runSubprocess(m.instanceCmd(instance, "config", "edit", instance.Name), "", func() tea.Cmd {
 		return refreshQuiet(nil, m.fetchInstances(), m.fetchServices())
@@ -149,7 +148,7 @@ func (m *Model) instanceFileEditCmd(instance *commands.Instance, path string) *e
 	return m.instanceCmd(instance, "file", "edit", instance.Name+path)
 }
 
-// instanceRename is pkg/gui's, a running instance stopped first, once confirmed.
+// instanceRename: a running instance stopped first, once confirmed.
 func (m *Model) instanceRename(instance *commands.Instance) tea.Cmd {
 	m.openTextPrompt(fmt.Sprintf(m.tr.RenameInstancePrompt, instance.Name), m.tr.RenameHint, instance.Name, func(m *Model, name string) tea.Cmd {
 		if name == instance.Name {
@@ -200,7 +199,7 @@ func (m *Model) afterRename(instance *commands.Instance, name string, end func()
 	}
 }
 
-// instanceEditDescription is pkg/gui's: one line, a written one's lines run together.
+// instanceEditDescription: one line, a written one's lines run together.
 func (m *Model) instanceEditDescription(instance *commands.Instance) tea.Cmd {
 	current := strings.Join(strings.Fields(instance.Latest().Instance.Description), " ")
 	title := fmt.Sprintf(m.tr.EditDescriptionPrompt, instance.Name)
@@ -224,7 +223,7 @@ func (m *Model) instanceEditDescription(instance *commands.Instance) tea.Cmd {
 	return nil
 }
 
-// instanceAttachConsole is pkg/gui's: `incus console`, which prints its own detach hint.
+// instanceAttachConsole: `incus console`, which prints its own detach hint.
 func (m *Model) instanceAttachConsole(instance *commands.Instance) tea.Cmd {
 	if !instance.IsRunning() {
 		m.openError(m.tr.CannotAttachStoppedInstanceError)
@@ -241,7 +240,7 @@ func (m *Model) instanceAttachConsole(instance *commands.Instance) tea.Cmd {
 	return m.runSubprocess(m.instanceCmd(instance, "console", instance.Name), "", nil)
 }
 
-// instanceExecShell is pkg/gui's: the CLI's exec, not the client's websocket.
+// instanceExecShell: the CLI's exec, not the client's websocket.
 func (m *Model) instanceExecShell(instance *commands.Instance) tea.Cmd {
 	if !instance.IsRunning() {
 		m.openError(m.tr.CannotExecStoppedInstanceError)

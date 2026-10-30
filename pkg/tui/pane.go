@@ -8,7 +8,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// tabWidth is gocui's default View.TabWidth, which pkg/gui leaves alone.
+// tabWidth is the width of a tab stop.
 const tabWidth = 4
 
 // cell is one grapheme of a styled line, with the escapes written before it.
@@ -46,10 +46,10 @@ func cells(line string) []cell {
 	return out
 }
 
-// wrapLine breaks line to columns cells as gocui's lineWrap does: at the
+// wrapLine breaks line to columns cells: at the
 // last space or hyphen that fits, dropping a space and keeping a hyphen,
 // else mid-word. A continuation starts with the escapes still in force,
-// as gocui's cells each carry their own style.
+// so each row carries its own style.
 func wrapLine(line string, columns int) []string {
 	if columns <= 0 {
 		return []string{line}
@@ -127,7 +127,7 @@ func carry(active, escapes string) string {
 	return active
 }
 
-// pane is the main panel's content as gocui's main view holds it.
+// pane is the main panel's content, its scroll and its search.
 type pane struct {
 	content    string
 	wrap       bool
@@ -138,7 +138,7 @@ type pane struct {
 	height int
 	ox     int
 	oy     int
-	// cy is gocui's cursor row, relative to oy: where a search last
+	// cy is the cursor row, relative to oy: where a search last
 	// focused, which a scroll doesn't move.
 	cy int
 
@@ -160,20 +160,19 @@ func (p *pane) begin(wrap, autoscroll bool) {
 	p.wrap, p.autoscroll = wrap, autoscroll
 }
 
-// render is pkg/gui's renderMain: the content, from the top.
+// render: the content, from the top.
 func (p *pane) render(content string) {
 	p.ox, p.oy, p.cy = 0, 0, 0
 	p.rerender(content)
 }
 
-// rerender is pkg/gui's reRenderMain: the content, where it's scrolled to.
+// rerender: the content, where it's scrolled to.
 func (p *pane) rerender(content string) {
 	p.content = content
 	p.relayout()
 	p.follow()
 }
 
-// clear is pkg/gui's clearMain.
 func (p *pane) clear() {
 	p.content, p.lines = "", nil
 	p.ox, p.oy, p.cy = 0, 0, 0
@@ -185,17 +184,16 @@ func (p *pane) relayout() {
 	p.refind()
 }
 
-// follow keeps the last line in view while autoscrolling: gocui's skips
-// trailing lines with no cells, but writing gives every line at least one.
+// follow keeps the last line in view while autoscrolling: every line has
+// a cell, so none is skipped as trailing.
 func (p *pane) follow() {
 	if p.autoscroll && len(p.lines) > p.height {
 		p.oy = len(p.lines) - p.height
 	}
 }
 
-// viewLines is content as gocui's main view holds it once pkg/gui's
-// setViewContent has written it: a final newline starts no line, but
-// nothing at all is still one.
+// viewLines is content split into view lines: a final newline starts no
+// line, but nothing at all is still one.
 func viewLines(content string, wrap bool, width int) []string {
 	content = utils.NormalizeLinefeeds(string(bom.Clean([]byte(content))))
 	content = strings.TrimSuffix(content, "\n")
@@ -213,8 +211,8 @@ func viewLines(content string, wrap bool, width int) []string {
 	return lines
 }
 
-// expandTabs pads each tab to the next stop, counted in cells as gocui's
-// parseInput does, not columns.
+// expandTabs pads each tab to the next stop, counted in cells, not
+// columns.
 func expandTabs(line string) string {
 	if !strings.Contains(line, "\t") {
 		return line
@@ -240,7 +238,7 @@ func expandTabs(line string) string {
 }
 
 // visible is what a height-row window onto the pane shows: from the last
-// line if scrolled past it, and never sideways when wrapped, as gocui draws.
+// line if scrolled past it, and never sideways when wrapped.
 func (p *pane) visible(height int) []string {
 	start := max(min(p.oy, len(p.lines)-1), 0)
 	end := min(start+height, len(p.lines))
@@ -259,7 +257,6 @@ func (p *pane) visible(height int) []string {
 	return rows
 }
 
-// scrollDown is pkg/gui's scrollDownMain.
 func (p *pane) scrollDown(step, height int, pastBottom bool) {
 	p.autoscroll = false
 
@@ -279,7 +276,6 @@ func (p *pane) scrollUp(step int) {
 	p.oy = max(p.oy-step, 0)
 }
 
-// scrollRight is pkg/gui's scrollRightMain.
 func (p *pane) scrollRight(step int) {
 	widest := 0
 	for _, line := range p.lines {

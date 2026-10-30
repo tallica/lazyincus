@@ -21,7 +21,7 @@ type copiedMsg struct {
 	err   error
 }
 
-// copyMenu is pkg/gui's: each value beside its label, empty ones left out.
+// copyMenu: each value beside its label, empty ones left out.
 func (m *Model) copyMenu(values ...copyValue) {
 	var items []*menuItem
 	for _, value := range values {

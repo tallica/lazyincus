@@ -7,7 +7,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// onNetwork is pkg/gui's onSelected for the networks panel.
 func onNetwork(action func(*Model, *commands.Network) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		network := m.selectedNetwork()
@@ -43,7 +42,7 @@ func (m *Model) networkCopy(network *commands.Network) tea.Cmd {
 	return nil
 }
 
-// networkDelete is pkg/gui's: a managed network, and one nothing uses.
+// networkDelete: a managed network, and one nothing uses.
 func (m *Model) networkDelete(network *commands.Network) tea.Cmd {
 	if !network.IsManaged() {
 		m.openError(m.tr.CannotDeleteUnmanagedNetwork)

@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-// Match colours are gocui's, fixed rather than themed.
+// Match colours are fixed rather than themed.
 const (
 	matchStyle        = "\x1b[30;43m"
 	currentMatchStyle = "\x1b[30;46m"
@@ -18,7 +18,7 @@ type match struct {
 	x0, x1, y int
 }
 
-// search is gocui's searcher: the needle, its matches, the current one.
+// search is a needle, its matches and the current one.
 type search struct {
 	needle  string
 	matches []match
@@ -29,7 +29,7 @@ func (p *pane) searching() bool {
 	return p.search.needle != ""
 }
 
-// find is gocui's View.Search: the main view never highlights a line, so
+// find searches for needle: the main view never highlights a line, so
 // it starts at the first match.
 func (p *pane) find(needle string) {
 	p.search = search{needle: needle}
@@ -43,7 +43,7 @@ func (p *pane) clearSearch() {
 	p.search = search{}
 }
 
-// findMatches is gocui's updateSearchPositions: case-sensitive only when
+// findMatches is case-sensitive only when
 // the needle has a capital, and never across a wrapped line's break.
 func (p *pane) findMatches() {
 	p.search.matches = nil
@@ -89,7 +89,7 @@ func matchesAt(cs, want []cell, fold bool) bool {
 	return true
 }
 
-// refind is gocui's on each write: the current match moves if it's gone.
+// refind runs on each write: the current match moves if it's gone.
 func (p *pane) refind() {
 	p.findMatches()
 	if n := len(p.search.matches); n > 0 && p.search.current >= n {
@@ -97,7 +97,7 @@ func (p *pane) refind() {
 	}
 }
 
-// nearestMatch is gocui's nearestSearchPosition, from the cursor's line.
+// nearestMatch is the match nearest the cursor's line.
 func (p *pane) nearestMatch() int {
 	line := p.cy + p.oy
 	nearest := 0
@@ -114,7 +114,7 @@ func (p *pane) nearestMatch() int {
 	return nearest
 }
 
-// nextMatch is gocui's gotoNextMatch (1) and gotoPreviousMatch (-1).
+// nextMatch moves to the next match (1) or the previous (-1).
 func (p *pane) nextMatch(step int) {
 	n := len(p.search.matches)
 	if n == 0 {
@@ -145,7 +145,7 @@ func (p *pane) selectMatch(i int) {
 	p.cy = y - p.oy
 }
 
-// originFor is gocui's calculateNewOrigin: a line out of view goes mid-way.
+// originFor scrolls to line: one out of view goes mid-way.
 func originFor(line, origin, lines, height int) int {
 	if height >= lines {
 		return 0
@@ -161,7 +161,7 @@ func (p *pane) matchStatus() (int, int) {
 	return p.search.current, len(p.search.matches)
 }
 
-// highlightMatches colours line y's matches as gocui's setCharacter does:
+// highlightMatches colours line y's matches:
 // black on yellow, the current one on cyan, whatever the text's own style.
 func (p *pane) highlightMatches(line string, y int) string {
 	matchAt := func(x int) int {

@@ -13,7 +13,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
-// typedCommand is pkg/gui's handleTypedCommand: never through a shell.
+// typedCommand: never through a shell.
 func (m *Model) typedCommand() tea.Cmd {
 	// A global key reaches a popup that isn't editable too.
 	if len(m.popups) > 0 {
@@ -45,7 +45,7 @@ func (m *Model) typedCommand() tea.Cmd {
 	return nil
 }
 
-// typedComposeCommand is pkg/gui's: a service's name is offered after the cursor, for the verb typed before it.
+// typedComposeCommand: a service's name is offered after the cursor, for the verb typed before it.
 func typedComposeCommand(m *Model, target composeTarget) tea.Cmd {
 	initial := ""
 	if target.service != "" {
@@ -69,7 +69,7 @@ func typedComposeCommand(m *Model, target composeTarget) tea.Cmd {
 	return nil
 }
 
-// bindPromptHistory is pkg/gui's: beyond initial, only lines starting with the cursor's left are stepped to.
+// bindPromptHistory: beyond initial, only lines starting with the cursor's left are stepped to.
 func (m *Model) bindPromptHistory(history config.History, initial string) {
 	lines, err := m.cfg.LoadHistory(history)
 	if err != nil {
@@ -134,7 +134,6 @@ func historyPrefix(input *textinput.Model, draft, initial string) (string, strin
 	return before, after
 }
 
-// runTyped is pkg/gui's.
 func (m *Model) runTyped(cmd *exec.Cmd, line string, history config.History, remote string, stack *composeTarget) tea.Cmd {
 	if cmd == nil {
 		return nil
@@ -264,7 +263,7 @@ func (m *Model) typedComposeCmd(line string, target composeTarget) (*exec.Cmd, e
 	return commands.WithRemote(m.incus.ComposeCmd(target.dir, args...), target.remote), nil
 }
 
-// typedCommandProject is pkg/gui's: the row's, else the session's on its own remote.
+// typedCommandProject: the row's, else the session's on its own remote.
 func (m *Model) typedCommandProject(view string) string {
 	if p := m.panelNamed(view); p != nil && p.project != nil {
 		if project := p.project(); project != "" {

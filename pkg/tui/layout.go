@@ -44,7 +44,6 @@ const (
 // infoSectionPadding keeps cut-off options a space clear of the information.
 const infoSectionPadding = " "
 
-// dimensions are pkg/gui's getWindowDimensions.
 func (m *Model) dimensions(width, height int, information, appStatus string) map[string]boxlayout.Dimensions {
 	if width < 10 || height < 9 {
 		return boxlayout.ArrangeWindows(&boxlayout.Box{Window: limitView}, 0, 0, width, height)
@@ -147,7 +146,6 @@ func (m *Model) sideChildren(_, height int) []*boxlayout.Box {
 	return children
 }
 
-// stacksCollapsed is pkg/gui's stacksCollapsed.
 func (m *Model) stacksCollapsed(window, focused string) bool {
 	if !m.stacksAway() {
 		return false

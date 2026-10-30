@@ -57,7 +57,6 @@ func (m *Model) onOperationsRecount() {
 	m.countOperations()
 }
 
-// operationsStatus is pkg/gui's operationsStatusContent.
 func (m *Model) operationsStatus() string {
 	running, failed := m.operationCounts[0], m.operationCounts[1]
 

@@ -9,7 +9,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// colourCodes are gocuiColorMap's keys as SGR foregrounds; +10 is the bg.
+// colourCodes are the config's colour names as SGR foregrounds; +10 is the bg.
 var colourCodes = map[string]int{
 	"black": 30, "red": 31, "green": 32, "yellow": 33,
 	"blue": 34, "magenta": 35, "cyan": 36, "white": 37,
@@ -73,7 +73,7 @@ func hexRGB(hex string) (int, int, int) {
 // theme is the config's colours as escapes, worked out once per config.
 type theme struct {
 	activeBorder, inactiveBorder string
-	// activeTab is gocui's tab on show in an unfocused window: unbolded.
+	// activeTab is the tab on show in an unfocused window: unbolded.
 	activeTab        string
 	selectedBg       string
 	inactiveSelected string

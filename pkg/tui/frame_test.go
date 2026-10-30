@@ -18,7 +18,7 @@ func plainFrame(t *testing.T, border string, s frameSpec, w, h int) []string {
 	return strings.Split(ansi.Strip(newTheme(gui).frame(s, w, h)), "\n")
 }
 
-func TestFrameTitleAsGocuiDrawsIt(t *testing.T) {
+func TestFrameTitle(t *testing.T) {
 	lines := plainFrame(t, "", frameSpec{prefix: "[1]", title: "Instances"}, 20, 3)
 
 	assert.Equal(t, []string{
@@ -54,7 +54,7 @@ func TestBrightenLeavesOtherColoursAlone(t *testing.T) {
 	assert.Equal(t, "\x1b[38;2;30;31;32mx\x1b[91m", brighten("\x1b[38;2;30;31;32mx\x1b[31m"))
 }
 
-func TestFrameSubtitleAsGocuiDrawsIt(t *testing.T) {
+func TestFrameSubtitle(t *testing.T) {
 	th := newTheme(config.GetDefaultConfig().Gui)
 
 	top := ansi.Strip(strings.Split(th.frame(frameSpec{title: "Commands", subtitle: "esc: close"}, 30, 3), "\n")[0])

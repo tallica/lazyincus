@@ -7,7 +7,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// onVolume is pkg/gui's onSelected for the volumes panel.
 func onVolume(action func(*Model, *commands.Volume) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		volume := m.selectedVolume()
@@ -37,7 +36,7 @@ func (m *Model) volumeCopy(volume *commands.Volume) tea.Cmd {
 	return nil
 }
 
-// volumeDelete is pkg/gui's: a custom volume, and one nothing uses.
+// volumeDelete: a custom volume, and one nothing uses.
 func (m *Model) volumeDelete(volume *commands.Volume) tea.Cmd {
 	if !volume.IsCustom() {
 		m.openError(m.tr.CannotDeleteManagedVolume)

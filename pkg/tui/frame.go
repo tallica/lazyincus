@@ -26,8 +26,8 @@ type frameSpec struct {
 	total, origin int
 }
 
-// frame draws s in a w×h box, its title in the top edge where gocui's
-// drawTitle puts it: lipgloss borders take no title.
+// frame draws s in a w×h box, its title in the top edge: lipgloss borders
+// take no title.
 func (t theme) frame(s frameSpec, w, h int) string {
 	if w < 2 || h < 2 {
 		return strings.TrimSuffix(strings.Repeat(strings.Repeat(" ", max(w, 0))+"\n", max(h, 0)), "\n")
@@ -49,7 +49,7 @@ func (t theme) frame(s frameSpec, w, h int) string {
 
 	lines := make([]string, 0, h)
 	top := border + r.tl + r.h + reset + heading + border + rule + r.tr + reset
-	// gocui's drawSubtitle skips one that would start left of the frame.
+	// A subtitle that would start left of the frame is skipped.
 	if sw := ansi.StringWidth(s.subtitle); s.subtitle != "" && w-6-sw >= 0 {
 		top = ansi.Truncate(top, w-6-sw, "") + reset + border + s.subtitle + strings.Repeat(r.h, 5) + r.tr + reset
 	}
@@ -70,7 +70,7 @@ func (t theme) frame(s frameSpec, w, h int) string {
 	}
 
 	bottom := border + r.bl + strings.Repeat(r.h, inner) + r.br + reset
-	// gocui's drawListFooter skips one that would start left of the frame.
+	// A footer that would start left of the frame is skipped.
 	if fw := ansi.StringWidth(s.footer); s.footer != "" && w-2-fw >= 1 {
 		bottom = border + r.bl + strings.Repeat(r.h, w-3-fw) + s.footer + r.h + r.br + reset
 	}
@@ -79,7 +79,7 @@ func (t theme) frame(s frameSpec, w, h int) string {
 	return strings.Join(lines, "\n")
 }
 
-// heading colours tabs as gocui does: focused, only the tab on show is
+// heading colours tabs: focused, only the tab on show is
 // coloured; unfocused, everything is, that tab unbolded.
 func (t theme) heading(s frameSpec, border string) string {
 	prefix := ""
@@ -111,8 +111,8 @@ func (t theme) heading(s frameSpec, border string) string {
 	return prefix + strings.Join(parts, other+" - "+reset)
 }
 
-// scrollbar is the rows gocui's calcRealScrollbarStartEnd puts the thumb
-// on, end inclusive; start > end for none.
+// scrollbar is the rows the thumb covers,
+// end inclusive; start > end for none.
 func scrollbar(total, height, origin int) (int, int) {
 	if height < 2 || height >= total {
 		return 0, -1
@@ -143,7 +143,7 @@ func fit(line string, width int) string {
 
 var sgrSequence = regexp.MustCompile(`\x1b\[([0-9;]*)m`)
 
-// brighten turns line's 8-colour foregrounds bright, as gocui does on a selected row.
+// brighten turns line's 8-colour foregrounds bright, as on a selected row.
 func brighten(line string) string {
 	return sgrSequence.ReplaceAllStringFunc(line, func(seq string) string {
 		params := strings.Split(sgrSequence.FindStringSubmatch(seq)[1], ";")

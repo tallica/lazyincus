@@ -10,7 +10,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// openPaletteKey is pkg/gui's handleCommandPalette.
 func (m *Model) openPaletteKey() {
 	if len(m.popups) > 0 || m.currentView() == filterView {
 		return
@@ -19,7 +18,7 @@ func (m *Model) openPaletteKey() {
 	m.openPalette(m.currentView(), "")
 }
 
-// openPalette is pkg/gui's; scoped to item, only view's actions on it.
+// openPalette: scoped to item, only view's actions on it.
 func (m *Model) openPalette(view, item string) {
 	// The palette takes the prompt over, from a list's filter or a search.
 	if m.filter.active {
@@ -43,7 +42,7 @@ func (m *Model) paletteOpen() bool {
 	return m.filter.panel == menuView && (mn == nil || !mn.daemon)
 }
 
-// paletteTab is pkg/gui's: the selected item's actions, else tab's own.
+// paletteTab: the selected item's actions, else tab's own.
 func (m *Model) paletteTab() tea.Cmd {
 	if m.daemon.filtering {
 		return nil
@@ -64,7 +63,7 @@ func (m *Model) paletteTab() tea.Cmd {
 	return item.onTab(m)
 }
 
-// paletteItems is pkg/gui's: a row per action, then unless scoped per item.
+// paletteItems: a row per action, then unless scoped per item.
 func (m *Model) paletteItems(view string, scoped bool) []*menuItem {
 	scopes := map[string]string{"": m.tr.CommandPaletteGlobal, mainView: m.tr.MainTitle}
 	for _, p := range m.visiblePanels() {
@@ -199,7 +198,7 @@ func (m *Model) paletteItems(view string, scoped bool) []*menuItem {
 	return items
 }
 
-// paletteSource is pkg/gui's: a panel's selection and its items.
+// paletteSource: a panel's selection and its items.
 type paletteSource struct {
 	selected func() (name string, stillSelected func() bool, ok bool)
 	items    func() []paletteEntry
@@ -210,7 +209,7 @@ type paletteEntry struct {
 	goTo         func() bool
 }
 
-// paletteSources is pkg/gui's, for the panels ported so far.
+// paletteSources is a source for each panel.
 func (m *Model) paletteSources() map[string]paletteSource {
 	return map[string]paletteSource{
 		"stacks": m.sourceOf(m.panelNamed("stacks"),
@@ -257,7 +256,7 @@ func (m *Model) paletteSources() map[string]paletteSource {
 	}
 }
 
-// sourceOf is pkg/gui's, items told apart by key; detail can be nil.
+// sourceOf: items told apart by key; detail can be nil.
 func (m *Model) sourceOf(p *panel, key, name, detail func(item int) string) paletteSource {
 	rowOf := func(k string) int {
 		return slices.IndexFunc(p.shown, func(item int) bool { return key(item) == k })
@@ -301,7 +300,7 @@ func (m *Model) sourceOf(p *panel, key, name, detail func(item int) string) pale
 	}
 }
 
-// onRemote is pkg/gui's: what, naming its remote unless it's the session's.
+// onRemote: what, naming its remote unless it's the session's.
 func (m *Model) onRemote(what, remote string) string {
 	if remote == "" || remote == m.incus.RemoteName() {
 		return what

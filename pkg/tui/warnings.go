@@ -14,7 +14,7 @@ import (
 
 type warningsPollMsg struct{}
 
-// warningsPollInterval is pkg/gui's: no event says the daemon has raised a warning.
+// warningsPollInterval: no event says the daemon has raised a warning.
 const warningsPollInterval = 30 * time.Second
 
 func (m *Model) fetchWarnings() fetch {
@@ -53,7 +53,6 @@ func (m *Model) pollWarnings() tea.Cmd {
 	return refreshQuiet(m.tick(warningsPollInterval, warningsPollMsg{}), m.fetchWarnings())
 }
 
-// warningsStatus is pkg/gui's warningsStatusContent.
 func (m *Model) warningsStatus() string {
 	if m.newWarnings == 0 {
 		return ""

@@ -8,10 +8,10 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// spinnerInterval is pkg/gui's: utils.Loader turns once per 50ms.
+// spinnerInterval: utils.Loader turns once per 50ms.
 const spinnerInterval = 50 * time.Millisecond
 
-// appStatus is one of pkg/gui's statusManager's, the newest first.
+// appStatus is one status on show, the newest first.
 type appStatus struct {
 	name    string
 	waiting bool
@@ -33,7 +33,7 @@ type transientDoneMsg struct{ name string }
 
 type spinnerMsg struct{}
 
-// withWaitingStatus is pkg/gui's WithWaitingStatus, f run off the loop.
+// withWaitingStatus: f run off the loop.
 func (m *Model) withWaitingStatus(name string, f func() error) tea.Cmd {
 	return m.withWaitingStatusThen(name, f, nil)
 }
@@ -45,7 +45,7 @@ func (m *Model) withWaitingStatusThen(name string, f func() error, then func(err
 	return tea.Batch(m.spin(), func() tea.Msg { return waitingDoneMsg{name: name, err: f(), then: then} })
 }
 
-// waitingRefresh is pkg/gui's WithWaitingStatus around a refresh: the status spans the fetches.
+// waitingRefresh shows a waiting status around a refresh: it spans the fetches.
 func (m *Model) waitingRefresh(name string, fetches ...fetch) tea.Cmd {
 	return m.waitingRefreshThen(name, nil, fetches...)
 }
@@ -72,7 +72,7 @@ func (m *Model) waitingRefreshThen(name string, then func() tea.Cmd, fetches ...
 	})
 }
 
-// waitingActionThen is pkg/gui's WithWaitingStatus around act and a refresh: act's error is reported and ends it.
+// waitingActionThen shows a waiting status around act and a refresh: act's error is reported and ends it.
 func (m *Model) waitingActionThen(name string, act func() error, then func() tea.Cmd, fetches ...fetch) tea.Cmd {
 	var acted bool
 
@@ -109,7 +109,6 @@ func (m *Model) waitingActionThen(name string, act func() error, then func() tea
 	})
 }
 
-// withTransientStatus is pkg/gui's WithTransientStatus.
 func (m *Model) withTransientStatus(name string, duration time.Duration) tea.Cmd {
 	m.addStatus(appStatus{name: name})
 
@@ -169,7 +168,6 @@ func (m *Model) onHeldStatus(msg heldStatusMsg) tea.Cmd {
 	return cmd
 }
 
-// fitStatus is pkg/gui's getStatusString.
 func (m *Model) fitStatus() {
 	if len(m.statuses) == 0 {
 		m.appStatus = ""

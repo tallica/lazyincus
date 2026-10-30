@@ -9,7 +9,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// composeTarget is pkg/gui's: a stack, narrowed to one service unless service is empty.
+// composeTarget: a stack, narrowed to one service unless service is empty.
 type composeTarget struct {
 	remote  string
 	dir     string
@@ -21,7 +21,7 @@ func stackTarget(stack *commands.ComposeStack) composeTarget {
 	return composeTarget{remote: stack.Remote, dir: stack.Dir, project: stack.Name}
 }
 
-// onStack is onStackRow with pkg/gui's withStack checks: a broken stack says why.
+// onStack is onStackRow with the checks on the stack: a broken one says why.
 func onStack(action func(*Model, *commands.ComposeStack) tea.Cmd) func(*Model) tea.Cmd {
 	return onStackRow(func(m *Model, stack *commands.ComposeStack) tea.Cmd {
 		if stack.Err != nil {
@@ -52,7 +52,6 @@ func (m *Model) composeCmd(target composeTarget, args ...string) *exec.Cmd {
 	return commands.WithRemote(m.incus.ComposeCmd(target.dir, args...), target.remote)
 }
 
-// composeRun is pkg/gui's.
 func (m *Model) composeRun(target composeTarget, args ...string) tea.Cmd {
 	return m.composeRunThen(target, args, nil)
 }

@@ -186,7 +186,7 @@ func TestAnErrorReplacesAnOpenConfirmation(t *testing.T) {
 
 	assert.Len(t, m.popups, 1)
 	press(m, "esc")
-	assert.Empty(t, m.popups, "pkg/gui has one confirmation view: the question is gone")
+	assert.Empty(t, m.popups, "a menu replaces the confirmation: the question is gone")
 }
 
 func TestAPromptDrawsItsTextBold(t *testing.T) {

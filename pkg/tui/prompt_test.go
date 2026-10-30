@@ -83,7 +83,7 @@ func TestEscDropsAPrompt(t *testing.T) {
 	assert.Empty(t, *submitted)
 }
 
-// gocui gives an editable view every key with a rune, and the global
+// An editable view takes every key with a rune, and the global
 // bindings only the others.
 func TestAPromptTypesWhatWouldBeKeys(t *testing.T) {
 	m := start(t, options{}, 140, 40)

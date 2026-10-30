@@ -68,7 +68,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	m.setSnapshots()
 }
 
-// selectInstance is pkg/gui's Select: the cursor onto the instance with key, if shown.
+// selectInstance: the cursor onto the instance with key, if shown.
 func (m *Model) selectInstance(key string) bool {
 	p := m.panelNamed("instances")
 	for row, item := range p.shown {
@@ -88,7 +88,6 @@ func (m *Model) rerenderInstances() {
 	}
 }
 
-// sortInstances is pkg/gui's.
 func sortInstances(a, b *commands.Instance) bool {
 	if a.Project != b.Project {
 		return a.Project < b.Project
@@ -105,7 +104,7 @@ func isStopped(instance *commands.Instance) bool {
 	return strings.EqualFold(instance.Status(), "Stopped")
 }
 
-// spansProjects is pkg/gui's spansMultipleProjects over items' projects.
+// spansProjects is whether items come from more than one project.
 func spansProjects[T any](items []T, project func(T) string) bool {
 	seen := ""
 	for _, item := range items {
@@ -123,7 +122,7 @@ func spansProjects[T any](items []T, project func(T) string) bool {
 
 func instanceProject(instance *commands.Instance) string { return instance.Project }
 
-// keepInstance is pkg/gui's instances Filter, for what's ported: every user while narrowed.
+// keepInstance keeps every user while the list is narrowed.
 func (m *Model) keepInstance(item int) bool {
 	if m.instanceUsers != nil {
 		return m.instanceUsers.uses(m.instances[item])
@@ -136,12 +135,12 @@ func (m *Model) keepInstance(item int) bool {
 	return m.showStackInstances || !m.isStackInstance(m.instances[item])
 }
 
-// isStackInstance is pkg/gui's: a listed stack's service claims the instance.
+// isStackInstance is whether a listed stack's service claims the instance.
 func (m *Model) isStackInstance(instance *commands.Instance) bool {
 	return m.stackServices[instance.Project][instance.ComposeService()]
 }
 
-// setInstancesSpan is pkg/gui's: computed over the instances Instances shows.
+// setInstancesSpan is computed over the instances Instances shows.
 func (m *Model) setInstancesSpan() {
 	standalone := lo.Reject(m.instances, func(instance *commands.Instance, _ int) bool {
 		return !m.showStackInstances && m.isStackInstance(instance)
@@ -150,13 +149,11 @@ func (m *Model) setInstancesSpan() {
 	m.showProject = spansProjects(standalone, instanceProject)
 }
 
-// toggleStackInstances is pkg/gui's handleToggleStackInstances.
 func (m *Model) toggleStackInstances() {
 	m.showStackInstances = !m.showStackInstances
 	m.rerenderInstances()
 }
 
-// toggleStoppedInstances is pkg/gui's handleHideStoppedInstances.
 func (m *Model) toggleStoppedInstances() {
 	m.showStopped = !m.showStopped
 	m.filterList(m.panelNamed("instances"))
@@ -178,7 +175,6 @@ func (m *Model) instanceFlex() []utils.FlexColumn {
 	}}
 }
 
-// instanceMainTabs are pkg/gui's, in its order.
 func (m *Model) instanceMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
@@ -271,7 +267,6 @@ func (m *Model) instanceEnv(instance *commands.Instance) string {
 	return m.tr.NothingToDisplay
 }
 
-// instanceLocation is pkg/gui's.
 func (m *Model) instanceLocation(instance *commands.Instance) presentation.Location {
 	loc := presentation.Location{Remote: instance.Remote, Project: instance.Project}
 	if loc.Remote == "" {
@@ -294,13 +289,12 @@ func (m *Model) instanceKey() string {
 	return instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
 }
 
-// viewInstanceLogs is pkg/gui's handleInstanceViewLogs.
 func (m *Model) viewInstanceLogs() {
 	m.setMainTab(m.panelNamed("instances"), "logs")
 	m.enterMain()
 }
 
-// instanceUsers is pkg/gui's: what the instances panel is narrowed to by `u`.
+// instanceUsers: what the instances panel is narrowed to by `u`.
 type instanceUsers struct {
 	label string
 	uses  func(*commands.Instance) bool
@@ -308,7 +302,7 @@ type instanceUsers struct {
 	from string
 }
 
-// showUsers is pkg/gui's: Instances narrowed to what uses a resource, focused.
+// showUsers: Instances narrowed to what uses a resource, focused.
 func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.Cmd {
 	if !slices.ContainsFunc(m.instances, uses) {
 		m.openError(fmt.Sprintf(m.tr.NothingUses, label))
@@ -325,7 +319,7 @@ func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.
 	return nil
 }
 
-// clearInstanceUsers is pkg/gui's: the whole list back, and focus where `u` was pressed.
+// clearInstanceUsers: the whole list back, and focus where `u` was pressed.
 func (m *Model) clearInstanceUsers() {
 	from := m.instanceUsers.from
 	m.instanceUsers = nil
@@ -338,7 +332,6 @@ func (m *Model) clearInstanceUsers() {
 	}
 }
 
-// instancesTitle is pkg/gui's instancesPanelTitle.
 func (m *Model) instancesTitle() string {
 	if m.instanceUsers != nil {
 		return fmt.Sprintf(m.tr.InstancesUsing, m.instanceUsers.label)

@@ -119,7 +119,6 @@ func (m *Model) imageUpdatesSummary(results map[string]commands.UpstreamStatus) 
 		counts[commands.UpstreamNewer], counts[commands.UpstreamCurrent], counts[commands.UpstreamFailed])
 }
 
-// checkImageUpdates is pkg/gui's handleCheckImageUpdates.
 func (m *Model) checkImageUpdates() tea.Cmd {
 	return m.waitingRefresh(m.tr.CheckingImagesStatus, m.imageUpdatesFetch(true))
 }

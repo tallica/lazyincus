@@ -13,7 +13,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// composeHolder is pkg/gui's composeInstances and composeProject: what the
+// composeHolder: what the
 // Info tabs, which tick off the loop, read of the newest services refresh.
 type composeHolder struct {
 	instances atomic.Pointer[presentation.StackInstances]
@@ -168,7 +168,7 @@ func (m *Model) rerenderServices() {
 	m.refill(m.panelNamed("services"), func(item int) string { return m.serviceRows[item].Key() }, m.serviceCells)
 }
 
-// sortServiceRows is pkg/gui's: by name, a service's replicas after it, in order.
+// sortServiceRows: by name, a service's replicas after it, in order.
 func sortServiceRows(a, b *commands.ServiceRow) bool {
 	if a.Service.Name != b.Service.Name {
 		return a.Service.Name < b.Service.Name
@@ -206,7 +206,6 @@ func (m *Model) selectedServiceRow() *commands.ServiceRow {
 	return m.serviceRows[item]
 }
 
-// serviceKey is pkg/gui's GetItemContextCacheKey for the selected row.
 func (m *Model) serviceKey() string {
 	row := m.selectedServiceRow()
 	if row == nil {

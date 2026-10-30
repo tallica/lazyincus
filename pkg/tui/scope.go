@@ -18,7 +18,7 @@ func marker(selected bool) string {
 	return " "
 }
 
-// switchRemoteMenu is pkg/gui's handleSwitchRemote: the CLI's remotes that
+// switchRemoteMenu: the CLI's remotes that
 // hold instances, to move every panel onto one for the rest of the session.
 func (m *Model) switchRemoteMenu() tea.Cmd {
 	current := m.incus.RemoteName()
@@ -120,7 +120,7 @@ type projectsMsg struct {
 	err   error
 }
 
-// switchProjectMenu is pkg/gui's handleSwitchProject: instances outside the
+// switchProjectMenu: instances outside the
 // remote's configured project are invisible otherwise, which hides every
 // incus-compose stack.
 func (m *Model) switchProjectMenu() tea.Cmd {

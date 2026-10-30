@@ -20,7 +20,6 @@ type execDoneMsg struct {
 	then func(error) tea.Cmd
 }
 
-// runSubprocess is pkg/gui's runSubprocessWithMessage on tea.Exec.
 func (m *Model) runSubprocess(cmd *exec.Cmd, message string, then func() tea.Cmd) tea.Cmd {
 	if then == nil {
 		return m.runSubprocessReturning(cmd, message, nil, nil)
@@ -29,7 +28,7 @@ func (m *Model) runSubprocess(cmd *exec.Cmd, message string, then func() tea.Cmd
 	return m.runSubprocessReturning(cmd, message, nil, func(error) tea.Cmd { return then() })
 }
 
-// runSubprocessReturning is pkg/gui's: after runs before the screen comes back, so its wait doesn't hold the TUI.
+// runSubprocessReturning: after runs before the screen comes back, so its wait doesn't hold the TUI.
 func (m *Model) runSubprocessReturning(cmd *exec.Cmd, message string, after func(error), then func(error) tea.Cmd) tea.Cmd {
 	s := &subprocess{
 		cmd: cmd, message: message, os: m.os, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
@@ -52,7 +51,6 @@ func (m *Model) onExecDone(msg execDoneMsg) tea.Cmd {
 	return msg.then(msg.err)
 }
 
-// subprocess is pkg/gui's runCommand.
 type subprocess struct {
 	cmd               *exec.Cmd
 	message           string

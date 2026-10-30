@@ -13,7 +13,7 @@ import (
 
 // popup is a message, or with asks a question; the top one has the keys.
 type popup struct {
-	// view is pkg/gui's view for it: confirmationView or menuView.
+	// view: confirmationView or menuView.
 	view    string
 	title   string
 	message string
@@ -37,17 +37,14 @@ func (m *Model) openError(message string) {
 	m.openMessage(m.tr.ErrorTitle, utils.ColoredString(strings.TrimSpace(message), color.FgRed))
 }
 
-// openMessage is pkg/gui's createMessagePanel.
 func (m *Model) openMessage(title, message string) {
 	m.openPopup(&popup{view: confirmationView, title: title, message: message}, nil, nil)
 }
 
-// openConfirmation is pkg/gui's createConfirmationPanel.
 func (m *Model) openConfirmation(title, message string, onYes func() tea.Cmd) {
 	m.openPopup(&popup{view: confirmationView, title: title, message: message, asks: true}, onYes, nil)
 }
 
-// openSkippableConfirmation is pkg/gui's createSkippableConfirmationPanel.
 func (m *Model) openSkippableConfirmation(id, title, message string, onYes func() tea.Cmd) tea.Cmd {
 	if m.cfg.SkipsConfirm(id) {
 		return onYes()
@@ -69,7 +66,7 @@ func (m *Model) openSkippableConfirmation(id, title, message string, onYes func(
 	return nil
 }
 
-// openPopup is pkg/gui's createPopupPanel: enter/y confirm, esc/n close.
+// openPopup: enter/y confirm, esc/n close.
 func (m *Model) openPopup(p *popup, onConfirm, onClose func() tea.Cmd) {
 	closing := func(f func() tea.Cmd) func(*Model) tea.Cmd {
 		return func(m *Model) tea.Cmd {
@@ -89,7 +86,7 @@ func (m *Model) openPopup(p *popup, onConfirm, onClose func() tea.Cmd) {
 		p.bindings = append(p.bindings, &binding{view: confirmationView, key: k.key, handler: k.handler})
 	}
 
-	// pkg/gui's onNewPopupPanel hides the menu and any confirmation.
+	// A new popup hides the menu and any confirmation.
 	m.popups = m.popups[:0]
 	m.popups = append(m.popups, p)
 }
@@ -98,7 +95,6 @@ func (m *Model) closePopup() {
 	m.popups = m.popups[:len(m.popups)-1]
 }
 
-// popupColumns and popupRows are pkg/gui's.
 func popupColumns(screenWidth, minWidth int) (int, int) {
 	x0, x1 := screenWidth/2-screenWidth/4, screenWidth/2+screenWidth/4
 	if minWidth <= x1-x0 {
@@ -117,10 +113,10 @@ func popupRows(screenHeight, rows int) (int, int) {
 	return screenHeight/2 - rows/2 - rows%2 - 1, screenHeight/2 + rows/2
 }
 
-// popupFrameMargin is pkg/gui's: corners and rule around title and subtitle.
+// popupFrameMargin: corners and rule around title and subtitle.
 const popupFrameMargin = 10
 
-// fitBeside is pkg/gui's: subtitle cut to the room beside title.
+// fitBeside: subtitle cut to the room beside title.
 func fitBeside(subtitle, title string, width int) string {
 	room := width - utils.DisplayWidth(title) - popupFrameMargin
 	if utils.DisplayWidth(subtitle) <= room {
@@ -134,7 +130,7 @@ func fitBeside(subtitle, title string, width int) string {
 	return utils.Truncate(subtitle, room)
 }
 
-// popupX is where pkg/gui's resizePopupPanel puts p across the screen.
+// popupX is where p goes across the screen.
 func (m *Model) popupX(p *popup) (int, int) {
 	minWidth := p.heldWidth
 	if p.menu != nil && (p.menu.wide || m.paletteOpen()) {
@@ -172,7 +168,7 @@ func keepEscapes(lines []string) []string {
 	return lines
 }
 
-// fitPopups is pkg/gui's resizePopupPanel: a shorter subtitle mustn't
+// fitPopups: a shorter subtitle mustn't
 // narrow the popup under the cursor, so its width only grows.
 func (m *Model) fitPopups() {
 	for _, p := range m.popups {

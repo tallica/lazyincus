@@ -17,7 +17,7 @@ import (
 )
 
 // The screen tests draw pkg/tui's View over incustest's fixture daemon and
-// compare it with testdata/screens, as pkg/gui's do with its own.
+// compare it with testdata/screens.
 
 type screenCase struct {
 	golden        string
@@ -124,7 +124,7 @@ func TestScreenAllSnapshots(t *testing.T) {
 	}
 }
 
-// onList focuses a list the way pkg/gui's screen tests do, without passing
+// onList focuses a list without passing
 // the lists before it, then presses keys.
 func onList(view string, keys ...string) func(*Model) {
 	return func(m *Model) {

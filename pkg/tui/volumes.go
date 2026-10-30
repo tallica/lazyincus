@@ -45,7 +45,7 @@ func (m *Model) setVolumes(volumes []*commands.Volume) {
 	}
 }
 
-// sortVolumes is pkg/gui's: by pool, custom volumes ahead of Incus's own.
+// sortVolumes: by pool, custom volumes ahead of Incus's own.
 func sortVolumes(a, b *commands.Volume) bool {
 	if a.Pool != b.Pool {
 		return a.Pool < b.Pool
@@ -88,7 +88,7 @@ func (m *Model) volumeConfigTask() mainTaskFunc {
 	return renderString(func() string { return presentation.VolumeConfig(volume, loc, tr) })
 }
 
-// volumeKey is pkg/gui's, leaving out the usage, which changes with every poll.
+// volumeKey: leaving out the usage, which changes with every poll.
 func (m *Model) volumeKey() string {
 	volume := m.selectedVolume()
 	if volume == nil {

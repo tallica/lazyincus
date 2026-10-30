@@ -12,7 +12,7 @@ import (
 
 const snapshotOptionsView = "snapshotOptions"
 
-// snapshotPrompt is pkg/gui's: a name field and an options box, enter creating from either.
+// snapshotPrompt: a name field and an options box, enter creating from either.
 type snapshotPrompt struct {
 	create        func(m *Model, name string, opts commands.SnapshotOptions) tea.Cmd
 	statefulField bool
@@ -80,7 +80,7 @@ func (m *Model) snapshotCreatePrompt(instance *commands.Instance) tea.Cmd {
 	return nil
 }
 
-// volumeSnapshotCreatePrompt is pkg/gui's: the same popup for a custom volume.
+// volumeSnapshotCreatePrompt: the same popup for a custom volume.
 func (m *Model) volumeSnapshotCreatePrompt(volume *commands.Volume) tea.Cmd {
 	if !volume.IsCustom() {
 		m.openError(m.tr.CannotSnapshotInstanceVolume)
@@ -96,7 +96,7 @@ func (m *Model) volumeSnapshotCreatePrompt(volume *commands.Volume) tea.Cmd {
 	return nil
 }
 
-// openSnapshotPrompt is pkg/gui's; tab switches popup.view, which the keys follow.
+// openSnapshotPrompt: tab switches popup.view, which the keys follow.
 func (m *Model) openSnapshotPrompt(label string, sp *snapshotPrompt) {
 	input := newEditorInput()
 	p := &popup{
@@ -156,7 +156,7 @@ func (m *Model) openSnapshotPrompt(label string, sp *snapshotPrompt) {
 	m.popups = append(m.popups, p)
 }
 
-// snapshotOptionsLines is pkg/gui's renderSnapshotOptions' text.
+// snapshotOptionsLines is the options form's text.
 func (m *Model) snapshotOptionsLines(sp *snapshotPrompt) []string {
 	rows := [][2]string{
 		{m.tr.SnapshotExpiryField, snapshotExpiries[sp.expiry].label},
@@ -203,7 +203,6 @@ func (m *Model) snapshotOptionsFrame(p *popup, x0, x1 int) string {
 	return m.theme.frame(spec, w, len(lines)+2)
 }
 
-// snapshotOptionsKeys is pkg/gui's renderSnapshotOptionsKeys.
 func (m *Model) snapshotOptionsKeys() map[string]string {
 	return map[string]string{
 		"esc":   m.tr.Close,
@@ -214,7 +213,7 @@ func (m *Model) snapshotOptionsKeys() map[string]string {
 	}
 }
 
-// createSnapshot is pkg/gui's: then the panel on that instance, the cursor on the snapshot.
+// createSnapshot: then the panel on that instance, the cursor on the snapshot.
 func (m *Model) createSnapshot(instance *commands.Instance, name string, opts commands.SnapshotOptions) tea.Cmd {
 	key := (&commands.Snapshot{Project: instance.Project, Owner: instance.Name, Name: name}).Key()
 
@@ -243,14 +242,13 @@ func (m *Model) createVolumeSnapshot(volume *commands.Volume, name string, opts 
 		}))
 }
 
-// focusSnapshot is pkg/gui's: the cursor on it in a focused Snapshots.
+// focusSnapshot: the cursor on it in a focused Snapshots.
 func (m *Model) focusSnapshot(key string) {
 	if m.selectSnapshot(key) {
 		m.focusView("snapshots")
 	}
 }
 
-// snapshotNew is pkg/gui's handleSnapshotCreate.
 func (m *Model) snapshotNew() tea.Cmd {
 	if volume := m.snapshotsVolume(); volume != nil {
 		return m.volumeSnapshotCreatePrompt(volume)

@@ -25,7 +25,7 @@ const (
 	writeClear
 )
 
-// mainWriteMsg is pkg/gui's writeMain, numbered so a stale write is dropped.
+// mainWriteMsg: numbered so a stale write is dropped.
 type mainWriteMsg struct {
 	generation, number uint64
 	wrap, autoscroll   bool
@@ -54,7 +54,6 @@ func (w *mainWriter) rerender(content string) { w.write(writeRerender, content) 
 
 func (w *mainWriter) clear() { w.write(writeClear, "") }
 
-// tickerTask is pkg/gui's NewTickerTask after clearMain.
 func tickerTask(interval time.Duration, content func() string) mainTaskFunc {
 	return func(ctx context.Context, w *mainWriter) {
 		w.clear()
@@ -74,7 +73,6 @@ func tickerTask(interval time.Duration, content func() string) mainTaskFunc {
 	}
 }
 
-// renderString is pkg/gui's NewSimpleRenderStringTask.
 func renderString(content func() string) mainTaskFunc {
 	return func(_ context.Context, w *mainWriter) { w.render(content()) }
 }

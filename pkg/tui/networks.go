@@ -44,12 +44,11 @@ func (m *Model) setNetworks(networks []*commands.Network) {
 
 func networkProject(network *commands.Network) string { return network.Network.Project }
 
-// keepNetwork is pkg/gui's networks Filter: the host's own interfaces wait for e.
+// keepNetwork: the host's own interfaces wait for e.
 func (m *Model) keepNetwork(item int) bool {
 	return m.showUnmanaged || m.networks[item].IsManaged()
 }
 
-// toggleUnmanagedNetworks is pkg/gui's handleToggleUnmanagedNetworks.
 func (m *Model) toggleUnmanagedNetworks() {
 	m.showUnmanaged = !m.showUnmanaged
 	m.filterList(m.panelNamed("networks"))
@@ -64,7 +63,7 @@ func (m *Model) selectedNetwork() *commands.Network {
 	return m.networks[item]
 }
 
-// networkMainTabs are pkg/gui's: leases and state polled, as nothing the
+// networkMainTabs poll leases and state, as nothing the
 // list notices says an instance took a lease or a port changed.
 func (m *Model) networkMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
@@ -114,7 +113,7 @@ func (m *Model) networkConfig(network *commands.Network) func() string {
 	return func() string { return presentation.NetworkConfig(network, loc) }
 }
 
-// networkKey is pkg/gui's: forwards and ACLs aren't in the network, so their events count in networkTabs.
+// networkKey: forwards and ACLs aren't in the network, so their events count in networkTabs.
 func (m *Model) networkKey() string {
 	network := m.selectedNetwork()
 	if network == nil {

@@ -90,7 +90,6 @@ func TestARefreshKeepsTheFilter(t *testing.T) {
 	assert.Equal(t, 1, m.panelNamed("instances").count())
 }
 
-// pkg/gui's TestTabInAFilterCyclesPanels.
 func TestTabInAFilterCyclesPanels(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 

@@ -14,7 +14,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
-// localStackDir is pkg/gui's: the directory the local stack comes from, and
+// localStackDir: the directory the local stack comes from, and
 // whether it was named rather than being wherever lazyincus started.
 func localStackDir() (string, bool) {
 	if dir := os.Getenv("INCUS_COMPOSE_PROJECT_DIRECTORY"); dir != "" {
@@ -31,7 +31,7 @@ func localStackDir() (string, bool) {
 	return dir, false
 }
 
-// stackCache is pkg/gui's: each stack's compose config by directory, read once.
+// stackCache: each stack's compose config by directory, read once.
 type stackCache struct {
 	mutex  sync.Mutex
 	stacks map[string]*commands.ComposeStack
@@ -72,7 +72,7 @@ func (c *stackCache) forget(dir string) {
 	delete(c.stacks, dir)
 }
 
-// listStacks is pkg/gui's: every stack with its config, each a copy of the cached one.
+// listStacks: every stack with its config, each a copy of the cached one.
 func (m *Model) listStacks(saved []string) []*commands.ComposeStack {
 	stacks := []*commands.ComposeStack{}
 	byRef := map[string]*commands.ComposeStack{}
@@ -159,7 +159,7 @@ func (m *Model) stacksHereIn(stacks []*commands.ComposeStack) bool {
 	})
 }
 
-// readStackStatuses is pkg/gui's: the session's remote asked, every other one's as last read.
+// readStackStatuses: the session's remote asked, every other one's as last read.
 func (m *Model) readStackStatuses(stacks []*commands.ComposeStack) error {
 	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
 		if stack.Remote == m.incus.RemoteName() {
@@ -215,7 +215,7 @@ func (m *Model) remoteStatuses(remote string) (remoteStatuses, bool) {
 	return m.remotes.cachedStatuses(remote, read, m.notifyRemotes)
 }
 
-// setStacks is the apply of fetchStacks, in pkg/gui's order.
+// setStacks is the apply of fetchStacks.
 func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool) {
 	m.stacksElsewhere, m.stacksHere = elsewhere, here
 	m.setStackDirs(stacks)
@@ -236,7 +236,7 @@ func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool)
 	}
 }
 
-// sortStacks is pkg/gui's: the local stack first when it's saved nowhere,
+// sortStacks: the local stack first when it's saved nowhere,
 // then each saved remote's together.
 func sortStacks(a, b *commands.ComposeStack) bool {
 	if a.Saved != b.Saved {
@@ -282,7 +282,6 @@ func (m *Model) selectedStackRow() *commands.ComposeStack {
 	return m.stacks[item]
 }
 
-// stackKey is pkg/gui's GetItemContextCacheKey for the selected stack.
 func (m *Model) stackKey() string {
 	stack := m.selectedStackRow()
 	if stack == nil {
@@ -293,7 +292,7 @@ func (m *Model) stackKey() string {
 		"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 }
 
-// setStackServices is pkg/gui's: the stacks' compose instances, which
+// setStackServices: the stacks' compose instances, which
 // Instances re-filters when they change.
 func (m *Model) setStackServices(stacks []*commands.ComposeStack) {
 	services := map[string]map[string]bool{}
@@ -327,7 +326,7 @@ func stackDirKey(remote, project string) string {
 	return remote + "\x00" + project
 }
 
-// setStackDirs is pkg/gui's: where each listed stack's directory is, and which remotes they're on.
+// setStackDirs: where each listed stack's directory is, and which remotes they're on.
 func (m *Model) setStackDirs(stacks []*commands.ComposeStack) {
 	dirs := map[string]string{}
 	remotes := []string{}

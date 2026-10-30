@@ -21,7 +21,7 @@ func refuseEmpty(text string) error {
 
 func acceptEmpty(string) error { return nil }
 
-// openTextPrompt is pkg/gui's: a line of text, from initial, for submit.
+// openTextPrompt: a line of text, from initial, for submit.
 func (m *Model) openTextPrompt(title, hint, initial string, submit func(*Model, string) tea.Cmd) {
 	m.textPrompt(title, hint, initial, refuseEmpty, submit)
 }
@@ -31,7 +31,7 @@ func (m *Model) openOptionalTextPrompt(title, hint string, submit func(*Model, s
 	m.textPrompt(title, hint, "", acceptEmpty, submit)
 }
 
-// textPrompt is pkg/gui's: check's errKeepPrompt leaves the prompt as it is,
+// textPrompt: check's errKeepPrompt leaves the prompt as it is,
 // any other error leaves it up saying why in place of the hint.
 func (m *Model) textPrompt(title, hint, initial string, check func(string) error, submit func(*Model, string) tea.Cmd) {
 	input := newEditorInput()
@@ -82,7 +82,7 @@ func (m *Model) editPrompt(msg tea.Msg) tea.Cmd {
 }
 
 // promptCursor is where the cursor is in the prompt's text wrapped to width:
-// gocui leaves it at the end of the first row, whatever the wrap.
+// the next character goes there, whatever the wrap.
 func promptCursor(input *textinput.Model, width int) (row, col int) {
 	cs := cells(input.Value())
 

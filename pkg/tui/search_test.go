@@ -8,7 +8,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
-// The pkg/gui search tests, on the Config tab: Info has no "packets" yet.
+// These search the Config tab: Info has no "packets" yet.
 
 func searchMain(m *Model, text string) {
 	press(m, "]", "]", "enter", "/")

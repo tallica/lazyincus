@@ -215,7 +215,7 @@ func TestClickOnTheFilteredListKeepsTheFilterAnotherDropsIt(t *testing.T) {
 	d = m.dims()[mainView]
 	mouseClick(m, d.X0+3, d.Y0+3)
 	assert.Equal(t, mainView, m.currentView())
-	assert.True(t, m.filter.active, "main keeps it, as pkg/gui does")
+	assert.True(t, m.filter.active, "main keeps it")
 
 	window := m.windowNames()[2]
 	d = m.dims()[window]

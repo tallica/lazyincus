@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// The cases are gocui's own TestLineWrap.
-func TestWrapLineAsGocui(t *testing.T) {
+// The cases are those of gocui's TestLineWrap, whose wrapping this kept.
+func TestWrapLine(t *testing.T) {
 	for _, tc := range []struct {
 		line    string
 		columns int
@@ -32,8 +32,8 @@ func TestWrapLineAsGocui(t *testing.T) {
 	}
 }
 
-// border-rounded-100x30 in pkg/gui's goldens: 28 lines in 27 rows.
-func TestScrollbarAsGocui(t *testing.T) {
+// border-rounded-100x30 in the goldens: 28 lines in 27 rows.
+func TestScrollbarThumb(t *testing.T) {
 	start, end := scrollbar(28, 27, 0)
 	assert.Equal(t, []int{0, 25}, []int{start, end})
 
@@ -119,7 +119,7 @@ func TestPaneKeepsItsPlaceUntilRenderedAfresh(t *testing.T) {
 	assert.Equal(t, 8, p.oy, "a new task starts afresh, its own autoscroll on")
 }
 
-func TestPaneContentAsGocuiWritesIt(t *testing.T) {
+func TestPaneContentIsSplitIntoViewLines(t *testing.T) {
 	assert.Equal(t, []string{"a   b", "ab  c", ""}, viewLines("a\tb\r\nab\tc\n\n", false, 20))
 	assert.Equal(t, []string{""}, viewLines("", false, 20))
 	assert.Equal(t, []string{""}, viewLines("\n", false, 20))

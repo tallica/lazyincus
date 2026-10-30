@@ -12,7 +12,7 @@ import (
 
 const operationsKept = 100
 
-// operationLog is pkg/gui's: the daemon forgets an operation 5s after it ends, so its events are the history.
+// operationLog: the daemon forgets an operation 5s after it ends, so its events are the history.
 type operationLog struct {
 	entries map[string]*loggedOperation
 }

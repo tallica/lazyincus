@@ -47,7 +47,7 @@ type Model struct {
 	tasks  *tasks.TaskManager
 	// runTask stands in for pkg/tasks in tests.
 	runTask func(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd
-	// mainParent is gocui's main ParentView: the panel enter came from.
+	// mainParent is the panel enter came from.
 	mainParent string
 	filter     filter
 	appStatus  string
@@ -55,7 +55,7 @@ type Model struct {
 	spinning   bool
 
 	composeAvailable bool
-	// localStackDir and localStackExplicit are pkg/gui's: where the local stack comes from, set once.
+	// localStackDir and localStackExplicit are where the local stack comes from, set once.
 	localStackDir      string
 	localStackExplicit bool
 	// loadStack reads a stack's compose config; tests stand in for incus-compose.
@@ -70,9 +70,9 @@ type Model struct {
 	stacksHere    bool
 	// stacksElsewhere is whether any listed stack is on another remote.
 	stacksElsewhere bool
-	// landing is pkg/gui's State.Landing: the first stacks read of a scope leaves Stacks if none is here.
+	// landing: the first stacks read of a scope leaves Stacks if none is here.
 	landing bool
-	// stackDirs and stackRemotes are pkg/gui's, for the tabs naming a compose instance's stack.
+	// stackDirs and stackRemotes serve the tabs naming a compose instance's stack.
 	stackDirs     map[string]string
 	stackRemotes  []string
 	stackServices map[string]map[string]bool
@@ -101,7 +101,7 @@ type Model struct {
 	showUnmanaged bool
 	profiles      []*commands.Profile
 	profilesSpan  bool
-	// networkTabs is pkg/gui's: the forward and ACL events, which the networks' tabs show.
+	// networkTabs: the forward and ACL events, which the networks' tabs show.
 	networkTabs uint64
 	// upstreams are the registry checks by image fingerprint, nil before the first.
 	upstreams     map[string]commands.UpstreamStatus
@@ -131,7 +131,7 @@ type Model struct {
 	configModTime  time.Time
 	// checkUpstreams asks the registries; tests stand in for them.
 	checkUpstreams func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus
-	// runIncus is pkg/gui's, run off the loop; tests stand in for the CLI.
+	// runIncus: run off the loop; tests stand in for the CLI.
 	runIncus func(*exec.Cmd) (string, error)
 	// runOnTerminal runs a compose or backup verb on the terminal; tests record it.
 	runOnTerminal func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd
@@ -370,7 +370,7 @@ func (m *Model) quit() tea.Cmd {
 	return tea.Quit
 }
 
-// escape is pkg/gui's, for esc where no view takes it.
+// escape: for esc where no view takes it.
 func (m *Model) escape() {
 	if m.filter.active {
 		m.clearFilter()
@@ -387,7 +387,6 @@ func (m *Model) jumpToTopMain() {
 	m.main.ox, m.main.oy = 0, 0
 }
 
-// enterMain is pkg/gui's handleEnterMain.
 func (m *Model) enterMain() {
 	parent := m.currentView()
 	m.focusView(mainView)
@@ -411,7 +410,7 @@ func (m *Model) cycleMainTab(p *panel, step int) {
 	p.mainTab = wrap(p.mainTab+step, len(p.mainTabs()))
 }
 
-// setMainTab is pkg/gui's SetMainTab: the tab named key, if p has one.
+// setMainTab: the tab named key, if p has one.
 func (m *Model) setMainTab(p *panel, key string) {
 	for i, tab := range p.mainTabs() {
 		if tab.key == key {
@@ -420,7 +419,6 @@ func (m *Model) setMainTab(p *panel, key string) {
 	}
 }
 
-// scrollMain is pkg/gui's scrollUpMain (-1) and scrollDownMain (1).
 func (m *Model) scrollMain(direction int) {
 	step := m.cfg.UserConfig.Gui.ScrollHeight
 	if direction < 0 {

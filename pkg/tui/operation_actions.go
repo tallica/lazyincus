@@ -11,7 +11,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// showOperation is pkg/gui's: closing it goes back to the list.
+// showOperation: closing it goes back to the list.
 func (m *Model) showOperation(operation *commands.Operation) tea.Cmd {
 	back := m.backToDaemon(daemonOperations, operation.Key())
 	m.openPopup(&popup{view: confirmationView, title: m.tr.OperationTitle, message: strings.TrimRight(m.operationInfo(operation), "\n")}, back, back)
@@ -19,7 +19,6 @@ func (m *Model) showOperation(operation *commands.Operation) tea.Cmd {
 	return nil
 }
 
-// operationInfo is pkg/gui's operationInfoStr.
 func (m *Model) operationInfo(operation *commands.Operation) string {
 	op := operation.Operation
 	line := func(label, value string) string {
@@ -70,7 +69,7 @@ func (m *Model) operationInfo(operation *commands.Operation) string {
 	return output
 }
 
-// operationCancel is pkg/gui's: asked first, then back to the list either way.
+// operationCancel: asked first, then back to the list either way.
 func (m *Model) operationCancel(operation *commands.Operation) tea.Cmd {
 	if operation.IsFinal() || !operation.Operation.MayCancel {
 		m.openError(fmt.Sprintf(m.tr.OperationNotCancellable, operation.Operation.Description))

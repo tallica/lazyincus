@@ -16,9 +16,9 @@ const (
 	confirmationView = "confirmation"
 )
 
-// menuItem is pkg/gui's types.MenuItem with handlers that return a Cmd.
+// menuItem is a menu row with handlers that return a Cmd.
 type menuItem struct {
-	// key is pkg/gui's MenuItem.Key: W's popup keeps the cursor on it.
+	// key: W's popup keeps the cursor on it.
 	key          string
 	label        string
 	labelColumns []string
@@ -33,13 +33,11 @@ type menuItem struct {
 	checked           bool
 }
 
-// menuKey is pkg/gui's types.MenuKey.
 type menuKey struct {
 	handler func(*Model) tea.Cmd
 	mutates bool
 }
 
-// menuOptions is pkg/gui's CreateMenuOptions.
 type menuOptions struct {
 	title      string
 	subtitle   string
@@ -51,7 +49,7 @@ type menuOptions struct {
 	tabs        []string
 	tabIndex    int
 	flexColumns []utils.FlexColumn
-	// daemon is pkg/gui's State.DaemonPopup: the menu is W's.
+	// daemon: the menu is W's.
 	daemon bool
 	// onConfirm makes the menu a checklist, handed the rows ticked on enter.
 	onConfirm func(picked []*menuItem) tea.Cmd
@@ -62,7 +60,6 @@ type menu struct {
 	list *panel
 }
 
-// openMenu is pkg/gui's Menu.
 func (m *Model) openMenu(opts menuOptions) {
 	if !opts.hideCancel && opts.onConfirm == nil {
 		opts.items = append(opts.items, &menuItem{labelColumns: []string{m.tr.Cancel}, onPress: func(*Model) tea.Cmd { return nil }})
@@ -83,7 +80,7 @@ func (m *Model) openMenu(opts menuOptions) {
 	}
 	mn.list.selected = opts.selected
 
-	// pkg/gui has one menu view: a menu opened replaces the one open.
+	// A menu opened replaces the one open.
 	m.popups = slices.DeleteFunc(m.popups, func(p *popup) bool { return p.menu != nil })
 
 	title := opts.title
@@ -110,7 +107,7 @@ func padMenuItems(items []*menuItem) {
 	}
 }
 
-// menuNeedle is pkg/gui's FilterString for the menu: the palette's.
+// menuNeedle is the text the menu filters by: the palette's.
 func (m *Model) menuNeedle() string {
 	if m.filter.panel != menuView {
 		return ""
@@ -152,7 +149,7 @@ func (mn *menu) selectedItem() *menuItem {
 	return nil
 }
 
-// menuBindings are pkg/gui's on the menu view.
+// menuBindings are the keys of the menu.
 func (m *Model) menuBindings() []*binding {
 	return []*binding{
 		{view: menuView, key: "esc", handler: do((*Model).escapeMenu)},
@@ -177,7 +174,7 @@ func (m *Model) menuBindings() []*binding {
 	}
 }
 
-// escapeMenu is pkg/gui's handleMenuEscape: W's filter goes before the popup.
+// escapeMenu closes W's filter before the popup.
 func (m *Model) escapeMenu() {
 	if mn := m.topMenu(); mn != nil && mn.daemon && m.menuNeedle() != "" {
 		m.clearFilter()
@@ -187,7 +184,6 @@ func (m *Model) escapeMenu() {
 	m.closeMenu()
 }
 
-// closeMenu is pkg/gui's handleMenuClose.
 func (m *Model) closeMenu() {
 	if m.filter.panel == menuView {
 		m.clearFilter()
@@ -196,7 +192,6 @@ func (m *Model) closeMenu() {
 	m.closePopup()
 }
 
-// pressMenu is pkg/gui's handleMenuPress.
 func (m *Model) pressMenu() tea.Cmd {
 	mn := m.topMenu()
 
@@ -213,7 +208,6 @@ func (m *Model) pressMenu() tea.Cmd {
 	return m.pressItem(mn)
 }
 
-// pressItem is pkg/gui's onMenuPress.
 func (m *Model) pressItem(mn *menu) tea.Cmd {
 	item := mn.selectedItem()
 	if item == nil {
@@ -228,7 +222,7 @@ func (m *Model) pressItem(mn *menu) tea.Cmd {
 	return item.onPress(m)
 }
 
-// toggleMenuItem is pkg/gui's handleMenuToggle: a tick, or in a plain menu a press.
+// toggleMenuItem is a tick, or in a plain menu a press.
 func (m *Model) toggleMenuItem() tea.Cmd {
 	mn := m.topMenu()
 	if mn.onConfirm == nil {
@@ -252,7 +246,7 @@ func (m *Model) toggleAllMenuItems() {
 	m.rerenderMenu()
 }
 
-// menuItemKey is pkg/gui's handleMenuKey, guarded on the session's remote.
+// menuItemKey is guarded on the session's remote.
 func (m *Model) menuItemKey(key string) tea.Cmd {
 	item := m.topMenu().selectedItem()
 	if item == nil {
@@ -277,7 +271,6 @@ func (m *Model) menuItemKey(key string) tea.Cmd {
 	return k.handler(m)
 }
 
-// menuOptionsMap is pkg/gui's renderMenuOptions.
 func (m *Model) menuOptionsMap(mn *menu) map[string]string {
 	options := map[string]string{"esc": m.tr.Close, "↑ ↓": m.tr.Navigate, "enter": m.tr.Execute}
 
@@ -299,7 +292,7 @@ func (m *Model) menuOptionsMap(mn *menu) map[string]string {
 	return options
 }
 
-// optionsBindings is pkg/gui's getBindings: the view's, a gap, the globals.
+// optionsBindings are the view's, a gap, the globals.
 func (m *Model) optionsBindings(view string) []*binding {
 	var global, own []*binding
 
@@ -331,7 +324,6 @@ func (m *Model) optionsBindings(view string) []*binding {
 	return append(append(own, &binding{}), global...)
 }
 
-// openOptionsMenu is pkg/gui's handleCreateOptionsMenu.
 func (m *Model) openOptionsMenu() {
 	if len(m.popups) > 0 {
 		return

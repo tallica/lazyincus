@@ -14,7 +14,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// failureWatch is pkg/gui's (docs/Panels.md, "Services"): note runs on a listener's goroutine.
+// failureWatch: see docs/Panels.md, "Services"; note runs on a listener's goroutine.
 type failureWatch struct {
 	mutex    sync.Mutex
 	watching bool
@@ -135,7 +135,7 @@ func cliProject(args []string) string {
 	return project
 }
 
-// eventsCover is pkg/gui's: the session's open stream hears project.
+// eventsCover is whether the session's open stream hears project.
 func (m *Model) eventsCover(project string) bool {
 	scope := m.incus.ProjectName()
 
@@ -147,7 +147,7 @@ type watchReadyMsg struct {
 	start func() tea.Cmd
 }
 
-// runWatched is pkg/gui's: then gets what failed in project on remote while cmd ran, if cmd failed too.
+// runWatched runs cmd, then gets what failed in project on remote while it ran, if cmd failed too.
 func (m *Model) runWatched(cmd *exec.Cmd, remote, project string, then func(failures []daemonFailure) tea.Cmd) tea.Cmd {
 	if len(cmd.Args) > 0 && slices.Contains(followingVerbs, cliVerb(cmd.Args[1:])) {
 		return m.runOnTerminal(cmd, nil, func(error) tea.Cmd { return then(nil) })
@@ -239,7 +239,7 @@ func listenForFailures(command *commands.IncusCommand, project string, watch *fa
 	return cancel, true
 }
 
-// showFailures is pkg/gui's: one Error popup for every failure, if any.
+// showFailures: one Error popup for every failure, if any.
 func (m *Model) showFailures(failures []daemonFailure, remote string) {
 	if len(failures) == 0 {
 		return

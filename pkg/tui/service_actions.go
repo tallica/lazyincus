@@ -13,7 +13,7 @@ func serviceTarget(service *commands.ComposeService) composeTarget {
 	return composeTarget{remote: service.Remote, dir: service.Dir, project: service.Project, service: service.Name}
 }
 
-// onService is pkg/gui's selectedService: the service whatever row is selected, for the verbs only a service has.
+// onService: the service whatever row is selected, for the verbs only a service has.
 func onService(action func(*Model, *commands.ComposeService) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		row := m.selectedServiceRow()
@@ -29,7 +29,7 @@ func onServiceTarget(action func(*Model, composeTarget) tea.Cmd) func(*Model) te
 	return onService(func(m *Model, service *commands.ComposeService) tea.Cmd { return action(m, serviceTarget(service)) })
 }
 
-// onServiceRow is pkg/gui's: only a replica's row takes the instance side, a lone instance's service row is still the compose scope.
+// onServiceRow: only a replica's row takes the instance side, a lone instance's service row is still the compose scope.
 func onServiceRow(
 	instanceAction func(*Model, *commands.Instance) tea.Cmd,
 	serviceAction func(*Model, *commands.ComposeService) tea.Cmd,
@@ -143,7 +143,7 @@ func withServiceInstance(title func(*Model) string, action func(*Model, *command
 	}
 }
 
-// serviceBindings is pkg/gui's servicesKeybindings, in the order the options menu lists them for the selected row.
+// serviceBindings: in the order the options menu lists them for the selected row.
 func (m *Model) serviceBindings() []*binding {
 	service := func(key, description string, mutates bool, handler func(*Model) tea.Cmd) *binding {
 		return &binding{view: "services", key: key, description: description, mutates: mutates, handler: handler}

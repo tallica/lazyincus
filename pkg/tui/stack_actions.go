@@ -12,7 +12,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
-// onStackRow is pkg/gui's onSelected on Stacks: the key acts on the selected stack.
+// onStackRow: the key acts on the selected stack.
 func onStackRow(action func(*Model, *commands.ComposeStack) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		stack := m.selectedStackRow()

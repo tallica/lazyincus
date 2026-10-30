@@ -9,7 +9,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// Windows are pkg/gui's (window.go): number keys and cycling count them.
+// Number keys and cycling count windows.
 
 func (m *Model) visiblePanels() []*panel {
 	return slices.DeleteFunc(slices.Clone(m.panels), (*panel).isHidden)
@@ -66,7 +66,7 @@ func (m *Model) activeInWindow(window string) *panel {
 	return panels[0]
 }
 
-// windowTitle is pkg/gui's: what the number key's description names.
+// windowTitle: what the number key's description names.
 func (m *Model) windowTitle(window string) string {
 	switch window {
 	case resourcesWindow:
@@ -82,7 +82,7 @@ func titlePrefix(index int) string {
 	return fmt.Sprintf("[%d]", index+1)
 }
 
-// windowTabs is pkg/gui's fitWindowTabs for one window; nil for one panel.
+// windowTabs fits the tabs of one window; nil for one panel.
 func (m *Model) windowTabs(window string, index, width int) []string {
 	panels := m.windowPanels(window)
 	if len(panels) < 2 {
@@ -90,7 +90,7 @@ func (m *Model) windowTabs(window string, index, width int) []string {
 	}
 
 	active := m.activeInWindow(window)
-	// Corners, the runes around the prefix, and gocui's rule before the corner.
+	// Corners, the runes around the prefix, and the rule before the corner.
 	room := width - ansi.StringWidth(titlePrefix(index)) - 5
 
 	titles := make([]string, len(panels))
@@ -107,7 +107,6 @@ func (m *Model) windowTabs(window string, index, width int) []string {
 	return titles
 }
 
-// fitActiveTab is pkg/gui's fitActiveTab.
 func fitActiveTab(panels []*panel, active *panel, room int) []string {
 	short := make([]string, len(panels))
 	titles := make([]string, len(panels))
@@ -175,7 +174,6 @@ func (m *Model) initialView() string {
 	return m.visiblePanels()[0].name
 }
 
-// focusView is pkg/gui's switchFocus.
 func (m *Model) focusView(name string) {
 	if m.stacksSwap(m.currentSideView(), name) {
 		m.panelNamed(name).mainTab = 0
@@ -192,7 +190,7 @@ func (m *Model) focusView(name string) {
 			m.activeViews[window] = name
 		}
 	} else if len(m.focus) == 0 {
-		// gocui focuses the initial view at startup, under whatever follows.
+		// The initial view is focused at startup, under whatever follows.
 		m.focus = []string{m.initialView()}
 	}
 
@@ -210,7 +208,6 @@ func (m *Model) returnFocus() {
 	m.filterFollowsFocus()
 }
 
-// stacksSwap is pkg/gui's stacksSwap.
 func (m *Model) stacksSwap(from, to string) bool {
 	if !m.stacksAway() {
 		return false
@@ -221,7 +218,6 @@ func (m *Model) stacksSwap(from, to string) bool {
 	return (stacks(to) && !stacks(from)) || (to == "instances" && stacks(from))
 }
 
-// landOffStacks is pkg/gui's landOffStacks.
 func (m *Model) landOffStacks() {
 	if !m.stacksAway() {
 		return
@@ -234,7 +230,7 @@ func (m *Model) landOffStacks() {
 	}
 }
 
-// leaveHiddenView is pkg/gui's: the focus leaves a side panel that has just been hidden.
+// leaveHiddenView: the focus leaves a side panel that has just been hidden.
 func (m *Model) leaveHiddenView() {
 	p := m.panelNamed(m.currentSideView())
 	if p == nil || !p.isHidden() {
@@ -246,7 +242,6 @@ func (m *Model) leaveHiddenView() {
 	m.popups = popups
 }
 
-// goToWindow is pkg/gui's handleGoToWindow.
 func (m *Model) goToWindow(window string) {
 	if len(m.popups) == 0 && m.windowOf(m.currentView()) == window {
 		m.cycleWindowTab(1)
@@ -267,7 +262,6 @@ func (m *Model) cycleWindowTab(offset int) {
 	m.focusView(panels[wrap(index+offset, len(panels))].name)
 }
 
-// cycleWindows is pkg/gui's cycleSidePanel.
 func (m *Model) cycleWindows(offset int) {
 	if len(m.popups) > 0 {
 		return
@@ -279,7 +273,6 @@ func (m *Model) cycleWindows(offset int) {
 	m.focusView(m.activeInWindow(names[wrap(index+offset, len(names))]).name)
 }
 
-// cycleViews is pkg/gui's cycleSideView.
 func (m *Model) cycleViews(offset int) {
 	if len(m.popups) > 0 {
 		return

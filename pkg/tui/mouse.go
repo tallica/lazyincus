@@ -8,7 +8,7 @@ import (
 	"github.com/jesseduffield/lazycore/pkg/boxlayout"
 )
 
-// mouseAt is a cell; the left button and the wheel are all pkg/gui binds.
+// mouseAt is a cell; the left button and the wheel are all that's bound.
 type mouseAt struct{ x, y int }
 
 func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
@@ -70,7 +70,7 @@ func (m *Model) topMenuAt(at mouseAt) (*menu, int, int, bool) {
 	return top.menu, y0, y1 - y0 - 1, true
 }
 
-// wheel is pkg/gui's: a list moves its selection, main scrolls.
+// wheel: a list moves its selection, main scrolls.
 func (m *Model) wheel(at mouseAt, step int) {
 	if mn, _, _, ok := m.topMenuAt(at); ok {
 		m.moveSelection(mn.list, step)
@@ -90,7 +90,6 @@ func (m *Model) wheel(at mouseAt, step int) {
 	}
 }
 
-// click is pkg/gui's left click.
 func (m *Model) click(at mouseAt) tea.Cmd {
 	if _, _, _, ok := m.topMenuAt(at); ok {
 		return m.clickMenu(at)
@@ -118,7 +117,6 @@ func (m *Model) click(at mouseAt) tea.Cmd {
 	return nil
 }
 
-// clickMenu is pkg/gui's menu OnClick.
 func (m *Model) clickMenu(at mouseAt) tea.Cmd {
 	mn, y0, rows, ok := m.topMenuAt(at)
 	if !ok {
@@ -130,7 +128,7 @@ func (m *Model) clickMenu(at mouseAt) tea.Cmd {
 	return m.pressItem(mn)
 }
 
-// clickPrompt is gocui's SetCursor2D: the column counts along the text's first line, whatever the row.
+// clickPrompt: the column counts along the text's first line, whatever the row.
 func (m *Model) clickPrompt(p *popup, at mouseAt) {
 	x0, y0, x1, y1, _ := m.popupLayout(p)
 	if !at.within(x0, y0, x1, y1) {
@@ -140,7 +138,7 @@ func (m *Model) clickPrompt(p *popup, at mouseAt) {
 	p.input.SetCursor(cursorAt(p.input.Value(), at.x-x0-1))
 }
 
-// clickFilter moves the prompt's cursor even unfocused, as gocui does for an editable view.
+// clickFilter moves the prompt's cursor even unfocused.
 func (m *Model) clickFilter(at mouseAt) bool {
 	d, ok := m.dims()[filterView]
 	if !ok || !m.filter.active || !at.within(d.X0, d.Y0, d.X1, d.Y1) {
@@ -204,7 +202,7 @@ func (m *Model) clickMain(at mouseAt, d boxlayout.Dimensions) {
 	}
 }
 
-// clickedTab is gocui's GetClickedTabIndex; a lone tab is 0 anywhere.
+// clickedTab is the tab under x; a lone tab is 0 anywhere.
 func clickedTab(prefix string, tabs []string, x int) int {
 	if len(tabs) == 0 {
 		return -1

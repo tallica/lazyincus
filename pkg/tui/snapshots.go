@@ -9,7 +9,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// snapshotsFollow is pkg/gui's SnapshotsLabel, SnapshotsInstances and SnapshotsVolume.
+// snapshotsFollow: SnapshotsInstances and SnapshotsVolume.
 type snapshotsFollow struct {
 	label     string
 	instances []*commands.Instance
@@ -17,13 +17,11 @@ type snapshotsFollow struct {
 	volume string
 }
 
-// snapshotsSpan is pkg/gui's.
 type snapshotsSpan struct {
 	instances bool
 	projects  bool
 }
 
-// followSelection is pkg/gui's OnSelect into refreshSnapshotsFor.
 func (m *Model) followSelection() {
 	switch m.currentSideView() {
 	case "stacks":
@@ -58,7 +56,6 @@ func (m *Model) followInstance() {
 	m.followSnapshotsOf(snapshotsFollow{label: m.onRemote(instance.Name, instance.Remote), instances: []*commands.Instance{instance}})
 }
 
-// followSnapshotsOf is pkg/gui's refreshSnapshotsFor and refreshSnapshotsForVolume.
 func (m *Model) followSnapshotsOf(follow snapshotsFollow) {
 	m.snapshotsFollow = follow
 	if !m.snapshotsShowAll {
@@ -66,7 +63,7 @@ func (m *Model) followSnapshotsOf(follow snapshotsFollow) {
 	}
 }
 
-// snapshotsVolume is pkg/gui's: the followed volume as the newest refresh has it.
+// snapshotsVolume: the followed volume as the newest refresh has it.
 func (m *Model) snapshotsVolume() *commands.Volume {
 	if m.snapshotsShowAll || m.snapshotsFollow.volume == "" {
 		return nil
@@ -81,7 +78,7 @@ func (m *Model) snapshotsVolume() *commands.Volume {
 	return nil
 }
 
-// setSnapshots is pkg/gui's renderSnapshots, the selection kept on its snapshot.
+// setSnapshots: the selection kept on its snapshot.
 func (m *Model) setSnapshots() {
 	key := ""
 	if selected := m.selectedSnapshot(); selected != nil {
@@ -119,7 +116,7 @@ func (m *Model) setSnapshots() {
 	p.selectRow(p.selected, m.listRows(p))
 }
 
-// sortSnapshots is pkg/gui's: by instance, newest first within one.
+// sortSnapshots: by instance, newest first within one.
 func sortSnapshots(a, b *commands.Snapshot) bool {
 	if a.Project != b.Project {
 		return a.Project < b.Project
@@ -141,7 +138,6 @@ func (m *Model) selectedSnapshot() *commands.Snapshot {
 	return m.snapshots[item]
 }
 
-// snapshotOwner is pkg/gui's.
 func (m *Model) snapshotOwner(snapshot *commands.Snapshot) string {
 	switch {
 	case m.snapshotsSpan.projects:
@@ -153,7 +149,7 @@ func (m *Model) snapshotOwner(snapshot *commands.Snapshot) string {
 	}
 }
 
-// snapshotFlex is pkg/gui's: the instance gives way before the name.
+// snapshotFlex: the instance gives way before the name.
 func (m *Model) snapshotFlex() []utils.FlexColumn {
 	name := utils.FlexColumn{Index: 0, MinWidth: presentation.MinSnapshotNameWidth}
 	if !m.snapshotsSpan.instances {
@@ -189,7 +185,6 @@ func (m *Model) snapshotKey() string {
 	return snapshot.Key() + "-" + utils.Fingerprint(snapshot.Details())
 }
 
-// snapshotsLabel is pkg/gui's.
 func (m *Model) snapshotsLabel() string {
 	if m.snapshotsShowAll {
 		return m.tr.AllSnapshotsLabel
@@ -198,7 +193,6 @@ func (m *Model) snapshotsLabel() string {
 	return m.snapshotsFollow.label
 }
 
-// snapshotsTitle is pkg/gui's snapshotsTabTitle.
 func (m *Model) snapshotsTitle() string {
 	if label := m.snapshotsLabel(); label != "" {
 		return m.tr.SnapshotsTitle + " (" + label + ")"
@@ -207,13 +201,11 @@ func (m *Model) snapshotsTitle() string {
 	return m.tr.SnapshotsTitle
 }
 
-// toggleAllSnapshots is pkg/gui's handleToggleAllSnapshots.
 func (m *Model) toggleAllSnapshots() {
 	m.snapshotsShowAll = !m.snapshotsShowAll
 	m.setSnapshots()
 }
 
-// snapshotsRemote is pkg/gui's actionRemote for the snapshots panel.
 func (m *Model) snapshotsRemote() string {
 	if instances := m.snapshotsFollow.instances; !m.snapshotsShowAll && len(instances) > 0 && instances[0].Remote != "" {
 		return instances[0].Remote

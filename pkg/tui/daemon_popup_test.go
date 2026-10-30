@@ -15,7 +15,7 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
-// recordOperations is pkg/gui's: ended operations a second apart, described as given.
+// recordOperations: ended operations a second apart, described as given.
 func recordOperations(m *Model, descriptions ...string) {
 	for i, description := range descriptions {
 		operation := testOperation(fmt.Sprintf("op%02d", i), api.Success, 0)

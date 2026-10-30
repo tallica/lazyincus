@@ -21,7 +21,6 @@ const (
 	daemonWarnings
 )
 
-// daemonState is pkg/gui's DaemonTab, DaemonOpened, OperationsShown and SpansProjects.Operations.
 type daemonState struct {
 	tab           daemonTab
 	opened        bool
@@ -64,7 +63,6 @@ func (m *Model) daemonOpen(tab daemonTab) bool {
 	return m.daemonPopup() != nil && m.daemon.tab == tab
 }
 
-// openDaemonKey is pkg/gui's handleOpenDaemon.
 func (m *Model) openDaemonKey() tea.Cmd {
 	tab := m.daemon.tab
 	if !m.daemon.opened && m.newWarnings > 0 {
@@ -98,7 +96,6 @@ func (m *Model) openDaemon(tab daemonTab, selected string) {
 	mn.list.selected = max(daemonRow(mn, selected), 0)
 }
 
-// switchDaemonTab is pkg/gui's handleDaemonTab.
 func (m *Model) switchDaemonTab(step int) {
 	if mn := m.topMenu(); mn == nil || !mn.daemon {
 		return
@@ -108,7 +105,6 @@ func (m *Model) switchDaemonTab(step int) {
 	m.openDaemon(daemonTab((int(m.daemon.tab)+step+tabs)%tabs), "")
 }
 
-// openDaemonFilter is pkg/gui's handleDaemonFilter.
 func (m *Model) openDaemonFilter() {
 	if mn := m.topMenu(); mn == nil || !mn.daemon {
 		return
@@ -119,7 +115,6 @@ func (m *Model) openDaemonFilter() {
 	m.daemon.filtering = true
 }
 
-// cycleOperationsShown is pkg/gui's handleOperationsShown.
 func (m *Model) cycleOperationsShown() {
 	if mn := m.topMenu(); mn == nil || !mn.daemon || m.daemon.tab != daemonOperations {
 		return
@@ -247,7 +242,7 @@ func daemonRow(mn *menu, key string) int {
 	return slices.IndexFunc(mn.list.shown, func(item int) bool { return mn.items[item].key == key })
 }
 
-// daemonSelected is pkg/gui's: read it before the rows change, for redrawDaemon.
+// daemonSelected: read it before the rows change, for redrawDaemon.
 func (m *Model) daemonSelected(tab daemonTab) string {
 	p := m.daemonPopup()
 	if p == nil || m.daemon.tab != tab {
@@ -266,7 +261,7 @@ func (m *Model) daemonSelected(tab daemonTab) string {
 	return ""
 }
 
-// redrawDaemon is pkg/gui's: the popup in place, the cursor on the row keyed selected.
+// redrawDaemon: the popup in place, the cursor on the row keyed selected.
 func (m *Model) redrawDaemon(tab daemonTab, selected string) {
 	p := m.daemonPopup()
 	if p == nil || m.daemon.tab != tab {
@@ -301,7 +296,7 @@ func (m *Model) seeOperations() {
 	m.countOperations()
 }
 
-// showOperations is pkg/gui's: selected is the row the popup had before the log changed.
+// showOperations: selected is the row the popup had before the log changed.
 func (m *Model) showOperations(selected string) {
 	m.daemon.spansProjects = spansProjects(m.operations.list(), func(operation *commands.Operation) string { return operation.Project })
 	m.redrawDaemon(daemonOperations, selected)

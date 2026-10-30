@@ -36,7 +36,7 @@ func (m *Model) setImages(images []*commands.Image) {
 	})
 }
 
-// sortImages is pkg/gui's: by the label shown, the fingerprint breaking ties.
+// sortImages: by the label shown, the fingerprint breaking ties.
 func sortImages(a, b *commands.Image) bool {
 	left, right := strings.ToLower(a.Label()), strings.ToLower(b.Label())
 	if left != right {
@@ -62,7 +62,7 @@ func (m *Model) imageFlex() []utils.FlexColumn {
 	return []utils.FlexColumn{{Index: projectColumns(m.imagesSpan), MinWidth: presentation.MinImageLabelWidth}}
 }
 
-// projectColumns is pkg/gui's: how many columns lead with the project.
+// projectColumns is how many columns lead with the project.
 func projectColumns(spans bool) int {
 	if spans {
 		return 1
@@ -104,7 +104,7 @@ func (m *Model) imageKey() string {
 	return image.Key() + "-" + utils.Fingerprint(image.Image, image.UsedBy, upstream)
 }
 
-// sessionLocation is pkg/gui's: a resource only ever shows the session's remote.
+// sessionLocation: a resource only ever shows the session's remote.
 func (m *Model) sessionLocation(project string) presentation.Location {
 	return presentation.Location{Remote: m.incus.RemoteName(), Project: project}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-// stackMainTabs are pkg/gui's, in its order.
 func (m *Model) stackMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
@@ -57,7 +56,6 @@ func (m *Model) stackConfigTask() mainTaskFunc {
 	})
 }
 
-// viewStackLogs is pkg/gui's handleStackViewLogs.
 func (m *Model) viewStackLogs() {
 	m.setMainTab(m.panelNamed("stacks"), "logs")
 	m.enterMain()

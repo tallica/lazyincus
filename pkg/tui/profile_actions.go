@@ -10,7 +10,6 @@ import (
 // defaultProfile is the profile every project has, and keeps.
 const defaultProfile = "default"
 
-// onProfile is pkg/gui's onSelected for the profiles panel.
 func onProfile(action func(*Model, *commands.Profile) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
 		profile := m.selectedProfile()
@@ -30,7 +29,7 @@ func (m *Model) profileEdit(profile *commands.Profile) tea.Cmd {
 	return m.editInIncus(profile.Profile.Project, func() []fetch { return []fetch{m.fetchProfiles()} }, "profile", "edit", profile.Name)
 }
 
-// profileDelete is pkg/gui's: what the daemon would refuse - a default, one in use - it says rather than asks.
+// profileDelete: what the daemon would refuse - a default, one in use - it says rather than asks.
 func (m *Model) profileDelete(profile *commands.Profile) tea.Cmd {
 	if profile.Name == defaultProfile {
 		m.openError(m.tr.CannotDeleteDefaultProfile)
