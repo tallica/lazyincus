@@ -24,3 +24,20 @@ func TestAMonochromeTerminalShowsTheSelectionInReverseVideo(t *testing.T) {
 	m.Update(tea.ColorProfileMsg{Profile: colorprofile.TrueColor})
 	assert.False(t, reverse.MatchString(row()))
 }
+
+func TestA16ColourTermCapsTheDetectedProfile(t *testing.T) {
+	for _, tc := range []struct {
+		term     string
+		detected colorprofile.Profile
+		want     colorprofile.Profile
+	}{
+		{"xterm-16color", colorprofile.ANSI256, colorprofile.ANSI},
+		{"xterm-16color", colorprofile.TrueColor, colorprofile.ANSI},
+		{"xterm-color", colorprofile.ANSI256, colorprofile.ANSI},
+		{"xterm-16color", colorprofile.ASCII, colorprofile.ASCII},
+		{"xterm-256color", colorprofile.TrueColor, colorprofile.TrueColor},
+		{"", colorprofile.ANSI256, colorprofile.ANSI256},
+	} {
+		assert.Equal(t, tc.want, terminalProfile(tc.detected, tc.term), tc.term)
+	}
+}

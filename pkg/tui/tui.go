@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -197,6 +198,16 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	return m
 }
 
+// terminalProfile caps detected at the 16 colours a TERM like xterm-16color
+// names, which colorprofile takes for 256 as it does any xterm.
+func terminalProfile(detected colorprofile.Profile, term string) colorprofile.Profile {
+	if (strings.HasSuffix(term, "16color") || term == "xterm-color") && detected > colorprofile.ANSI {
+		return colorprofile.ANSI
+	}
+
+	return detected
+}
+
 func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) error {
 	// fatih/color decides once, from stdout, whether to colour; Bubble Tea
 	// owns the terminal, so the answer is always yes.
@@ -207,7 +218,8 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	}
 
 	m := NewModel(incus, osCommand, tr, cfg)
-	_, err := tea.NewProgram(m).Run()
+	profile := terminalProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Getenv("TERM"))
+	_, err := tea.NewProgram(m, tea.WithColorProfile(profile)).Run()
 	m.stopEvents()
 	m.tasks.Close()
 
