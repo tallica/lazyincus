@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode"
 
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -38,6 +39,7 @@ func (m *Model) typedCommand() tea.Cmd {
 
 			return m.runTyped(cmd, line, config.IncusHistory, remote, nil)
 		})
+	m.bindPromptHistory(config.IncusHistory, initial)
 
 	return nil
 }
@@ -60,8 +62,76 @@ func typedComposeCommand(m *Model, target composeTarget) tea.Cmd {
 		return m.runTyped(cmd, line, config.ComposeHistory, target.remote, &target)
 	})
 	m.topPrompt().input.CursorStart()
+	m.bindPromptHistory(config.ComposeHistory, initial)
 
 	return nil
+}
+
+// bindPromptHistory is pkg/gui's: beyond initial, only lines starting with the cursor's left are stepped to.
+func (m *Model) bindPromptHistory(history config.History, initial string) {
+	lines, err := m.cfg.LoadHistory(history)
+	if err != nil {
+		m.incus.Log.Warn().Err(err).Msg("reading command history")
+
+		return
+	}
+
+	p := m.topPrompt()
+	at, draft, prefix, tail := len(lines), "", "", ""
+
+	step := func(by int) func(*Model) tea.Cmd {
+		return func(m *Model) tea.Cmd {
+			if at == len(lines) {
+				draft = p.input.Value()
+				prefix, tail = historyPrefix(p.input, draft, initial)
+			}
+
+			next := at + by
+			for next >= 0 && next < len(lines) && (!strings.HasPrefix(lines[next], prefix) || lines[next] == draft) {
+				next += by
+			}
+
+			if next < 0 || (next > len(lines) && at == len(lines)) {
+				return nil
+			}
+
+			at = min(next, len(lines))
+			text := draft
+			if at < len(lines) {
+				text = lines[at]
+			}
+
+			p.input.SetValue(text)
+			p.input.SetCursor(len([]rune(text)))
+			p.subtitle = m.tr.TypedCommandHint
+			// The draft's cursor where it was: before a service on ;.
+			if at == len(lines) {
+				p.input.SetCursor(len([]rune(draft)) - len([]rune(tail)))
+			}
+
+			return nil
+		}
+	}
+
+	for _, b := range []struct {
+		key string
+		by  int
+	}{{"up", -1}, {"down", 1}} {
+		p.bindings = append(p.bindings, &binding{view: confirmationView, key: b.key, handler: step(b.by)})
+	}
+}
+
+// historyPrefix is what a line must start with to be stepped to, and the draft after the cursor.
+func historyPrefix(input *textinput.Model, draft, initial string) (string, string) {
+	runes := []rune(draft)
+	at := min(input.Position(), len(runes))
+	before, after := string(runes[:at]), string(runes[at:])
+
+	if typed := strings.TrimSpace(before); typed == "" || typed == strings.TrimSpace(initial) {
+		return "", after
+	}
+
+	return before, after
 }
 
 // runTyped is pkg/gui's.

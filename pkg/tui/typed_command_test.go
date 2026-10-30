@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 
@@ -282,4 +283,94 @@ func TestTypedComposeCmd(t *testing.T) {
 	cmd, err = m.typedComposeCmd("incus-compose", target)
 	assert.NoError(t, err)
 	assert.Nil(t, cmd)
+}
+
+// ↑ steps back through the lines run before, newest first, and ↓ past the
+// newest gives back what was being typed.
+func TestTypedCommandRecallsItsHistory(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, "info web"))
+	require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, "list"))
+	require.NoError(t, m.cfg.RecordCommand(config.ComposeHistory, "ps"))
+	seed := "--project " + m.selectedInstance().Project + " "
+
+	press(m, ":")
+	input := func() string { return m.topPrompt().input.Value() }
+
+	for _, want := range []string{"list", "info web", "info web"} {
+		press(m, "up")
+		assert.Equal(t, want, input())
+	}
+
+	for _, want := range []string{"list", seed} {
+		press(m, "down")
+		assert.Equal(t, want, input())
+	}
+}
+
+// Typed beyond the seed, ↑ and ↓ step only through the lines starting with
+// what's before the cursor, and ↓ past the newest gives back what was typed.
+func TestTypedCommandRecallsOnlyWhatStartsWithTheLine(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	seed := "--project " + m.selectedInstance().Project + " "
+	for _, line := range []string{"start web", "list", "stop web", "start db"} {
+		require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, seed+line))
+	}
+
+	press(m, ":")
+	typeText(m, "sta")
+	input := func() string { return m.topPrompt().input.Value() }
+
+	for _, want := range []string{"start db", "start web", "start web"} {
+		press(m, "up")
+		assert.Equal(t, seed+want, input())
+	}
+
+	press(m, "down")
+	assert.Equal(t, seed+"start db", input())
+	press(m, "down")
+	assert.Equal(t, seed+"sta", input())
+}
+
+// On ;, what's before the cursor is the verb typed in front of the service,
+// and ↓ back to it leaves the cursor there.
+func TestTypedComposeCommandRecallsByTheVerb(t *testing.T) {
+	m, _, _ := composeModel(t, options{})
+	for _, line := range []string{"logs web", "stop web", "ps"} {
+		require.NoError(t, m.cfg.RecordCommand(config.ComposeHistory, line))
+	}
+
+	press(m, "2", ";")
+	input := func() string { return m.topPrompt().input.Value() }
+
+	press(m, "l", "up")
+	assert.Equal(t, "logs web", input())
+
+	press(m, "down")
+	assert.Equal(t, "l web", input())
+
+	// Back where it was typed, in front of the service.
+	press(m, "o")
+	assert.Equal(t, "lo web", input())
+}
+
+func TestSteppingPutsTheHintBack(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, "list"))
+
+	press(m, ":")
+	m.topPrompt().subtitle = "unterminated quote"
+	press(m, "up")
+
+	assert.Equal(t, m.tr.TypedCommandHint, m.topPrompt().subtitle)
+}
+
+func TestAnUnreadableHistoryLeavesThePromptWorking(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	require.NoError(t, os.WriteFile(m.cfg.HistoryFilename(), []byte("incus: [\n"), 0o600))
+
+	press(m, ":", "up")
+
+	require.NotNil(t, m.topPrompt())
+	assert.Equal(t, "--project "+m.selectedInstance().Project+" ", m.topPrompt().input.Value())
 }
