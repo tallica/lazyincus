@@ -233,8 +233,9 @@ func (m *Model) newPanels() []*panel {
 			flex: m.snapshotFlex, mainTabs: m.snapshotMainTabs, itemKey: m.snapshotKey,
 		},
 		{
-			name: "backups", title: static(tr.BackupsTitle), hidden: m.backupsAway, window: snapshotsWindow,
+			name: "backups", title: m.backupsTitle, hidden: m.backupsAway, window: snapshotsWindow,
 			plainTitle: tr.BackupsTitle, shortTitle: tr.BackupsShort, empty: tr.NoBackups,
+			flex: m.backupFlex, mainTabs: m.backupMainTabs, itemKey: m.backupItemKey,
 		},
 		{
 			name: "images", title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,

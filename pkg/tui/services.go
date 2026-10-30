@@ -62,6 +62,7 @@ func (m *Model) followStack(stack *commands.ComposeStack) {
 		return nil
 	})
 	m.queue(refresh(m.fetchServices()))
+	m.followStackBackups()
 }
 
 // fetchServices lists the services of the stack Stacks has selected.

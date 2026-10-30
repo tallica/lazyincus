@@ -211,6 +211,7 @@ func (s *refreshSeq) admit(ticket uint64) bool {
 type refreshSeqs struct {
 	stacks       refreshSeq
 	services     refreshSeq
+	backups      refreshSeq
 	instances    refreshSeq
 	images       refreshSeq
 	volumes      refreshSeq
@@ -222,7 +223,7 @@ type refreshSeqs struct {
 // invalidateAll turns away every fetch in flight but the image check, which
 // a change of scope doesn't concern.
 func (s *refreshSeqs) invalidateAll() {
-	for _, seq := range []*refreshSeq{&s.stacks, &s.services, &s.instances, &s.images, &s.volumes, &s.networks, &s.profiles} {
+	for _, seq := range []*refreshSeq{&s.stacks, &s.services, &s.backups, &s.instances, &s.images, &s.volumes, &s.networks, &s.profiles} {
 		seq.invalidate()
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/fatih/color"
+	"github.com/tallica/lazyincus/pkg/gui/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -237,6 +238,11 @@ func (m *Model) paletteSources() map[string]paletteSource {
 		"profiles": m.sourceOf(m.panelNamed("profiles"),
 			func(item int) string { return m.profiles[item].Key() },
 			func(item int) string { return m.profiles[item].Name }, nil),
+		"backups": m.sourceOf(m.panelNamed("backups"),
+			func(item int) string { return m.backupKey(m.backups[item]) },
+			func(item int) string {
+				return m.onRemote(presentation.BackupLabel(m.backups[item]), m.actionRemote("backups"))
+			}, nil),
 		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
 			func(item int) string { return m.snapshots[item].Key() },
 			func(item int) string {

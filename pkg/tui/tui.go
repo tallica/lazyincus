@@ -85,6 +85,10 @@ type Model struct {
 	snapshotsFollow    snapshotsFollow
 	snapshotsSpan      snapshotsSpan
 	snapshots          []*commands.Snapshot
+	// loadBackups: tests stand in for incus-compose.
+	loadBackups         func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
+	backups             []*commands.ComposeBackup
+	backupVerifications map[string]*commands.BackupVerification
 
 	instances     []*commands.Instance
 	images        []*commands.Image
@@ -152,6 +156,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 	m.home, _ = os.UserHomeDir()
 	m.localStackDir, m.localStackExplicit = localStackDir()
 	m.loadStack = incus.LoadComposeStack
+	m.loadBackups = (*commands.IncusCommand).ComposeBackups
 	m.stackCache = &stackCache{}
 	m.composeState = &composeHolder{}
 	m.runOnTerminal = func(cmd *exec.Cmd, then func() tea.Cmd) tea.Cmd { return m.runSubprocess(cmd, "", then) }

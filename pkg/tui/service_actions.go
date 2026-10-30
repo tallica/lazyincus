@@ -184,6 +184,7 @@ func (m *Model) serviceBindings() []*binding {
 		// The stack's, whichever row is selected.
 		{view: "services", key: "G", description: m.tr.ComposeUpdateImages, mutates: true, noSelection: true, handler: onStack(updateImages)},
 		service("M", m.serviceScopedDescription(m.tr.ComposeLogs), false, onServiceTarget(composeVerb("", "logs", "--follow"))),
+		{view: "services", key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), noSelection: true, handler: (*Model).goToBackups},
 	}
 
 	order := "udUSsrpfbgmMnEy"

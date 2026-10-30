@@ -361,6 +361,11 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 		fetches = append(fetches, m.fetchVolumes())
 	}
 
+	// A backup is a volume.
+	if kinds&(refreshVolumes|refreshBackups) != 0 {
+		fetches = append(fetches, m.fetchBackups())
+	}
+
 	if kinds&refreshNetworks != 0 {
 		fetches = append(fetches, m.fetchNetworks())
 	}

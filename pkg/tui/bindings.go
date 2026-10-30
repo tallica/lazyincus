@@ -104,6 +104,11 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "snapshots", description: m.tr.Rename, mutates: true, handler: onSnapshot((*Model).snapshotRename)},
 		&binding{view: "snapshots", description: m.tr.NewInstanceFromSnapshot, mutates: true, handler: onSnapshot((*Model).snapshotNewInstance)},
 		&binding{view: "snapshots", key: "y", description: m.tr.Copy, handler: onSnapshot((*Model).snapshotCopy)},
+		&binding{view: "backups", key: "n", description: m.tr.NewBackup, mutates: true, noSelection: true, handler: (*Model).backupNew},
+		&binding{view: "backups", key: "r", description: m.tr.RestoreBackup, mutates: true, handler: onBackup((*Model).backupRestore)},
+		&binding{view: "backups", key: "d", description: m.tr.Remove, mutates: true, handler: onBackup((*Model).backupDelete)},
+		&binding{view: "backups", key: "D", description: m.tr.PruneBackups, mutates: true, noSelection: true, handler: (*Model).backupPrune},
+		&binding{view: "backups", key: "v", description: m.tr.VerifyBackup, handler: onBackup((*Model).backupVerify)},
 		&binding{view: "images", key: "d", description: m.tr.Remove, mutates: true, handler: onImage((*Model).imageDelete)},
 		&binding{view: "images", key: "c", description: m.tr.EditInEditor, mutates: true, handler: onImage((*Model).imageEdit)},
 		&binding{view: "images", key: "u", description: m.tr.ShowUsers, handler: onImage((*Model).imageUsers)},
@@ -143,6 +148,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: "stacks", key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewStackLogs)},
 		&binding{view: "stacks", key: "M", description: m.tr.ComposeLogs, handler: onStackTarget(composeVerb("", "logs", "--follow"))},
 		&binding{view: "stacks", key: "y", description: m.tr.Copy, handler: onStackRow((*Model).stackCopy)},
+		&binding{view: "stacks", key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), handler: (*Model).goToBackups},
 		&binding{view: mainView, key: "esc", description: m.tr.Return, noSelection: true, handler: do((*Model).exitMain)},
 		&binding{view: mainView, key: "/", description: m.tr.LcSearch, noSelection: true, handler: do((*Model).openSearch)},
 		&binding{view: mainView, key: "left", handler: scrollStep((*pane).scrollLeft)},
@@ -183,7 +189,7 @@ func (m *Model) bindings() []*binding {
 	for index, window := range m.windowNames() {
 		bindings = append(bindings, &binding{
 			key:         fmt.Sprintf("%d", index+1),
-			description: fmt.Sprintf(m.tr.FocusPanel, strings.ToLower(m.windowTitle(window))),
+			description: m.focusPanelDescription(m.windowTitle(window)),
 			handler:     do(func(m *Model) { m.goToWindow(window) }),
 		})
 	}
@@ -301,6 +307,10 @@ func (m *Model) guardReadOnly(b *binding) {
 
 		return handler(m)
 	}
+}
+
+func (m *Model) focusPanelDescription(title string) string {
+	return fmt.Sprintf(m.tr.FocusPanel, strings.ToLower(title))
 }
 
 // actionRemote is pkg/gui's, for the panels ported so far.
