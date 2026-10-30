@@ -1,5 +1,4 @@
-// Package tui is the Bubble Tea front end replacing pkg/gui; until it can,
-// LAZYINCUS_TUI=bubbletea picks it.
+// Package tui is lazyincus's Bubble Tea front end.
 package tui
 
 import (

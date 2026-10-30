@@ -2,13 +2,11 @@ package app
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/gui"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/log"
 	"github.com/tallica/lazyincus/pkg/tui"
@@ -20,7 +18,6 @@ type App struct {
 	Log          *zerolog.Logger
 	OSCommand    *commands.OSCommand
 	IncusCommand *commands.IncusCommand
-	Gui          *gui.Gui
 	Tr           *i18n.TranslationSet
 }
 
@@ -39,19 +36,12 @@ func NewApp(config *config.AppConfig) (*App, error) {
 	if err != nil {
 		return app, err
 	}
-	app.Gui, err = gui.NewGui(app.Log, app.IncusCommand, app.OSCommand, app.Tr, config)
-	if err != nil {
-		return app, err
-	}
+
 	return app, nil
 }
 
 func (app *App) Run() error {
-	if os.Getenv("LAZYINCUS_TUI") == "bubbletea" {
-		return tui.Run(app.IncusCommand, app.OSCommand, app.Tr, app.Config)
-	}
-
-	return app.Gui.Run()
+	return tui.Run(app.IncusCommand, app.OSCommand, app.Tr, app.Config)
 }
 
 type errorMapping struct {
