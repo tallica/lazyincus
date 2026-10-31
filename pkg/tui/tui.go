@@ -285,6 +285,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case heldStatusMsg:
 		return m.onHeldStatus(msg)
 
+	// The runtime unpacks a batch before Update; one held under a status reaches here whole.
+	case tea.BatchMsg:
+		return tea.Batch(msg...)
+
 	case transientDoneMsg:
 		m.removeStatus(msg.name)
 

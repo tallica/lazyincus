@@ -53,3 +53,20 @@ func TestAWaitingStatusSpinsUntilItsWorkIsDone(t *testing.T) {
 	assert.Equal(t, 2, ticks, "stopped once nothing waits")
 	assert.NotContains(t, footer(m), "Stopping")
 }
+
+// A batch a waiting status held back still runs, every command of it.
+func TestAHeldBatchRuns(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	type ran struct{ n int }
+
+	cmd := m.update(heldStatusMsg{name: "Working", msg: tea.BatchMsg{
+		func() tea.Msg { return ran{1} }, func() tea.Msg { return ran{2} },
+	}})
+	require.NotNil(t, cmd)
+
+	batch, ok := cmd().(tea.BatchMsg)
+	require.True(t, ok)
+	require.Len(t, batch, 2)
+	assert.Equal(t, ran{1}, batch[0]())
+	assert.Equal(t, ran{2}, batch[1]())
+}
