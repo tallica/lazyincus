@@ -241,7 +241,12 @@ func (m *Model) instanceLogText() func(*commands.Instance) string {
 func (m *Model) instanceTopTask(instance *commands.Instance) mainTaskFunc {
 	tr := m.tr
 
-	return tickerTask(2*time.Second, func() string {
+	first := ""
+	if instance.IsRunning() {
+		first = tr.Loading
+	}
+
+	return tickerTaskFrom(first, 2*time.Second, func() string {
 		output, err := instance.Top()
 		switch {
 		case errors.Is(err, commands.ErrInstanceNotRunning):

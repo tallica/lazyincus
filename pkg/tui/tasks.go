@@ -55,8 +55,16 @@ func (w *mainWriter) rerender(content string) { w.write(writeRerender, content) 
 func (w *mainWriter) clear() { w.write(writeClear, "") }
 
 func tickerTask(interval time.Duration, content func() string) mainTaskFunc {
+	return tickerTaskFrom("", interval, content)
+}
+
+func tickerTaskFrom(first string, interval time.Duration, content func() string) mainTaskFunc {
 	return func(ctx context.Context, w *mainWriter) {
 		w.clear()
+
+		if first != "" {
+			w.rerender(first)
+		}
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
