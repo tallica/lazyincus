@@ -78,9 +78,9 @@ func (m *Model) operationCancel(operation *commands.Operation) tea.Cmd {
 
 	back := m.backToDaemon(daemonOperations, operation.Key())
 	prompt := fmt.Sprintf(m.tr.ConfirmCancelOperation, operationLabel(operation))
-	m.openPopup(&popup{view: confirmationView, title: m.tr.Confirm, message: prompt, asks: true}, func() tea.Cmd {
+	m.openPopup(&popup{view: confirmationView, title: m.tr.Confirm, message: prompt, asks: true}, m.stillOn(m.incus.RemoteName(), func() tea.Cmd {
 		return m.waitingActionThen(m.tr.CancellingStatus, func() error { return m.incus.CancelOperation(operation) }, back, m.fetchOperations())
-	}, back)
+	}), back)
 
 	return nil
 }

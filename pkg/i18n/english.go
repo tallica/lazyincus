@@ -306,6 +306,8 @@ type TranslationSet struct {
 	ReadOnlyRemote  string
 	ReadOnlySession string
 
+	RemoteChangedSinceAsked string
+
 	CommandPalette         string
 	CommandPaletteTitle    string
 	CommandPalettePrompt   string
@@ -679,6 +681,8 @@ func englishSet() TranslationSet {
 		ReadOnly:        "read-only",
 		ReadOnlyRemote:  "%s is read-only in the config, so lazyincus changes nothing there.",
 		ReadOnlySession: "lazyincus was started with --read-only, so it changes nothing.",
+
+		RemoteChangedSinceAsked: "That was asked on %s and the session is on %s now, so nothing was sent.",
 
 		CommandPalette:         "command palette",
 		CommandPaletteTitle:    "Commands",

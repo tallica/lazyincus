@@ -58,10 +58,10 @@ func (m *Model) acknowledgeWarning(warning *commands.Warning) tea.Cmd {
 // deleteWarning's prompt shows all of it: two of a type can differ only in count and first sighting.
 func (m *Model) deleteWarning(warning *commands.Warning) tea.Cmd {
 	prompt := m.warningDetails(warning) + "\n\n" + m.tr.ConfirmDeleteWarning
-	m.openPopup(&popup{view: confirmationView, title: m.tr.Confirm, message: prompt, asks: true}, func() tea.Cmd {
+	m.openPopup(&popup{view: confirmationView, title: m.tr.Confirm, message: prompt, asks: true}, m.stillOn(m.incus.RemoteName(), func() tea.Cmd {
 		return m.waitingActionThen(m.tr.RemovingStatus, func() error { return m.incus.DeleteWarning(warning) },
 			m.backToDaemon(daemonWarnings, ""), m.fetchWarnings())
-	}, m.backToDaemon(daemonWarnings, warning.Key()))
+	}), m.backToDaemon(daemonWarnings, warning.Key()))
 
 	return nil
 }

@@ -79,6 +79,26 @@ func TestDaemonKeysHonourReadOnly(t *testing.T) {
 	assert.Empty(t, server.Cancelled())
 }
 
+// R reaches a confirmation; its answer mustn't go to the remote switched to.
+func TestDaemonConfirmationsStayOnTheirRemote(t *testing.T) {
+	server := warningsServer()
+	server.SetOperations([]api.Operation{liveCancellable()})
+	m := start(t, options{server: server, compose: true, remotes: map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})}}, 140, 40)
+
+	press(m, "W", "d")
+	run(m, m.switchToRemote("pve01"))
+	press(m, "enter")
+	assert.Contains(t, popupText(m), "asked on fake and the session is on pve01")
+	assert.Contains(t, warningStatuses(server), "disk")
+
+	run(m, m.switchToRemote("fake"))
+	press(m, "esc", "W", "[", "d")
+	run(m, m.switchToRemote("pve01"))
+	press(m, "enter")
+	assert.Contains(t, popupText(m), "asked on fake and the session is on pve01")
+	assert.Empty(t, server.Cancelled())
+}
+
 func liveCancellable() api.Operation {
 	return api.Operation{
 		ID: "download", Class: "task", Description: "Downloading image",

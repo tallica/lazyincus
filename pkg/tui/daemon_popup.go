@@ -59,6 +59,18 @@ func (m *Model) daemonPopup() *popup {
 	return nil
 }
 
+// stillOn runs act only while the session is still on remote: R reaches a confirmation.
+func (m *Model) stillOn(remote string, act func() tea.Cmd) func() tea.Cmd {
+	return func() tea.Cmd {
+		if now := m.incus.RemoteName(); now != remote {
+			m.openError(fmt.Sprintf(m.tr.RemoteChangedSinceAsked, remote, now))
+			return nil
+		}
+
+		return act()
+	}
+}
+
 func (m *Model) daemonOpen(tab daemonTab) bool {
 	return m.daemonPopup() != nil && m.daemon.tab == tab
 }
