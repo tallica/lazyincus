@@ -112,7 +112,8 @@ func (t theme) heading(s frameSpec, border string) string {
 }
 
 // scrollbar is the rows the thumb covers,
-// end inclusive; start > end for none.
+// end inclusive; start > end for none. Adapted from gocui's calcScrollbar;
+// see THIRD_PARTY_NOTICES.md.
 func scrollbar(total, height, origin int) (int, int) {
 	if height < 2 || height >= total {
 		return 0, -1

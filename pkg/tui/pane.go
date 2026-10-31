@@ -78,6 +78,7 @@ func wrapLine(line string, columns int) []string {
 }
 
 // wrapRanges are where wrapLine breaks cs, as [start, end) cell indices.
+// Adapted from gocui's lineWrap; see THIRD_PARTY_NOTICES.md.
 func wrapRanges(cs []cell, columns int) [][2]int {
 	var ranges [][2]int
 	n, offset, lastSpace := 0, 0, -1
