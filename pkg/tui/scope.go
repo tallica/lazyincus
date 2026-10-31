@@ -116,24 +116,30 @@ func (m *Model) moveToRemote(name string, command *commands.IncusCommand, projec
 
 // projectsMsg is the project names a P asked for.
 type projectsMsg struct {
-	names []string
-	err   error
+	remote string
+	names  []string
+	err    error
 }
 
 // switchProjectMenu: instances outside the
 // remote's configured project are invisible otherwise, which hides every
 // incus-compose stack.
 func (m *Model) switchProjectMenu() tea.Cmd {
-	incus := m.incus
+	incus, remote := m.incus, m.incus.RemoteName()
 
 	return func() tea.Msg {
 		names, err := incus.GetProjectNames()
 
-		return projectsMsg{names, err}
+		return projectsMsg{remote, names, err}
 	}
 }
 
 func (m *Model) onProjects(msg projectsMsg) {
+	// An R since: these are another remote's projects.
+	if msg.remote != m.incus.RemoteName() {
+		return
+	}
+
 	if msg.err != nil {
 		m.handleError(msg.err)
 		return

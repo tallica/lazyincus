@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A long line in a prompt puts the cursor where the next character goes, not at the end of the first row.
 - Rows that sort equal keep the daemon's order, instead of swapping places between refreshes.
 - Confirming a cancel or delete in `W` after `R` moved the session sends nothing, instead of sending it to the new remote.
+- `P`'s menu no longer lists the old remote's projects when `R` moved the session before they arrived.
 
 ### Security
 - Built with Go 1.27.3, fixing GO-2026-6809: `crypto/x509` trusted compromised intermediate certificates when verifying a server.

@@ -131,3 +131,14 @@ func TestProjectsMenu(t *testing.T) {
 	assert.True(t, m.incus.IsAllProjects())
 	assert.Len(t, instanceNames(m), 2)
 }
+
+// Names that land after an R are the old remote's: no menu of them.
+func TestProjectsMenuAfterARemoteSwitch(t *testing.T) {
+	m := start(t, options{compose: true, remotes: map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})}}, 140, 40)
+
+	names := m.switchProjectMenu()
+	run(m, m.switchToRemote("pve01"))
+	run(m, names)
+
+	assert.Nil(t, m.topMenu())
+}
