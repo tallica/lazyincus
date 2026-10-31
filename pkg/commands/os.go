@@ -126,9 +126,8 @@ func sanitisedCommandOutput(output []byte, err error) (string, error) {
 	return outputString, nil
 }
 
-// OpenFile opens a file with the configured open command
-func (c *OSCommand) OpenFile(filename string) error {
-	commandTemplate := c.Config.UserConfig.OS.OpenCommand
+// OpenFile opens filename with commandTemplate, which the caller reads from the config.
+func (c *OSCommand) OpenFile(commandTemplate, filename string) error {
 	templateValues := map[string]string{
 		"filename": c.Quote(filename),
 	}
@@ -161,11 +160,8 @@ var clipboardCommandCandidates = []string{
 	"xsel --clipboard --input",
 }
 
-// CopyToClipboard copies text to the system clipboard by piping it into the
-// configured copy-to-clipboard command, or - when none is configured - the
-// first of clipboardCommandCandidates found on PATH.
-func (c *OSCommand) CopyToClipboard(text string) error {
-	commandStr := c.Config.UserConfig.OS.CopyToClipboardCommand
+// CopyToClipboard pipes text into commandStr, else the first of clipboardCommandCandidates on PATH.
+func (c *OSCommand) CopyToClipboard(commandStr, text string) error {
 	if commandStr == "" {
 		commandStr = c.defaultClipboardCommand()
 	}

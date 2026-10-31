@@ -6,9 +6,9 @@ type openedConfigMsg struct{ err error }
 
 // openConfig: the opener may block, so it runs off the loop.
 func (m *Model) openConfig() tea.Cmd {
-	filename, open := m.cfg.ConfigFilename(), m.openFile
+	command, filename, open := m.cfg.UserConfig.OS.OpenCommand, m.cfg.ConfigFilename(), m.openFile
 
-	return func() tea.Msg { return openedConfigMsg{err: open(filename)} }
+	return func() tea.Msg { return openedConfigMsg{err: open(command, filename)} }
 }
 
 func (m *Model) onOpenedConfig(msg openedConfigMsg) {

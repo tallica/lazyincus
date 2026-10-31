@@ -14,20 +14,20 @@ import (
 func TestOOpensTheConfigFile(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 	var opened []string
-	m.openFile = func(name string) error {
-		opened = append(opened, name)
+	m.openFile = func(command, name string) error {
+		opened = append(opened, command, name)
 		return nil
 	}
 
 	press(m, "o")
 
-	assert.Equal(t, []string{m.cfg.ConfigFilename()}, opened)
+	assert.Equal(t, []string{m.cfg.UserConfig.OS.OpenCommand, m.cfg.ConfigFilename()}, opened)
 	assert.Empty(t, m.popups)
 }
 
 func TestOFailingToOpenIsAnError(t *testing.T) {
 	m := start(t, options{}, 140, 40)
-	m.openFile = func(string) error { return errors.New("no opener") }
+	m.openFile = func(string, string) error { return errors.New("no opener") }
 
 	press(m, "o")
 
@@ -38,7 +38,7 @@ func TestOFailingToOpenIsAnError(t *testing.T) {
 
 func TestOverAMenuOGoesToTheMenu(t *testing.T) {
 	m := start(t, options{}, 140, 40)
-	m.openFile = func(string) error {
+	m.openFile = func(string, string) error {
 		t.Error("the config was opened")
 		return nil
 	}

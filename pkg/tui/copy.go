@@ -44,9 +44,9 @@ func (m *Model) copyMenu(values ...copyValue) {
 }
 
 func (m *Model) copyToClipboard(value string) tea.Cmd {
-	osCommand := m.os
+	osCommand, command := m.os, m.cfg.UserConfig.OS.CopyToClipboardCommand
 
-	return func() tea.Msg { return copiedMsg{value: value, err: osCommand.CopyToClipboard(value)} }
+	return func() tea.Msg { return copiedMsg{value: value, err: osCommand.CopyToClipboard(command, value)} }
 }
 
 func (m *Model) onCopied(msg copiedMsg) tea.Cmd {

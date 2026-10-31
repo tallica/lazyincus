@@ -144,7 +144,7 @@ type Model struct {
 	// completeIncus is the incus CLI's completion for :; tests stand in for it.
 	completeIncus func(remote string, args []string, word string) (commands.Completion, error)
 	// openFile opens a path with the OS; tests stand in for it.
-	openFile func(string) error
+	openFile func(command, filename string) error
 	// failures synchronises itself: the event listeners note into it.
 	failures *failureWatch
 	// after stands in for tea.Tick in tests.
