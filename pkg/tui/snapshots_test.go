@@ -224,3 +224,15 @@ func TestNIsRefusedReadOnly(t *testing.T) {
 	require.Len(t, m.popups, 1)
 	assert.Contains(t, m.popups[0].message, "--read-only")
 }
+
+// Decided in the phase 11 triage: an empty Stacks panel empties Snapshots as a stack does.
+func TestFocusingAnEmptyStacksPanelEmptiesSnapshots(t *testing.T) {
+	m := start(t, options{fixture: true, compose: true}, 140, 40)
+	press(m, "j")
+	require.Equal(t, "Snapshots (web)", m.snapshotsTitle())
+
+	press(m, "1")
+	require.Equal(t, "stacks", m.currentSideView())
+	assert.Equal(t, "Snapshots", m.snapshotsTitle())
+	assert.Empty(t, rowsOf(m, "snapshots"))
+}
