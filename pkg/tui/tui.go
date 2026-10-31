@@ -480,6 +480,9 @@ func (m *Model) fitMain() {
 	if p.itemKey != nil {
 		key += "\x00" + p.itemKey()
 	}
+	if key == m.mainTask.key {
+		return
+	}
 	m.queueMain(key, tab.wrap, tab.autoscroll, tab.task())
 }
 

@@ -67,3 +67,25 @@ func TestTasksRunThroughPkgTasksAndTheInbox(t *testing.T) {
 	}
 	assert.Contains(t, mainText(m), "name: cache")
 }
+
+// A message that leaves main's tab as it was doesn't build the tab's task again.
+func TestATabsTaskIsBuiltOnlyWhenItChanges(t *testing.T) {
+	m := start(t, options{fixture: true}, 140, 40)
+	p := m.panelNamed("instances")
+	tabs, built := p.mainTabs, 0
+	p.mainTabs = func() []mainTab {
+		counted := tabs()
+		for i := range counted {
+			task := counted[i].task
+			counted[i].task = func() mainTaskFunc { built++; return task() }
+		}
+
+		return counted
+	}
+
+	m.Update(spinnerMsg{})
+	assert.Zero(t, built)
+
+	press(m, "]")
+	assert.Equal(t, 1, built)
+}
