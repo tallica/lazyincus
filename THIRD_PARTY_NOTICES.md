@@ -48,6 +48,39 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## Bubble Tea, Bubbles and Lip Gloss (MIT)
+
+`charm.land/bubbletea/v2`, `charm.land/bubbles/v2` and
+`charm.land/lipgloss/v2`, the terminal UI lazyincus is built on, with the
+Charm modules they bring (`github.com/charmbracelet/colorprofile`,
+`ultraviolet` and `x/...`), all under the same MIT License, each
+module's copyright line naming Charmbracelet, Inc. with its own years.
+Bubble Tea's reads:
+
+```
+MIT License
+
+Copyright (c) 2020-2026 Charmbracelet, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Incus (Apache License 2.0)
 
 `github.com/lxc/incus/v7/client` and `github.com/lxc/incus/v7/shared/api`,
