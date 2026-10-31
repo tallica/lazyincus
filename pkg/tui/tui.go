@@ -5,8 +5,10 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -224,11 +226,33 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 
 	m := NewModel(incus, osCommand, tr, cfg)
 	profile := terminalProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Getenv("TERM"))
-	_, err := tea.NewProgram(m, tea.WithColorProfile(profile)).Run()
+	program := tea.NewProgram(m, tea.WithColorProfile(profile))
+	stop := quitOnHangup(program)
+	_, err := program.Run()
+	stop()
 	m.stopEvents()
 	m.tasks.Close()
 
 	return err
+}
+
+// quitOnHangup: Bubble Tea quits on SIGTERM but not SIGHUP, and dying on it leaves the terminal raw.
+func quitOnHangup(program *tea.Program) (stop func()) {
+	hangup, done := make(chan os.Signal, 1), make(chan struct{})
+	signal.Notify(hangup, syscall.SIGHUP)
+
+	go func() {
+		select {
+		case <-hangup:
+			program.Quit()
+		case <-done:
+		}
+	}()
+
+	return func() {
+		signal.Stop(hangup)
+		close(done)
+	}
 }
 
 func (m *Model) Init() tea.Cmd {
