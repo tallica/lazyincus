@@ -37,8 +37,9 @@ service's instance blocks repeat none of it.
 
 ## Copying
 
-`y` on any list opens a menu of what the item has to copy, built by
-`copyMenu` from label/value pairs, each value shown beside its label so
+`y` on every list but Backups opens a menu of what the item has to copy,
+built by `copyMenu` from label/value pairs, each value shown beside its
+label so
 the menu says what lands on the clipboard; a value the item lacks - a
 stopped instance's address - is left out rather than offered empty. A
 network's addresses are Incus's `ipv4.address`/`ipv6.address`, the
