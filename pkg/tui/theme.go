@@ -101,7 +101,7 @@ func newTheme(gui config.GuiConfig) theme {
 	}
 }
 
-// applyTheme: with no colour for a selection, tcell fell back to reverse.
+// applyTheme: with no colour for a selection, gocui's tcell fell back to reverse.
 func (m *Model) applyTheme() {
 	m.theme = newTheme(m.cfg.UserConfig.Gui)
 	if m.monochrome {
