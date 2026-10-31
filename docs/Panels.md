@@ -75,8 +75,9 @@ dropped. A line that fails gets the compose verbs' Error popup
 or every project when it names none, and leaving `exec`, `console` and
 `monitor` unwatched for the reason `logs` is; an error the CLI gets
 straight back, with no operation behind it - an instance that doesn't
-exist - stays on the terminal, short of `gui.returnImmediately`. Enter on the seed as it stands runs
-nothing, and a line that can't be split - an unclosed quote - is refused
+exist - stays on the terminal, short of `gui.returnImmediately`. Enter on
+the seed as it stands runs nothing, and a line that can't be split - an
+unclosed quote - is refused
 where it stands, saying why, rather than run as other arguments than the
 ones typed.
 
