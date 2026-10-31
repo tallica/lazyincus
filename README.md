@@ -173,6 +173,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L` | Scroll the main panel (and `h`/`l`, `←`/`→` sideways while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
+| `esc` | Close the top popup or menu; from the main panel, back to its list; on a list, clear the filter or the `u` list of users |
 | `space` | Stacks panel: switch to the stack's remote |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, start the service, or the selected replica |
@@ -182,7 +183,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation) |
+| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -197,7 +198,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
-| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't) |
+| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
