@@ -88,7 +88,7 @@ func TestUpdateImagesRecreatesTheTicked(t *testing.T) {
 // A check made already isn't made again; one that said nothing of this
 // stack's images is.
 func TestUpdateImagesChecksAStackNotYetChecked(t *testing.T) {
-	m, _, checks := updatesModel(t, map[string]commands.UpstreamState{"web": commands.UpstreamNewer})
+	m, _, checks := updatesModel(t, map[string]commands.UpstreamState{"cache": commands.UpstreamNewer})
 	m.upstreams = map[string]commands.UpstreamStatus{"elsewhere-image": {State: commands.UpstreamCurrent}}
 
 	press(m, "G")
@@ -109,7 +109,7 @@ func TestUpdateImagesWithNothingNewer(t *testing.T) {
 }
 
 func TestUpdateImagesRefusedReadOnly(t *testing.T) {
-	m, ran, _ := updatesModel(t, map[string]commands.UpstreamState{"web": commands.UpstreamNewer})
+	m, ran, _ := updatesModel(t, map[string]commands.UpstreamState{"cache": commands.UpstreamNewer})
 	m.cfg.ReadOnly = true
 
 	press(m, "G")
@@ -160,4 +160,16 @@ func TestCheckImageUpdatesOfAStackElsewhere(t *testing.T) {
 
 	assert.Contains(t, asked, commands.UpstreamTarget{Fingerprint: "aaaa", Ref: "ghcr.io/acme/api:1", Architecture: "x86_64", Pinned: "sha256:00"})
 	assert.Equal(t, commands.UpstreamNewer, m.upstreams["aaaa"].State)
+}
+
+// A check landing while a service's Info is open names what it found there.
+func TestServiceInfoFollowsAnImageCheck(t *testing.T) {
+	m, _, _ := updatesModel(t, map[string]commands.UpstreamState{"cache": commands.UpstreamNewer})
+
+	press(m, "2")
+	require.Equal(t, "cache", m.selectedServiceRow().Key())
+	assert.NotContains(t, mainText(m), "the tag has a newer build")
+
+	run(m, refresh(m.imageUpdatesFetch(false)))
+	assert.Contains(t, mainText(m), "Registry:     the tag has a newer build")
 }

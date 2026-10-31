@@ -225,7 +225,7 @@ func (m *Model) serviceKey() string {
 		key += "-" + instance.ConfigFingerprint()
 	}
 
-	return key
+	return key + "-" + presentation.UpstreamVerdict(commands.MostTelling(m.upstreams, presentation.BaseImages(row.Instances())...), m.tr)
 }
 
 // servicesTitle names the compose project the panel acts on.
