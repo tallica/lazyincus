@@ -124,7 +124,6 @@ func (m *Model) topMenu() *menu {
 	return m.popups[len(m.popups)-1].menu
 }
 
-// rerenderMenu is the menu panel's RerenderList.
 func (m *Model) rerenderMenu() {
 	if mn := m.topMenu(); mn != nil {
 		m.renderMenu(mn)

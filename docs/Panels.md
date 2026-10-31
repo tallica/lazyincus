@@ -256,7 +256,7 @@ before the invalidation, and `fetchServices` takes its ticket before
 reading the stack, so a fetch that isn't turned away has the new one.
 
 Stacks refresh on the 10s cadence of the other lists that events keep
-current (`pollUnlessWatched`), on any event that refreshes the instances,
+current (`slowPoll`), on any event that refreshes the instances,
 and after a compose verb. While a stack pinned to another remote is listed
 they stay at 10s with the stream open: that remote's events never reach
 this session. The keys are the Services panel's compose verbs
@@ -923,9 +923,9 @@ ends moves below the ones under way. `enter` shows all of a row, and
 closing that, or answering a key's confirmation, goes back to the list.
 `/` filters the list on show, keeping its order rather than ranking the
 matches, and `esc` clears that before it closes the popup.
-The keys are the menu's (`MenuItem.Keys`), each saying whether it changes
-anything, since the menu's keys mean something else in every menu: a
-read-only remote refuses them here and nowhere else.
+The keys are the menu item's (`menuItem.keys`), each saying whether it
+changes anything, since the menu's keys mean something else in every
+menu: a read-only remote refuses them here and nowhere else.
 
 ### Operations
 
