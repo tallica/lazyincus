@@ -21,8 +21,7 @@ import (
 
 // DisplayWidth is how many terminal columns str takes, colour escapes
 // taking none. Every width lazyincus lays out goes through here, measured
-// by grapheme cluster with uniseg the way gocui draws - tcell sets
-// uniseg's ambiguous width for an East Asian locale for both of us.
+// by grapheme cluster with uniseg.
 func DisplayWidth(str string) int {
 	return uniseg.StringWidth(Decolorise(str))
 }
@@ -113,22 +112,6 @@ func ResolvePlaceholderString(str string, arguments map[string]string) string {
 		str = strings.ReplaceAll(str, "{{"+key+"}}", value)
 	}
 	return str
-}
-
-// Max returns the maximum of two integers
-func Max(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
-}
-
-// Min returns the minimum of two integers
-func Min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
 }
 
 // RenderTable takes an array of string arrays and returns a table containing the values

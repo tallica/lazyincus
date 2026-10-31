@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
@@ -158,6 +159,25 @@ func (s *Server) images() []api.Image {
 	}
 
 	return slices.Clone(s.Images)
+}
+
+// DeleteImage drops the image from what the listings return.
+func (s *Server) DeleteImage(fingerprint string) (incus.Operation, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	if !shared.imagesSet {
+		shared.images, shared.imagesSet = slices.Clone(s.Images), true
+	}
+
+	kept := slices.DeleteFunc(slices.Clone(shared.images), func(image api.Image) bool { return image.Fingerprint == fingerprint })
+	if len(kept) == len(shared.images) {
+		return nil, api.StatusErrorf(http.StatusNotFound, "Image not found")
+	}
+	shared.images = kept
+
+	return doneOperation{}, nil
 }
 
 // SetDown makes every listing fail the way an unreachable daemon's does,
@@ -670,6 +690,18 @@ func (s *Server) RenameInstanceSnapshot(instance, snapshot string, renamed api.I
 	}
 
 	return op, err
+}
+
+// CreateInstanceSnapshot adds the snapshot to what the listings return.
+func (s *Server) CreateInstanceSnapshot(instance string, post api.InstanceSnapshotsPost) (incus.Operation, error) {
+	return s.updateInstance(instance, func(full *api.InstanceFull) {
+		// A copy: the listings handed out share the old one.
+		snapshot := api.InstanceSnapshot{Name: instance + "/" + post.Name, CreatedAt: time.Now(), Stateful: post.Stateful}
+		if post.ExpiresAt != nil {
+			snapshot.ExpiresAt = *post.ExpiresAt
+		}
+		full.Snapshots = append(slices.Clone(full.Snapshots), snapshot)
+	})
 }
 
 // RenameInstance renames the instance in what the listings return.

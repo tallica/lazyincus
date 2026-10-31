@@ -3,35 +3,34 @@ package i18n
 // TranslationSet is a set of localised strings. For this MVP, English is the
 // only supported language.
 type TranslationSet struct {
-	NotEnoughSpace                             string
-	MainTitle                                  string
-	Navigate                                   string
-	Menu                                       string
-	MenuTitle                                  string
-	Execute                                    string
-	Toggle                                     string
-	ToggleAll                                  string
-	Apply                                      string
-	OpenWhatChanged                            string
-	Scroll                                     string
-	Close                                      string
-	Submit                                     string
-	SwitchList                                 string
-	Quit                                       string
-	ErrorTitle                                 string
-	NoViewMachingNewLineFocusedSwitchStatement string
-	OpenConfig                                 string
-	EditConfig                                 string
-	ConfirmQuit                                string
-	ErrorOccurred                              string
-	CannotReachDaemonError                     string
-	ConnectionLost                             string
-	ConnectionLostTitle                        string
-	CannotAttachStoppedInstanceError           string
-	CannotAttachAppContainerError              string
-	CannotExecStoppedInstanceError             string
-	CannotAccessIncusSocketError               string
-	CannotKillChildError                       string
+	NotEnoughSpace                   string
+	MainTitle                        string
+	Navigate                         string
+	Menu                             string
+	MenuTitle                        string
+	Execute                          string
+	Toggle                           string
+	ToggleAll                        string
+	Apply                            string
+	OpenWhatChanged                  string
+	Scroll                           string
+	Close                            string
+	Submit                           string
+	SwitchList                       string
+	Quit                             string
+	ErrorTitle                       string
+	OpenConfig                       string
+	EditConfig                       string
+	ConfirmQuit                      string
+	ErrorOccurred                    string
+	CannotReachDaemonError           string
+	ConnectionLost                   string
+	ConnectionLostTitle              string
+	CannotAttachStoppedInstanceError string
+	CannotAttachAppContainerError    string
+	CannotExecStoppedInstanceError   string
+	CannotAccessIncusSocketError     string
+	CannotKillChildError             string
 
 	Cancel                       string
 	Remove                       string
@@ -306,6 +305,8 @@ type TranslationSet struct {
 	ReadOnlyRemote  string
 	ReadOnlySession string
 
+	RemoteChangedSinceAsked string
+
 	CommandPalette         string
 	CommandPaletteTitle    string
 	CommandPalettePrompt   string
@@ -381,8 +382,6 @@ func englishSet() TranslationSet {
 		ResumingStatus:      "resuming",
 		RemovingStatus:      "removing",
 		ForceRemovingStatus: "stopping and deleting",
-
-		NoViewMachingNewLineFocusedSwitchStatement: "No view matching newLineFocused switch statement",
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
 		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that --remote, INCUS_REMOTE or the CLI's default-remote names the one you meant.",
@@ -679,6 +678,8 @@ func englishSet() TranslationSet {
 		ReadOnly:        "read-only",
 		ReadOnlyRemote:  "%s is read-only in the config, so lazyincus changes nothing there.",
 		ReadOnlySession: "lazyincus was started with --read-only, so it changes nothing.",
+
+		RemoteChangedSinceAsked: "That was asked on %s and the session is on %s now, so nothing was sent.",
 
 		CommandPalette:         "command palette",
 		CommandPaletteTitle:    "Commands",

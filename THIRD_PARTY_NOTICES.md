@@ -9,18 +9,18 @@ distributed as source or as a compiled binary.
 
 lazyincus is a direct port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by Jesse Duffield — most of the non-Docker-specific code in this repository
-(the gocui TUI shell, config system, generic list/panel machinery, task
-manager, i18n scaffolding, utility helpers) is copied or adapted from it.
-The original MIT copyright notice is preserved in [LICENSE](LICENSE). See
-[docs/Port.md](docs/Port.md) for the rename map and a package-by-package
-account of what was carried over.
+(config system, task manager, i18n scaffolding, utility helpers) is copied
+or adapted from it. The original MIT copyright notice is preserved in
+[LICENSE](LICENSE). See [docs/Port.md](docs/Port.md) for the rename map and
+a package-by-package account of what was carried over.
 
 ## gocui (BSD-style)
 
-`github.com/jesseduffield/gocui`, the terminal UI library this project is
-built on. One file, `pkg/gui/confirmation_panel.go`, was itself adapted by
-lazydocker from a gocui example and carries gocui's own copyright header
-in addition to being pulled in as a Go module dependency.
+`github.com/jesseduffield/gocui`, the terminal UI library lazyincus was
+built on until the Bubble Tea rewrite. Its line wrapping (`wrapRanges` in
+`pkg/tui/pane.go`, tested with the cases of gocui's `TestLineWrap`) and
+scrollbar arithmetic (`scrollbar` in `pkg/tui/frame.go`) are adapted from
+it, so the screen wraps and scrolls as it did.
 
 ```
 Copyright (c) 2014 The gocui Authors. All rights reserved.
@@ -46,6 +46,39 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
+
+## Bubble Tea, Bubbles and Lip Gloss (MIT)
+
+`charm.land/bubbletea/v2`, `charm.land/bubbles/v2` and
+`charm.land/lipgloss/v2`, the terminal UI lazyincus is built on, with the
+Charm modules they bring (`github.com/charmbracelet/colorprofile`,
+`ultraviolet` and `x/...`), all under the same MIT License, each
+module's copyright line naming Charmbracelet, Inc. with its own years.
+Bubble Tea's reads:
+
+```
+MIT License
+
+Copyright (c) 2020-2026 Charmbracelet, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ## Incus (Apache License 2.0)

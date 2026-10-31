@@ -26,7 +26,7 @@ inferred.
   nothing treats it as fatal. `NoteError` classifies every error -
   `IsConnectionError` takes a `*url.Error` to mean the request never
   arrived, anything else to mean the daemon answered - and `IsConnected` is
-  that verdict. The 2s instance poll drives `gui.syncConnection`, which
+  that verdict. The 2s instance poll drives `syncConnection`, which
   raises a modal on the way down and closes it on the way back up; there's
   nothing to reconnect, since the client dials per request. The event
   stream gets there sooner without judging itself - a dropped websocket
@@ -49,18 +49,16 @@ inferred.
   takes no context, so `ListenForEvents` doesn't wait on a dial it's been
   cancelled during - `run` waits for the event watcher, and quitting
   would otherwise sit out the 5s - and closes the stream if it opens late.
-- **Errors from the main loop**: gocui ends it on any error out of a
-  keybinding or an `Update` closure, which is no way to end a session, so
-  `Run` sets gocui's `ErrorHandler` to `gui.handleError` - error panel for
-  most things, silence for a connection error the modal already covers,
-  `nil` returned either way so the loop carries on. Quitting is unaffected;
-  gocui excludes `ErrQuit` before consulting it.
+- **Errors from the main loop**: an error out of a refresh or an action is
+  no way to end a session, so `handleError` shows an error popup for most
+  things and stays silent for a connection error the modal already covers;
+  the loop carries on either way.
 - **Projects**: Incus scopes instances (and networks, volumes, profiles)
   per project, and a client is scoped to one at a time. `UseProject` swaps
   `IncusCommand.client` under `clientMutex`, hence the `Client()` accessor
   rather than a field, and every refresh builds its `Instance`s with a
-  client of their own. `P` (`handleSwitchProject` in
-  `pkg/gui/projects.go`) scopes to a single project.
+  client of their own. `P` (`switchProjectMenu` in
+  `pkg/tui/scope.go`) scopes to a single project.
 - **Clients**: the client's `UseProject` copies its `skipEvents` without
   the lock that `getEvents` writes it under, and `getEvents` runs at every
   event listener's connect: the stream's, reconnects included, and the
@@ -79,7 +77,7 @@ inferred.
   shell-outs included, which pass `--project`. Identity includes the
   project everywhere items are matched across refreshes: two projects can
   hold an instance, image or volume of the same name. The project column
-  is per-panel and driven by `State.SpansProjects`, recomputed each
+  is per-panel, each panel's from `spansProjects`, recomputed each
   refresh: a server with one project shouldn't carry a column repeating it
   on every row.
 - **List instances**: `GetInstancesFull` / `GetInstancesFullAllProjects`
@@ -279,7 +277,7 @@ inferred.
   as a rule.
 - **Exec**: deliberately not the client library's `ExecInstance` websocket
   API — that needs the session's stdio wired into the terminal, which is
-  nontrivial to thread through gocui's suspend/resume model (raw mode,
+  nontrivial to thread through the terminal hand-over (raw mode,
   window-resize messages). `instanceExecShell` shells out to the `incus` CLI
   instead, the same pattern lazydocker uses for `docker exec`. Trade-off:
   requires the `incus` binary on PATH, not just socket access.
@@ -292,7 +290,7 @@ inferred.
   they're the host's and rewritten anyway. The edit is lost, the CLI having
   removed its temporary copy.
 - **Copy**: a new instance from a snapshot runs `incus copy
-  <instance>/<snapshot> <name>` in the background (`Gui.runIncus`) rather
+  <instance>/<snapshot> <name>` in the background (`Model.runIncus`) rather
   than calling `CopyInstanceSnapshot`, because the CLI first strips the
   source's volatile keys by `instance.InstanceIncludeWhenCopying`, internal
   to Incus (`cmd/incus/copy.go`). It refuses `--instance-only` for a

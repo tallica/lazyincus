@@ -1,0 +1,570 @@
+// Package tui is lazyincus's Bubble Tea front end.
+package tui
+
+import (
+	"context"
+	"os"
+	"os/exec"
+	"os/signal"
+	"strings"
+	"sync/atomic"
+	"syscall"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
+	"github.com/fatih/color"
+	lcUtils "github.com/jesseduffield/lazycore/pkg/utils"
+	"github.com/sasha-s/go-deadlock"
+	"github.com/tallica/lazyincus/pkg/commands"
+	"github.com/tallica/lazyincus/pkg/config"
+	"github.com/tallica/lazyincus/pkg/i18n"
+	"github.com/tallica/lazyincus/pkg/tasks"
+)
+
+const inboxSize = 256
+
+// Model is the whole UI's state; Update is the only place it changes.
+type Model struct {
+	incus      *commands.IncusCommand
+	os         *commands.OSCommand
+	tr         *i18n.TranslationSet
+	cfg        *config.AppConfig
+	theme      theme
+	monochrome bool
+
+	width, height int
+
+	panels []*panel
+	// activeViews is each shared window's panel on show.
+	activeViews map[string]string
+	// focus is the static views, side panels and main, last on top.
+	focus  []string
+	popups []*popup
+
+	screenMode      screenMode
+	expandSidePanel bool
+	main            pane
+	mainTask        mainTask
+	// mainWidth is main's, for the ticking tabs to read each tick: a resize keeps the task.
+	mainWidth atomic.Int64
+	// listed is m.instances for the network tabs to read each tick; never sorted in place once stored.
+	listed atomic.Pointer[[]*commands.Instance]
+	// pendingMain starts the task fitMain queued, for Update to return.
+	pendingMain tea.Cmd
+	// queued is what a fetch's apply started, which has no Cmd to return.
+	queued []tea.Cmd
+	tasks  *tasks.TaskManager
+	// runTask stands in for pkg/tasks in tests.
+	runTask func(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd
+	// mainParent is the panel enter came from.
+	mainParent string
+	filter     filter
+	appStatus  string
+	statuses   []appStatus
+	spinning   bool
+
+	composeAvailable bool
+	// localStackDir and localStackExplicit are where the local stack comes from, set once.
+	localStackDir      string
+	localStackExplicit bool
+	// loadStack reads a stack's compose config; tests stand in for incus-compose.
+	loadStack func(dir string) *commands.ComposeStack
+	// stackCache and remotes synchronise themselves: the fetches use them off the loop.
+	stackCache *stackCache
+	remotes    *remoteCommands
+	// notifyRemotes tells the loop a remote connected or its statuses changed.
+	notifyRemotes func()
+	home          string
+	stacks        []*commands.ComposeStack
+	stacksHere    bool
+	// stacksElsewhere is whether any listed stack is on another remote.
+	stacksElsewhere bool
+	// landing: the first stacks read of a scope leaves Stacks if none is here.
+	landing bool
+	// stackDirs and stackRemotes serve the tabs naming a compose instance's stack.
+	stackDirs     map[string]string
+	stackRemotes  []string
+	stackServices map[string]map[string]bool
+	// selectedStack is what Services and Backups follow; nil for none.
+	selectedStack      *commands.ComposeStack
+	composeState       *composeHolder
+	serviceRows        []*commands.ServiceRow
+	servicesNote       string
+	showStackInstances bool
+	snapshotsShowAll   bool
+	snapshotsFollow    snapshotsFollow
+	snapshotsSpan      snapshotsSpan
+	snapshots          []*commands.Snapshot
+	// loadBackups: tests stand in for incus-compose.
+	loadBackups         func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
+	backups             []*commands.ComposeBackup
+	backupVerifications map[string]*commands.BackupVerification
+
+	instances     []*commands.Instance
+	images        []*commands.Image
+	imagesSpan    bool
+	volumes       []*commands.Volume
+	volumesSpan   bool
+	networks      []*commands.Network
+	networksSpan  bool
+	showUnmanaged bool
+	profiles      []*commands.Profile
+	profilesSpan  bool
+	// networkTabs: the forward and ACL events, which the networks' tabs show.
+	networkTabs uint64
+	// upstreams are the registry checks by image fingerprint, nil before the first.
+	upstreams     map[string]commands.UpstreamStatus
+	showProject   bool
+	showStopped   bool
+	instanceUsers *instanceUsers
+
+	refreshes refreshSeqs
+	events    events
+	// operations is the session's history; operationCounts its footer's running and failed.
+	operations        operationLog
+	operationCounts   [2]int
+	operationsRecount bool
+	// operationsSeenAt is when operations were last on screen: failures since are news.
+	operationsSeenAt time.Time
+	warnings         []*commands.Warning
+	newWarnings      int
+	daemon           daemonState
+	// inbox is what goroutines outside the program send it.
+	inbox        chan tea.Msg
+	streamEvents bool
+	// eventsLive is whether an event stream is open: the slow polls wait on it.
+	eventsLive bool
+	// polledAt is when each slow poll last asked the daemon.
+	polledAt       map[refreshKind]time.Time
+	connectionLost bool
+	configModTime  time.Time
+	// checkUpstreams asks the registries; tests stand in for them.
+	checkUpstreams func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus
+	// runIncus: run off the loop; tests stand in for the CLI.
+	runIncus func(*exec.Cmd) (string, error)
+	// runOnTerminal runs a compose or backup verb on the terminal; tests record it.
+	runOnTerminal func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd
+	// completeIncus is the incus CLI's completion for :; tests stand in for it.
+	completeIncus func(remote string, args []string, word string) (commands.Completion, error)
+	// openFile opens a path with the OS; tests stand in for it.
+	openFile func(command, filename string) error
+	// failures synchronises itself: the event listeners note into it.
+	failures *failureWatch
+	// after stands in for tea.Tick in tests.
+	after func(time.Duration, tea.Msg) tea.Cmd
+}
+
+func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) *Model {
+	gui := cfg.UserConfig.Gui
+
+	m := &Model{
+		incus:            incus,
+		os:               osCommand,
+		tr:               tr,
+		cfg:              cfg,
+		theme:            newTheme(gui),
+		activeViews:      map[string]string{},
+		screenMode:       parseScreenMode(gui.ScreenMode),
+		expandSidePanel:  gui.ExpandFocusedSidePanel,
+		snapshotsShowAll: gui.ShowAllSnapshots,
+		showStopped:      true,
+		filter:           filter{input: newEditorInput()},
+		inbox:            make(chan tea.Msg, inboxSize),
+		failures:         &failureWatch{},
+		tasks:            tasks.NewTaskManager(incus.Log, tr),
+		streamEvents:     true,
+		runIncus:         osCommand.RunExecutableWithOutput,
+		openFile:         osCommand.OpenFile,
+		completeIncus:    osCommand.CompleteIncus,
+		checkUpstreams:   commands.NewRegistryChecker().CheckAll,
+	}
+	if _, err := exec.LookPath("incus-compose"); err == nil {
+		m.composeAvailable = true
+	}
+	m.home, _ = os.UserHomeDir()
+	m.localStackDir, m.localStackExplicit = localStackDir()
+	m.loadStack = incus.LoadComposeStack
+	m.loadBackups = (*commands.IncusCommand).ComposeBackups
+	m.stackCache = &stackCache{}
+	m.composeState = &composeHolder{}
+	m.runOnTerminal = func(cmd *exec.Cmd, after func(error), then func(error) tea.Cmd) tea.Cmd {
+		return m.runSubprocessReturning(cmd, "", after, then)
+	}
+	m.stacksHere, m.landing = true, true
+	m.notifyRemotes = func() {
+		select {
+		case m.inbox <- remotesChangedMsg{}:
+		default: // a full inbox: the next poll asks again
+		}
+	}
+	m.remotes = &remoteCommands{
+		connect: incus.ConnectRemote, known: incus.IsInstanceRemote,
+		names: incus.InstanceRemoteNames, connected: m.notifyRemotes,
+	}
+	m.panels = m.newPanels()
+
+	return m
+}
+
+// terminalProfile caps detected at the 16 colours a TERM like xterm-16color
+// names, which colorprofile takes for 256 as it does any xterm.
+func terminalProfile(detected colorprofile.Profile, term string) colorprofile.Profile {
+	if (strings.HasSuffix(term, "16color") || term == "xterm-color") && detected > colorprofile.ANSI {
+		return colorprofile.ANSI
+	}
+
+	return detected
+}
+
+func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) error {
+	// fatih/color decides once, from stdout, whether to colour; Bubble Tea
+	// owns the terminal, so the answer is always yes.
+	color.NoColor = false
+
+	if err := cfg.PinStacks(incus.RemoteName()); err != nil {
+		incus.Log.Warn().Err(err).Send()
+	}
+
+	m := NewModel(incus, osCommand, tr, cfg)
+	profile := terminalProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Getenv("TERM"))
+	program := tea.NewProgram(m, tea.WithColorProfile(profile))
+	// --debug's deadlock report would land on the UI and its exit leave the terminal raw.
+	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() { _ = program.ReleaseTerminal() })
+	stop := quitOnHangup(program)
+	_, err := program.Run()
+	stop()
+	m.stopEvents()
+	m.tasks.Close()
+
+	return err
+}
+
+// quitOnHangup: Bubble Tea quits on SIGTERM but not SIGHUP, and dying on it leaves the terminal raw.
+func quitOnHangup(program *tea.Program) (stop func()) {
+	hangup, done := make(chan os.Signal, 1), make(chan struct{})
+	signal.Notify(hangup, syscall.SIGHUP)
+
+	go func() {
+		select {
+		case <-hangup:
+			program.Quit()
+		case <-done:
+		}
+	}()
+
+	return func() {
+		signal.Stop(hangup)
+		close(done)
+	}
+}
+
+func (m *Model) Init() tea.Cmd {
+	cmds := []tea.Cmd{m.refreshAll(), m.pollers()}
+	if m.cfg.UserConfig.Gui.CheckImageUpdatesOnStart {
+		cmds = append(cmds, refreshQuiet(nil, m.imageUpdatesFetch(false)))
+	}
+	if m.streamEvents {
+		cmds = append(cmds, m.listen(), m.receive())
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmd := m.update(msg)
+	m.fitViews()
+
+	main, queued := m.pendingMain, m.queued
+	m.pendingMain, m.queued = nil, nil
+
+	return m, tea.Batch(append(queued, cmd, main)...)
+}
+
+// fitViews fits the lists and main to their windows: View only reads them.
+func (m *Model) fitViews() {
+	m.followSelection()
+	m.fitStatus()
+	m.fitLists()
+	m.fitMain()
+	m.fitFilter()
+	m.fitPopups()
+}
+
+func (m *Model) update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.ColorProfileMsg:
+		m.monochrome = msg.Profile <= colorprofile.ASCII
+		m.applyTheme()
+
+	case tea.WindowSizeMsg:
+		m.width, m.height = msg.Width, msg.Height
+		m.clampLists()
+
+	case refreshMsg:
+		return m.applyRefresh(msg)
+
+	case mainWriteMsg:
+		m.onMainWrite(msg)
+
+	case waitingDoneMsg:
+		return m.onWaitingDone(msg)
+
+	case heldStatusMsg:
+		return m.onHeldStatus(msg)
+
+	// The runtime unpacks a batch before Update; one held under a status reaches here whole.
+	case tea.BatchMsg:
+		return tea.Batch(msg...)
+
+	case transientDoneMsg:
+		m.removeStatus(msg.name)
+
+	case spinnerMsg:
+		return m.onSpinner()
+
+	case received:
+		return tea.Batch(m.update(msg.msg), m.receive())
+
+	case eventsOpenedMsg:
+		return m.onEventsOpened(msg)
+
+	case eventMsg:
+		return m.onEvent(msg)
+
+	case eventsClosedMsg:
+		return m.onEventsClosed(msg)
+
+	case reopenEventsMsg:
+		if msg.stream == m.events.stream {
+			return m.listen()
+		}
+
+	case flushEventsMsg:
+		return m.flushEvents()
+
+	case instanceUpdatedMsg:
+		return m.refreshUpdated()
+
+	case projectsMsg:
+		m.onProjects(msg)
+
+	case remotesChangedMsg:
+		return refreshQuiet(nil, m.fetchStacks(), m.fetchServices())
+
+	case pollMsg:
+		return m.pollInstances()
+
+	case slowPollMsg:
+		return m.slowPoll(msg.kind)
+
+	case warningsPollMsg:
+		return m.pollWarnings()
+
+	case operationsRecountMsg:
+		m.onOperationsRecount()
+
+	case syncConnectionMsg:
+		m.syncConnection()
+
+	case configPollMsg:
+		return m.statConfig()
+
+	case configStatMsg:
+		return m.onConfigStat(msg.modTime)
+
+	case watchReadyMsg:
+		return msg.start()
+
+	case execDoneMsg:
+		return m.onExecDone(msg)
+
+	case completedMsg:
+		m.onCompleted(msg)
+
+	case openedConfigMsg:
+		m.onOpenedConfig(msg)
+
+	case copiedMsg:
+		return m.onCopied(msg)
+
+	case tea.KeyPressMsg:
+		return m.handleKey(msg)
+
+	case tea.MouseMsg:
+		return m.onMouse(msg)
+
+	case tea.PasteMsg:
+		switch {
+		case m.currentView() == filterView:
+			return m.editFilter(msg)
+		case m.topPrompt() != nil && m.currentView() == confirmationView:
+			return m.editPrompt(msg)
+		}
+	}
+
+	return nil
+}
+
+func (m *Model) queue(cmd tea.Cmd) {
+	m.queued = append(m.queued, cmd)
+}
+
+func (m *Model) quit() tea.Cmd {
+	if m.cfg.UserConfig.ConfirmOnQuit {
+		m.openConfirmation("", m.tr.ConfirmQuit, func() tea.Cmd { return tea.Quit })
+		return nil
+	}
+
+	return tea.Quit
+}
+
+// escape: for esc where no view takes it.
+func (m *Model) escape() {
+	if m.filter.active {
+		m.clearFilter()
+		return
+	}
+
+	if m.instanceUsers != nil && m.currentView() == "instances" {
+		m.clearInstanceUsers()
+	}
+}
+
+func (m *Model) jumpToTopMain() {
+	m.main.autoscroll = false
+	m.main.ox, m.main.oy = 0, 0
+}
+
+func (m *Model) enterMain() {
+	parent := m.currentView()
+	m.focusView(mainView)
+	m.mainParent = parent
+}
+
+func (m *Model) exitMain() {
+	m.mainParent = ""
+	m.returnFocus()
+}
+
+func (m *Model) moveSelection(p *panel, step int) {
+	p.selectRow(p.selected+step, m.listRows(p))
+}
+
+func (m *Model) cycleMainTab(p *panel, step int) {
+	if p.mainTabs == nil {
+		return
+	}
+
+	p.mainTab = wrap(p.mainTab+step, len(p.mainTabs()))
+}
+
+// setMainTab: the tab named key, if p has one.
+func (m *Model) setMainTab(p *panel, key string) {
+	for i, tab := range p.mainTabs() {
+		if tab.key == key {
+			p.mainTab = i
+		}
+	}
+}
+
+func (m *Model) scrollMain(direction int) {
+	step := m.cfg.UserConfig.Gui.ScrollHeight
+	if direction < 0 {
+		m.main.scrollUp(step)
+		return
+	}
+
+	_, h := size(m.dims()[mainView])
+	m.main.scrollDown(step, h-2, m.cfg.UserConfig.Gui.ScrollPastBottom)
+}
+
+// fitMain sizes main and queues the task for what it should show.
+func (m *Model) fitMain() {
+	d, ok := m.dims()[mainView]
+	if !ok {
+		return
+	}
+	w, h := size(d)
+	m.main.fit(w-2, h-2)
+	m.mainWidth.Store(int64(m.main.width))
+
+	p := m.currentSidePanel()
+	if p.count() == 0 {
+		message := p.empty
+		if p.awaiting != "" {
+			message = p.awaiting
+		}
+		m.queueMain(p.name+"\x00"+message, m.cfg.UserConfig.Gui.WrapMainPanel, false, renderString(func() string { return message }))
+		return
+	}
+	if p.mainTabs == nil {
+		m.queueMain(p.name, false, false, renderString(func() string { return "" }))
+		return
+	}
+
+	tab := p.mainTabs()[p.mainTab]
+	key := p.name + "\x00" + tab.title
+	if p.itemKey != nil {
+		key += "\x00" + p.itemKey()
+	}
+	if key == m.mainTask.key {
+		return
+	}
+	m.queueMain(key, tab.wrap, tab.autoscroll, tab.task())
+}
+
+func (m *Model) listRows(p *panel) int {
+	d, ok := m.dims()[p.windowName()]
+	if !ok {
+		return 0
+	}
+
+	_, h := size(d)
+
+	return h - 2
+}
+
+func (m *Model) fitLists() {
+	if m.width == 0 {
+		return
+	}
+
+	dims := m.dims()
+	for _, p := range m.visiblePanels() {
+		if d, ok := dims[p.windowName()]; ok {
+			w, _ := size(d)
+			p.fit(w - 2)
+		}
+	}
+}
+
+func (m *Model) clampLists() {
+	if m.width == 0 {
+		return
+	}
+
+	for _, p := range m.visiblePanels() {
+		p.selectRow(p.selected, m.listRows(p))
+	}
+}
+
+func (m *Model) View() tea.View {
+	view := tea.NewView(m.render())
+	view.AltScreen = true
+	if !m.cfg.UserConfig.Gui.IgnoreMouseEvents {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
+
+	if d, ok := m.dims()[filterView]; ok && m.currentView() == filterView {
+		view.Cursor = tea.NewCursor(d.X0+m.filterCursorX()-m.filter.ox, d.Y0)
+	}
+
+	if p := m.topPrompt(); p != nil && m.currentView() == confirmationView {
+		x0, y0, x1, _, _ := m.popupLayout(p)
+		row, col := promptCursor(p.input, max(x1-x0-1, 1))
+		view.Cursor = tea.NewCursor(x0+1+col, y0+1+row)
+	}
+
+	return view
+}

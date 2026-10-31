@@ -12,8 +12,9 @@ This is a port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by [Jesse Duffield](https://github.com/jesseduffield) — the excellent Docker
 TUI this project's UI, keybindings, and overall structure are lifted from.
 Full credit for the original design goes to Jesse and the lazydocker
-contributors. The framework underneath is [gocui](https://github.com/jroimartin/gocui)
-by Roi Martin, used here through [Jesse's fork](https://github.com/jesseduffield/gocui).
+contributors. The terminal UI underneath is rebuilt on
+[Bubble Tea](https://github.com/charmbracelet/bubbletea) by Charm, where
+lazydocker's is [gocui](https://github.com/jesseduffield/gocui).
 See [LICENSE](LICENSE) (MIT, same as upstream),
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party
 attributions, and [docs/Port.md](docs/Port.md) for what was carried over and
@@ -156,8 +157,9 @@ backup` runs.
 
 The instances panel's columns (name, status, health, type, IPv4, snapshot
 count) can be reordered or hidden via `gui.instanceColumns` in the config
-file, and the Services panel's (name, status, health, IPv4, snapshot count) via
-`gui.serviceColumns` - see [docs/Config.md](docs/Config.md). Health comes
+file, and the Services panel's (name, status, replicas, health, IPv4,
+snapshot count) via `gui.serviceColumns` - see
+[docs/Config.md](docs/Config.md). Health comes
 from `ic-healthd`, so it's blank for anything created outside
 incus-compose, and for an instance that isn't running: ic-healthd takes
 seconds to catch up with a pause or stop, and never does while it's down.
@@ -171,6 +173,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `PgUp`/`PgDn`, `ctrl+u`/`ctrl+d`, `J`/`K`, `H`/`L` | Scroll the main panel (and `h`/`l`, `←`/`→` sideways while it has focus) |
 | `Home` / `End` | Main panel: jump to the top / follow the end again |
 | `enter` | Focus main panel (Info / Logs / Config / Env / Top tabs) |
+| `esc` | Close the top popup or menu; from the main panel, back to its list; on a list, clear the filter or the `u` list of users |
 | `space` | Stacks panel: switch to the stack's remote |
 | `[` / `]` | Switch main-panel tab |
 | `S` | Start; on the Services panel, start the service, or the selected replica |
@@ -180,7 +183,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation) |
+| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking) |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -195,7 +198,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
-| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't) |
+| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -442,5 +445,5 @@ or via the Makefile (`make build`, `make vet`, `make test`, `make lint`,
 MIT — see [LICENSE](LICENSE). This project carries forward the original
 lazydocker copyright notice as required by its MIT license, since much of
 the code here is ported/adapted from it. Third-party dependency licenses
-(gocui, the Incus client library, etc.) are listed in
+(Bubble Tea, the Incus client library, etc.) are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
