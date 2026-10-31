@@ -1,9 +1,13 @@
 package tui
 
 import (
+	"context"
 	"slices"
+	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,6 +46,27 @@ func TestTheStackInfoTabNamesItsServicesAndEndpoints(t *testing.T) {
 	assert.Contains(t, text, "Directory:")
 	assert.Contains(t, text, "── Endpoints")
 	assert.Contains(t, text, "web-1:")
+}
+
+// A resize keeps the task, so its next tick has to draw at the new width.
+func TestTheStackInfoTabFollowsAResize(t *testing.T) {
+	m := replicatedStack(t, composeFixture("default", "web-1", "web"))
+	task := m.stackInfoTask()
+
+	m.Update(tea.WindowSizeMsg{Width: 100, Height: 40})
+
+	var content string
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	task(ctx, &mainWriter{send: func(msg tea.Msg) { content = msg.(mainWriteMsg).content }})
+
+	heading := ""
+	for line := range strings.SplitSeq(ansi.Strip(content), "\n") {
+		if strings.HasPrefix(line, "── Endpoints") {
+			heading = line
+		}
+	}
+	assert.Equal(t, m.main.width, ansi.StringWidth(heading))
 }
 
 // Logs heads each instance with its replica's name, or its service's for a lone one.

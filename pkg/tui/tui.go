@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -41,6 +42,8 @@ type Model struct {
 	expandSidePanel bool
 	main            pane
 	mainTask        mainTask
+	// mainWidth is main's, for the ticking tabs to read each tick: a resize keeps the task.
+	mainWidth atomic.Int64
 	// pendingMain starts the task fitMain queued, for Update to return.
 	pendingMain tea.Cmd
 	// queued is what a fetch's apply started, which has no Cmd to return.
@@ -450,6 +453,7 @@ func (m *Model) fitMain() {
 	}
 	w, h := size(d)
 	m.main.fit(w-2, h-2)
+	m.mainWidth.Store(int64(m.main.width))
 
 	p := m.currentSidePanel()
 	if p.count() == 0 {

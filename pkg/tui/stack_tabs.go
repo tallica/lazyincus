@@ -22,24 +22,24 @@ func (m *Model) stackMainTabs() []mainTab {
 // selected, and for the counters.
 func (m *Model) stackInfoTask() mainTaskFunc {
 	stack, holder, tr := m.selectedStackRow(), m.composeState, m.tr
-	remote, host, home, width := m.stackRemote(stack), m.publishHostFor(stack.Remote), m.home, m.main.width
+	remote, host, home, width := m.stackRemote(stack), m.publishHostFor(stack.Remote), m.home, &m.mainWidth
 	guiConfig := m.cfg.UserConfig.Gui
 
 	return tickerTask(time.Second, func() string {
 		state, project := holder.load()
 
-		return presentation.StackInfo(stack, remote, home, state, project, host, width, &guiConfig, tr)
+		return presentation.StackInfo(stack, remote, home, state, project, host, int(width.Load()), &guiConfig, tr)
 	})
 }
 
 // stackLogsTask stacks every service's logs, each instance under a heading of its own.
 func (m *Model) stackLogsTask() mainTaskFunc {
-	stack, holder, tr, width, logOf := m.selectedStackRow(), m.composeState, m.tr, m.main.width, m.instanceLogText()
+	stack, holder, tr, width, logOf := m.selectedStackRow(), m.composeState, m.tr, &m.mainWidth, m.instanceLogText()
 
 	return tickerTask(time.Second, func() string {
 		state, _ := holder.load()
 
-		return presentation.StackLogs(stack, state, width, logOf, tr)
+		return presentation.StackLogs(stack, state, int(width.Load()), logOf, tr)
 	})
 }
 

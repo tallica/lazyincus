@@ -22,7 +22,7 @@ func (m *Model) serviceMainTabs() []mainTab {
 // serviceInfoTask ticks like an instance's Info tab: the identity half is
 // static, the counters under it aren't.
 func (m *Model) serviceInfoTask() mainTaskFunc {
-	row, holder, tr, width := m.selectedServiceRow(), m.composeState, m.tr, m.main.width
+	row, holder, tr, width := m.selectedServiceRow(), m.composeState, m.tr, &m.mainWidth
 
 	service := row.Service
 	remote := service.Remote
@@ -48,7 +48,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 	return tickerTask(time.Second, func() string {
 		_, project := holder.load()
 
-		return presentation.ServiceInfo(row, loc, verdict, project, instanceInfo, width, tr)
+		return presentation.ServiceInfo(row, loc, verdict, project, instanceInfo, int(width.Load()), tr)
 	})
 }
 
@@ -56,7 +56,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 // instance; a replicated service's own row stacks every replica's under a
 // heading of its own.
 func (m *Model) serviceLogsTask() mainTaskFunc {
-	row, tr, width, logOf := m.selectedServiceRow(), m.tr, m.main.width, m.instanceLogText()
+	row, tr, width, logOf := m.selectedServiceRow(), m.tr, &m.mainWidth, m.instanceLogText()
 
 	if instance, ok := row.SelectedInstance(); ok {
 		return m.instanceLogsTask(instance)
@@ -68,7 +68,7 @@ func (m *Model) serviceLogsTask() mainTaskFunc {
 	}
 
 	return tickerTask(time.Second, func() string {
-		return presentation.ServiceLogs(row.Service, instances, width, logOf, tr)
+		return presentation.ServiceLogs(row.Service, instances, int(width.Load()), logOf, tr)
 	})
 }
 
