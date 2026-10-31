@@ -14,6 +14,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/fatih/color"
+	lcUtils "github.com/jesseduffield/lazycore/pkg/utils"
+	"github.com/sasha-s/go-deadlock"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
@@ -227,6 +229,8 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	m := NewModel(incus, osCommand, tr, cfg)
 	profile := terminalProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Getenv("TERM"))
 	program := tea.NewProgram(m, tea.WithColorProfile(profile))
+	// --debug's deadlock report would land on the UI and its exit leave the terminal raw.
+	deadlock.Opts.LogBuf = lcUtils.NewOnceWriter(os.Stderr, func() { _ = program.ReleaseTerminal() })
 	stop := quitOnHangup(program)
 	_, err := program.Run()
 	stop()
