@@ -161,3 +161,13 @@ func TestKittyCtrlKeysActAsTheKeysTheyShare(t *testing.T) {
 	press(m, "ctrl+[")
 	assert.Equal(t, view, m.currentView(), "ctrl+[ is esc")
 }
+
+// Decided in the phase 11 triage: main shows the empty list, not the item the filter hid.
+func TestAFilterMatchingNothingEmptiesMain(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	require.NotContains(t, mainText(m), "No instances")
+
+	press(m, "/")
+	typeText(m, "zzz")
+	assert.Contains(t, mainText(m), "No instances")
+}
