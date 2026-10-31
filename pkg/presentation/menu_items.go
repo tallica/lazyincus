@@ -1,17 +1,15 @@
 package presentation
 
-import "github.com/tallica/lazyincus/pkg/types"
-
 // GetMenuItemDisplayStrings is the item's columns, a checklist's tick first.
-func GetMenuItemDisplayStrings(menuItem *types.MenuItem, checklist bool) []string {
+func GetMenuItemDisplayStrings(columns []string, checked, checklist bool) []string {
 	if !checklist {
-		return menuItem.LabelColumns
+		return columns
 	}
 
 	box := "[ ]"
-	if menuItem.Checked {
+	if checked {
 		box = "[x]"
 	}
 
-	return append([]string{box}, menuItem.LabelColumns...)
+	return append([]string{box}, columns...)
 }

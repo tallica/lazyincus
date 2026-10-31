@@ -78,5 +78,4 @@ pkg/tui/
   failure_watch.go             a typed or compose command's failure, shown once it ends
   subprocess.go                handing the terminal to `exec`, an editor or a typed command
 pkg/presentation/              table-cell rendering, one file per side panel and per `W` list, plus menu rows
-pkg/types/                     the menu item types
 ```

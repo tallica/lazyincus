@@ -7,7 +7,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/tallica/lazyincus/pkg/presentation"
-	"github.com/tallica/lazyincus/pkg/types"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -134,8 +133,7 @@ func (m *Model) renderMenu(mn *menu) {
 	checklist := mn.onConfirm != nil
 	mn.list.cells = make([][]string, len(mn.items))
 	for i, item := range mn.items {
-		shown := &types.MenuItem{LabelColumns: item.labelColumns, Checked: item.checked}
-		mn.list.cells[i] = presentation.GetMenuItemDisplayStrings(shown, checklist)
+		mn.list.cells[i] = presentation.GetMenuItemDisplayStrings(item.labelColumns, item.checked, checklist)
 	}
 	m.filterList(mn.list)
 }
