@@ -1,7 +1,7 @@
 # Panels
 
 What each side panel lists, the columns it shows, its main-panel tabs and
-what its keys do. The rule they all derive from — `sidePanelDefs()`, and
+what its keys do. The rule they all derive from — `newPanels()`, and
 what adding a panel takes — is in [CLAUDE.md](../CLAUDE.md#panels);
 the keys as a user meets them are in [README.md](../README.md#usage).
 
@@ -22,8 +22,9 @@ take `a`, "yes, don't ask again", kept in [`state.yml`](Config.md#state).
 ## Where an item lives
 
 Every Info tab, and the header of every Config tab that has one, starts
-with where the item lives, broadest first (`locationStr`): its remote -
-always, the footer's being the session's and not necessarily the
+with where the item lives, broadest first
+(`presentation.LocationLines`): its remote - always, the footer's being
+the session's and not necessarily the
 item's - then its project, and for an instance incus-compose made, its
 stack and service. incus-compose names the project for the stack, so the
 Stack line doesn't repeat the name: it's the directory the stack is
@@ -315,7 +316,7 @@ read again off to one side (`cachedStatuses`), the Stacks and Services
 refreshing when a connection lands or a read changes something. The
 session's own are read in the refresh, as every other list is. Services
 skip a remote whose statuses last failed, the list saying so in place of
-rows (`EmptyNote`), and a remote gone from the CLI's
+rows (the panel's `note`), and a remote gone from the CLI's
 config - renamed since the stack was saved - isn't tried at all
 (`unknownRemote`), its message pointing at `e`. The compose verbs and the
 instances' `incus console`/`exec`/`config edit`/`file edit` need no
@@ -369,9 +370,9 @@ service's only instance, and none from a service's own row, which means all
 of them. That last case is what every tab, the snapshots panel and
 `withServiceInstance` branch on. `ServiceRow.Instances` is the same split
 for the tabs that show an instance each. Rows are rebuilt on every refresh,
-so the panel's `SameItem` is what keeps the cursor on the row it was on;
-without it the selection holds an index, which by then belongs to a
-different replica.
+so the key `refill` matches on, `ServiceRow.Key`, is what keeps the
+cursor on the row it was on; without it the selection holds an index,
+which by then belongs to a different replica.
 
 `ComposeService.Status` is an instance status — the daemon's own spelling,
 rendered by the instances panel's own `presentation.DisplayStatus`, a
@@ -387,10 +388,10 @@ becomes "Standalone Instances" while any such stack is listed. A stack on
 another remote has nothing there to drop. A compose instance no Services row
 claims stays there, having no panel of its own: one of a project no stack
 lists, or of a service its compose file no longer declares, which the
-stack's Drift names. `C` sets `ShowStackInstances`, which turns the filter
-off and the title back to "Instances" until it's pressed again; it's
-bound only when incus-compose is there to have stacks.
-`SpansProjects.Instances` is computed over what's left after that filter,
+stack's Drift names. `C` sets `Model.showStackInstances`, which turns the
+filter off and the title back to "Instances" until it's pressed again;
+it's bound only when incus-compose is there to have stacks.
+`Model.showProject` is computed over what's left after that filter,
 not over everything the daemon returned, and again whenever the stacks
 change which services they declare, or `C` is pressed. At startup and on
 a change of scope the stacks are read ahead of the instances, and the two
@@ -432,7 +433,7 @@ README's [Compose stacks](../README.md#compose-stacks).
 `onServiceRow` is what splits a key between the two, a replica's row taking
 the instances panel's own action where one exists. Those actions are the
 instances panel's, split into handler and action for this, and they refresh
-both panels (`refreshInstancesAndServices`), a compose instance having a row
+both panels (`instanceFetches`), a compose instance having a row
 in each.
 
 The keybinding menu varies with the row, which it can because it rebuilds
@@ -440,7 +441,7 @@ its bindings each time it opens. `composeRowDescription` names the other
 verb where the two scopes aren't the same one, and `serviceScopedDescription`
 appends "service" to the verbs only a service has — "bring up" alone, on a
 replica's row, reads as bringing that replica up, which isn't a thing. The
-order varies too: `servicesKeybindings` hands this panel's keys to
+order varies too: `serviceBindings` hands this panel's keys to
 `orderByKey`, leading with the compose verbs on a service's own row and with
 the instances panel's keys, in its order, on a replica's — the same keys
 doing the same thing should be found in the same place. A key the order
@@ -473,16 +474,17 @@ decide, replica rows following it — otherwise the rows would disagree on
 how many cells they have. `gui.instanceStatusStyle` covers the status
 column either way; `serviceStatusStyles` supplies the glyphs for `partial`
 and `none`, which no instance state has. There's no project column: every
-row shares the one project, so `servicesPanelTitle` puts it in the title
+row shares the one project, so `servicesTitle` puts it in the title
 instead, followed by the stack's remote when that isn't the session's.
 
 Main panel tabs:
 
 - **Info** — what the compose file declares for the service, then the Info
-  tab of each instance the row stands for, `instanceInfoStr` and all,
-  which is why this renders on a ticker. Each instance is ruled off by
-  `instanceHeading` and drops its own Name line, the heading having said
-  it. The heading numbers replicas — "Replica 2 of 4 · web-2", the blocks
+  tab of each instance the row stands for, `presentation.InstanceInfo`
+  and all, which is why this renders on a ticker. Each instance is ruled
+  off by `presentation.InstanceHeading` and drops its own Name line, the
+  heading having said it. The heading numbers replicas —
+  "Replica 2 of 4 · web-2", the blocks
   being the same labels over and over — and numbers them over the
   service's instances rather than the ones on screen, so a replica's row
   still reads "2 of 4" while showing only itself. A service with one
@@ -490,8 +492,9 @@ Main panel tabs:
   carrying the service's own name has nothing left to say ("Instance").
   It's ruled either way: the rule is where the compose file's half ends
   and the daemon's begins, which a service with no replicas has too.
-  `instanceInfoStr` takes the identity lines to leave out, the service and
-  the heading having just said them: where it lives, image and name
+  `presentation.InstanceInfo` takes the identity lines to leave out, the
+  service and the heading having just said them: where it lives, image
+  and name
   always, plus health for a lone instance. The compose fields are parsed
   with the stack's config by `parseComposeConfig` and stored rendered,
   only display wanting them; the Healthcheck line is the project's, from
@@ -506,8 +509,9 @@ Main panel tabs:
   instances panel does, so a restart re-reads the log.
 - **Logs** — delegates to the instance logs renderer for whichever instance
   the row names; a service's own row with replicas under it stacks all of
-  their logs, each under the Info tab's `instanceHeading`. They stay
-  separate streams — the buffers carry nothing to interleave them on — so
+  their logs, each under the Info tab's `presentation.InstanceHeading`.
+  They stay separate streams — the buffers carry nothing to interleave
+  them on — so
   `M`, `logs --follow`, is the merged view.
 - **Env** and **Top** — the instance's own, through `serviceInstanceTab`:
   the row's replica answers for it, as does a lone service's only instance,
@@ -517,8 +521,9 @@ Main panel tabs:
   `incus-compose config --format json`, read afresh in its stack's
   directory, handed to `yaml.JSONToYAML` untouched (decoding through
   `map[string]any` first would turn every count into a float64 and render
-  `replicas: 2` as `2.0`), then one `instanceConfigStr` dump per instance
-  the row stands for, under the Info tab's own `instanceHeading`.
+  `replicas: 2` as `2.0`), then one `presentation.InstanceConfig` dump
+  per instance the row stands for, under the Info tab's own
+  `presentation.InstanceHeading`.
 
 The credits tab and the interleaved logs tab from lazydocker's Project
 panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
@@ -604,7 +609,8 @@ up:
   disk, network. A gap sets those off rather than a heading — CPU and
   memory say what they are, and a ruled heading would weigh the same as the
   replica headings stacking whole instances, a level above it. Both halves
-  pad their labels to `identityPadding`, the tab being one run of them.
+  pad their labels to `presentation.IdentityPadding`, the tab being one
+  run of them.
   Re-rendered every second (no extra API calls: the background poll already
   keeps that current). CPU is cumulative usage
   time, not a percentage — the API reports total nanoseconds since start,
@@ -660,10 +666,10 @@ service - and moves to the new snapshot once it exists, so taking one from
 the instances panel shows you the result. It opens a two-view popup: the
 editable confirmation view as a name field, and a `snapshotOptions` view
 parked under it, with `tab` moving focus between them. Its own view rather
-than the menu, so the menu panel's keybindings don't fight the navigation
-- which means teaching `newLineFocused`, `renderPanelOptions` and
-`resizeCurrentPopupPanel` about it, the last so it keeps its position
-under the prompt instead of being centred.
+than the menu, so the menu panel's keybindings don't fight the
+navigation: a second view (`snapshotOptionsView`) with bindings of its
+own, drawn by `snapshotOptionsFrame` under the name field rather than
+centred.
 
 The options are fields rather than a list of actions: a row shows a value
 that `← →` cycle in place, and enter means create wherever the focus is.
@@ -790,8 +796,9 @@ Local images (`GetImages`), identified by `Image.Label()`: alias, else the
 description an unaliased cached image carries (what `incus image list` shows
 in its DESCRIPTION column), else the short fingerprint. It takes whatever
 width the columns after it leave, down to 28 characters and cut with an
-ellipsis below that - one of the `FlexColumns` a side panel can name, which the
-volumes' and snapshots' names are too, and the instances' and services'
+ellipsis below that - one of the `FlexColumn`s a side panel can name,
+which the volumes' and snapshots' names are too, and the instances' and
+services'
 `image` column wherever the config puts it. With more than one they give
 way in the order named, each to its own floor: the snapshots panel's
 instance column goes first, repeating down a list grouped by it, before

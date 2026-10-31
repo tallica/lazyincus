@@ -76,11 +76,11 @@ Not planned:
 - [ ] **Events for a restricted certificate** — `ListenForEvents` asks for
       every project's events whenever the panels list every project. A
       certificate restricted to some projects may be refused that, and
-      `watchEvents` then retries with backoff for as long as the app runs,
-      logging each refusal; the polls carry on, so nothing breaks, but the
-      stream never opens. Fall back to the client's own project's events,
-      or one listener per allowed project, and stop retrying a refusal
-      that won't change. Untried: the development certificate isn't
+      `onEventsClosed` then retries with backoff for as long as the app
+      runs, logging each refusal; the polls carry on, so nothing breaks,
+      but the stream never opens. Fall back to the client's own project's
+      events, or one listener per allowed project, and stop retrying a
+      refusal that won't change. Untried: the development certificate isn't
       restricted, so `incustest`'s `Listen` would need to refuse
       all-projects for a test to see it.
 - [ ] **Poll less now that events carry the changes** — what's polled, and
@@ -160,9 +160,9 @@ Deliberately deferred (don't re-pitch unprompted):
   connection (`GetImageServer` against the `images:` simplestreams remote,
   distinct from the instance server). If revived: build the thin version
   first — prompt for one string and shell out to `incus launch` via
-  `runSubprocessWithMessage`, mirroring `instanceExecShell`. That also shows
-  image-download progress natively, which a `WithWaitingStatus` spinner would
-  hide. A copy from a snapshot went the other way: `incus copy` in the
+  `runSubprocess`, mirroring `instanceExecShell`. That also shows
+  image-download progress natively, which a `withWaitingStatus` spinner
+  would hide. A copy from a snapshot went the other way: `incus copy` in the
   background through `Model.runIncus`, under the spinner.
 
 ### What Bubble Tea makes possible

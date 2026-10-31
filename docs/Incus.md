@@ -77,7 +77,7 @@ inferred.
   shell-outs included, which pass `--project`. Identity includes the
   project everywhere items are matched across refreshes: two projects can
   hold an instance, image or volume of the same name. The project column
-  is per-panel and driven by `State.SpansProjects`, recomputed each
+  is per-panel, each panel's from `spansProjects`, recomputed each
   refresh: a server with one project shouldn't carry a column repeating it
   on every row.
 - **List instances**: `GetInstancesFull` / `GetInstancesFullAllProjects`
