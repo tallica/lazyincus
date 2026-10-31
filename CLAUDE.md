@@ -124,15 +124,16 @@ the closure that shows the answer, which `Update` runs when the
 `refreshMsg` carrying it arrives. So a `tea.Cmd` reads only what it
 captured on the loop, plus the self-synchronising objects set up in
 `NewModel`; anything else it needs, it captures first. A keypress wanting a
-refresh starts it from `withWaitingStatus` or `waitingRefresh`. Each kind
-of fetch carries a `refreshSeq`, so an older fetch that finishes late can't
-undo a newer one. A refresh of several kinds applies each that succeeded
-even when another fails. Refreshes come from the pollers, from actions, and
-from the daemon's event stream (`pkg/tui/events.go`), which says straight
-away when something changes; see [docs/Incus.md](docs/Incus.md). A stack on
-another remote is the one exception to asking inside the fetch: that remote
-is connected to and read in the background (`pkg/tui/remotes.go`), the
-fetch taking the last answer, so a server that's away holds up no poll.
+refresh starts it from `withWaitingStatusThen` or `waitingRefresh`. Each
+kind of fetch carries a `refreshSeq`, so an older fetch that finishes late
+can't undo a newer one. A refresh of several kinds applies each that
+succeeded even when another fails. Refreshes come from the pollers, from
+actions, and from the daemon's event stream (`pkg/tui/events.go`), which
+says straight away when something changes; see
+[docs/Incus.md](docs/Incus.md). A stack on another remote is the one
+exception to asking inside the fetch: that remote is connected to and read
+in the background (`pkg/tui/remotes.go`), the fetch taking the last answer,
+so a server that's away holds up no poll.
 
 A main-panel tab's content is built off the loop, in a task goroutine
 (`pkg/tui/tasks.go`), and reaches the screen as a numbered `mainWriteMsg`,
