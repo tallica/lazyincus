@@ -44,6 +44,8 @@ type Model struct {
 	mainTask        mainTask
 	// mainWidth is main's, for the ticking tabs to read each tick: a resize keeps the task.
 	mainWidth atomic.Int64
+	// listed is m.instances for the network tabs to read each tick; never sorted in place once stored.
+	listed atomic.Pointer[[]*commands.Instance]
 	// pendingMain starts the task fitMain queued, for Update to return.
 	pendingMain tea.Cmd
 	// queued is what a fetch's apply started, which has no Cmd to return.

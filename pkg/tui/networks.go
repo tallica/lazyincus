@@ -94,18 +94,30 @@ func (m *Model) networkLeases(network *commands.Network) func() string {
 }
 
 func (m *Model) networkState(network *commands.Network) func() string {
-	instances, tr := m.instances, m.tr
-	return func() string { return presentation.NetworkState(network, instances, tr) }
+	instances, tr := m.listedInstances(), m.tr
+	return func() string { return presentation.NetworkState(network, instances(), tr) }
 }
 
 func (m *Model) networkACLs(network *commands.Network) func() string {
-	instances, width, tr := m.instances, m.main.width, m.tr
-	return func() string { return presentation.NetworkACLs(network, instances, width, tr) }
+	instances, width, tr := m.listedInstances(), m.main.width, m.tr
+	return func() string { return presentation.NetworkACLs(network, instances(), width, tr) }
 }
 
 func (m *Model) networkForwards(network *commands.Network) func() string {
-	instances, tr := m.instances, m.tr
-	return func() string { return presentation.NetworkForwards(network, instances, tr) }
+	instances, tr := m.listedInstances(), m.tr
+	return func() string { return presentation.NetworkForwards(network, instances(), tr) }
+}
+
+func (m *Model) listedInstances() func() []*commands.Instance {
+	listed := &m.listed
+
+	return func() []*commands.Instance {
+		if instances := listed.Load(); instances != nil {
+			return *instances
+		}
+
+		return nil
+	}
 }
 
 func (m *Model) networkConfig(network *commands.Network) func() string {

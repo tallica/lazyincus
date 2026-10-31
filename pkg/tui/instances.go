@@ -50,6 +50,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 
 	sort.SliceStable(instances, func(a, b int) bool { return sortInstances(instances[a], instances[b]) })
 	m.instances = instances
+	m.listed.Store(&instances)
 	m.setInstancesSpan()
 
 	p := m.panelNamed("instances")
@@ -84,7 +85,7 @@ func (m *Model) selectInstance(key string) bool {
 // rerenderInstances shows the rows' marks, which their status reads.
 func (m *Model) rerenderInstances() {
 	if m.instances != nil {
-		m.setInstances(m.instances)
+		m.setInstances(slices.Clone(m.instances))
 	}
 }
 
