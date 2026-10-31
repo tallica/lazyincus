@@ -2,9 +2,11 @@ package tui
 
 import (
 	"context"
+	"os"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -67,6 +69,18 @@ func TestTheStackInfoTabFollowsAResize(t *testing.T) {
 		}
 	}
 	assert.Equal(t, m.main.width, ansi.StringWidth(heading))
+}
+
+func TestTheStackInfoTabFollowsAConfigReload(t *testing.T) {
+	m := replicatedStack(t, composeFixture("default", "web-1", "web"))
+	require.Contains(t, mainText(m), "Status:       running")
+
+	require.NoError(t, os.WriteFile(m.cfg.ConfigFilename(), []byte("gui:\n  instanceStatusStyle: short\n"), 0o600))
+	m.Update(configStatMsg{modTime: time.Unix(1, 0)})
+	_, cmd := m.Update(configStatMsg{modTime: time.Unix(2, 0)})
+	run(m, cmd)
+
+	assert.Contains(t, mainText(m), "Status:       r\n")
 }
 
 // Logs heads each instance with its replica's name, or its service's for a lone one.

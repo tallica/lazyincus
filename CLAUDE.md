@@ -197,7 +197,7 @@ location precedence.
 
 The config reloads at runtime, after `O` and from a modification-time poll
 (`statConfig`). `reloadConfig` re-applies only what the model caches —
-theme, columns; the rest is read at the point of use.
+theme, columns, main's tab; the rest is read at the point of use.
 
 ## Building / testing
 

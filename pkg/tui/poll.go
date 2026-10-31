@@ -126,6 +126,8 @@ func (m *Model) reloadConfig() error {
 
 	m.applyTheme()
 	m.rerenderInstances()
+	// Main's task captured the config it started with.
+	m.mainTask.key = ""
 
 	return nil
 }
