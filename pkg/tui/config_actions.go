@@ -2,16 +2,16 @@ package tui
 
 import tea "charm.land/bubbletea/v2"
 
-type openedConfigMsg struct{ err error }
+type openedMsg struct{ err error }
 
 // openConfig: the opener may block, so it runs off the loop.
 func (m *Model) openConfig() tea.Cmd {
 	command, filename, open := m.cfg.UserConfig.OS.OpenCommand, m.cfg.ConfigFilename(), m.openFile
 
-	return func() tea.Msg { return openedConfigMsg{err: open(command, filename)} }
+	return func() tea.Msg { return openedMsg{err: open(command, filename)} }
 }
 
-func (m *Model) onOpenedConfig(msg openedConfigMsg) {
+func (m *Model) onOpened(msg openedMsg) {
 	if msg.err != nil {
 		m.openError(msg.err.Error())
 	}

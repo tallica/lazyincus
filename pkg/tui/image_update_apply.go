@@ -2,6 +2,7 @@ package tui
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -95,14 +96,8 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 			checked:      true,
 		}
 
-		if link := commands.BuildLink(update.status.From, update.status.To); link != "" {
-			item.keys = map[string]menuKey{"o": {handler: func(m *Model) tea.Cmd {
-				if err := m.os.OpenLink(link); err != nil {
-					m.handleError(err)
-				}
-
-				return nil
-			}}}
+		if links := commands.BuildLinks(update.status.Ref, update.status.From, update.status.To); len(links) > 0 {
+			item.keys = map[string]menuKey{"o": {handler: openBuildLink(links)}}
 		}
 
 		items = append(items, item)
@@ -122,6 +117,17 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 	})
 
 	return nil
+}
+
+// openBuildLink opens the first of links that exists, asking off the loop.
+func openBuildLink(links []string) func(*Model) tea.Cmd {
+	return func(m *Model) tea.Cmd {
+		command, open := m.cfg.UserConfig.OS.OpenLinkCommand, m.os.OpenLink
+
+		return func() tea.Msg {
+			return openedMsg{err: open(command, commands.FirstLink(context.Background(), links))}
+		}
+	}
 }
 
 // composeUpdateImages recreates the services on a pull; without --no-deps,

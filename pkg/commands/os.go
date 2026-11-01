@@ -138,8 +138,7 @@ func (c *OSCommand) OpenFile(commandTemplate, filename string) error {
 }
 
 // OpenLink opens a link with the configured open-link command
-func (c *OSCommand) OpenLink(link string) error {
-	commandTemplate := c.Config.UserConfig.OS.OpenLinkCommand
+func (c *OSCommand) OpenLink(commandTemplate, link string) error {
 	templateValues := map[string]string{
 		"link": c.Quote(link),
 	}

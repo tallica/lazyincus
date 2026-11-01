@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"context"
 	"maps"
+	"net/http"
 	"net/url"
 	"slices"
 	"strings"
@@ -15,6 +17,7 @@ const (
 	labelVersion  = "org.opencontainers.image.version"
 	labelSource   = "org.opencontainers.image.source"
 	labelRevision = "org.opencontainers.image.revision"
+	labelURL      = "org.opencontainers.image.url"
 )
 
 // BuildInfo is what an image's config says of its build.
@@ -22,6 +25,7 @@ type BuildInfo struct {
 	Version  string
 	Source   string
 	Revision string
+	URL      string
 	Versions map[string]string
 	Created  time.Time
 }
@@ -32,10 +36,21 @@ func buildInfo(image v1.Image) (*BuildInfo, error) {
 		return nil, err
 	}
 
+	manifest, err := image.Manifest()
+	if err != nil {
+		return nil, err
+	}
+
+	// The official images label their source in the manifest, not the config.
+	labelOr := func(key string) string {
+		return lo.CoalesceOrEmpty(config.Config.Labels[key], manifest.Annotations[key])
+	}
+
 	info := &BuildInfo{
 		Version:  config.Config.Labels[labelVersion],
-		Source:   config.Config.Labels[labelSource],
-		Revision: config.Config.Labels[labelRevision],
+		Source:   labelOr(labelSource),
+		Revision: labelOr(labelRevision),
+		URL:      labelOr(labelURL),
 		Versions: map[string]string{},
 		Created:  config.Created.Time,
 	}
@@ -107,16 +122,99 @@ func buildDate(created, other time.Time) string {
 	return created.Format(time.DateOnly)
 }
 
+// BuildLinks are where to read what changed, best first; only the last is sure to exist.
+func BuildLinks(ref string, from, to *BuildInfo) []string {
+	link := BuildLink(from, to)
+
+	upstream := packagedUpstream(to)
+	if upstream == "" {
+		return lo.Compact([]string{link})
+	}
+
+	var links []string
+	if version := ownBuildVersion(ref, to); version != "" {
+		links = append(links, upstream+"/releases/tag/"+version, upstream+"/releases/tag/v"+version)
+	}
+
+	return append(links, lo.CoalesceOrEmpty(to.URL, link))
+}
+
+// packagedUpstream guesses redis/redis from redis/docker-library-redis.
+func packagedUpstream(to *BuildInfo) string {
+	if to == nil {
+		return ""
+	}
+
+	// Only bashbrew, which builds the official images, adds the #commit:dir.
+	source, err := url.Parse(to.Source)
+	if err != nil || source.Host != "github.com" || source.Fragment == "" {
+		return ""
+	}
+
+	owner, repository, ok := strings.Cut(strings.Trim(strings.TrimSuffix(source.Path, ".git"), "/"), "/")
+	if !ok {
+		return ""
+	}
+
+	project := strings.TrimPrefix(strings.TrimPrefix(repository, "docker-library-"), "docker-")
+	if owner == "docker-library" {
+		owner = project
+	}
+
+	return "https://github.com/" + owner + "/" + project
+}
+
+// ownBuildVersion is the build's version of what ref is an image of.
+func ownBuildVersion(ref string, info *BuildInfo) string {
+	if info.Version != "" {
+		return info.Version
+	}
+
+	for key, version := range info.Versions {
+		if ownVersion(ref, key) {
+			return version
+		}
+	}
+
+	return ""
+}
+
+// FirstLink is the first of links that exists, else the last.
+func FirstLink(ctx context.Context, links []string) string {
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	for _, link := range links[:len(links)-1] {
+		request, err := http.NewRequestWithContext(ctx, http.MethodHead, link, nil)
+		if err != nil {
+			continue
+		}
+
+		response, err := client.Do(request)
+		if err != nil {
+			continue
+		}
+		_ = response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			return link
+		}
+	}
+
+	return links[len(links)-1]
+}
+
 // BuildLink is where to read what changed between two builds, if they say.
 func BuildLink(from, to *BuildInfo) string {
 	if to == nil || to.Source == "" {
 		return ""
 	}
 
-	source, err := url.Parse(strings.TrimSuffix(strings.TrimSuffix(to.Source, "/"), ".git"))
+	source, err := url.Parse(to.Source)
 	if err != nil || (source.Scheme != "https" && source.Scheme != "http") {
 		return ""
 	}
+	source.Fragment, source.RawFragment = "", ""
+	source.Path = strings.TrimSuffix(strings.TrimSuffix(source.Path, "/"), ".git")
 
 	if source.Host != "github.com" {
 		return source.String()

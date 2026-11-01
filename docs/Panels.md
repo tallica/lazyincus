@@ -557,8 +557,13 @@ from → to: the `org.opencontainers.image.version` label, else a changed
 `*_VERSION` variable, as the official images set - the one named for the
 image first, any other shown by name - else the build date; `o` opens the
 GitHub comparison of the two builds' revisions, or the releases, when the
-image's labels name its source. Reading both builds' configs costs a
-newer build a manifest GET or two, which Docker Hub counts as pulls. It
+image's labels name its source. An official image's source is Docker's
+packaging repository, whose commits are only its Dockerfile's, so `o`
+opens the release of the new version in the project it packages instead -
+`redis/redis` for `redis/docker-library-redis` - or, where GitHub has no
+such release, the image's page on Docker Hub. Reading both builds'
+configs costs a newer build a manifest GET or two, which Docker Hub
+counts as pulls. It
 checks first when none of the stack's images has been checked yet, and
 checks again after, for the images the services now run. The tag comes
 from the copy Incus pulled, so an image incus-compose built has none and

@@ -382,8 +382,8 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case completedMsg:
 		m.onCompleted(msg)
 
-	case openedConfigMsg:
-		m.onOpenedConfig(msg)
+	case openedMsg:
+		m.onOpened(msg)
 
 	case copiedMsg:
 		return m.onCopied(msg)

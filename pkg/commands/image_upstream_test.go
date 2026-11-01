@@ -65,10 +65,20 @@ func (reg *testRegistry) push(t *testing.T, tag string) string {
 func (reg *testRegistry) pushWith(t *testing.T, tag string, config v1.Config) (string, string) {
 	t.Helper()
 
+	return reg.pushAnnotated(t, tag, config, nil)
+}
+
+// pushAnnotated is pushWith with the amd64 manifest's annotations.
+func (reg *testRegistry) pushAnnotated(t *testing.T, tag string, config v1.Config, annotations map[string]string) (string, string) {
+	t.Helper()
+
 	amd64, err := random.Image(64, 2)
 	require.NoError(t, err)
 	amd64, err = mutate.Config(amd64, config)
 	require.NoError(t, err)
+	if annotations != nil {
+		amd64 = mutate.Annotations(amd64, annotations).(v1.Image)
+	}
 	arm64, err := random.Image(64, 2)
 	require.NoError(t, err)
 
@@ -140,6 +150,25 @@ func TestRegistryCheckerReadsBothBuilds(t *testing.T) {
 
 // A running build the registry has since let go is asked for once: Docker
 // Hub would count each ask as a pull.
+// An official image names its source in the manifest's annotations.
+func TestRegistryCheckerReadsAnnotations(t *testing.T) {
+	reg := newTestRegistry(t)
+	annotated := func(revision string) map[string]string {
+		return map[string]string{
+			labelRevision: revision,
+			labelSource:   "https://github.com/acme/docker-app.git#" + revision + ":alpine",
+		}
+	}
+	fingerprint, pinned := reg.pushAnnotated(t, "library/app:1", v1.Config{}, annotated("aaa"))
+	reg.pushAnnotated(t, "library/app:1", v1.Config{}, annotated("bbb"))
+
+	status := NewRegistryChecker().Check(context.Background(), UpstreamTarget{
+		Fingerprint: fingerprint, Ref: reg.host + "/library/app:1", Architecture: "x86_64", Pinned: pinned,
+	})
+	require.Equal(t, UpstreamNewer, status.State)
+	assert.Equal(t, "https://github.com/acme/docker-app/compare/aaa...bbb", BuildLink(status.From, status.To))
+}
+
 func TestRegistryCheckerAsksForAGoneBuildOnce(t *testing.T) {
 	reg := newTestRegistry(t)
 	reg.push(t, "library/app:1")
@@ -218,8 +247,49 @@ func TestBuildLink(t *testing.T) {
 		BuildLink(nil, &BuildInfo{Source: "https://github.com/acme/app.git"}))
 	assert.Equal(t, "https://gitlab.com/acme/app",
 		BuildLink(&BuildInfo{Revision: "a"}, &BuildInfo{Source: "https://gitlab.com/acme/app", Revision: "b"}))
+	assert.Equal(t, "https://github.com/acme/app/releases",
+		BuildLink(nil, &BuildInfo{Source: "https://github.com/acme/app.git#8fd1238:alpine"}))
 	assert.Empty(t, BuildLink(nil, &BuildInfo{Source: "git@github.com:acme/app"}))
 	assert.Empty(t, BuildLink(nil, &BuildInfo{}))
+}
+
+func TestBuildLinks(t *testing.T) {
+	official := &BuildInfo{
+		Source:   "https://github.com/redis/docker-library-redis.git#8fd1238:alpine",
+		URL:      "https://hub.docker.com/_/redis",
+		Versions: map[string]string{"REDIS_VERSION": "8.10.3"},
+	}
+	assert.Equal(t, []string{
+		"https://github.com/redis/redis/releases/tag/8.10.3",
+		"https://github.com/redis/redis/releases/tag/v8.10.3",
+		"https://hub.docker.com/_/redis",
+	}, BuildLinks("docker.io/library/redis:alpine", &BuildInfo{Revision: "a"}, official))
+
+	assert.Equal(t, []string{
+		"https://github.com/postgres/postgres/releases/tag/17.2",
+		"https://github.com/postgres/postgres/releases/tag/v17.2",
+		"https://github.com/docker-library/postgres/releases",
+	}, BuildLinks("docker.io/library/postgres:17", nil, &BuildInfo{
+		Source: "https://github.com/docker-library/postgres.git#abc:17/bookworm", Version: "17.2",
+	}))
+
+	// An image labelled with its own repository keeps the comparison.
+	assert.Equal(t, []string{"https://github.com/acme/app/compare/a...b"},
+		BuildLinks("ghcr.io/acme/app:1", &BuildInfo{Revision: "a"}, &BuildInfo{Source: "https://github.com/acme/app", Revision: "b"}))
+	assert.Empty(t, BuildLinks("ghcr.io/acme/app:1", nil, &BuildInfo{}))
+}
+
+func TestFirstLink(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/there" {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	ctx := context.Background()
+	assert.Equal(t, server.URL+"/there", FirstLink(ctx, []string{server.URL + "/gone", server.URL + "/there", "fallback"}))
+	assert.Equal(t, "fallback", FirstLink(ctx, []string{server.URL + "/gone", "fallback"}))
 }
 
 func TestRegistryCheckerReportsFailures(t *testing.T) {
