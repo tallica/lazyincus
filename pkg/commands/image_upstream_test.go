@@ -273,6 +273,15 @@ func TestBuildLinks(t *testing.T) {
 		Source: "https://github.com/docker-library/postgres.git#abc:17/bookworm", Version: "17.2",
 	}))
 
+	// Packaged off GitHub, there's no project to guess.
+	assert.Equal(t, []string{"https://hub.docker.com/_/ubuntu"}, BuildLinks("docker.io/library/ubuntu:24.04", nil, &BuildInfo{
+		Source: "https://git.launchpad.net/cloud-images/+oci/ubuntu-base#abc:oci", URL: "https://hub.docker.com/_/ubuntu",
+		Versions: map[string]string{"UBUNTU_VERSION": "24.04"},
+	}))
+	assert.Equal(t, []string{"https://git.launchpad.net/cloud-images/+oci/ubuntu-base"}, BuildLinks("docker.io/library/ubuntu:24.04", nil, &BuildInfo{
+		Source: "https://git.launchpad.net/cloud-images/+oci/ubuntu-base#abc:oci",
+	}))
+
 	// An image labelled with its own repository keeps the comparison.
 	assert.Equal(t, []string{"https://github.com/acme/app/compare/a...b"},
 		BuildLinks("ghcr.io/acme/app:1", &BuildInfo{Revision: "a"}, &BuildInfo{Source: "https://github.com/acme/app", Revision: "b"}))

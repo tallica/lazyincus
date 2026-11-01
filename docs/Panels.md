@@ -561,17 +561,17 @@ image's labels name its source. An official image's source is Docker's
 packaging repository, whose commits are only its Dockerfile's, so `o`
 opens the release of the new version in the project it packages instead -
 `redis/redis` for `redis/docker-library-redis` - or, where GitHub has no
-such release, the image's page on Docker Hub. Reading both builds'
-configs costs a newer build a manifest GET or two, which Docker Hub
-counts as pulls. It
-checks first when none of the stack's images has been checked yet, and
-checks again after, for the images the services now run. The tag comes
-from the copy Incus pulled, so an image incus-compose built has none and
-isn't checked, and neither is a service with no instances yet. The check
-runs from this machine, not the daemon, with the credentials in your
-`~/.docker/config.json`; a registry only the daemon can reach shows its
-error on the Config tab. A tag that hasn't moved costs a HEAD, which
-Docker Hub doesn't count against its pull limit.
+such release or the packaging isn't on GitHub, the image's page on Docker
+Hub. Reading both builds' configs costs a newer build a manifest GET or
+two, which Docker Hub counts as pulls. It checks first when none of the
+stack's images has been checked yet, and checks again after, for the
+images the services now run. The tag comes from the copy Incus pulled, so
+an image incus-compose built has none and isn't checked, and neither is a
+service with no instances yet. The check runs from this machine, not the
+daemon, with the credentials in your `~/.docker/config.json`; a registry
+only the daemon can reach shows its error on the Config tab. A tag that
+hasn't moved costs a HEAD, which Docker Hub doesn't count against its pull
+limit.
 `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag, `2.1`
 to `2.2`, isn't looked for - see
 [BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);

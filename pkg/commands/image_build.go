@@ -126,28 +126,39 @@ func buildDate(created, other time.Time) string {
 func BuildLinks(ref string, from, to *BuildInfo) []string {
 	link := BuildLink(from, to)
 
-	upstream := packagedUpstream(to)
-	if upstream == "" {
+	source := officialSource(to)
+	if source == nil {
 		return lo.Compact([]string{link})
 	}
 
 	var links []string
-	if version := ownBuildVersion(ref, to); version != "" {
-		links = append(links, upstream+"/releases/tag/"+version, upstream+"/releases/tag/v"+version)
+	if upstream := packagedUpstream(source); upstream != "" {
+		if version := ownBuildVersion(ref, to); version != "" {
+			links = append(links, upstream+"/releases/tag/"+version, upstream+"/releases/tag/v"+version)
+		}
 	}
 
-	return append(links, lo.CoalesceOrEmpty(to.URL, link))
+	return lo.Compact(append(links, lo.CoalesceOrEmpty(to.URL, link)))
 }
 
-// packagedUpstream guesses redis/redis from redis/docker-library-redis.
-func packagedUpstream(to *BuildInfo) string {
+// officialSource is the source of an official image's build, else nil.
+func officialSource(to *BuildInfo) *url.URL {
 	if to == nil {
-		return ""
+		return nil
 	}
 
 	// Only bashbrew, which builds the official images, adds the #commit:dir.
 	source, err := url.Parse(to.Source)
-	if err != nil || source.Host != "github.com" || source.Fragment == "" {
+	if err != nil || source.Fragment == "" {
+		return nil
+	}
+
+	return source
+}
+
+// packagedUpstream guesses redis/redis from redis/docker-library-redis.
+func packagedUpstream(source *url.URL) string {
+	if source.Host != "github.com" {
 		return ""
 	}
 
