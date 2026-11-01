@@ -148,8 +148,6 @@ func TestRegistryCheckerReadsBothBuilds(t *testing.T) {
 	assert.Equal(t, "https://github.com/acme/app/compare/aaa...bbb", BuildLink(status.From, status.To))
 }
 
-// A running build the registry has since let go is asked for once: Docker
-// Hub would count each ask as a pull.
 // An official image names its source in the manifest's annotations.
 func TestRegistryCheckerReadsAnnotations(t *testing.T) {
 	reg := newTestRegistry(t)
@@ -169,6 +167,8 @@ func TestRegistryCheckerReadsAnnotations(t *testing.T) {
 	assert.Equal(t, "https://github.com/acme/docker-app/compare/aaa...bbb", BuildLink(status.From, status.To))
 }
 
+// A running build the registry has since let go is asked for once: Docker
+// Hub would count each ask as a pull.
 func TestRegistryCheckerAsksForAGoneBuildOnce(t *testing.T) {
 	reg := newTestRegistry(t)
 	reg.push(t, "library/app:1")
