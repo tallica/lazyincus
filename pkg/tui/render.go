@@ -239,6 +239,34 @@ func (m *Model) information() string {
 	return infoSectionPadding + m.operationsStatus() + m.warningsStatus() + m.incusStatus() + m.cfg.Version
 }
 
+func (m *Model) sessionProject() string {
+	if m.incus.IsAllProjects() {
+		return m.tr.AllProjects
+	}
+
+	return m.incus.ProjectName()
+}
+
+func joinScope(remote, project string) string {
+	if project == "" {
+		return remote
+	}
+
+	return strings.TrimPrefix(remote+"/"+project, "/")
+}
+
+// terminalTitle names the session's remote and project, so a terminal tab says which daemon it's on.
+func (m *Model) terminalTitle() string {
+	remote := m.incus.RemoteName()
+	scope := joinScope(remote, m.sessionProject())
+
+	if scope != "" && m.isReadOnly(remote) {
+		scope += " (" + m.tr.ReadOnly + ")"
+	}
+
+	return strings.TrimPrefix(scope+" - "+m.cfg.Name, " - ")
+}
+
 func (m *Model) incusStatus() string {
 	remote := m.incus.RemoteName()
 	version := m.incus.ServerVersion()
@@ -256,18 +284,11 @@ func (m *Model) incusStatus() string {
 		scope = colour + remote + reset
 	}
 
-	project := m.incus.ProjectName()
-	if m.incus.IsAllProjects() {
-		project = m.tr.AllProjects
-	}
-	if project != "" {
-		scope = strings.TrimPrefix(scope+"/"+project, "/")
-	}
-	if scope != "" {
+	if scope = joinScope(scope, m.sessionProject()); scope != "" {
 		label += " (" + scope + ")"
 	}
 
-	if m.cfg.ReadOnly || m.cfg.UserConfig.Remotes[remote].ReadOnly {
+	if m.isReadOnly(remote) {
 		label += " \x1b[33m" + m.tr.ReadOnly + reset
 	}
 

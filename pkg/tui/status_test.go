@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 // The footer under a transient status.
@@ -69,4 +70,21 @@ func TestAHeldBatchRuns(t *testing.T) {
 	require.Len(t, batch, 2)
 	assert.Equal(t, ran{1}, batch[0]())
 	assert.Equal(t, ran{2}, batch[1]())
+}
+
+// The terminal's title says which daemon and project the session is on.
+func TestTheTerminalTitleNamesTheSession(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	assert.Equal(t, "fake/all projects - lazyincus", m.View().WindowTitle)
+
+	m.incus.UseProject("shop")
+	assert.Equal(t, "fake/shop - lazyincus", m.View().WindowTitle)
+
+	m = start(t, options{readOnly: true}, 90, 16)
+	assert.Equal(t, "fake/all projects (read-only) - lazyincus", m.View().WindowTitle)
+
+	m = start(t, options{configure: func(c *config.UserConfig) {
+		c.Remotes = map[string]config.RemoteConfig{"fake": {ReadOnly: true}}
+	}}, 90, 16)
+	assert.Equal(t, "fake/all projects (read-only) - lazyincus", m.View().WindowTitle)
 }

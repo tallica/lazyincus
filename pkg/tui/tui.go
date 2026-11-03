@@ -547,6 +547,7 @@ func (m *Model) clampLists() {
 func (m *Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
+	view.WindowTitle = m.terminalTitle()
 	if !m.cfg.UserConfig.Gui.IgnoreMouseEvents {
 		view.MouseMode = tea.MouseModeCellMotion
 	}
