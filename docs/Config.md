@@ -92,7 +92,7 @@ your file either).
 | `remotes.<name>.color` | string | none | Marks the remote: a color name or a hex value, as the theme takes. It colors the remote's name in the footer and the border of each unfocused panel whose keys act on it - a stack's own remote on Stacks and Services, as `readOnly` reckons it. The focused panel keeps `theme.activeBorderColor`. |
 | `oS.openCommand` | string | macOS: `open {{filename}}`; Linux: `sh -c "xdg-open {{filename}} >/dev/null"` | Command used to open a file. |
 | `oS.openLinkCommand` | string | macOS: `open {{link}}`; Linux: `sh -c "xdg-open {{link}} >/dev/null"` | Command used to open a URL, as `o` on `G`'s list does to show what changed in an image. |
-| `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used. |
+| `oS.copyToClipboardCommand` | string | auto-detected | Command that copied text (e.g. an instance's IPv4 address, via `y`) is piped into on stdin. When unset, the first of `pbcopy`, `wl-copy`, `xclip -selection clipboard -in`, `xsel --clipboard --input` found on `PATH` is used; with none, as over SSH, the text goes through the terminal (OSC 52). The terminal never says whether that worked, some ignore it, and tmux passes it on only with `set-clipboard on`. |
 | `ignore` | []string | `[]` | List rows are hidden when any displayed column contains one of these substrings — status and IP addresses included, not just the name. |
 
 ## State

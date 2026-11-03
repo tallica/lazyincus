@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -50,6 +51,12 @@ func (m *Model) copyToClipboard(value string) tea.Cmd {
 }
 
 func (m *Model) onCopied(msg copiedMsg) tea.Cmd {
+	// OSC 52 (docs/Config.md, oS.copyToClipboardCommand).
+	if errors.Is(msg.err, commands.ErrNoClipboardCommand) {
+		return tea.Batch(tea.SetClipboard(msg.value),
+			m.withTransientStatus(fmt.Sprintf("%s %s", m.tr.SentToTerminalClipboard, msg.value), 2*time.Second))
+	}
+
 	if msg.err != nil {
 		m.openError(msg.err.Error())
 		return nil

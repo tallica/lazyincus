@@ -159,6 +159,8 @@ var clipboardCommandCandidates = []string{
 	"xsel --clipboard --input",
 }
 
+var ErrNoClipboardCommand = errors.New("no clipboard command found")
+
 // CopyToClipboard pipes text into commandStr, else the first of clipboardCommandCandidates on PATH.
 func (c *OSCommand) CopyToClipboard(commandStr, text string) error {
 	if commandStr == "" {
@@ -166,7 +168,7 @@ func (c *OSCommand) CopyToClipboard(commandStr, text string) error {
 	}
 
 	if commandStr == "" {
-		return errors.New("No clipboard command found. Install one of pbcopy, wl-copy, xclip or xsel, or set os.copyToClipboardCommand in your config")
+		return ErrNoClipboardCommand
 	}
 
 	cmd, err := c.ExecutableFromString(commandStr)

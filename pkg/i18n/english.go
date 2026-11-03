@@ -123,6 +123,7 @@ type TranslationSet struct {
 	ViewLogs                     string
 	ExecShell                    string
 	CopiedToClipboard            string
+	SentToTerminalClipboard      string
 	Copy                         string
 	CopyMenuTitle                string
 	NothingToCopy                string
@@ -489,6 +490,7 @@ func englishSet() TranslationSet {
 		ViewLogs:                     "view logs",
 		ExecShell:                    "exec shell",
 		CopiedToClipboard:            "copied to clipboard:",
+		SentToTerminalClipboard:      "sent to the terminal's clipboard:",
 		Copy:                         "copy name, address…",
 		CopyMenuTitle:                "Copy",
 		NothingToCopy:                "Nothing to copy.",
