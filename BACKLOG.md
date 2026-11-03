@@ -191,8 +191,6 @@ Available since the move to Bubble Tea v2; none of it wired up.
 
 Known rough edges, carried over from the gocui version:
 
-- Moving the cursor in the search prompt searches again and jumps back to
-  the first match. Search only when the text changes.
 - After a main-panel search, main stops passing the keys it doesn't take
   (`[`, `]`, `E`) to the panel it was entered from, until `esc` and
   `enter` again. Keep the parent across the search.

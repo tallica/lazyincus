@@ -166,3 +166,18 @@ func TestFullScreenKeepsMainOnShowWhileSearching(t *testing.T) {
 	press(m, "/", "f")
 	assert.Contains(t, strings.Join(screen(m), "\n"), first)
 }
+
+// Moving the cursor in the search prompt leaves main where it was scrolled to.
+func TestACursorKeyInTheSearchPromptDoesntSearchAgain(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	searchMain(m, "e")
+	press(m, "pgdown", "pgdown")
+	scrolled := m.main.oy
+	require.NotZero(t, scrolled)
+
+	press(m, "left", "right")
+	assert.Equal(t, scrolled, m.main.oy)
+
+	press(m, "x")
+	assert.Equal(t, "ex", m.main.search.needle, "typing still searches")
+}
