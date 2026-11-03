@@ -179,13 +179,6 @@ Available since the move to Bubble Tea v2; none of it wired up.
 - [ ] **Recentre on scroll** - keep the selection in the middle once it
       leaves the view, the way lazygit scrolls; lazyincus moves a line at a
       time, as lazydocker does. A UX choice to make, not a gap.
-- [ ] **Copy over SSH** - `tea.SetClipboard` (OSC 52) copies through the
-      terminal itself; today's copy menu shells out to `pbcopy`,
-      `wl-copy`, `xclip` or `xsel` and fails on a remote shell with none.
-      Fall back to it when `os.copyToClipboardCommand` isn't set.
-- [ ] **Window title** - name the remote and project, so the terminal tab
-      says which daemon it's pointed at; worth it next to a read-only
-      production remote.
 - [ ] **Terminal progress bar** - `View.ProgressBar` (OSC 9;4) for a long
       operation, such as an export, a backup or an image pull, in the tab
       or taskbar while you're in another window.
