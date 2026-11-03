@@ -50,7 +50,13 @@ func (m *Model) showWarnings(warnings []*commands.Warning) {
 }
 
 func (m *Model) pollWarnings() tea.Cmd {
-	return refreshQuiet(m.tick(warningsPollInterval, warningsPollMsg{}), m.fetchWarnings())
+	next := m.tick(warningsPollInterval, warningsPollMsg{})
+	if m.awaySkips(m.warningsPolledAt) {
+		return next
+	}
+	m.warningsPolledAt = time.Now()
+
+	return refreshQuiet(next, m.fetchWarnings())
 }
 
 func (m *Model) warningsStatus() string {

@@ -140,6 +140,12 @@ When the stream opens, every list is fetched again for what changed while
 none was; when it drops, the marks come off, the instances are listed at
 once to see whether the daemon has gone, and the polls return to 10s.
 
+While the terminal reports it isn't focused, every poll fetches at most
+once a minute and the main panel's tab stops, keeping what it last drew;
+the event stream refreshes the lists as ever. Focus back, every list is
+fetched again and the tab starts again. A terminal that sends no focus
+events is never away, and tmux passes them on only with `focus-events on`.
+
 Only a poll catches:
 
 - an instance's CPU, memory, processes and addresses - the 2s poll;

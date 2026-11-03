@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed, an official image's project release notes.
 - The terminal's title names the remote and project, and says when the remote is read-only, so a tab shows which daemon it's on.
 - `y` copies through the terminal when no clipboard command is found, as over SSH. tmux needs `set-clipboard on` to pass it on.
+- While the terminal isn't focused, lazyincus polls once a minute and the main panel's tab stops; focus back, it catches up at once. tmux needs `focus-events on`.
 
 ### Changed
 - The interface is rebuilt on Bubble Tea in place of gocui. Panels, keys and screens are as before; the differences below are the ones to notice.

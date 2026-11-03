@@ -51,6 +51,9 @@ func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 	if m.eventsLive && (kind != refreshStacks || !m.stacksElsewhere) && time.Since(m.polledAt[kind]) < watchedPollInterval {
 		return next
 	}
+	if m.awaySkips(m.polledAt[kind]) {
+		return next
+	}
 
 	if m.polledAt == nil {
 		m.polledAt = map[refreshKind]time.Time{}
@@ -62,7 +65,13 @@ func (m *Model) slowPoll(kind refreshKind) tea.Cmd {
 
 // pollInstances refreshes the instances quietly, the connection check too.
 func (m *Model) pollInstances() tea.Cmd {
-	return refreshQuiet(tea.Batch(syncConnection, m.tick(instancesPollInterval, pollMsg{})), m.fetchInstances(), m.fetchServices())
+	next := tea.Batch(syncConnection, m.tick(instancesPollInterval, pollMsg{}))
+	if m.awaySkips(m.instancesPolledAt) {
+		return next
+	}
+	m.instancesPolledAt = time.Now()
+
+	return refreshQuiet(next, m.fetchInstances(), m.fetchServices())
 }
 
 type syncConnectionMsg struct{}

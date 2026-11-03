@@ -132,6 +132,9 @@ type Model struct {
 	streamEvents bool
 	// eventsLive is whether an event stream is open: the slow polls wait on it.
 	eventsLive bool
+	// away is whether the terminal has reported losing focus.
+	away                                bool
+	instancesPolledAt, warningsPolledAt time.Time
 	// polledAt is when each slow poll last asked the daemon.
 	polledAt       map[refreshKind]time.Time
 	connectionLost bool
@@ -350,6 +353,12 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case pollMsg:
 		return m.pollInstances()
 
+	case tea.BlurMsg:
+		m.onBlur()
+
+	case tea.FocusMsg:
+		return m.onFocus()
+
 	case slowPollMsg:
 		return m.slowPoll(msg.kind)
 
@@ -548,6 +557,7 @@ func (m *Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
 	view.WindowTitle = m.terminalTitle()
+	view.ReportFocus = true
 	if !m.cfg.UserConfig.Gui.IgnoreMouseEvents {
 		view.MouseMode = tea.MouseModeCellMotion
 	}
