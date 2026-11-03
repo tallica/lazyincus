@@ -447,6 +447,10 @@ func (m *Model) jumpToTopMain() {
 
 func (m *Model) enterMain() {
 	parent := m.currentView()
+	// From main, enter is its parent's, passed on: main isn't its own parent.
+	if parent == mainView {
+		return
+	}
 	m.focusView(mainView)
 	m.mainParent = parent
 }

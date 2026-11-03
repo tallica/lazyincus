@@ -194,3 +194,13 @@ func TestASearchKeepsMainsParent(t *testing.T) {
 	press(m, "esc", "[")
 	assert.Equal(t, 2, m.panelNamed("instances").mainTab, "[ after esc clears it")
 }
+
+// enter in main, which its parent panel's binding gets, leaves main's parent alone.
+func TestEnterInMainKeepsItsParent(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "enter", "/", "f", "enter", "]", "[", "down", "up", "enter")
+	require.Equal(t, mainView, m.currentView())
+
+	press(m, "]")
+	assert.Equal(t, 1, m.panelNamed("instances").mainTab)
+}
