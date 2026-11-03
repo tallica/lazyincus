@@ -21,15 +21,6 @@ func TestMainPassesKeysItDoesntTakeToItsPanel(t *testing.T) {
 }
 
 // Main forgets its panel once the search prompt has had focus.
-func TestMainForgetsItsPanelAfterASearch(t *testing.T) {
-	m := start(t, options{}, 140, 40)
-
-	press(m, "enter", "/", "x", "enter")
-	require.Equal(t, mainView, m.currentView())
-	press(m, "]")
-	assert.Equal(t, 0, m.panelNamed("instances").mainTab)
-}
-
 func TestAMutatingKeyFromMainIsGuardedToo(t *testing.T) {
 	m := start(t, options{readOnly: true}, 140, 40)
 

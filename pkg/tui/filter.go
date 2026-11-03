@@ -103,15 +103,17 @@ func (m *Model) openSearch() {
 }
 
 func (m *Model) editFilter(msg tea.Msg) tea.Cmd {
+	before := m.filter.input.Value()
+
 	var cmd tea.Cmd
 	m.filter.input, cmd = m.filter.input.Update(msg)
-	m.onNeedle(m.filter.input.Value())
+	if needle := m.filter.input.Value(); needle != before {
+		m.onNeedle(needle)
+	}
 
 	return cmd
 }
 
-// onNeedle runs on every key the
-// editor takes, so even moving the cursor searches afresh.
 func (m *Model) onNeedle(needle string) {
 	if !m.filter.search {
 		m.refilter(m.filter.panel)

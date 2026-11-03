@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
@@ -147,4 +148,59 @@ func TestKeysTheEditorDoesntTakeStillWork(t *testing.T) {
 	press(m, "pgdown")
 	assert.Equal(t, m.cfg.UserConfig.Gui.ScrollHeight, m.main.oy)
 	assert.Equal(t, filterView, m.currentView())
+}
+
+// Full screen with main focused, main stays on show while its search is typed.
+func TestFullScreenKeepsMainOnShowWhileSearching(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "]", "]", "enter")
+	for range 3 {
+		if m.screenMode == screenFull {
+			break
+		}
+		press(m, "+")
+	}
+	require.Equal(t, screenFull, m.screenMode)
+	first := strings.SplitN(mainText(m), "\n", 2)[0]
+
+	press(m, "/", "f")
+	assert.Contains(t, strings.Join(screen(m), "\n"), first)
+}
+
+// Moving the cursor in the search prompt leaves main where it was scrolled to.
+func TestACursorKeyInTheSearchPromptDoesntSearchAgain(t *testing.T) {
+	m := start(t, options{}, 90, 16)
+	searchMain(m, "e")
+	press(m, "pgdown", "pgdown")
+	scrolled := m.main.oy
+	require.NotZero(t, scrolled)
+
+	press(m, "left", "right")
+	assert.Equal(t, scrolled, m.main.oy)
+
+	press(m, "x")
+	assert.Equal(t, "ex", m.main.search.needle, "typing still searches")
+}
+
+// A search leaves main passing on the keys it doesn't take, [ and ] here, to the panel it was entered from.
+func TestASearchKeepsMainsParent(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "]", "]", "enter", "/", "f", "enter")
+	require.Equal(t, mainView, m.currentView())
+
+	press(m, "]")
+	assert.Equal(t, 3, m.panelNamed("instances").mainTab, "] after the search")
+
+	press(m, "esc", "[")
+	assert.Equal(t, 2, m.panelNamed("instances").mainTab, "[ after esc clears it")
+}
+
+// enter in main, which its parent panel's binding gets, leaves main's parent alone.
+func TestEnterInMainKeepsItsParent(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "enter", "/", "f", "enter", "]", "[", "down", "up", "enter")
+	require.Equal(t, mainView, m.currentView())
+
+	press(m, "]")
+	assert.Equal(t, 1, m.panelNamed("instances").mainTab)
 }
