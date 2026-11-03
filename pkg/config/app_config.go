@@ -169,8 +169,8 @@ func GetDefaultConfig() UserConfig {
 			Theme: ThemeConfig{
 				ActiveBorderColor:           []string{"green", "bold"},
 				InactiveBorderColor:         []string{"default"},
-				SelectedLineBgColor:         []string{"blue"},
-				InactiveSelectedLineBgColor: []string{"default"},
+				SelectedLineBgColor:         []string{"#515151", "bold"},
+				InactiveSelectedLineBgColor: []string{"#3b3b3b"},
 				OptionsTextColor:            []string{"blue"},
 			},
 			ReturnImmediately:       false,
