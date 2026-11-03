@@ -53,10 +53,10 @@ func TestMainKeepsItsTaskWhileItsKeyHolds(t *testing.T) {
 	assert.Equal(t, generation, m.mainTask.generation)
 }
 
-func TestTasksRunThroughPkgTasksAndTheInbox(t *testing.T) {
+func TestTasksRunThroughTheInbox(t *testing.T) {
 	m := start(t, options{}, 90, 16)
 	m.runTask = nil
-	t.Cleanup(m.tasks.Close)
+	t.Cleanup(func() { m.cancelMain() })
 
 	press(m, "]", "]")
 	// The Logs tab's writes may come through first, and be dropped.

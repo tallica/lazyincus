@@ -99,23 +99,37 @@ func (m *Model) queueMain(key string, wrap, autoscroll bool, task mainTaskFunc) 
 	})
 }
 
-// startTask hands task to pkg/tasks, which stops the last one first.
+// mainTaskSettle: a held key overtakes each task within it, so the rows it passes ask the daemon nothing.
+const mainTaskSettle = 100 * time.Millisecond
+
+// startTask cancels main's last task and starts task without waiting for it to stop.
 func (m *Model) startTask(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd {
+	m.cancelMain()
+
+	var ctx context.Context
+	ctx, m.cancelMain = context.WithCancel(context.Background())
+
 	if m.runTask != nil {
 		return m.runTask(task)
 	}
 
-	tasks, inbox := m.tasks, m.inbox
+	inbox := m.inbox
 
 	return func() tea.Msg {
-		_ = tasks.NewTask(func(ctx context.Context) {
+		go func() {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(mainTaskSettle):
+			}
+
 			task(ctx, func(msg tea.Msg) {
 				select {
 				case inbox <- msg:
 				case <-ctx.Done():
 				}
 			})
-		})
+		}()
 
 		return nil
 	}

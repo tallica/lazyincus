@@ -22,7 +22,6 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/sahilm/fuzzy v0.1.3
 	github.com/samber/lo v1.53.0
-	github.com/sasha-s/go-deadlock v0.3.9
 	github.com/spkg/bom v1.0.1
 	github.com/stretchr/testify v1.12.1
 )
@@ -68,7 +67,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/opencontainers/umoci v0.6.1-0.20251213054154-70fc5ee1f4df // indirect
-	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.11 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect

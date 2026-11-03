@@ -1,9 +1,14 @@
 package commands
 
 import (
+	"fmt"
+	"io"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -212,6 +217,62 @@ func TestARunningContainersConsoleLogAccumulates(t *testing.T) {
 	log, err := instance.TailConsoleLog()
 	require.NoError(t, err)
 	assert.Equal(t, "line\nline\n", log)
+}
+
+// drainingLog hands out the next numbered line on each read, as a running
+// container's console does, and is slow to read so readers overlap.
+type drainingLog struct {
+	*incustest.Server
+
+	mutex sync.Mutex
+	next  int
+}
+
+func (d *drainingLog) GetInstanceConsoleLog(string, *incus.InstanceConsoleLogArgs) (io.ReadCloser, error) {
+	d.mutex.Lock()
+	d.next++
+	line := fmt.Sprintf("%d\n", d.next)
+	d.mutex.Unlock()
+
+	return io.NopCloser(slowReader{strings.NewReader(line)}), nil
+}
+
+type slowReader struct{ io.Reader }
+
+func (r slowReader) Read(p []byte) (int, error) {
+	time.Sleep(time.Millisecond)
+
+	return r.Reader.Read(p)
+}
+
+// Two tabs can read one container's log at once; its lines stay in order.
+func TestConcurrentConsoleLogReadsKeepTheirOrder(t *testing.T) {
+	instance := listed("default", "web", "Running")
+	instance.Instance.Type = "container"
+	instance.Client = &drainingLog{Server: incustest.New(incustest.Server{})}
+
+	var runtimes instanceRuntimes
+	runtimes.attach(instance, 1)
+
+	var readers sync.WaitGroup
+	for range 8 {
+		readers.Go(func() {
+			for range 5 {
+				_, err := instance.TailConsoleLog()
+				assert.NoError(t, err)
+			}
+		})
+	}
+	readers.Wait()
+
+	var want strings.Builder
+	for i := 1; i <= 40; i++ {
+		fmt.Fprintf(&want, "%d\n", i)
+	}
+
+	log, err := instance.TailConsoleLog()
+	require.NoError(t, err)
+	assert.Equal(t, want.String()+"41\n", log)
 }
 
 // Stopped, any instance's read is the whole log; it replaces what the

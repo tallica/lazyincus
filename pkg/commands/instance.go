@@ -7,6 +7,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -469,6 +470,9 @@ func (i *Instance) TailConsoleLog() (string, error) {
 
 	running := latest.IsRunning()
 
+	runtime.logRead.Lock()
+	defer runtime.logRead.Unlock()
+
 	runtime.mutex.Lock()
 	alreadyFetched := runtime.stoppedLogFetched
 	buffered := runtime.logBuffer.String()
@@ -607,11 +611,19 @@ func (i *Instance) setTopCommand(command []string) {
 	runtime.topCommand = command
 }
 
+// execLocks runs one exec per client: two at once race in the client's
+// event listener setup (lxc/incus client/incus.go queryOperation, v7.6.0).
+var execLocks sync.Map
+
 // exec runs a command in the instance and returns its stdout, using the
 // client library's websocket exec rather than the `incus` CLI: this runs on
 // a poll, so spawning a process per tick would be wasteful, and nothing here
 // needs a terminal attached.
 func (i *Instance) exec(command []string) (string, error) {
+	lock, _ := execLocks.LoadOrStore(i.Client, &sync.Mutex{})
+	lock.(*sync.Mutex).Lock()
+	defer lock.(*sync.Mutex).Unlock()
+
 	var stdout, stderr bytes.Buffer
 
 	dataDone := make(chan bool)

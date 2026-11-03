@@ -18,11 +18,11 @@ the upstream commit this port pins.
 | `~/.config/lazydocker` | `~/.config/lazyincus` (via `xdg.New("", "lazyincus")`) |
 | `docker rm` / `docker exec` shell-outs | `incus exec` shell-outs |
 
-`pkg/tasks`, `pkg/log` and `pkg/utils` started as close to line-for-line
-ports, none of that code being Docker-specific. lazydocker's `pkg/gui`,
-built on gocui, has no counterpart: `pkg/tui` is a Bubble Tea rewrite, so
-an upstream bugfix in that layer is a behaviour to check here, not a patch
-to carry over.
+`pkg/log` and `pkg/utils` started as close to line-for-line ports, none
+of that code being Docker-specific. lazydocker's `pkg/gui`, built on
+gocui, has no counterpart: `pkg/tui` is a Bubble Tea rewrite, so an
+upstream bugfix in that layer is a behaviour to check here, not a patch to
+carry over.
 
 ## Package map
 
@@ -32,7 +32,6 @@ pkg/app/app.go                 wires config -> log -> i18n -> OSCommand -> Incus
 pkg/config/                    YAML user config, defaults, theme; the app's own state.yml and history.yml
 pkg/log/                       zerolog setup (console or JSON, file-based when --debug/DEBUG=TRUE)
 pkg/i18n/                      TranslationSet; English only
-pkg/tasks/                     cancellable background task manager (drives main-panel rendering)
 pkg/utils/                     string/table/color/yaml helpers and fuzzy ranking; every display width goes through DisplayWidth
 pkg/commands/
   incus.go                     IncusCommand: connection, to any remote by name, project scoping, list/refresh per resource
