@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A list filter that matches nothing shows the list's empty message in the main panel, rather than the item selected before.
 
 ### Fixed
+- In full-screen mode, `/` on the main panel keeps it on show while you type the search, rather than switching to the side panel.
 - `/` on a list ignores case unless what you type has a capital, as the main-panel search does, and no longer matches inside colour codes.
 - Top shows "Loading…" while its first process list is fetched, instead of a blank pane.
 - `ctrl+p` after a main-panel search now filters the palette as you type, instead of starting from the search's text and searching the main panel.

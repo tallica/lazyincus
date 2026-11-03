@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/config"
 )
 
@@ -147,4 +148,21 @@ func TestKeysTheEditorDoesntTakeStillWork(t *testing.T) {
 	press(m, "pgdown")
 	assert.Equal(t, m.cfg.UserConfig.Gui.ScrollHeight, m.main.oy)
 	assert.Equal(t, filterView, m.currentView())
+}
+
+// Full screen with main focused, main stays on show while its search is typed.
+func TestFullScreenKeepsMainOnShowWhileSearching(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "]", "]", "enter")
+	for range 3 {
+		if m.screenMode == screenFull {
+			break
+		}
+		press(m, "+")
+	}
+	require.Equal(t, screenFull, m.screenMode)
+	first := strings.SplitN(mainText(m), "\n", 2)[0]
+
+	press(m, "/", "f")
+	assert.Contains(t, strings.Join(screen(m), "\n"), first)
 }

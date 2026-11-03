@@ -79,11 +79,17 @@ func (m *Model) dimensions(width, height int, information, appStatus string) map
 	return boxlayout.ArrangeWindows(root, 0, 0, width, height)
 }
 
+func (m *Model) mainFocused() bool {
+	view := m.currentStaticView()
+
+	return view == mainView || view == filterView && m.filter.search
+}
+
 func (m *Model) midSectionWeights() (int, int) {
 	sideWeight := 1
 	mainWeight := int(1/m.cfg.UserConfig.Gui.SidePanelWidth) - 1
 
-	if m.currentStaticView() == mainView && m.screenMode == screenFull {
+	if m.mainFocused() && m.screenMode == screenFull {
 		return 0, 1
 	}
 
