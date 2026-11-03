@@ -469,6 +469,9 @@ func (i *Instance) TailConsoleLog() (string, error) {
 
 	running := latest.IsRunning()
 
+	runtime.logRead.Lock()
+	defer runtime.logRead.Unlock()
+
 	runtime.mutex.Lock()
 	alreadyFetched := runtime.stoppedLogFetched
 	buffered := runtime.logBuffer.String()

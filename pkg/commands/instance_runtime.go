@@ -12,8 +12,10 @@ import (
 // hands each byte out once - which `ps` worked in it, and what lazyincus
 // is in the middle of doing to it.
 type instanceRuntime struct {
-	mutex             deadlock.Mutex
-	latest            *Instance
+	mutex  deadlock.Mutex
+	latest *Instance
+	// logRead orders reads of a log that drains on read (docs/Incus.md, "Logs").
+	logRead           deadlock.Mutex
 	logBuffer         strings.Builder
 	stoppedLogFetched bool
 	topCommand        []string
