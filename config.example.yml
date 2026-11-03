@@ -32,8 +32,8 @@ gui:
       - "#515151"
       - bold
     # The selected row of the list the main panel shows while the main
-    # panel or a popup has the focus. [default] leaves its text bold on
-    # the terminal's own background.
+    # panel or a popup has the focus. [default] is the terminal's own
+    # background; bold only if listed, as here.
     inactiveSelectedLineBgColor:
       - "#3b3b3b"
       - bold
