@@ -221,10 +221,13 @@ run that too when a change touches timing.
 
 ### Releasing
 
-CI is `.github/workflows/ci.yml`: test, lint and govulncheck on every push
-to master, pull request and `v*` tag. govulncheck lives in `vuln.yml`,
-which CI calls and which also runs weekly on its own. On a tag its
-`release` job waits for all three and publishes nothing unless they pass.
+CI is `.github/workflows/ci.yml`, which calls the shared `go.yml` from
+[tallica/workflows](https://github.com/tallica/workflows) at `@v1`: test,
+lint and govulncheck on every push to master, pull request and `v*` tag
+(its Prettier job is off here). `vuln.yml` runs govulncheck weekly on its
+own, and `pr.yml` checks commit messages and the PR title against
+Conventional Commits. On a tag the `release` job waits for the checks and
+publishes nothing unless they pass.
 Then GoReleaser builds macOS and Linux binaries for amd64 and arm64,
 archives each with the markdown and LICENSE, and publishes them with a
 `checksums.txt`. The release notes are the tag's `CHANGELOG.md` section

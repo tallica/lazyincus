@@ -1,22 +1,15 @@
 name: vuln
 
 # Weekly as well as from CI: an advisory can land with nothing here changing.
+# The schedule has to live in this repo; it only fires where it is declared.
 on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
-  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
   govulncheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-          cache: true
-      - run: make audit
+    uses: tallica/workflows/.github/workflows/govulncheck.yml@v1

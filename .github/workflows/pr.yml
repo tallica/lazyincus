@@ -1,0 +1,14 @@
+name: PR
+
+# Conventional Commits on the commits and title, with the shared default
+# commitlint config; the CHANGELOG guard runs on PRs labelled user-facing.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  pr:
+    uses: tallica/workflows/.github/workflows/pr.yml@v1
