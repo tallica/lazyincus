@@ -181,3 +181,16 @@ func TestACursorKeyInTheSearchPromptDoesntSearchAgain(t *testing.T) {
 	press(m, "x")
 	assert.Equal(t, "ex", m.main.search.needle, "typing still searches")
 }
+
+// A search leaves main passing on the keys it doesn't take, [ and ] here, to the panel it was entered from.
+func TestASearchKeepsMainsParent(t *testing.T) {
+	m := start(t, options{}, 140, 40)
+	press(m, "]", "]", "enter", "/", "f", "enter")
+	require.Equal(t, mainView, m.currentView())
+
+	press(m, "]")
+	assert.Equal(t, 3, m.panelNamed("instances").mainTab, "] after the search")
+
+	press(m, "esc", "[")
+	assert.Equal(t, 2, m.panelNamed("instances").mainTab, "[ after esc clears it")
+}

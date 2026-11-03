@@ -180,7 +180,7 @@ func (m *Model) focusView(name string) {
 	}
 
 	m.popups = nil
-	if m.currentStaticView() == mainView && name != mainView {
+	if m.currentStaticView() == mainView && name != mainView && (name != filterView || !m.filter.search) {
 		m.mainParent = ""
 	}
 

@@ -191,9 +191,6 @@ Available since the move to Bubble Tea v2; none of it wired up.
 
 Known rough edges, carried over from the gocui version:
 
-- After a main-panel search, main stops passing the keys it doesn't take
-  (`[`, `]`, `E`) to the panel it was entered from, until `esc` and
-  `enter` again. Keep the parent across the search.
 - A main-panel search doesn't find a needle split by a wrapped line's
   break.
 - `sortVolumes`, and any other sort that can call two rows equal, should
