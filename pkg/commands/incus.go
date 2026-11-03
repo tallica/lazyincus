@@ -16,7 +16,6 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/cliconfig"
 	"github.com/rs/zerolog"
-	"github.com/sasha-s/go-deadlock"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
 )
@@ -31,7 +30,7 @@ type IncusCommand struct {
 
 	// Guarded by clientMutex: they change when the user switches project,
 	// and all of them when the user switches remote.
-	clientMutex deadlock.Mutex
+	clientMutex sync.Mutex
 	// base is the connection's own client, which every other is made from
 	// and nothing uses for a request: UseProject is only safe on a client
 	// nothing listens on (docs/Incus.md, "Clients").
@@ -46,7 +45,7 @@ type IncusCommand struct {
 	remoteName    string
 	serverVersion string
 
-	connMutex deadlock.Mutex
+	connMutex sync.Mutex
 	connected bool
 
 	runtimes instanceRuntimes

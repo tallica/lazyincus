@@ -2,9 +2,8 @@ package commands
 
 import (
 	"strings"
+	"sync"
 	"sync/atomic"
-
-	"github.com/sasha-s/go-deadlock"
 )
 
 // instanceRuntime is what outlives the Instance each refresh replaces: the
@@ -12,10 +11,10 @@ import (
 // hands each byte out once - which `ps` worked in it, and what lazyincus
 // is in the middle of doing to it.
 type instanceRuntime struct {
-	mutex  deadlock.Mutex
+	mutex  sync.Mutex
 	latest *Instance
 	// logRead orders reads of a log that drains on read (docs/Incus.md, "Logs").
-	logRead           deadlock.Mutex
+	logRead           sync.Mutex
 	logBuffer         strings.Builder
 	stoppedLogFetched bool
 	topCommand        []string
@@ -48,7 +47,7 @@ func (r *instanceRuntime) beginTransition(status string) (end func()) {
 
 // instanceRuntimes holds one instanceRuntime per instance, by Instance.Key.
 type instanceRuntimes struct {
-	mutex    deadlock.Mutex
+	mutex    sync.Mutex
 	byKey    map[string]*instanceRuntime
 	listings uint64
 }
