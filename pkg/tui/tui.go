@@ -19,7 +19,6 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
-	"github.com/tallica/lazyincus/pkg/tasks"
 )
 
 const inboxSize = 256
@@ -53,9 +52,9 @@ type Model struct {
 	// pendingMain starts the task fitMain queued, for Update to return.
 	pendingMain tea.Cmd
 	// queued is what a fetch's apply started, which has no Cmd to return.
-	queued []tea.Cmd
-	tasks  *tasks.TaskManager
-	// runTask stands in for pkg/tasks in tests.
+	queued     []tea.Cmd
+	cancelMain context.CancelFunc
+	// runTask stands in for the task's goroutine in tests.
 	runTask func(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd
 	// mainParent is the panel enter came from.
 	mainParent string
@@ -172,7 +171,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		filter:           filter{input: newEditorInput()},
 		inbox:            make(chan tea.Msg, inboxSize),
 		failures:         &failureWatch{},
-		tasks:            tasks.NewTaskManager(incus.Log, tr),
+		cancelMain:       func() {},
 		streamEvents:     true,
 		runIncus:         osCommand.RunExecutableWithOutput,
 		openFile:         osCommand.OpenFile,
@@ -235,7 +234,7 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 	_, err := program.Run()
 	stop()
 	m.stopEvents()
-	m.tasks.Close()
+	m.cancelMain()
 
 	return err
 }

@@ -9,7 +9,7 @@ distributed as source or as a compiled binary.
 
 lazyincus is a direct port of [lazydocker](https://github.com/jesseduffield/lazydocker)
 by Jesse Duffield — most of the non-Docker-specific code in this repository
-(config system, task manager, i18n scaffolding, utility helpers) is copied
+(config system, i18n scaffolding, utility helpers) is copied
 or adapted from it. The original MIT copyright notice is preserved in
 [LICENSE](LICENSE). See [docs/Port.md](docs/Port.md) for the rename map and
 a package-by-package account of what was carried over.
