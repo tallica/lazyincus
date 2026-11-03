@@ -61,7 +61,7 @@ var (
 		ActiveBorderColor:           []string{"green", "bold"},
 		InactiveBorderColor:         []string{"default"},
 		SelectedLineBgColor:         []string{"#515151", "bold"},
-		InactiveSelectedLineBgColor: []string{"#3b3b3b"},
+		InactiveSelectedLineBgColor: []string{"#3b3b3b", "bold"},
 		OptionsTextColor:            []string{"blue"},
 	}
 	LightTheme = ThemeConfig{

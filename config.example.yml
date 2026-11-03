@@ -36,6 +36,7 @@ gui:
     # the terminal's own background.
     inactiveSelectedLineBgColor:
       - "#3b3b3b"
+      - bold
     optionsTextColor:
       - blue
 

@@ -61,13 +61,18 @@ func TestALightBackgroundTakesTheLightDefaults(t *testing.T) {
 	assert.Equal(t, sgr(config.DarkTheme.SelectedLineBgColor, true), m.theme.selectedBg)
 }
 
-// On light a selected row is neither bold nor brightened: either washes its colours out.
-func TestHighlightIsBoldAndBrightOnlyOnDark(t *testing.T) {
+// A selected row is brightened on dark only, and bold only where the theme says so.
+func TestHighlightBrightensOnDarkAndBoldsAsTheThemeSays(t *testing.T) {
 	dark := highlight("\x1b[32mrun\x1b[0m", 3, "", true)
 	assert.Contains(t, dark, "\x1b[92m")
-	assert.Contains(t, dark, bold)
+	assert.NotContains(t, dark, bold)
 
 	light := highlight("\x1b[32mrun\x1b[0m", 3, "", false)
 	assert.Contains(t, light, "\x1b[32m")
-	assert.NotContains(t, light, bold)
+
+	m := start(t, options{configure: func(c *config.UserConfig) {
+		c.Gui.Theme.SelectedLineBgColor = []string{"#515151"}
+	}}, 140, 40)
+	assert.Equal(t, "\x1b[48;2;81;81;81m", m.theme.selectedBg, "no bold unless the key asks")
+	assert.Equal(t, "\x1b[48;2;59;59;59;1m", m.theme.inactiveSelected, "the default inactive bar keeps its bold")
 }

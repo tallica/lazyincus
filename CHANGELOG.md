@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - The selected row is a bold dark-grey bar, and the inactive selection a darker one, in place of blue and none: easier to read coloured text on.
+- A selected row is bold only where its theme key lists `bold`; a config setting `inactiveSelectedLineBgColor` without it loses the bold it always had.
 - The interface is rebuilt on Bubble Tea in place of gocui. Panels, keys and screens are as before; the differences below are the ones to notice.
 - In a prompt, `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do nothing, and the cursor is a block rather than your terminal's own.
 - With `NO_COLOR` or a terminal without colour, the selected row is shown in reverse video and the focused panel's border in bold.

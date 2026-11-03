@@ -67,7 +67,7 @@ func (m *Model) render() string {
 		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
 		if p.menu == nil && p.snapshot == nil && spec.focused && len(lines) > 0 {
 			// The cursor row is bold and bright on dark, and a bar on light.
-			bg := ""
+			bg := bold
 			if !m.theme.dark {
 				bg = m.theme.selectedBg
 			}

@@ -79,7 +79,7 @@ type theme struct {
 	inactiveSelected string
 	options          string
 	runes            frameRunes
-	// dark: selected rows bold and brightened (docs/Config.md, "gui").
+	// dark: selected rows brightened (docs/Config.md, "gui").
 	dark bool
 }
 
@@ -112,7 +112,7 @@ func newTheme(gui config.GuiConfig, light bool) theme {
 func (m *Model) applyTheme() {
 	m.theme = newTheme(m.cfg.UserConfig.Gui, m.light)
 	if m.monochrome {
-		m.theme.selectedBg, m.theme.inactiveSelected = "\x1b[7m", "\x1b[7m"
+		m.theme.selectedBg, m.theme.inactiveSelected = bold+"\x1b[7m", bold+"\x1b[7m"
 	}
 }
 
