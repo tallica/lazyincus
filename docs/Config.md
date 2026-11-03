@@ -58,16 +58,24 @@ your file either).
 
 ### `gui`
 
+A `theme` key left unset follows the terminal's background, which
+lazyincus asks the terminal for at startup: the light defaults below on a
+light one, the others otherwise, as on a terminal that doesn't answer. On
+a dark background a selected row is bold and its colours brightened. On a
+light one it's neither, and the light defaults leave out `bold`: a pale
+colour brightened washes out, as it does in a terminal that brightens
+bold text itself, iTerm2's "Brighten bold text" for one.
+
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `scrollHeight` | int | `2` | Lines scrolled at a time in the main panel. |
 | `language` | string | `"en"` | Only English is supported; the field exists for forward-compatibility with lazydocker's i18n scaffolding. |
 | `scrollPastBottom` | bool | `false` | Whether you can scroll the main panel past its last line. |
 | `mouseEvents` | bool | `false` | Set `true` to **disable** mouse interaction (the YAML key is `mouseEvents` even though it toggles ignoring them — inherited as-is from lazydocker). |
-| `theme.activeBorderColor` | []string | `[green, bold]` | Border color/attributes for the focused panel. |
+| `theme.activeBorderColor` | []string | `[green, bold]`; light: `[green]` | Border color/attributes for the focused panel. |
 | `theme.inactiveBorderColor` | []string | `[default]` | Border color/attributes for unfocused panels. |
-| `theme.selectedLineBgColor` | []string | `["#515151", bold]` | Background color of the selected list row: a color name - `black` to `white`, or `brightblack` to `brightwhite` for the theme's bright variants - or a hex value, and attributes such as `bold`. |
-| `theme.inactiveSelectedLineBgColor` | []string | `["#3b3b3b"]` | Background of the selected row of the list the main panel is showing, while the main panel or a popup has the focus: color names, hex values or attributes, as `selectedLineBgColor` takes. `[default]` is the terminal's own background, leaving the row's text bold and brightened. |
+| `theme.selectedLineBgColor` | []string | `["#515151", bold]`; light: `["#e4e4e4"]` | Background color of the selected list row: a color name - `black` to `white`, or `brightblack` to `brightwhite` for the theme's bright variants - or a hex value, and attributes such as `bold`. |
+| `theme.inactiveSelectedLineBgColor` | []string | `["#3b3b3b"]`; light: `["#eeeeee"]` | Background of the selected row of the list the main panel is showing, while the main panel or a popup has the focus: color names, hex values or attributes, as `selectedLineBgColor` takes. `[default]` is the terminal's own background, leaving only the row's text bold, on a dark one. |
 | `theme.optionsTextColor` | []string | `[blue]` | Color of the keybinding hints in the bottom line. |
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. A compose verb or `:` line that fails then says so in a popup, even with nothing failing on the daemon. |
 | `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |

@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"image/color"
 	"regexp"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/stretchr/testify/assert"
+	"github.com/tallica/lazyincus/pkg/config"
 )
 
 func TestAMonochromeTerminalShowsTheSelectionInReverseVideo(t *testing.T) {
@@ -40,4 +42,32 @@ func TestA16ColourTermCapsTheDetectedProfile(t *testing.T) {
 	} {
 		assert.Equal(t, tc.want, terminalProfile(tc.detected, tc.term), tc.term)
 	}
+}
+
+// A light background takes the light defaults for the keys the config leaves unset.
+func TestALightBackgroundTakesTheLightDefaults(t *testing.T) {
+	m := start(t, options{configure: func(c *config.UserConfig) {
+		c.Gui.Theme.InactiveSelectedLineBgColor = []string{"#112233"}
+	}}, 140, 40)
+	assert.Equal(t, sgr(config.DarkTheme.SelectedLineBgColor, true), m.theme.selectedBg)
+	assert.True(t, m.theme.dark)
+
+	m.Update(tea.BackgroundColorMsg{Color: color.White})
+	assert.Equal(t, sgr(config.LightTheme.SelectedLineBgColor, true), m.theme.selectedBg)
+	assert.Equal(t, sgr([]string{"#112233"}, true), m.theme.inactiveSelected, "a key the config sets keeps it")
+	assert.False(t, m.theme.dark)
+
+	m.Update(tea.BackgroundColorMsg{Color: color.Black})
+	assert.Equal(t, sgr(config.DarkTheme.SelectedLineBgColor, true), m.theme.selectedBg)
+}
+
+// On light a selected row is neither bold nor brightened: either washes its colours out.
+func TestHighlightIsBoldAndBrightOnlyOnDark(t *testing.T) {
+	dark := highlight("\x1b[32mrun\x1b[0m", 3, "", true)
+	assert.Contains(t, dark, "\x1b[92m")
+	assert.Contains(t, dark, bold)
+
+	light := highlight("\x1b[32mrun\x1b[0m", 3, "", false)
+	assert.Contains(t, light, "\x1b[32m")
+	assert.NotContains(t, light, bold)
 }

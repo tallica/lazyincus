@@ -55,6 +55,43 @@ type ThemeConfig struct {
 	OptionsTextColor            []string `yaml:"optionsTextColor,omitempty"`
 }
 
+// DarkTheme and LightTheme: see docs/Config.md, "gui".
+var (
+	DarkTheme = ThemeConfig{
+		ActiveBorderColor:           []string{"green", "bold"},
+		InactiveBorderColor:         []string{"default"},
+		SelectedLineBgColor:         []string{"#515151", "bold"},
+		InactiveSelectedLineBgColor: []string{"#3b3b3b"},
+		OptionsTextColor:            []string{"blue"},
+	}
+	LightTheme = ThemeConfig{
+		ActiveBorderColor:           []string{"green"},
+		InactiveBorderColor:         []string{"default"},
+		SelectedLineBgColor:         []string{"#e4e4e4"},
+		InactiveSelectedLineBgColor: []string{"#eeeeee"},
+		OptionsTextColor:            []string{"blue"},
+	}
+)
+
+// Over is t with defaults' value for each key t leaves unset.
+func (t ThemeConfig) Over(defaults ThemeConfig) ThemeConfig {
+	or := func(set, fallback []string) []string {
+		if len(set) == 0 {
+			return fallback
+		}
+
+		return set
+	}
+
+	return ThemeConfig{
+		ActiveBorderColor:           or(t.ActiveBorderColor, defaults.ActiveBorderColor),
+		InactiveBorderColor:         or(t.InactiveBorderColor, defaults.InactiveBorderColor),
+		SelectedLineBgColor:         or(t.SelectedLineBgColor, defaults.SelectedLineBgColor),
+		InactiveSelectedLineBgColor: or(t.InactiveSelectedLineBgColor, defaults.InactiveSelectedLineBgColor),
+		OptionsTextColor:            or(t.OptionsTextColor, defaults.OptionsTextColor),
+	}
+}
+
 // GuiConfig is for configuring visual things like colors and whether we show or
 // hide things
 type GuiConfig struct {
@@ -162,17 +199,10 @@ type OSConfig struct {
 func GetDefaultConfig() UserConfig {
 	return UserConfig{
 		Gui: GuiConfig{
-			ScrollHeight:      2,
-			Language:          "en",
-			ScrollPastBottom:  false,
-			IgnoreMouseEvents: false,
-			Theme: ThemeConfig{
-				ActiveBorderColor:           []string{"green", "bold"},
-				InactiveBorderColor:         []string{"default"},
-				SelectedLineBgColor:         []string{"#515151", "bold"},
-				InactiveSelectedLineBgColor: []string{"#3b3b3b"},
-				OptionsTextColor:            []string{"blue"},
-			},
+			ScrollHeight:            2,
+			Language:                "en",
+			ScrollPastBottom:        false,
+			IgnoreMouseEvents:       false,
 			ReturnImmediately:       false,
 			ExpandFocusedSidePanel:  false,
 			ShowAllSnapshots:        false,

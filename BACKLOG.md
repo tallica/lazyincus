@@ -182,9 +182,6 @@ Available since the move to Bubble Tea v2; none of it wired up.
 - [ ] **Terminal progress bar** - `View.ProgressBar` (OSC 9;4) for a long
       operation, such as an export, a backup or an image pull, in the tab
       or taskbar while you're in another window.
-- [ ] **Light or dark default theme** - `tea.RequestBackgroundColor`
-      reports the terminal's background, so the default theme can suit a
-      light terminal without configuration.
 - [ ] **Suggestions in prompts** - `textinput` has them built in: the list
       filter could offer names from the list, and a typed command could
       offer history as you type.

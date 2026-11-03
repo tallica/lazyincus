@@ -66,9 +66,13 @@ func (m *Model) render() string {
 		x0, y0, x1, y1, lines := m.popupLayout(p)
 		spec := frameSpec{title: p.title, subtitle: p.fittedSubtitle, body: lines, focused: i == len(m.popups)-1 && m.currentView() == p.view, total: len(lines)}
 		if p.menu == nil && p.snapshot == nil && spec.focused && len(lines) > 0 {
-			// The cursor row is bold and bright.
+			// The cursor row is bold and bright on dark, and a bar on light.
+			bg := ""
+			if !m.theme.dark {
+				bg = m.theme.selectedBg
+			}
 			spec.body = slices.Clone(lines)
-			spec.body[0] = highlight(lines[0], x1-x0-1, "")
+			spec.body[0] = highlight(lines[0], x1-x0-1, bg, m.theme.dark)
 		}
 		if p.menu != nil {
 			// A menu highlights its selection focused or not.
@@ -158,7 +162,7 @@ func (m *Model) rowsBody(p *panel, width, rows int, lit bool, bg string) []strin
 	body := make([]string, 0, max(end-p.origin, 0))
 	for i := p.origin; i < end; i++ {
 		if lit && i == p.selected {
-			body = append(body, highlight(all[i], width, bg))
+			body = append(body, highlight(all[i], width, bg, m.theme.dark))
 			continue
 		}
 		body = append(body, all[i])

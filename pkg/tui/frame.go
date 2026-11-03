@@ -166,10 +166,14 @@ func brighten(line string) string {
 	})
 }
 
-// highlight puts bg behind line, bold, re-asserting both after each reset inside.
-func highlight(line string, width int, bg string) string {
-	bg += bold
-	line = strings.ReplaceAll(brighten(fit(line, width)), reset, reset+bg)
+// highlight puts bg behind line, on dark bold and brightened, re-asserting both after each reset inside.
+func highlight(line string, width int, bg string, dark bool) string {
+	line = fit(line, width)
+	if dark {
+		bg += bold
+		line = brighten(line)
+	}
+	line = strings.ReplaceAll(line, reset, reset+bg)
 
 	return bg + line + reset
 }

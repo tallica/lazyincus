@@ -20,6 +20,8 @@ gui:
   # inherited as-is from lazydocker).
   mouseEvents: false
 
+  # Unset, each theme key follows the terminal's background; these are
+  # the dark defaults (docs/Config.md has the light ones).
   theme:
     activeBorderColor:
       - green
