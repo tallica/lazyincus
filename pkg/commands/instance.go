@@ -611,8 +611,7 @@ func (i *Instance) setTopCommand(command []string) {
 	runtime.topCommand = command
 }
 
-// execLocks runs one exec per client: two at once race in the client's
-// event listener setup (lxc/incus client/incus.go queryOperation, v7.6.0).
+// execLocks: two operations at once on one client race (docs/Incus.md, "Clients").
 var execLocks sync.Map
 
 // exec runs a command in the instance and returns its stdout, using the
