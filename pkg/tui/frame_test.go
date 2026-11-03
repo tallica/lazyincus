@@ -15,7 +15,7 @@ func plainFrame(t *testing.T, border string, s frameSpec, w, h int) []string {
 	gui := config.GetDefaultConfig().Gui
 	gui.Border = border
 
-	return strings.Split(ansi.Strip(newTheme(gui).frame(s, w, h)), "\n")
+	return strings.Split(ansi.Strip(newTheme(gui, false).frame(s, w, h)), "\n")
 }
 
 func TestFrameTitle(t *testing.T) {
@@ -43,7 +43,7 @@ func TestFrameBorders(t *testing.T) {
 }
 
 func TestHighlightKeepsColoursAndBoldUnderTheBackground(t *testing.T) {
-	line := highlight("\x1b[32mrun\x1b[0m ok", 8, "\x1b[44m")
+	line := highlight("\x1b[32mrun\x1b[0m ok", 8, "\x1b[44m\x1b[1m", true)
 
 	assert.Equal(t, "\x1b[44m\x1b[1m\x1b[92mrun\x1b[0m\x1b[44m\x1b[1m ok  \x1b[0m\x1b[44m\x1b[1m\x1b[0m", line)
 	assert.Equal(t, 8, ansi.StringWidth(line))
@@ -55,7 +55,7 @@ func TestBrightenLeavesOtherColoursAlone(t *testing.T) {
 }
 
 func TestFrameSubtitle(t *testing.T) {
-	th := newTheme(config.GetDefaultConfig().Gui)
+	th := newTheme(config.GetDefaultConfig().Gui, false)
 
 	top := ansi.Strip(strings.Split(th.frame(frameSpec{title: "Commands", subtitle: "esc: close"}, 30, 3), "\n")[0])
 	assert.Equal(t, "╭─Commands────esc: close─────╮", top)

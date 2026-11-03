@@ -191,7 +191,7 @@ func (m *Model) snapshotOptionsFrame(p *popup, x0, x1 int) string {
 	for i, line := range lines {
 		body[i] = fit(line, w-2)
 		if i == p.snapshot.field {
-			body[i] = highlight(line, w-2, m.theme.selectedBg)
+			body[i] = highlight(line, w-2, m.theme.selectedBg, m.theme.dark)
 		}
 	}
 

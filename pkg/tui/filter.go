@@ -312,6 +312,10 @@ func (m *Model) fitFilter() {
 func (m *Model) filterLine(width int) string {
 	text := ansi.Cut(m.filter.input.Value(), m.filter.ox, m.filter.ox+width)
 	if m.currentView() == filterView {
+		if !m.theme.dark {
+			return promptColour + text + reset
+		}
+
 		return bold + brighten(promptColour) + text + reset
 	}
 

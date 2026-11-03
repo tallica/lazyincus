@@ -20,21 +20,23 @@ gui:
   # inherited as-is from lazydocker).
   mouseEvents: false
 
+  # Unset, each theme key follows the terminal's background; these are
+  # the dark defaults (docs/Config.md has the light ones).
   theme:
     activeBorderColor:
       - green
       - bold
     inactiveBorderColor:
       - default
-    # Where the palette's blue is too light to read coloured text on,
-    # a dark grey works on any dark theme, for example: ["#515151"]
     selectedLineBgColor:
-      - blue
+      - "#515151"
+      - bold
     # The selected row of the list the main panel shows while the main
-    # panel or a popup has the focus: its text bold on the terminal's own
-    # background. A grey makes it a bar, e.g. ["#3b3b3b"]
+    # panel or a popup has the focus. [default] is the terminal's own
+    # background; bold only if listed, as here.
     inactiveSelectedLineBgColor:
-      - default
+      - "#3b3b3b"
+      - bold
     optionsTextColor:
       - blue
 

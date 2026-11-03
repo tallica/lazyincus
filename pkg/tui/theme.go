@@ -79,10 +79,16 @@ type theme struct {
 	inactiveSelected string
 	options          string
 	runes            frameRunes
+	// dark: selected rows brightened (docs/Config.md, "gui").
+	dark bool
 }
 
-func newTheme(gui config.GuiConfig) theme {
-	t := gui.Theme
+func newTheme(gui config.GuiConfig, light bool) theme {
+	defaults := config.DarkTheme
+	if light {
+		defaults = config.LightTheme
+	}
+	t := gui.Theme.Over(defaults)
 	unbold := []string{}
 	for _, key := range t.ActiveBorderColor {
 		if key != "bold" {
@@ -98,14 +104,15 @@ func newTheme(gui config.GuiConfig) theme {
 		inactiveSelected: sgr(t.InactiveSelectedLineBgColor, true),
 		options:          sgr(t.OptionsTextColor, false),
 		runes:            borderRunes(gui.Border),
+		dark:             !light,
 	}
 }
 
 // applyTheme: with no colour for a selection, gocui's tcell fell back to reverse.
 func (m *Model) applyTheme() {
-	m.theme = newTheme(m.cfg.UserConfig.Gui)
+	m.theme = newTheme(m.cfg.UserConfig.Gui, m.light)
 	if m.monochrome {
-		m.theme.selectedBg, m.theme.inactiveSelected = "\x1b[7m", "\x1b[7m"
+		m.theme.selectedBg, m.theme.inactiveSelected = bold+"\x1b[7m", bold+"\x1b[7m"
 	}
 }
 

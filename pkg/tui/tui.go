@@ -29,6 +29,7 @@ type Model struct {
 	cfg        *config.AppConfig
 	theme      theme
 	monochrome bool
+	light      bool
 
 	width, height int
 
@@ -163,7 +164,7 @@ func NewModel(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i
 		os:               osCommand,
 		tr:               tr,
 		cfg:              cfg,
-		theme:            newTheme(gui),
+		theme:            newTheme(gui, false),
 		activeViews:      map[string]string{},
 		screenMode:       parseScreenMode(gui.ScreenMode),
 		expandSidePanel:  gui.ExpandFocusedSidePanel,
@@ -258,7 +259,7 @@ func quitOnHangup(program *tea.Program) (stop func()) {
 }
 
 func (m *Model) Init() tea.Cmd {
-	cmds := []tea.Cmd{m.refreshAll(), m.pollers()}
+	cmds := []tea.Cmd{m.refreshAll(), m.pollers(), tea.RequestBackgroundColor}
 	if m.cfg.UserConfig.Gui.CheckImageUpdatesOnStart {
 		cmds = append(cmds, refreshQuiet(nil, m.imageUpdatesFetch(false)))
 	}
@@ -293,6 +294,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.ColorProfileMsg:
 		m.monochrome = msg.Profile <= colorprofile.ASCII
+		m.applyTheme()
+
+	case tea.BackgroundColorMsg:
+		m.light = !msg.IsDark()
 		m.applyTheme()
 
 	case tea.WindowSizeMsg:
