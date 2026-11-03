@@ -3,6 +3,7 @@ package tui
 import (
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -82,8 +83,8 @@ func (p *panel) item() int {
 	return p.shown[p.selected]
 }
 
-// filter is a sorted list's filter: matched as typed,
-// colour codes and all, the selection following its item; or fuzzily,
+// filter is a sorted list's filter: matched in the cells' text, as the
+// main-panel search matches, the selection following its item; or fuzzily,
 // best first, the selection on the first.
 func (p *panel) filter(needle string, ignore []string) {
 	item := p.item()
@@ -91,6 +92,21 @@ func (p *panel) filter(needle string, ignore []string) {
 
 	contains := func(cells []string, s string) bool {
 		return slices.ContainsFunc(cells, func(cell string) bool { return strings.Contains(cell, s) })
+	}
+
+	want, fold := needle, !strings.ContainsFunc(needle, unicode.IsUpper)
+	if fold {
+		want = strings.ToLower(want)
+	}
+	matches := func(cells []string) bool {
+		return slices.ContainsFunc(cells, func(cell string) bool {
+			text := utils.Decolorise(cell)
+			if fold {
+				text = strings.ToLower(text)
+			}
+
+			return strings.Contains(text, want)
+		})
 	}
 
 	p.shown = p.shown[:0]
@@ -101,7 +117,7 @@ func (p *panel) filter(needle string, ignore []string) {
 		if slices.ContainsFunc(ignore, func(s string) bool { return contains(cells, s) }) {
 			continue
 		}
-		if needle != "" && !fuzzy && !contains(cells, needle) {
+		if needle != "" && !fuzzy && !matches(cells) {
 			continue
 		}
 		p.shown = append(p.shown, i)

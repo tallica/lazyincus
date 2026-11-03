@@ -53,7 +53,8 @@ has a capital, and found again on every write, so a ticking tab or one
 switched to keeps its matches. The prompt is the filter's bottom line, so a
 list filter still applied is cleared by it, as the command palette clears
 one. Starting a search stops the panel following new output, as scrolling
-up does. Focus leaving the main panel ends the search.
+up does. Focus leaving the main panel ends the search. A list's own filter,
+`/` on a list, matches its rows' text the same way.
 
 ## Typed commands
 

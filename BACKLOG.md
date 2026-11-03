@@ -218,11 +218,6 @@ Known rough edges, carried over from the gocui version:
   same way everywhere.
 - Search highlight colours are fixed, black on yellow and cyan; they could
   come from the theme.
-- The list filter (`/` on a list) matches the raw cells as typed:
-  case-sensitive, and colour codes included, so `Web` finds nothing and a
-  needle like `[3` can match inside an escape. Match the decoloured text,
-  case-folded unless the needle has a capital, as the main-panel search
-  does.
 - `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do
   nothing in a prompt, as the text input has neither.
 

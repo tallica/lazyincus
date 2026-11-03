@@ -38,13 +38,24 @@ func TestFilteringAListKeepsTheRowsWithTheNeedle(t *testing.T) {
 	assert.Contains(t, footer(m), "PgUp/PgDn: scroll")
 }
 
-func TestTheFilterMatchesAsTyped(t *testing.T) {
+func TestACapitalInTheFilterMatchesCase(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 
 	press(m, "/")
 	typeText(m, "Web")
 	assert.Equal(t, 0, m.panelNamed("instances").count())
 	assert.Nil(t, m.selectedInstance())
+}
+
+// The filter matches the text on show: colour codes don't count, and case
+// only does when the needle has a capital, as in the main-panel search.
+func TestTheFilterMatchesTheCellsText(t *testing.T) {
+	p := &panel{cells: [][]string{{"web", "\x1b[32mRunning\x1b[0m"}, {"db", "Stopped"}}}
+
+	for needle, want := range map[string]int{"run": 1, "Run": 1, "RUN": 0, "[3": 0, "pped": 1} {
+		p.filter(needle, nil)
+		assert.Equal(t, want, p.count(), needle)
+	}
 }
 
 func TestTheSelectionFollowsItsItemThroughTheFilter(t *testing.T) {
