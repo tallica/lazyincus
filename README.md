@@ -35,10 +35,6 @@ in the corners — custom and bulk commands, non-English translations —
 isn't there; see "What's not here yet" below, and
 [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
-> [!WARNING]
-> **AI-assisted project**<br>
-> This codebase was built with [Claude Code](https://claude.com/claude-code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
-
 ## Requirements
 
 - An [Incus](https://linuxcontainers.org/incus/) daemon (`incusd`) to talk to —

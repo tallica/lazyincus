@@ -18,8 +18,9 @@ with the gotchas behind a daemon in a local VM, in
 [docs/Remotes.md](docs/Remotes.md). What shipped when is in
 [CHANGELOG.md](CHANGELOG.md); what hasn't been built and why — including
 the panel-by-panel comparison against lazydocker — is in
-[BACKLOG.md](BACKLOG.md). Recording the walkthrough and the short
-per-feature demos the CHANGELOG links to is
+[BACKLOG.md](BACKLOG.md). Reporting a vulnerability, and what hasn't been
+audited, is [SECURITY.md](SECURITY.md). Recording the walkthrough and
+the short per-feature demos the CHANGELOG links to is
 [demo/README.md](demo/README.md).
 
 ## Status

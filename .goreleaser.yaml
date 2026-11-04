@@ -9,7 +9,7 @@ before:
   hooks:
     - go mod tidy
     - sh -c 'mkdir -p .archive'
-    - sh -c 'for f in README.md CHANGELOG.md THIRD_PARTY_NOTICES.md; do scripts/absolute-links.sh {{ .Tag }} < "$f" > ".archive/$f"; done'
+    - sh -c 'for f in README.md CHANGELOG.md SECURITY.md THIRD_PARTY_NOTICES.md; do scripts/absolute-links.sh {{ .Tag }} < "$f" > ".archive/$f"; done'
 
 builds:
   - env:
