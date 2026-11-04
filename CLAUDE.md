@@ -30,7 +30,7 @@ verbs are exercised for real, and with a VM alongside the containers.
 
 - Module: `github.com/tallica/lazyincus`
 - Go: 1.27
-- Incus client: `github.com/lxc/incus/v7` (client at `v7.5.1`)
+- Incus client: `github.com/lxc/incus/v7` (client at `v7.6.0`)
 - TUI: Bubble Tea v2 (`charm.land/bubbletea/v2`) with `bubbles` and
   `lipgloss`. The borders, tab strips and scrolling panes are drawn by
   hand in `pkg/tui`; layout rectangles come from lazycore's `boxlayout`.
