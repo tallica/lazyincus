@@ -71,9 +71,9 @@ inferred.
   the client: `queryOperation` reads `skipEvents` unlocked too, so two
   operations started at once on one client still race each other. Top's
   polls are the ones that overlap, so `Instance.exec` runs one at a time
-  per client (`execLocks`). A fix for both reads is open upstream,
-  [lxc/incus#4336](https://github.com/lxc/incus/pull/4336); once a release
-  has it, `execLocks` can go.
+  per client (`execLocks`). Upstream fixed both reads in
+  [lxc/incus#4336](https://github.com/lxc/incus/pull/4336), after 7.6;
+  once the client is on a release with it, `execLocks` can go.
 - **All projects**: the default, and "all projects" in that menu returns
   to it. Lists every project at once through the `*AllProjects` endpoints.
   Each item then carries its own project-scoped client (`clientFor`), so
