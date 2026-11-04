@@ -1,9 +1,12 @@
 name: CI
 
-# A `v*` tag runs the same checks as master and releases only if they pass.
+# A `v*` tag runs the same checks as master and releases only if they pass. A
+# push that changes only CHANGELOG.md, like the release commit, runs nothing:
+# the tag's run tests that commit once. Tags ignore path filters.
 on:
   push:
     branches: [master]
+    paths-ignore: ["CHANGELOG.md"]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:

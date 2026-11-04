@@ -1,7 +1,7 @@
 name: PR
 
 # Conventional Commits on the commits and title, with the shared default
-# commitlint config; the CHANGELOG guard runs on PRs labelled user-facing.
+# commitlint config; PRs labelled user-facing must add a CHANGELOG entry.
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
