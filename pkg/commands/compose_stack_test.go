@@ -74,7 +74,7 @@ func TestSplitStackInput(t *testing.T) {
 	known := func(name string) bool { return name == "pve01" }
 
 	for input, want := range map[string][2]string{
-		" pve01:~/caddy ":  {"pve01", "~/caddy"},
+		" pve01:~/caddy ":  {"pve01", "~/caddy"}, //nolint:gocritic // the blanks are what's tested
 		"pve01:":           {"pve01", ""},
 		"~/caddy":          {"", "~/caddy"},
 		"other:~/caddy":    {"", "other:~/caddy"},

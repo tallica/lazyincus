@@ -148,9 +148,7 @@ func (m *Model) serviceBindings() []*binding {
 	service := func(key, description string, mutates bool, handler func(*Model) tea.Cmd) *binding {
 		return &binding{view: servicesView, key: key, description: description, mutates: mutates, handler: handler}
 	}
-	instance := func(title func(*Model) string, action func(*Model, *commands.Instance) tea.Cmd) func(*Model) tea.Cmd {
-		return withServiceInstance(title, action)
-	}
+	instance := withServiceInstance
 	title := func(s string) func(*Model) string { return func(*Model) string { return s } }
 
 	bindings := []*binding{
