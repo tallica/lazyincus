@@ -10,7 +10,6 @@ require (
 	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/fatih/color v1.19.0
-	github.com/go-errors/errors v1.5.1
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-containerregistry v0.22.1
 	github.com/integrii/flaggy v1.8.0

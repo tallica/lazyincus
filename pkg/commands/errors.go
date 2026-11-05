@@ -1,20 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
-
-	"github.com/go-errors/errors"
 )
-
-// WrapError wraps an error for the sake of showing a stack trace at the top level
-func WrapError(err error) error {
-	if err == nil {
-		return err
-	}
-
-	return errors.Wrap(err, 0)
-}
 
 // IsConnectionError reports whether a request never reached the daemon. The
 // client returns *url.Error for those and api.StatusError for anything the

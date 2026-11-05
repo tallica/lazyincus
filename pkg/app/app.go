@@ -49,7 +49,7 @@ type errorMapping struct {
 
 // KnownError takes an error and tells us whether it's an error that we know
 // about where we can print a nicely formatted version of it rather than
-// panicking with a stack trace
+// asking for an issue
 func (app *App) KnownError(err error) (string, bool) {
 	errorMessage := err.Error()
 
@@ -68,7 +68,7 @@ func (app *App) KnownError(err error) (string, bool) {
 		}
 	}
 
-	// A stack trace says nothing about an unreachable daemon that the
+	// The generic report says nothing about an unreachable daemon that the
 	// address doesn't.
 	if commands.IsConnectError(err) {
 		return fmt.Sprintf(app.Tr.CannotReachDaemonError, err), true

@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/go-errors/errors"
 	"github.com/integrii/flaggy"
 	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/app"
@@ -123,11 +122,9 @@ func main() {
 			os.Exit(0)
 		}
 
-		newErr := errors.Wrap(err, 0)
-		stackTrace := newErr.ErrorStack()
-		lazyincusApp.Log.Error().Msg(stackTrace)
+		lazyincusApp.Log.Error().Err(err).Send()
 
-		log.Fatalf("%s\n\n%s", lazyincusApp.Tr.ErrorOccurred, stackTrace)
+		log.Fatalf("%s\n\n%s", lazyincusApp.Tr.ErrorOccurred, err)
 	}
 }
 

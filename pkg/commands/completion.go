@@ -30,7 +30,7 @@ func (c *OSCommand) CompleteIncus(remote string, args []string, word string) (Co
 	// stdout only: stderr carries cobra's "Completion ended with directive".
 	output, err := cmd.Output()
 	if err != nil {
-		return Completion{}, WrapError(err)
+		return Completion{}, err
 	}
 
 	return parseCobraCompletion(string(output), word), nil

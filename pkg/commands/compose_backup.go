@@ -112,7 +112,7 @@ func composeJSON(cmd *exec.Cmd) ([]byte, error) {
 	}
 
 	if err != nil {
-		return output, WrapError(err)
+		return output, err
 	}
 
 	return output, nil

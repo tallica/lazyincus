@@ -1,13 +1,12 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
-
-	"github.com/go-errors/errors"
 
 	"github.com/mgutz/str"
 	"github.com/rs/zerolog"
@@ -120,7 +119,7 @@ func sanitisedCommandOutput(output []byte, err error) (string, error) {
 
 			return outputString, errors.New(message)
 		}
-		return "", WrapError(err)
+		return "", err
 	}
 	return outputString, nil
 }
@@ -210,7 +209,7 @@ func (c *OSCommand) EditFile(filename string) (*exec.Cmd, error) {
 		}
 	}
 	if editor == "" {
-		return nil, errors.New("No editor defined in $VISUAL or $EDITOR")
+		return nil, errors.New("no editor defined in $VISUAL or $EDITOR")
 	}
 
 	return c.NewCmd(editor, filename), nil

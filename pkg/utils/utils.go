@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"regexp"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/rivo/uniseg"
 
 	"github.com/fatih/color"
@@ -120,7 +120,7 @@ func RenderTable(rows [][]string) (string, error) {
 		return "", nil
 	}
 	if !displayArraysAligned(rows) {
-		return "", errors.New("Each item must return the same number of strings to display")
+		return "", errors.New("each item must return the same number of strings to display")
 	}
 
 	columnPadWidths := getPadWidths(rows)
@@ -146,7 +146,7 @@ func RenderTableToWidth(rows [][]string, width int, flex []FlexColumn) (string, 
 	}
 
 	if !displayArraysAligned(rows) {
-		return "", errors.New("Each item must return the same number of strings to display")
+		return "", errors.New("each item must return the same number of strings to display")
 	}
 
 	widths := make([]int, len(rows[0]))
