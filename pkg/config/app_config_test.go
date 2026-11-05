@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,4 +59,38 @@ func TestLoadUserConfigCreatesMissingFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, GetDefaultConfig(), *loaded)
 	assert.FileExists(t, filepath.Join(dir, "config.yml"))
+}
+
+func TestConfigDirPrecedence(t *testing.T) {
+	platformDefault := filepath.Join(".config", "lazyincus")
+	if runtime.GOOS == "darwin" {
+		platformDefault = filepath.Join("Library", "Application Support", "lazyincus")
+	}
+
+	for _, tc := range []struct {
+		name, configDir, xdgConfigHome string
+		dotConfigExists                bool
+		want                           string // relative to HOME, unless absolute
+	}{
+		{name: "CONFIG_DIR", configDir: "/explicit", xdgConfigHome: "/xdg", dotConfigExists: true, want: "/explicit"},
+		{name: "XDG_CONFIG_HOME", xdgConfigHome: "/xdg", dotConfigExists: true, want: "/xdg/lazyincus"},
+		{name: "existing ~/.config", dotConfigExists: true, want: ".config/lazyincus"},
+		{name: "platform default", want: platformDefault},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			t.Setenv("CONFIG_DIR", tc.configDir)
+			t.Setenv("XDG_CONFIG_HOME", tc.xdgConfigHome)
+			if tc.dotConfigExists {
+				assert.NoError(t, os.MkdirAll(filepath.Join(home, ".config", "lazyincus"), 0o755))
+			}
+
+			want := tc.want
+			if !filepath.IsAbs(want) {
+				want = filepath.Join(home, want)
+			}
+			assert.Equal(t, want, configDir("lazyincus"))
+		})
+	}
 }

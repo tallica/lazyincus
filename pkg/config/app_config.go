@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/OpenPeeDeeP/xdg"
 	"github.com/goccy/go-yaml"
 )
 
@@ -262,30 +261,27 @@ func NewAppConfig(name, version, commit, date string, buildSource string, debugg
 	return appConfig, nil
 }
 
-// configDirForVendor checks CONFIG_DIR, XDG_CONFIG_HOME, an existing
-// ~/.config/<projectName>, then the platform default. The third case is why
-// macOS users with a config synced from Linux are picked up without moving
-// it: xdg.New would only ever look at ~/Library/Application Support.
-func configDirForVendor(vendor string, projectName string) string {
-	envConfigDir := os.Getenv("CONFIG_DIR")
-	if envConfigDir != "" {
-		return envConfigDir
+// configDir is the lookup order docs/Config.md#locations gives.
+func configDir(projectName string) string {
+	if dir := os.Getenv("CONFIG_DIR"); dir != "" {
+		return dir
 	}
 
-	if os.Getenv("XDG_CONFIG_HOME") != "" {
-		return xdg.New(vendor, projectName).ConfigHome()
+	if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" {
+		return filepath.Join(dir, projectName)
 	}
 
-	xdgDefault := filepath.Join(os.Getenv("HOME"), ".config", vendor, projectName)
+	xdgDefault := filepath.Join(os.Getenv("HOME"), ".config", projectName)
 	if _, err := os.Stat(xdgDefault); err == nil {
 		return xdgDefault
 	}
 
-	return xdg.New(vendor, projectName).ConfigHome()
-}
+	base, err := os.UserConfigDir()
+	if err != nil {
+		base = filepath.Join(os.Getenv("HOME"), ".config")
+	}
 
-func configDir(projectName string) string {
-	return configDirForVendor("", projectName)
+	return filepath.Join(base, projectName)
 }
 
 func findOrCreateConfigDir(projectName string) (string, error) {
