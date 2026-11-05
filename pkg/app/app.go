@@ -25,14 +25,11 @@ type App struct {
 func NewApp(config *config.AppConfig) (*App, error) {
 	app := &App{Config: config}
 
-	var err error
 	app.Log = log.NewLogger(config)
-	app.Tr, err = i18n.NewTranslationSetFromConfig(app.Log, config.UserConfig.Gui.Language)
-	if err != nil {
-		return app, err
-	}
+	app.Tr = i18n.NewTranslationSet(app.Log, config.UserConfig.Gui.Language)
 	app.OSCommand = commands.NewOSCommand(app.Log, config)
 
+	var err error
 	app.IncusCommand, err = commands.NewIncusCommand(app.Log, app.OSCommand, app.Config)
 	if err != nil {
 		return app, err
