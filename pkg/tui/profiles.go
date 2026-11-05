@@ -26,7 +26,7 @@ func (m *Model) fetchProfiles() fetch {
 }
 
 func (m *Model) setProfiles(profiles []*commands.Profile) {
-	m.refill(m.panelNamed("profiles"), func(item int) string { return m.profiles[item].Key() }, func() [][]string {
+	m.refill(m.panelNamed(profilesView), func(item int) string { return m.profiles[item].Key() }, func() [][]string {
 		sort.SliceStable(profiles, func(a, b int) bool { return sortProfiles(profiles[a], profiles[b]) })
 		m.profiles = profiles
 		m.profilesSpan = spansProjects(profiles, profileProject)
@@ -58,7 +58,7 @@ func (m *Model) profileFlex() []utils.FlexColumn {
 }
 
 func (m *Model) selectedProfile() *commands.Profile {
-	item := m.panelNamed("profiles").item()
+	item := m.panelNamed(profilesView).item()
 	if item < 0 || item >= len(m.profiles) {
 		return nil
 	}

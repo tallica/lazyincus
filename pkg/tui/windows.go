@@ -213,9 +213,9 @@ func (m *Model) stacksSwap(from, to string) bool {
 		return false
 	}
 
-	stacks := func(name string) bool { return name == "stacks" || name == "services" }
+	stacks := func(name string) bool { return name == stacksView || name == servicesView }
 
-	return (stacks(to) && !stacks(from)) || (to == "instances" && stacks(from))
+	return (stacks(to) && !stacks(from)) || (to == instancesView && stacks(from))
 }
 
 func (m *Model) landOffStacks() {
@@ -223,9 +223,9 @@ func (m *Model) landOffStacks() {
 		return
 	}
 
-	if view := m.currentSideView(); view == "stacks" || view == "services" {
+	if view := m.currentSideView(); view == stacksView || view == servicesView {
 		popups := m.popups
-		m.focusView("instances")
+		m.focusView(instancesView)
 		m.popups = popups
 	}
 }

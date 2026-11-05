@@ -27,7 +27,7 @@ func (m *Model) fetchImages() fetch {
 }
 
 func (m *Model) setImages(images []*commands.Image) {
-	m.refill(m.panelNamed("images"), func(item int) string { return m.images[item].Key() }, func() [][]string {
+	m.refill(m.panelNamed(imagesView), func(item int) string { return m.images[item].Key() }, func() [][]string {
 		sort.SliceStable(images, func(a, b int) bool { return sortImages(images[a], images[b]) })
 		m.images = images
 		m.imagesSpan = spansProjects(images, imageProject)
@@ -72,7 +72,7 @@ func projectColumns(spans bool) int {
 }
 
 func (m *Model) selectedImage() *commands.Image {
-	item := m.panelNamed("images").item()
+	item := m.panelNamed(imagesView).item()
 	if item < 0 || item >= len(m.images) {
 		return nil
 	}

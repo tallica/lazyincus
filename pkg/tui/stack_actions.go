@@ -142,7 +142,7 @@ func (m *Model) isLocalStack(dir string) bool {
 
 // selectStack moves the cursor to ref's row, and the focus to Stacks.
 func (m *Model) selectStack(ref string) {
-	p := m.panelNamed("stacks")
+	p := m.panelNamed(stacksView)
 
 	row := slices.IndexFunc(p.shown, func(item int) bool { return m.stacks[item].Ref() == ref })
 	if row < 0 {
@@ -150,7 +150,7 @@ func (m *Model) selectStack(ref string) {
 	}
 
 	p.selectRow(row, m.listRows(p))
-	m.focusView("stacks")
+	m.focusView(stacksView)
 }
 
 // stackEditCompose is `c`: the compose file in the user's editor, read again once it closes.

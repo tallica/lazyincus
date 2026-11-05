@@ -28,7 +28,7 @@ func (m *Model) fetchNetworks() fetch {
 }
 
 func (m *Model) setNetworks(networks []*commands.Network) {
-	m.refill(m.panelNamed("networks"), func(item int) string { return m.networks[item].Key() }, func() [][]string {
+	m.refill(m.panelNamed(networksView), func(item int) string { return m.networks[item].Key() }, func() [][]string {
 		sort.SliceStable(networks, func(a, b int) bool { return networks[a].Name < networks[b].Name })
 		m.networks = networks
 		m.networksSpan = spansProjects(networks, networkProject)
@@ -51,11 +51,11 @@ func (m *Model) keepNetwork(item int) bool {
 
 func (m *Model) toggleUnmanagedNetworks() {
 	m.showUnmanaged = !m.showUnmanaged
-	m.filterList(m.panelNamed("networks"))
+	m.filterList(m.panelNamed(networksView))
 }
 
 func (m *Model) selectedNetwork() *commands.Network {
-	item := m.panelNamed("networks").item()
+	item := m.panelNamed(networksView).item()
 	if item < 0 || item >= len(m.networks) {
 		return nil
 	}

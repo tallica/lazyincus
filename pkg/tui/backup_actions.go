@@ -67,7 +67,7 @@ func (m *Model) backupCreate(target composeTarget, args ...string) tea.Cmd {
 }
 
 func (m *Model) selectNewBackup(before map[string]bool) {
-	p := m.panelNamed("backups")
+	p := m.panelNamed(backupsView)
 
 	for row, item := range p.shown {
 		if !before[m.backups[item].Timestamp] {
@@ -243,7 +243,7 @@ func (m *Model) backupVerify(backup *commands.ComposeBackup) tea.Cmd {
 func (m *Model) goToBackups() tea.Cmd {
 	focus := func() tea.Cmd {
 		if !m.backupsAway() {
-			m.focusView("backups")
+			m.focusView(backupsView)
 		}
 
 		return nil

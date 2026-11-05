@@ -33,7 +33,7 @@ func (m *Model) fetchInstances() fetch {
 }
 
 func (m *Model) selectedInstance() *commands.Instance {
-	item := m.panelNamed("instances").item()
+	item := m.panelNamed(instancesView).item()
 	if item < 0 || item >= len(m.instances) {
 		return nil
 	}
@@ -53,7 +53,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 	m.listed.Store(&instances)
 	m.setInstancesSpan()
 
-	p := m.panelNamed("instances")
+	p := m.panelNamed(instancesView)
 	p.awaiting = ""
 	p.cells = m.instanceCells()
 	m.filterList(p)
@@ -71,7 +71,7 @@ func (m *Model) setInstances(instances []*commands.Instance) {
 
 // selectInstance: the cursor onto the instance with key, if shown.
 func (m *Model) selectInstance(key string) bool {
-	p := m.panelNamed("instances")
+	p := m.panelNamed(instancesView)
 	for row, item := range p.shown {
 		if m.instances[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
@@ -157,7 +157,7 @@ func (m *Model) toggleStackInstances() {
 
 func (m *Model) toggleStoppedInstances() {
 	m.showStopped = !m.showStopped
-	m.filterList(m.panelNamed("instances"))
+	m.filterList(m.panelNamed(instancesView))
 }
 
 func (m *Model) instanceCells() [][]string {
@@ -296,7 +296,7 @@ func (m *Model) instanceKey() string {
 }
 
 func (m *Model) viewInstanceLogs() {
-	m.setMainTab(m.panelNamed("instances"), "logs")
+	m.setMainTab(m.panelNamed(instancesView), "logs")
 	m.enterMain()
 }
 
@@ -316,11 +316,11 @@ func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.
 	}
 
 	m.instanceUsers = &instanceUsers{label: label, uses: uses, from: m.currentView()}
-	p := m.panelNamed("instances")
+	p := m.panelNamed(instancesView)
 	p.selected = 0
 	m.filterList(p)
 	p.selectRow(0, m.listRows(p))
-	m.focusView("instances")
+	m.focusView(instancesView)
 
 	return nil
 }
@@ -329,7 +329,7 @@ func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.
 func (m *Model) clearInstanceUsers() {
 	from := m.instanceUsers.from
 	m.instanceUsers = nil
-	p := m.panelNamed("instances")
+	p := m.panelNamed(instancesView)
 	m.filterList(p)
 	p.selectRow(p.selected, m.listRows(p))
 

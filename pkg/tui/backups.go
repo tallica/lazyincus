@@ -29,7 +29,7 @@ func (m *Model) backupVerification(backup *commands.ComposeBackup) *commands.Bac
 }
 
 func (m *Model) selectedBackup() *commands.ComposeBackup {
-	item := m.panelNamed("backups").item()
+	item := m.panelNamed(backupsView).item()
 	if item < 0 || item >= len(m.backups) {
 		return nil
 	}
@@ -108,13 +108,13 @@ func (m *Model) showBackups(ticket uint64, backups []*commands.ComposeBackup, em
 			return
 		}
 
-		m.panelNamed("backups").empty = empty
+		m.panelNamed(backupsView).empty = empty
 		m.setBackups(backups)
 	}
 }
 
 func (m *Model) setBackups(backups []*commands.ComposeBackup) {
-	m.refill(m.panelNamed("backups"), func(item int) string { return m.backups[item].Timestamp }, func() [][]string {
+	m.refill(m.panelNamed(backupsView), func(item int) string { return m.backups[item].Timestamp }, func() [][]string {
 		slices.SortStableFunc(backups, func(a, b *commands.ComposeBackup) int { return b.CreatedAt().Compare(a.CreatedAt()) })
 		m.backups = backups
 
@@ -130,7 +130,7 @@ func (m *Model) setBackups(backups []*commands.ComposeBackup) {
 func (m *Model) followStackBackups() {
 	m.refreshes.backups.invalidate()
 
-	p := m.panelNamed("backups")
+	p := m.panelNamed(backupsView)
 	p.empty, p.selected = m.tr.NoBackups, 0
 	m.refill(p, func(int) string { return "" }, func() [][]string {
 		m.backups = nil

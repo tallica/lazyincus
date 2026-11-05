@@ -49,7 +49,7 @@ func (m *Model) followStack(stack *commands.ComposeStack) {
 	m.composeState.instances.Store(nil)
 	m.composeState.project.Store(nil)
 
-	p := m.panelNamed("services")
+	p := m.panelNamed(servicesView)
 	p.empty, m.servicesNote = m.tr.NoServices, ""
 	if stack == nil {
 		p.empty = m.tr.NoStackSelected
@@ -131,7 +131,7 @@ func (m *Model) fetchServices() fetch {
 			}
 
 			m.composeState.instances.Store(&presentation.StackInstances{Remote: stack.Remote, Project: stack.Name, Services: services, Orphans: orphans})
-			m.panelNamed("services").empty = m.tr.NoServices
+			m.panelNamed(servicesView).empty = m.tr.NoServices
 			m.servicesNote = ""
 			m.setServices(commands.ServiceRows(services))
 			m.setSnapshots()
@@ -149,13 +149,13 @@ func (m *Model) showServicesUnreachable(ticket uint64, err error, note string) f
 
 		m.composeState.instances.Store(nil)
 		m.servicesNote = note
-		m.panelNamed("services").empty = err.Error()
+		m.panelNamed(servicesView).empty = err.Error()
 		m.setServices(nil)
 	}
 }
 
 func (m *Model) setServices(rows []*commands.ServiceRow) {
-	m.refill(m.panelNamed("services"), func(item int) string { return m.serviceRows[item].Key() }, func() [][]string {
+	m.refill(m.panelNamed(servicesView), func(item int) string { return m.serviceRows[item].Key() }, func() [][]string {
 		sort.SliceStable(rows, func(a, b int) bool { return sortServiceRows(rows[a], rows[b]) })
 		m.serviceRows = rows
 
@@ -165,7 +165,7 @@ func (m *Model) setServices(rows []*commands.ServiceRow) {
 
 // rerenderServices shows the rows' marks, which their status reads.
 func (m *Model) rerenderServices() {
-	m.refill(m.panelNamed("services"), func(item int) string { return m.serviceRows[item].Key() }, m.serviceCells)
+	m.refill(m.panelNamed(servicesView), func(item int) string { return m.serviceRows[item].Key() }, m.serviceCells)
 }
 
 // sortServiceRows: by name, a service's replicas after it, in order.
@@ -198,7 +198,7 @@ func (m *Model) serviceFlex() []utils.FlexColumn {
 }
 
 func (m *Model) selectedServiceRow() *commands.ServiceRow {
-	item := m.panelNamed("services").item()
+	item := m.panelNamed(servicesView).item()
 	if item < 0 || item >= len(m.serviceRows) {
 		return nil
 	}

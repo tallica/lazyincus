@@ -157,10 +157,10 @@ func (m *Model) stacksCollapsed(window, focused string) bool {
 		return false
 	}
 
-	stacksFocused := focused == "stacks" || focused == "services"
-	if window == "stacks" || window == "services" {
+	stacksFocused := focused == stacksView || focused == servicesView
+	if window == stacksView || window == servicesView {
 		return !stacksFocused
 	}
 
-	return window == "instances" && stacksFocused
+	return window == instancesView && stacksFocused
 }

@@ -102,6 +102,6 @@ func (m *Model) serviceInstanceTab(task func(*commands.Instance) mainTaskFunc) f
 }
 
 func (m *Model) viewServiceLogs() {
-	m.setMainTab(m.panelNamed("services"), "logs")
+	m.setMainTab(m.panelNamed(servicesView), "logs")
 	m.enterMain()
 }

@@ -201,7 +201,7 @@ func (m *Model) switchToProject(name string) tea.Cmd {
 func (m *Model) reloadAfterScopeChange() tea.Cmd {
 	// The stacks are directories, which the read below lists again.
 	for _, p := range m.panels {
-		if p.name != "stacks" {
+		if p.name != stacksView {
 			p.awaiting = m.tr.Loading
 			p.rowsWidth = -1
 			p.cells, p.shown = nil, nil
@@ -219,7 +219,7 @@ func (m *Model) reloadAfterScopeChange() tea.Cmd {
 	// instance arriving at the top reads as nothing changed.
 	m.mainTask.key = ""
 	m.jumpToTopMain()
-	m.panelNamed("instances").selected = 0
+	m.panelNamed(instancesView).selected = 0
 
 	// The history is the scope's, and a remote's warnings its own.
 	m.operations.clear()

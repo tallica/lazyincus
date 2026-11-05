@@ -24,17 +24,17 @@ type snapshotsSpan struct {
 
 func (m *Model) followSelection() {
 	switch m.currentSideView() {
-	case "stacks":
+	case stacksView:
 		m.followStack(m.selectedStackRow())
 		// A stack hands Snapshots nothing, so it empties rather than keep the last list's.
 		if f := m.snapshotsFollow; f.label != "" || len(f.instances) > 0 || f.volume != "" {
 			m.followSnapshotsOf(snapshotsFollow{})
 		}
-	case "services":
+	case servicesView:
 		m.followServices()
-	case "instances":
+	case instancesView:
 		m.followInstance()
-	case "volumes":
+	case volumesView:
 		// The other volumes' snapshots are their instance's.
 		if volume := m.selectedVolume(); volume != nil && volume.IsCustom() && volume.Key() != m.snapshotsFollow.volume {
 			m.followSnapshotsOf(snapshotsFollow{label: volume.Name, volume: volume.Key()})
@@ -103,7 +103,7 @@ func (m *Model) setSnapshots() {
 	sort.SliceStable(snapshots, func(a, b int) bool { return sortSnapshots(snapshots[a], snapshots[b]) })
 	m.snapshots = snapshots
 
-	p := m.panelNamed("snapshots")
+	p := m.panelNamed(snapshotsView)
 	p.awaiting = ""
 	p.cells = make([][]string, len(snapshots))
 	for i, snapshot := range snapshots {
@@ -130,7 +130,7 @@ func sortSnapshots(a, b *commands.Snapshot) bool {
 }
 
 func (m *Model) selectedSnapshot() *commands.Snapshot {
-	item := m.panelNamed("snapshots").item()
+	item := m.panelNamed(snapshotsView).item()
 	if item < 0 || item >= len(m.snapshots) {
 		return nil
 	}

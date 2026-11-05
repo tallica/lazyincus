@@ -20,7 +20,7 @@ func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) te
 
 // selectSnapshot: the cursor onto the snapshot with key, if shown.
 func (m *Model) selectSnapshot(key string) bool {
-	p := m.panelNamed("snapshots")
+	p := m.panelNamed(snapshotsView)
 	for row, item := range p.shown {
 		if m.snapshots[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
@@ -141,7 +141,7 @@ func (m *Model) snapshotNewInstance(snapshot *commands.Snapshot) tea.Cmd {
 // focusInstance: nothing while it's hidden.
 func (m *Model) focusInstance(key string) {
 	if m.selectInstance(key) {
-		m.focusView("instances")
+		m.focusView(instancesView)
 	}
 }
 

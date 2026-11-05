@@ -229,6 +229,18 @@ func (p *panel) selectRow(row, rows int) {
 }
 
 const (
+	stacksView    = "stacks"
+	servicesView  = "services"
+	instancesView = "instances"
+	snapshotsView = "snapshots"
+	backupsView   = "backups"
+	imagesView    = "images"
+	volumesView   = "volumes"
+	networksView  = "networks"
+	profilesView  = "profiles"
+)
+
+const (
 	snapshotsWindow = "restorePoints"
 	resourcesWindow = "resources"
 )
@@ -240,28 +252,28 @@ func (m *Model) newPanels() []*panel {
 
 	panels := []*panel{
 		{
-			name: "stacks", title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks,
+			name: stacksView, title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks,
 			mainTabs: m.stackMainTabs, itemKey: m.stackKey,
 			project: projectOf(m.selectedStackRow, func(s *commands.ComposeStack) string { return s.Name }),
 		},
 		{
-			name: "services", title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
+			name: servicesView, title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
 			mainTabs: m.serviceMainTabs, itemKey: m.serviceKey, flex: m.serviceFlex, note: func() string { return m.servicesNote },
 			project: projectOf(m.selectedServiceRow, func(r *commands.ServiceRow) string { return r.Service.Project }),
 		},
 		{
-			name: "instances", title: m.instancesTitle, empty: tr.NoInstances,
+			name: instancesView, title: m.instancesTitle, empty: tr.NoInstances,
 			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey, keep: m.keepInstance,
 			project: projectOf(m.selectedInstance, func(i *commands.Instance) string { return i.Project }),
 		},
 		{
-			name: "snapshots", title: m.snapshotsTitle, window: snapshotsWindow,
+			name: snapshotsView, title: m.snapshotsTitle, window: snapshotsWindow,
 			plainTitle: tr.SnapshotsTitle, shortTitle: tr.SnapshotsShort, empty: tr.NoSnapshots,
 			flex: m.snapshotFlex, mainTabs: m.snapshotMainTabs, itemKey: m.snapshotKey,
 			project: projectOf(m.selectedSnapshot, func(s *commands.Snapshot) string { return s.Project }),
 		},
 		{
-			name: "backups", title: m.backupsTitle, hidden: m.backupsAway, window: snapshotsWindow,
+			name: backupsView, title: m.backupsTitle, hidden: m.backupsAway, window: snapshotsWindow,
 			plainTitle: tr.BackupsTitle, shortTitle: tr.BackupsShort, empty: tr.NoBackups,
 			flex: m.backupFlex, mainTabs: m.backupMainTabs, itemKey: m.backupItemKey,
 			// A backup's row is a run, not the stack it belongs to.
@@ -274,22 +286,22 @@ func (m *Model) newPanels() []*panel {
 			},
 		},
 		{
-			name: "images", title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,
+			name: imagesView, title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,
 			flex: m.imageFlex, mainTabs: m.imageMainTabs, itemKey: m.imageKey,
 			project: projectOf(m.selectedImage, func(i *commands.Image) string { return i.Image.Project }),
 		},
 		{
-			name: "volumes", title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
+			name: volumesView, title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
 			flex: m.volumeFlex, mainTabs: m.volumeMainTabs, itemKey: m.volumeKey,
 			project: projectOf(m.selectedVolume, func(v *commands.Volume) string { return v.Volume.Project }),
 		},
 		{
-			name: "networks", title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks,
+			name: networksView, title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks,
 			mainTabs: m.networkMainTabs, itemKey: m.networkKey, keep: m.keepNetwork,
 			project: projectOf(m.selectedNetwork, func(n *commands.Network) string { return n.Network.Project }),
 		},
 		{
-			name: "profiles", title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles,
+			name: profilesView, title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles,
 			flex: m.profileFlex, mainTabs: m.profileMainTabs, itemKey: m.profileKey,
 			project: projectOf(m.selectedProfile, func(p *commands.Profile) string { return p.Profile.Project }),
 		},

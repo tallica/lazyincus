@@ -146,7 +146,7 @@ func withServiceInstance(title func(*Model) string, action func(*Model, *command
 // serviceBindings: in the order the options menu lists them for the selected row.
 func (m *Model) serviceBindings() []*binding {
 	service := func(key, description string, mutates bool, handler func(*Model) tea.Cmd) *binding {
-		return &binding{view: "services", key: key, description: description, mutates: mutates, handler: handler}
+		return &binding{view: servicesView, key: key, description: description, mutates: mutates, handler: handler}
 	}
 	instance := func(title func(*Model) string, action func(*Model, *commands.Instance) tea.Cmd) func(*Model) tea.Cmd {
 		return withServiceInstance(title, action)
@@ -182,9 +182,9 @@ func (m *Model) serviceBindings() []*binding {
 		service("b", m.serviceScopedDescription(m.tr.ComposeBuild), true, onServiceTarget(composeVerb("", "build"))),
 		service("g", m.serviceScopedDescription(m.tr.ComposePull), true, onServiceTarget(composeVerb("", "pull"))),
 		// The stack's, whichever row is selected.
-		{view: "services", key: "G", description: m.tr.ComposeUpdateImages, mutates: true, noSelection: true, handler: onStack(updateImages)},
+		{view: servicesView, key: "G", description: m.tr.ComposeUpdateImages, mutates: true, noSelection: true, handler: onStack(updateImages)},
 		service("M", m.serviceScopedDescription(m.tr.ComposeLogs), false, onServiceTarget(composeVerb("", "logs", "--follow"))),
-		{view: "services", key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), noSelection: true, handler: (*Model).goToBackups},
+		{view: servicesView, key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), noSelection: true, handler: (*Model).goToBackups},
 		service(";", m.tr.TypedComposeCommand, true, onServiceTarget(typedComposeCommand)),
 	}
 

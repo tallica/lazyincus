@@ -222,7 +222,7 @@ func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool)
 	m.leaveHiddenView()
 
 	sort.SliceStable(stacks, func(a, b int) bool { return sortStacks(stacks[a], stacks[b]) })
-	m.refill(m.panelNamed("stacks"), func(item int) string { return m.stacks[item].Ref() }, func() [][]string {
+	m.refill(m.panelNamed(stacksView), func(item int) string { return m.stacks[item].Ref() }, func() [][]string {
 		m.stacks = stacks
 
 		return m.stackCells()
@@ -270,11 +270,11 @@ func (m *Model) stackCells() [][]string {
 
 // rerenderStacks shows the stacks' marks, which the registry checks feed.
 func (m *Model) rerenderStacks() {
-	m.refill(m.panelNamed("stacks"), func(item int) string { return m.stacks[item].Ref() }, m.stackCells)
+	m.refill(m.panelNamed(stacksView), func(item int) string { return m.stacks[item].Ref() }, m.stackCells)
 }
 
 func (m *Model) selectedStackRow() *commands.ComposeStack {
-	item := m.panelNamed("stacks").item()
+	item := m.panelNamed(stacksView).item()
 	if item < 0 || item >= len(m.stacks) {
 		return nil
 	}

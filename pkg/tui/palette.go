@@ -69,7 +69,7 @@ func (m *Model) paletteItems(view string, scoped bool) []*menuItem {
 	for _, p := range m.visiblePanels() {
 		scopes[p.name] = p.title()
 	}
-	scopes["services"] = m.tr.ServicesTitle
+	scopes[servicesView] = m.tr.ServicesTitle
 
 	sources := m.paletteSources()
 	sideView := m.currentSideView()
@@ -212,10 +212,10 @@ type paletteEntry struct {
 // paletteSources is a source for each panel.
 func (m *Model) paletteSources() map[string]paletteSource {
 	return map[string]paletteSource{
-		"stacks": m.sourceOf(m.panelNamed("stacks"),
+		stacksView: m.sourceOf(m.panelNamed(stacksView),
 			func(item int) string { return m.stacks[item].Ref() },
 			func(item int) string { return m.onRemote(m.stacks[item].Name, m.stacks[item].Remote) }, nil),
-		"services": m.sourceOf(m.panelNamed("services"),
+		servicesView: m.sourceOf(m.panelNamed(servicesView),
 			func(item int) string { return m.serviceRows[item].Key() },
 			func(item int) string {
 				row := m.serviceRows[item]
@@ -224,34 +224,34 @@ func (m *Model) paletteSources() map[string]paletteSource {
 					name = row.Instance.Name
 				}
 
-				return m.onRemote(name, m.actionRemote("services"))
+				return m.onRemote(name, m.actionRemote(servicesView))
 			}, nil),
-		"instances": m.sourceOf(m.panelNamed("instances"),
+		instancesView: m.sourceOf(m.panelNamed(instancesView),
 			func(item int) string { return m.instances[item].Key() },
 			func(item int) string { return m.onRemote(m.instances[item].Name, m.instances[item].Remote) },
 			func(item int) string { return m.instances[item].Project }),
-		"images": m.sourceOf(m.panelNamed("images"),
+		imagesView: m.sourceOf(m.panelNamed(imagesView),
 			func(item int) string { return m.images[item].Key() },
 			func(item int) string { return m.images[item].Label() }, nil),
-		"volumes": m.sourceOf(m.panelNamed("volumes"),
+		volumesView: m.sourceOf(m.panelNamed(volumesView),
 			func(item int) string { return m.volumes[item].Key() },
 			func(item int) string { return m.volumes[item].Name },
 			func(item int) string { return m.volumes[item].Pool }),
-		"networks": m.sourceOf(m.panelNamed("networks"),
+		networksView: m.sourceOf(m.panelNamed(networksView),
 			func(item int) string { return m.networks[item].Key() },
 			func(item int) string { return m.networks[item].Name }, nil),
-		"profiles": m.sourceOf(m.panelNamed("profiles"),
+		profilesView: m.sourceOf(m.panelNamed(profilesView),
 			func(item int) string { return m.profiles[item].Key() },
 			func(item int) string { return m.profiles[item].Name }, nil),
-		"backups": m.sourceOf(m.panelNamed("backups"),
+		backupsView: m.sourceOf(m.panelNamed(backupsView),
 			func(item int) string { return m.backupKey(m.backups[item]) },
 			func(item int) string {
-				return m.onRemote(presentation.BackupLabel(m.backups[item]), m.actionRemote("backups"))
+				return m.onRemote(presentation.BackupLabel(m.backups[item]), m.actionRemote(backupsView))
 			}, nil),
-		"snapshots": m.sourceOf(m.panelNamed("snapshots"),
+		snapshotsView: m.sourceOf(m.panelNamed(snapshotsView),
 			func(item int) string { return m.snapshots[item].Key() },
 			func(item int) string {
-				return m.onRemote(m.snapshots[item].Owner+"/"+m.snapshots[item].Name, m.actionRemote("snapshots"))
+				return m.onRemote(m.snapshots[item].Owner+"/"+m.snapshots[item].Name, m.actionRemote(snapshotsView))
 			}, nil),
 	}
 }

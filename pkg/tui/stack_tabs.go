@@ -57,6 +57,6 @@ func (m *Model) stackConfigTask() mainTaskFunc {
 }
 
 func (m *Model) viewStackLogs() {
-	m.setMainTab(m.panelNamed("stacks"), "logs")
+	m.setMainTab(m.panelNamed(stacksView), "logs")
 	m.enterMain()
 }

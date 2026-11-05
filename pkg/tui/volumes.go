@@ -26,7 +26,7 @@ func (m *Model) fetchVolumes() fetch {
 }
 
 func (m *Model) setVolumes(volumes []*commands.Volume) {
-	m.refill(m.panelNamed("volumes"), func(item int) string { return m.volumes[item].Key() }, func() [][]string {
+	m.refill(m.panelNamed(volumesView), func(item int) string { return m.volumes[item].Key() }, func() [][]string {
 		sort.SliceStable(volumes, func(a, b int) bool { return sortVolumes(volumes[a], volumes[b]) })
 		m.volumes = volumes
 		m.volumesSpan = spansProjects(volumes, volumeProject)
@@ -69,7 +69,7 @@ func (m *Model) volumeFlex() []utils.FlexColumn {
 }
 
 func (m *Model) selectedVolume() *commands.Volume {
-	item := m.panelNamed("volumes").item()
+	item := m.panelNamed(volumesView).item()
 	if item < 0 || item >= len(m.volumes) {
 		return nil
 	}

@@ -245,7 +245,7 @@ func (m *Model) createVolumeSnapshot(volume *commands.Volume, name string, opts 
 // focusSnapshot: the cursor on it in a focused Snapshots.
 func (m *Model) focusSnapshot(key string) {
 	if m.selectSnapshot(key) {
-		m.focusView("snapshots")
+		m.focusView(snapshotsView)
 	}
 }
 

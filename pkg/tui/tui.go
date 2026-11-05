@@ -435,7 +435,7 @@ func (m *Model) escape() {
 		return
 	}
 
-	if m.instanceUsers != nil && m.currentView() == "instances" {
+	if m.instanceUsers != nil && m.currentView() == instancesView {
 		m.clearInstanceUsers()
 	}
 }
