@@ -39,15 +39,15 @@ type options struct {
 	home string
 }
 
-func newTestModel(t *testing.T, opts options) *Model {
-	t.Helper()
+func newTestModel(tb testing.TB, opts options) *Model {
+	tb.Helper()
 
 	userConfig := config.GetDefaultConfig()
 	if opts.configure != nil {
 		opts.configure(&userConfig)
 	}
 	appConfig := &config.AppConfig{
-		Name: "lazyincus", Version: "test", UserConfig: &userConfig, ConfigDir: t.TempDir(), ReadOnly: opts.readOnly,
+		Name: "lazyincus", Version: "test", UserConfig: &userConfig, ConfigDir: tb.TempDir(), ReadOnly: opts.readOnly,
 	}
 
 	instance := func(name, status string) api.InstanceFull {
@@ -83,7 +83,7 @@ func newTestModel(t *testing.T, opts options) *Model {
 	m.panels = m.newPanels()
 	m.focus = nil
 	if opts.compose {
-		withStacks(t, m, opts.localStack, opts.savedStacks...)
+		withStacks(tb, m, opts.localStack, opts.savedStacks...)
 		withRemotes(m, server, opts.remotes)
 	}
 	m.landOffStacks()
@@ -92,10 +92,10 @@ func newTestModel(t *testing.T, opts options) *Model {
 }
 
 // start sizes m and feeds it its first fetch, the way the program would.
-func start(t *testing.T, opts options, width, height int) *Model {
-	t.Helper()
+func start(tb testing.TB, opts options, width, height int) *Model {
+	tb.Helper()
 
-	m := newTestModel(t, opts)
+	m := newTestModel(tb, opts)
 	m.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	run(m, m.Init())
 
@@ -406,8 +406,8 @@ func testStack(t *testing.T, root, project string, services ...string) *commands
 // withStacks lists stacks without incus-compose: local is the stack
 // lazyincus started in, nil for none, and saved are in state.yml. A
 // directory neither names reads as having no compose file.
-func withStacks(t *testing.T, m *Model, local *commands.ComposeStack, saved ...*commands.ComposeStack) {
-	t.Helper()
+func withStacks(tb testing.TB, m *Model, local *commands.ComposeStack, saved ...*commands.ComposeStack) {
+	tb.Helper()
 
 	byDir := map[string]*commands.ComposeStack{}
 
@@ -418,7 +418,7 @@ func withStacks(t *testing.T, m *Model, local *commands.ComposeStack, saved ...*
 	}
 
 	for _, stack := range saved {
-		require.NoError(t, m.cfg.AddStack(stack.Ref()))
+		require.NoError(tb, m.cfg.AddStack(stack.Ref()))
 		byDir[stack.Dir] = stack
 	}
 
