@@ -67,7 +67,7 @@ func newTestModel(t *testing.T, opts options) *Model {
 	if opts.server != nil {
 		server = opts.server
 	}
-	incus := commands.NewIncusCommandWithClient(log, osCommand, tr, appConfig, server, "fake")
+	incus := commands.NewIncusCommandWithClient(log, osCommand, appConfig, server, "fake")
 
 	m := NewModel(incus, osCommand, tr, appConfig)
 	// Ticks never fire on their own: a test sends the message itself.
@@ -453,7 +453,7 @@ func withRemotes(m *Model, session *incustest.Server, servers map[string]*incust
 			return nil, &commands.ConnectError{Remote: remote, Err: errors.New("no answer")}
 		}
 
-		return commands.NewIncusCommandWithClient(m.incus.Log, m.incus.OSCommand, m.incus.Tr, m.incus.Config, server, remote), nil
+		return commands.NewIncusCommandWithClient(m.incus.Log, m.incus.OSCommand, m.incus.Config, server, remote), nil
 	}
 }
 

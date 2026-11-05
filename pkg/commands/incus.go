@@ -17,7 +17,6 @@ import (
 	"github.com/lxc/incus/v7/shared/cliconfig"
 	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // IncusCommand is the app's way into one Incus remote: the session's, or
@@ -25,7 +24,6 @@ import (
 type IncusCommand struct {
 	Log       *zerolog.Logger
 	OSCommand *OSCommand
-	Tr        *i18n.TranslationSet
 	Config    *config.AppConfig
 
 	// Guarded by clientMutex: they change when the user switches project,
@@ -70,13 +68,13 @@ const connectTimeout = 10 * time.Second
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
 // every remote that doesn't keep it where we'd look - a daemon in a VM
 // records its own path in the remote's config.
-func NewIncusCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) (*IncusCommand, error) {
+func NewIncusCommand(log *zerolog.Logger, osCommand *OSCommand, cfg *config.AppConfig) (*IncusCommand, error) {
 	cliCfg, err := cliconfig.LoadConfig("")
 	if err != nil {
 		return nil, &ConnectError{Err: err}
 	}
 
-	return connectCommand(log, osCommand, tr, cfg, cliCfg, cliCfg.DefaultRemote)
+	return connectCommand(log, osCommand, cfg, cliCfg, cliCfg.DefaultRemote)
 }
 
 // ConnectRemote is a command like c on another of the CLI's remotes.
@@ -85,7 +83,7 @@ func (c *IncusCommand) ConnectRemote(name string) (*IncusCommand, error) {
 		return nil, &ConnectError{Remote: name, Err: errors.New("no CLI config")}
 	}
 
-	return connectCommand(c.Log, c.OSCommand, c.Tr, c.Config, c.cliCfg, name)
+	return connectCommand(c.Log, c.OSCommand, c.Config, c.cliCfg, name)
 }
 
 // IsInstanceRemote is whether name is one of the CLI's remotes that has
@@ -121,7 +119,7 @@ func (c *IncusCommand) InstanceRemoteNames() []string {
 	return names
 }
 
-func connectCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
+func connectCommand(log *zerolog.Logger, osCommand *OSCommand, cfg *config.AppConfig, cliCfg *cliconfig.Config, name string) (*IncusCommand, error) {
 	client, err := connectRemote(cliCfg, name)
 	if err != nil {
 		return nil, &ConnectError{Remote: name, Err: err}
@@ -129,7 +127,7 @@ func connectCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.Translat
 
 	capDialTimeout(client)
 
-	command := NewIncusCommandWithClient(log, osCommand, tr, cfg, client, name)
+	command := NewIncusCommandWithClient(log, osCommand, cfg, client, name)
 	command.cliCfg = cliCfg
 
 	return command, nil
@@ -137,7 +135,7 @@ func connectCommand(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.Translat
 
 // NewIncusCommandWithClient is an IncusCommand around a client already
 // connected - to a remote, or to incustest's stand-in.
-func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
+func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
 	// Best-effort: the footer just shows no version without it.
 	version := ""
 	if server, _, err := client.GetServer(); err == nil {
@@ -149,7 +147,6 @@ func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, tr *i1
 	return &IncusCommand{
 		Log:           log,
 		OSCommand:     osCommand,
-		Tr:            tr,
 		Config:        cfg,
 		base:          client,
 		client:        client.UseProject(clientProjectName(client)),
@@ -469,7 +466,6 @@ func (c *IncusCommand) newInstance(full api.InstanceFull, fallbackProject string
 		Client:    client,
 		OSCommand: c.OSCommand,
 		Log:       c.Log,
-		Tr:        c.Tr,
 	}
 
 	c.runtimes.attach(instance, listing)
@@ -523,9 +519,6 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 			UsedBy:       users[apiImage.Fingerprint],
 			UsersUnknown: usersErr != nil,
 			Client:       c.clientFor(apiImage.Project),
-			OSCommand:    c.OSCommand,
-			Log:          c.Log,
-			Tr:           c.Tr,
 		}
 	}
 
@@ -592,12 +585,9 @@ func (c *IncusCommand) GetProfiles() ([]*Profile, error) {
 		apiProfile := apiProfiles[i]
 
 		ownProfiles[i] = &Profile{
-			Name:      apiProfile.Name,
-			Profile:   apiProfile,
-			Client:    c.clientFor(apiProfile.Project),
-			OSCommand: c.OSCommand,
-			Log:       c.Log,
-			Tr:        c.Tr,
+			Name:    apiProfile.Name,
+			Profile: apiProfile,
+			Client:  c.clientFor(apiProfile.Project),
 		}
 	}
 
@@ -625,9 +615,6 @@ func (c *IncusCommand) GetNetworks() ([]*Network, error) {
 			Network:   apiNetwork,
 			Client:    c.clientFor(apiNetwork.Project),
 			ClientFor: c.clientIn,
-			OSCommand: c.OSCommand,
-			Log:       c.Log,
-			Tr:        c.Tr,
 		}
 	}
 
@@ -680,9 +667,6 @@ func (c *IncusCommand) GetVolumes() ([]*Volume, error) {
 				PoolDriver: pool.Driver,
 				PoolSpace:  space,
 				Client:     c.clientFor(apiVolume.Project),
-				OSCommand:  c.OSCommand,
-				Log:        c.Log,
-				Tr:         c.Tr,
 			})
 		}
 	}

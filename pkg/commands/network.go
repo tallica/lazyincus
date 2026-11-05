@@ -8,8 +8,6 @@ import (
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Network is a network as listed by `incus network list`, managed by Incus
@@ -22,9 +20,6 @@ type Network struct {
 	// ClientFor is a client scoped to another project, which the leases
 	// need: see Leases.
 	ClientFor func(project string) incus.InstanceServer
-	OSCommand *OSCommand
-	Log       *zerolog.Logger
-	Tr        *i18n.TranslationSet
 }
 
 // Key identifies the network across refreshes: the all-projects view can

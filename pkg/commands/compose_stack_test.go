@@ -143,7 +143,7 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 		instance("other", "api-1", "api", "Frozen"),
 	}})
 
-	command := NewIncusCommandWithClient(NewDummyLog(), nil, nil, nil, server, "fake")
+	command := NewIncusCommandWithClient(NewDummyLog(), nil, nil, server, "fake")
 
 	statuses, err := command.GetComposeStatuses()
 	require.NoError(t, err)

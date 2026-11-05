@@ -6,8 +6,6 @@ import (
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Volume is one storage volume within a pool. Volumes are only unique per
@@ -27,9 +25,6 @@ type Volume struct {
 	// SnapshotList is a custom volume's snapshots, as Snapshots has them.
 	SnapshotList []api.StorageVolumeSnapshot
 	Client       incus.InstanceServer
-	OSCommand    *OSCommand
-	Log          *zerolog.Logger
-	Tr           *i18n.TranslationSet
 }
 
 // Key identifies the volume across refreshes and in the panel's context

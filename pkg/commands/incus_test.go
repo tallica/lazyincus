@@ -115,7 +115,7 @@ func TestEventStreamDoesntRaceProjectClients(t *testing.T) {
 	client, err := incus.ConnectIncus("https://"+addr, &incus.ConnectionArgs{SkipGetServer: true, InsecureSkipVerify: true})
 	require.NoError(t, err)
 
-	command := NewIncusCommandWithClient(nil, nil, nil, nil, client, "closed")
+	command := NewIncusCommandWithClient(nil, nil, nil, client, "closed")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()

@@ -12,7 +12,6 @@ func TestNewDummyIncusCommand(t *testing.T) {
 	assert.NotNil(t, c)
 	assert.NotNil(t, c.Log)
 	assert.NotNil(t, c.OSCommand)
-	assert.NotNil(t, c.Tr)
 	assert.Equal(t, "lazyincus", c.Config.Name)
 }
 

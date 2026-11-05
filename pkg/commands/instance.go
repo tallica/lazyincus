@@ -14,7 +14,6 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/lxc/incus/v7/shared/util"
 	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -38,7 +37,6 @@ type Instance struct {
 	Client    incus.InstanceServer
 	OSCommand *OSCommand
 	Log       *zerolog.Logger
-	Tr        *i18n.TranslationSet
 
 	runtime *instanceRuntime
 }

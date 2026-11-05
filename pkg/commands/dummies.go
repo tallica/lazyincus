@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // This file exports dummy constructors for use by tests in other packages
@@ -45,7 +44,6 @@ func NewDummyIncusCommandWithOSCommand(osCommand *OSCommand) *IncusCommand {
 	return &IncusCommand{
 		Log:       NewDummyLog(),
 		OSCommand: osCommand,
-		Tr:        i18n.NewTranslationSet(NewDummyLog(), "en"),
 		Config:    newAppConfig,
 	}
 }

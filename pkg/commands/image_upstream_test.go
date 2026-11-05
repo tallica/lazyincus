@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // testRegistry is an in-memory registry counting the manifest GETs it
@@ -358,7 +357,7 @@ func TestUpstreamTargets(t *testing.T) {
 	})
 
 	log := NewDummyLog()
-	command := NewIncusCommandWithClient(log, NewDummyOSCommand(), i18n.NewTranslationSet(log, "en"),
+	command := NewIncusCommandWithClient(log, NewDummyOSCommand(),
 		NewDummyAppConfig(), server, "fake")
 	command.UseProject("stack")
 

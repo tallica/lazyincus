@@ -3,8 +3,6 @@ package commands
 import (
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Image is a local image on the server, as listed by `incus image list`.
@@ -20,9 +18,6 @@ type Image struct {
 	// is empty for want of an answer rather than for want of users.
 	UsersUnknown bool
 	Client       incus.InstanceServer
-	OSCommand    *OSCommand
-	Log          *zerolog.Logger
-	Tr           *i18n.TranslationSet
 }
 
 // Key identifies the image across refreshes: one image can sit in several

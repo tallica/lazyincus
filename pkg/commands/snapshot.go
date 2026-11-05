@@ -6,8 +6,6 @@ import (
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Snapshot is one snapshot of an instance, or of a custom volume. Snapshots
@@ -28,10 +26,7 @@ type Snapshot struct {
 	Snapshot       api.InstanceSnapshot
 	VolumeSnapshot api.StorageVolumeSnapshot
 
-	Client    incus.InstanceServer
-	OSCommand *OSCommand
-	Log       *zerolog.Logger
-	Tr        *i18n.TranslationSet
+	Client incus.InstanceServer
 }
 
 func (s *Snapshot) Key() string {
@@ -164,15 +159,12 @@ func (i *Instance) Snapshots() []*Snapshot {
 		apiSnapshot := apiSnapshots[index]
 
 		snapshots[index] = &Snapshot{
-			Project:   i.Project,
-			Owner:     i.Name,
-			Name:      snapshotName(apiSnapshot.Name),
-			Instance:  i,
-			Snapshot:  apiSnapshot,
-			Client:    i.Client,
-			OSCommand: i.OSCommand,
-			Log:       i.Log,
-			Tr:        i.Tr,
+			Project:  i.Project,
+			Owner:    i.Name,
+			Name:     snapshotName(apiSnapshot.Name),
+			Instance: i,
+			Snapshot: apiSnapshot,
+			Client:   i.Client,
 		}
 	}
 
@@ -193,9 +185,6 @@ func (v *Volume) Snapshots() []*Snapshot {
 			Volume:         v,
 			VolumeSnapshot: apiSnapshot,
 			Client:         v.Client,
-			OSCommand:      v.OSCommand,
-			Log:            v.Log,
-			Tr:             v.Tr,
 		}
 	}
 

@@ -5,19 +5,14 @@ import (
 
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
-	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 // Profile is a profile: config and devices instances take on by naming it.
 type Profile struct {
 	Name string
 
-	Profile   api.Profile
-	Client    incus.InstanceServer
-	OSCommand *OSCommand
-	Log       *zerolog.Logger
-	Tr        *i18n.TranslationSet
+	Profile api.Profile
+	Client  incus.InstanceServer
 }
 
 // Key identifies the profile across refreshes: every project has a

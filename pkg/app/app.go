@@ -33,7 +33,7 @@ func NewApp(config *config.AppConfig) (*App, error) {
 	}
 	app.OSCommand = commands.NewOSCommand(app.Log, config)
 
-	app.IncusCommand, err = commands.NewIncusCommand(app.Log, app.OSCommand, app.Tr, app.Config)
+	app.IncusCommand, err = commands.NewIncusCommand(app.Log, app.OSCommand, app.Config)
 	if err != nil {
 		return app, err
 	}

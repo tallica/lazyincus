@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
-	"github.com/tallica/lazyincus/pkg/i18n"
 )
 
 func imagesServer() *incustest.Server {
@@ -27,7 +26,7 @@ func getImages(t *testing.T, server *incustest.Server) map[string]*Image {
 	t.Helper()
 
 	log := NewDummyLog()
-	command := NewIncusCommandWithClient(log, NewDummyOSCommand(), i18n.NewTranslationSet(log, "en"),
+	command := NewIncusCommandWithClient(log, NewDummyOSCommand(),
 		NewDummyAppConfig(), server, "fake")
 
 	images, err := command.GetImages()

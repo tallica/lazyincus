@@ -55,7 +55,7 @@ func listenInBackground(t *testing.T, command *IncusCommand, server *incustest.S
 func newEventsCommand(server *incustest.Server) *IncusCommand {
 	log := NewDummyLog()
 
-	return NewIncusCommandWithClient(log, nil, nil, nil, server, "fake")
+	return NewIncusCommandWithClient(log, nil, nil, server, "fake")
 }
 
 func TestListenForEventsPassesEventsOnUntilCancelled(t *testing.T) {
