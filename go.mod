@@ -13,8 +13,8 @@ require (
 	github.com/google/go-containerregistry v0.22.1
 	github.com/integrii/flaggy v1.8.0
 	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/lxc/incus/v7 v7.6.0
-	github.com/mgutz/str v1.2.0
 	github.com/rivo/uniseg v0.4.7
 	github.com/rs/zerolog v1.35.1
 	github.com/sahilm/fuzzy v0.1.3

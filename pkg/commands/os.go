@@ -2,13 +2,12 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/mgutz/str"
+	"github.com/kballard/go-shellquote"
 	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -63,9 +62,7 @@ func (c *OSCommand) RunExecutableWithOutput(cmd *exec.Cmd) (string, error) {
 }
 
 // ExecutableFromString takes a string like `incus list` and returns an
-// executable command for it. The line is the user's own - an open command, a
-// clipboard command - so one str.ToArgv can't read is an error to report
-// rather than the panic it answers with.
+// executable command for it.
 func (c *OSCommand) ExecutableFromString(commandStr string) (*exec.Cmd, error) {
 	args, err := toArgv(commandStr)
 	if err != nil {
@@ -75,18 +72,12 @@ func (c *OSCommand) ExecutableFromString(commandStr string) (*exec.Cmd, error) {
 	return c.NewCmd(args[0], args[1:]...), nil
 }
 
-// toArgv is str.ToArgv with the two ways a line leaves it with nothing to run
-// turned into errors: the panic it raises on a quote it can't close or a
-// backslash it ends on, and the nothing it returns for a line of whitespace.
-// Quote escapes for this parser, so its output goes through it untouched.
-func toArgv(line string) (args []string, err error) {
-	defer func() {
-		if reason := recover(); reason != nil {
-			err = errors.New(fmt.Sprint(reason))
-		}
-	}()
-
-	args = str.ToArgv(line)
+// toArgv splits line by shell quoting rules, which Quote escapes for.
+func toArgv(line string) ([]string, error) {
+	args, err := shellquote.Split(line)
+	if err != nil {
+		return nil, err
+	}
 	if len(args) == 0 {
 		return nil, errors.New("no command to run")
 	}

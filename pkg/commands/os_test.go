@@ -17,7 +17,7 @@ func TestAFailedCommandSaysWhy(t *testing.T) {
 	assert.EqualError(t, err, "nope\n", "stderr kept apart")
 }
 
-// A config command str.ToArgv can't read - a quote left open, a backslash to
+// A config command toArgv can't read - a quote left open, a backslash to
 // end on - is an error to report, not the panic that used to take the app down
 // with it, and a line of nothing is nothing to run.
 func TestExecutableFromStringRefusesALineItCantRead(t *testing.T) {
@@ -43,5 +43,20 @@ func TestQuoteRoundTripsThroughExecutableFromString(t *testing.T) {
 		cmd, err := c.ExecutableFromString("vi " + c.Quote(value))
 		assert.NoError(t, err, value)
 		assert.Equal(t, []string{"vi", value}, cmd.Args, value)
+	}
+}
+
+func TestToArgvSplitsLikeAShell(t *testing.T) {
+	for line, want := range map[string][]string{
+		`code --wait`:                     {"code", "--wait"},
+		`open -a "Visual Studio Code"`:    {"open", "-a", "Visual Studio Code"},
+		`gosu foo\ bar`:                   {"gosu", "foo bar"},
+		`gosu --test="some arg" -s a=123`: {"gosu", "--test=some arg", "-s", "a=123"},
+		`a "" b`:                          {"a", "", "b"},
+		`'a\b' "a\b"`:                     {`a\b`, `a\b`},
+	} {
+		got, err := toArgv(line)
+		assert.NoError(t, err, line)
+		assert.Equal(t, want, got, line)
 	}
 }
