@@ -252,7 +252,7 @@ func TestASubprocessIsEchoedAndWaitsForEnter(t *testing.T) {
 	var out strings.Builder
 
 	s := &subprocess{
-		cmd: exec.Command("echo", "hi"), message: "bye", os: m.os, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
+		cmd: exec.Command("echo", "hi"), message: "bye", log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
 	}
 	s.SetStdin(strings.NewReader("\n"))
 	s.SetStdout(&out)

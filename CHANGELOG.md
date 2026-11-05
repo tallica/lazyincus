@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Built against the Incus 7.6 client (v7.6.0).
 
 ### Fixed
+- `ctrl+c` in a shell-out no longer kills the command: a typed `; up` tears its stack down on it, as in a terminal, instead of leaving it running.
 - `enter` on the main panel no longer stops `[`, `]` and the rest of its panel's keys working there.
 - After a main-panel search, `[`, `]`, `E` and the other keys of the panel main was entered from work again without leaving and re-entering it.
 - Moving the cursor in the main panel's search prompt no longer jumps back to the first match.

@@ -231,11 +231,3 @@ func (c *OSCommand) RunPreparedCommand(cmd *exec.Cmd) error {
 	}
 	return nil
 }
-
-// Kill kills a process.
-func (c *OSCommand) Kill(cmd *exec.Cmd) error {
-	if cmd.Process == nil {
-		return nil
-	}
-	return cmd.Process.Kill()
-}

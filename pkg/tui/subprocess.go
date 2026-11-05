@@ -3,15 +3,12 @@ package tui
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/fatih/color"
 	"github.com/rs/zerolog"
-	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -31,7 +28,7 @@ func (m *Model) runSubprocess(cmd *exec.Cmd, message string, then func() tea.Cmd
 // runSubprocessReturning: after runs before the screen comes back, so its wait doesn't hold the TUI.
 func (m *Model) runSubprocessReturning(cmd *exec.Cmd, message string, after func(error), then func(error) tea.Cmd) tea.Cmd {
 	s := &subprocess{
-		cmd: cmd, message: message, os: m.os, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
+		cmd: cmd, message: message, log: m.incus.Log, pressEnter: m.tr.PressEnterToReturn,
 		returnImmediately: m.cfg.UserConfig.Gui.ReturnImmediately, after: after,
 	}
 
@@ -55,7 +52,6 @@ type subprocess struct {
 	cmd               *exec.Cmd
 	message           string
 	returnImmediately bool
-	os                *commands.OSCommand
 	log               *zerolog.Logger
 	pressEnter        string
 	after             func(error)
@@ -64,26 +60,9 @@ type subprocess struct {
 }
 
 func (s *subprocess) Run() error {
+	// ^C reaches the child from the terminal and is left to it: incus-compose
+	// up tears its stack down on one. Bubble Tea ignores it here meanwhile.
 	s.cmd.Stdin, s.cmd.Stdout, s.cmd.Stderr = s.stdin, s.stdout, s.stdout
-
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
-
-	done := make(chan struct{})
-	defer func() {
-		signal.Stop(interrupt)
-		close(done)
-	}()
-
-	go func() {
-		select {
-		case <-interrupt:
-			if err := s.os.Kill(s.cmd); err != nil {
-				s.log.Error().Err(err).Send()
-			}
-		case <-done:
-		}
-	}()
 
 	// The last frame's attributes are still in force on the released terminal.
 	fmt.Fprintf(s.stdout, "%s\n%s\n\n", reset, utils.ColoredString("+ "+strings.Join(s.cmd.Args, " "), color.FgBlue))
