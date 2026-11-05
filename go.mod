@@ -14,7 +14,6 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-containerregistry v0.22.1
 	github.com/integrii/flaggy v1.8.0
-	github.com/jesseduffield/kill v0.0.0-20250101124109-e216ddbe133a
 	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996
 	github.com/lxc/incus/v7 v7.6.0
 	github.com/mgutz/str v1.2.0
@@ -22,7 +21,6 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/sahilm/fuzzy v0.1.3
 	github.com/samber/lo v1.53.0
-	github.com/spkg/bom v1.0.1
 	github.com/stretchr/testify v1.12.1
 )
 

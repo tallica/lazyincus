@@ -123,6 +123,7 @@ func TestPaneContentIsSplitIntoViewLines(t *testing.T) {
 	assert.Equal(t, []string{"a   b", "ab  c", ""}, viewLines("a\tb\r\nab\tc\n\n", false, 20))
 	assert.Equal(t, []string{""}, viewLines("", false, 20))
 	assert.Equal(t, []string{""}, viewLines("\n", false, 20))
+	assert.Equal(t, []string{"a"}, viewLines("\xef\xbb\xbfa\n", false, 20))
 }
 
 func TestPaneShowsTheLastLineWhenScrolledPastIt(t *testing.T) {

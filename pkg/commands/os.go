@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-errors/errors"
 
-	"github.com/jesseduffield/kill"
 	"github.com/mgutz/str"
 	"github.com/rs/zerolog"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -245,10 +244,8 @@ func (c *OSCommand) RunPreparedCommand(cmd *exec.Cmd) error {
 
 // Kill kills a process.
 func (c *OSCommand) Kill(cmd *exec.Cmd) error {
-	return kill.Kill(cmd)
-}
-
-// PrepareForChildren sets Setpgid to true on the cmd, so that when we run it as a subprocess, we can kill its group rather than the process itself.
-func (c *OSCommand) PrepareForChildren(cmd *exec.Cmd) {
-	kill.PrepareForChildren(cmd)
+	if cmd.Process == nil {
+		return nil
+	}
+	return cmd.Process.Kill()
 }

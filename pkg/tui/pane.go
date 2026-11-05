@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/x/ansi"
-	"github.com/spkg/bom"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -196,7 +195,7 @@ func (p *pane) follow() {
 // viewLines is content split into view lines: a final newline starts no
 // line, but nothing at all is still one.
 func viewLines(content string, wrap bool, width int) []string {
-	content = utils.NormalizeLinefeeds(string(bom.Clean([]byte(content))))
+	content = utils.NormalizeLinefeeds(strings.TrimPrefix(content, "\ufeff"))
 	content = strings.TrimSuffix(content, "\n")
 
 	lines := []string{}
