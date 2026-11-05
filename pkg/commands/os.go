@@ -100,8 +100,7 @@ func (c *OSCommand) RunCommand(command string) error {
 func sanitisedCommandOutput(output []byte, err error) (string, error) {
 	outputString := string(output)
 	if err != nil {
-		exitError, ok := err.(*exec.ExitError)
-		if ok {
+		if exitError, ok := errors.AsType[*exec.ExitError](err); ok {
 			// CombinedOutput leaves Stderr empty, having put it in output.
 			message := string(exitError.Stderr)
 			if message == "" {
