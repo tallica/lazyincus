@@ -363,3 +363,11 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 - [ ] Custom expiry — the field cycles never, 1, 7 and 30 days; anything
       else needs the CLI. A free-text duration would want parsing and an
       error path, or a `custom…` value that opens a prompt.
+
+## Testing
+
+- [ ] **Goldens that keep colour** - the screen tests strip escapes
+      before comparing, so a lost reset or a wrong colour passes every
+      golden. A few screens kept with their escapes (the normal layout, a
+      menu, an error popup) would catch it. Wanted before the frame stops
+      going through lipgloss's canvas, which re-emits all of it.
