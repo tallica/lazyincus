@@ -46,8 +46,8 @@ func (m *Model) imageUpdatesFetch(report bool) fetch {
 				m.queue(m.withTransientStatus(m.imageUpdatesSummary(results), 3*time.Second))
 			}
 
-			if m.images != nil {
-				m.setImages(m.images)
+			if m.images.items != nil {
+				m.images.set(m, m.images.items)
 			}
 			m.rerenderStacks()
 			m.rerenderServices()

@@ -14,7 +14,7 @@ type list[T comparable] struct {
 	// span: the items come from more than one project, so rows name theirs.
 	span bool
 
-	get     func(*commands.IncusCommand) ([]T, error)
+	get     func(*commands.IncusCommand, *commands.Listing) ([]T, error)
 	less    func(a, b T) bool
 	key     func(T) string
 	project func(T) string
@@ -23,13 +23,15 @@ type list[T comparable] struct {
 	version func(T) string
 }
 
-// fetch reads the items with incus, the only thing its closure takes off the loop.
-func (l *list[T]) fetch(m *Model) fetch {
+func (l *list[T]) fetch(m *Model) fetch { return l.fetchIn(m, nil) }
+
+// fetchIn reads the items with incus, the only thing its closure takes off the loop.
+func (l *list[T]) fetchIn(m *Model, listing *commands.Listing) fetch {
 	ticket := l.seq.issue()
 	incus := m.incus
 
 	return func() (func(), error) {
-		items, err := l.get(incus)
+		items, err := l.get(incus, listing)
 		if err != nil {
 			return nil, err
 		}

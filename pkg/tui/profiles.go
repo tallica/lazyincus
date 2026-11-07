@@ -9,7 +9,9 @@ import (
 func (m *Model) newProfiles(p *panel) list[*commands.Profile] {
 	return list[*commands.Profile]{
 		panel: p, seq: &m.refreshes.profiles,
-		get:     (*commands.IncusCommand).GetProfiles,
+		get: func(incus *commands.IncusCommand, _ *commands.Listing) ([]*commands.Profile, error) {
+			return incus.GetProfiles()
+		},
 		less:    sortProfiles,
 		key:     (*commands.Profile).Key,
 		project: func(profile *commands.Profile) string { return profile.Profile.Project },

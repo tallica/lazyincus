@@ -13,7 +13,7 @@ import (
 
 func onImage(action func(*Model, *commands.Image) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		image := m.selectedImage()
+		image := m.images.selected()
 		if image == nil {
 			return nil
 		}
@@ -30,14 +30,14 @@ func (m *Model) editInIncus(project string, fetches func() []fetch, args ...stri
 }
 
 func (m *Model) imageEdit(image *commands.Image) tea.Cmd {
-	return m.editInIncus(image.Image.Project, func() []fetch { return []fetch{m.fetchImages(nil)} }, "image", "edit", image.Fingerprint)
+	return m.editInIncus(image.Image.Project, func() []fetch { return []fetch{m.images.fetch(m)} }, "image", "edit", image.Fingerprint)
 }
 
 func (m *Model) imageDelete(image *commands.Image) tea.Cmd {
-	message := fmt.Sprintf(m.tr.DeleteImage, m.qualified(image.Label(), image.Image.Project, m.imagesSpan))
+	message := fmt.Sprintf(m.tr.DeleteImage, m.qualified(image.Label(), image.Image.Project, m.images.span))
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, image.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchImages(nil))
+			return refresh(m.images.fetch(m))
 		}))
 	})
 
@@ -45,7 +45,7 @@ func (m *Model) imageDelete(image *commands.Image) tea.Cmd {
 }
 
 func (m *Model) pruneImages() tea.Cmd {
-	unused := lo.Filter(m.images, func(image *commands.Image, _ int) bool { return image.IsUnused() })
+	unused := lo.Filter(m.images.items, func(image *commands.Image, _ int) bool { return image.IsUnused() })
 	cached := lo.Filter(unused, func(image *commands.Image, _ int) bool { return image.Image.Cached })
 
 	item := func(format string, images []*commands.Image) *menuItem {
@@ -75,7 +75,7 @@ func (m *Model) confirmPruneImages(images []*commands.Image) tea.Cmd {
 	}
 
 	names := lo.Map(images, func(image *commands.Image, _ int) string {
-		return m.qualified(image.Label()+" "+image.ShortFingerprint(), image.Image.Project, m.imagesSpan)
+		return m.qualified(image.Label()+" "+image.ShortFingerprint(), image.Image.Project, m.images.span)
 	})
 	message := fmt.Sprintf(m.tr.ConfirmPruneImages, len(images), imagesSize(images), strings.Join(names, "\n"))
 
@@ -94,7 +94,7 @@ func (m *Model) confirmPruneImages(images []*commands.Image) tea.Cmd {
 				m.openError(err.Error())
 			}
 
-			return refresh(m.fetchImages(nil))
+			return refresh(m.images.fetch(m))
 		})
 	})
 

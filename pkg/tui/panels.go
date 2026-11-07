@@ -287,8 +287,8 @@ func (m *Model) newPanels() []*panel {
 		},
 		{
 			name: imagesView, title: static(tr.ImagesTitle), window: resourcesWindow, shortTitle: tr.ImagesShort, empty: tr.NoImages,
-			flex: m.imageFlex, mainTabs: m.imageMainTabs, itemKey: m.imageKey,
-			project: projectOf(m.selectedImage, func(i *commands.Image) string { return i.Image.Project }),
+			flex: m.imageFlex, mainTabs: m.imageMainTabs, itemKey: m.images.itemKey,
+			project: m.images.selectedProject,
 		},
 		{
 			name: volumesView, title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
@@ -309,7 +309,10 @@ func (m *Model) newPanels() []*panel {
 	for _, p := range panels {
 		p.awaiting = tr.Loading
 
-		if p.name == profilesView {
+		switch p.name {
+		case imagesView:
+			m.images = m.newImages(p)
+		case profilesView:
 			m.profiles = m.newProfiles(p)
 		}
 	}

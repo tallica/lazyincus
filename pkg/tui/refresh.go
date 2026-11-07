@@ -102,7 +102,7 @@ func (m *Model) fetchGroups() [][]fetch {
 
 	return [][]fetch{
 		m.instanceFetchesIn(l),
-		{m.fetchImages(l)},
+		{m.images.fetchIn(m, l)},
 		{m.fetchVolumes()},
 		{m.fetchNetworks()},
 		{m.profiles.fetch(m)},

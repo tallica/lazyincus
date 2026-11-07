@@ -103,8 +103,7 @@ type Model struct {
 	backupVerifications map[string]*commands.BackupVerification
 
 	instances     []*commands.Instance
-	images        []*commands.Image
-	imagesSpan    bool
+	images        list[*commands.Image]
 	volumes       []*commands.Volume
 	volumesSpan   bool
 	networks      []*commands.Network

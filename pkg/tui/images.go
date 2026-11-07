@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -9,31 +8,24 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (m *Model) fetchImages(l *commands.Listing) fetch {
-	ticket := m.refreshes.images.issue()
+func (m *Model) newImages(p *panel) list[*commands.Image] {
+	return list[*commands.Image]{
+		panel: p, seq: &m.refreshes.images,
+		get:     (*commands.IncusCommand).GetImages,
+		less:    sortImages,
+		key:     (*commands.Image).Key,
+		project: func(image *commands.Image) string { return image.Image.Project },
+		cells: func(image *commands.Image, span bool) []string {
+			newer := m.upstreams[image.Fingerprint].State == commands.UpstreamNewer
 
-	return func() (func(), error) {
-		images, err := m.incus.GetImages(l)
-		if err != nil {
-			return nil, err
-		}
+			return presentation.GetImageDisplayStrings(image, span, newer)
+		},
+		version: func(image *commands.Image) string {
+			upstream := presentation.ImageUpstream(m.upstreams[image.Fingerprint], m.tr)
 
-		return func() {
-			if m.refreshes.images.admit(ticket) {
-				m.setImages(images)
-			}
-		}, nil
+			return utils.Fingerprint(image.Image, image.UsedBy, upstream)
+		},
 	}
-}
-
-func (m *Model) setImages(images []*commands.Image) {
-	m.refill(m.panelNamed(imagesView), func(item int) string { return m.images[item].Key() }, func() [][]string {
-		sort.SliceStable(images, func(a, b int) bool { return sortImages(images[a], images[b]) })
-		m.images = images
-		m.imagesSpan = spansProjects(images, imageProject)
-
-		return m.imageCells()
-	})
 }
 
 // sortImages: by the label shown, the fingerprint breaking ties.
@@ -46,20 +38,8 @@ func sortImages(a, b *commands.Image) bool {
 	return a.Fingerprint < b.Fingerprint
 }
 
-func imageProject(image *commands.Image) string { return image.Image.Project }
-
-func (m *Model) imageCells() [][]string {
-	cells := make([][]string, len(m.images))
-	for i, image := range m.images {
-		newer := m.upstreams[image.Fingerprint].State == commands.UpstreamNewer
-		cells[i] = presentation.GetImageDisplayStrings(image, m.imagesSpan, newer)
-	}
-
-	return cells
-}
-
 func (m *Model) imageFlex() []utils.FlexColumn {
-	return []utils.FlexColumn{{Index: projectColumns(m.imagesSpan), MinWidth: presentation.MinImageLabelWidth}}
+	return []utils.FlexColumn{{Index: projectColumns(m.images.span), MinWidth: presentation.MinImageLabelWidth}}
 }
 
 // projectColumns is how many columns lead with the project.
@@ -71,37 +51,17 @@ func projectColumns(spans bool) int {
 	return 0
 }
 
-func (m *Model) selectedImage() *commands.Image {
-	item := m.panelNamed(imagesView).item()
-	if item < 0 || item >= len(m.images) {
-		return nil
-	}
-
-	return m.images[item]
-}
-
 func (m *Model) imageMainTabs() []mainTab {
 	return []mainTab{{key: "config", title: m.tr.ConfigTitle, task: m.imageConfigTask, wrap: m.cfg.UserConfig.Gui.WrapMainPanel}}
 }
 
 // imageConfigTask reads the registry check on the loop, for the task that renders off it.
 func (m *Model) imageConfigTask() mainTaskFunc {
-	image, tr := m.selectedImage(), m.tr
+	image, tr := m.images.selected(), m.tr
 	loc := m.sessionLocation(image.Image.Project)
 	upstream := presentation.ImageUpstream(m.upstreams[image.Fingerprint], tr)
 
 	return renderString(func() string { return presentation.ImageConfig(image, loc, upstream, tr) })
-}
-
-func (m *Model) imageKey() string {
-	image := m.selectedImage()
-	if image == nil {
-		return ""
-	}
-
-	upstream := presentation.ImageUpstream(m.upstreams[image.Fingerprint], m.tr)
-
-	return image.Key() + "-" + utils.Fingerprint(image.Image, image.UsedBy, upstream)
 }
 
 // sessionLocation: a resource only ever shows the session's remote.
