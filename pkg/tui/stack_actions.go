@@ -15,7 +15,7 @@ import (
 // onStackRow: the key acts on the selected stack.
 func onStackRow(action func(*Model, *commands.ComposeStack) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		stack := m.selectedStackRow()
+		stack := m.stacks.selected()
 		if stack == nil {
 			return nil
 		}
@@ -144,7 +144,7 @@ func (m *Model) isLocalStack(dir string) bool {
 func (m *Model) selectStack(ref string) {
 	p := m.panelNamed(stacksView)
 
-	row := slices.IndexFunc(p.shown, func(item int) bool { return m.stacks[item].Ref() == ref })
+	row := slices.IndexFunc(p.shown, func(item int) bool { return m.stacks.keyOf(item) == ref })
 	if row < 0 {
 		return
 	}

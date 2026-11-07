@@ -215,6 +215,19 @@ func (m *Model) remoteStatuses(remote string) (remoteStatuses, bool) {
 	return m.remotes.cachedStatuses(remote, read, m.notifyRemotes)
 }
 
+// newStacks: Stacks' fetch and fill are its own, as they span remotes.
+func (m *Model) newStacks(p *panel) list[*commands.ComposeStack] {
+	return list[*commands.ComposeStack]{
+		panel:   p,
+		key:     (*commands.ComposeStack).Ref,
+		project: func(stack *commands.ComposeStack) string { return stack.Name },
+		version: func(stack *commands.ComposeStack) string {
+			return stack.Name + "-" + fmt.Sprint(stack.Statuses) +
+				"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
+		},
+	}
+}
+
 // setStacks is the apply of fetchStacks.
 func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool) {
 	m.stacksElsewhere, m.stacksHere = elsewhere, here
@@ -222,13 +235,13 @@ func (m *Model) setStacks(stacks []*commands.ComposeStack, elsewhere, here bool)
 	m.leaveHiddenView()
 
 	sort.SliceStable(stacks, func(a, b int) bool { return sortStacks(stacks[a], stacks[b]) })
-	m.refill(m.panelNamed(stacksView), func(item int) string { return m.stacks[item].Ref() }, func() [][]string {
-		m.stacks = stacks
+	m.refill(m.stacks.panel, m.stacks.keyOf, func() [][]string {
+		m.stacks.items = stacks
 
 		return m.stackCells()
 	})
 	m.setStackServices(stacks)
-	m.followStack(m.selectedStackRow())
+	m.followStack(m.stacks.selected())
 
 	if m.landing {
 		m.landing = false
@@ -255,8 +268,8 @@ func sortStacks(a, b *commands.ComposeStack) bool {
 }
 
 func (m *Model) stackCells() [][]string {
-	cells := make([][]string, len(m.stacks))
-	for i, stack := range m.stacks {
+	cells := make([][]string, len(m.stacks.items))
+	for i, stack := range m.stacks.items {
 		var remote *presentation.StackRemote
 		if m.stacksElsewhere {
 			remote = &presentation.StackRemote{Name: m.stackRemote(stack), Active: m.onSessionRemote(stack.Remote)}
@@ -270,26 +283,7 @@ func (m *Model) stackCells() [][]string {
 
 // rerenderStacks shows the stacks' marks, which the registry checks feed.
 func (m *Model) rerenderStacks() {
-	m.refill(m.panelNamed(stacksView), func(item int) string { return m.stacks[item].Ref() }, m.stackCells)
-}
-
-func (m *Model) selectedStackRow() *commands.ComposeStack {
-	item := m.panelNamed(stacksView).item()
-	if item < 0 || item >= len(m.stacks) {
-		return nil
-	}
-
-	return m.stacks[item]
-}
-
-func (m *Model) stackKey() string {
-	stack := m.selectedStackRow()
-	if stack == nil {
-		return ""
-	}
-
-	return "stacks-" + stack.Ref() + "-" + stack.Name + "-" + fmt.Sprint(stack.Statuses) +
-		"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
+	m.refill(m.stacks.panel, m.stacks.keyOf, m.stackCells)
 }
 
 // setStackServices: the stacks' compose instances, which

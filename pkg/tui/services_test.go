@@ -94,7 +94,7 @@ func TestAStackOnAnUnreachableRemoteHasNoServices(t *testing.T) {
 
 	m := start(t, options{compose: true, savedStacks: []*commands.ComposeStack{unreachable}}, 140, 40)
 
-	untilRemotes(t, m, func() bool { return m.stacks[0].StatusErr != nil })
+	untilRemotes(t, m, func() bool { return m.stacks.items[0].StatusErr != nil })
 	run(m, refresh(m.fetchServices(nil)))
 	assert.Equal(t, fmt.Sprintf(m.tr.CannotReachRemote, "down"), m.servicesNote)
 	assert.Equal(t, []string{m.servicesNote}, rowsOf(m, "services"))

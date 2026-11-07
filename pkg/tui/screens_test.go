@@ -98,7 +98,7 @@ func TestScreens(t *testing.T) {
 			m := start(t, tc.opts, tc.width, tc.height)
 			if tc.opts.compose {
 				untilRemotes(t, m, func() bool {
-					return !slices.ContainsFunc(m.stacks, func(stack *commands.ComposeStack) bool { return stack.StatusPending })
+					return !slices.ContainsFunc(m.stacks.items, func(stack *commands.ComposeStack) bool { return stack.StatusPending })
 				})
 			}
 			press(m, tc.keys...)

@@ -249,7 +249,7 @@ func (m *Model) goToBackups() tea.Cmd {
 		return nil
 	}
 
-	stack := m.selectedStackRow()
+	stack := m.stacks.selected()
 	if stack == nil {
 		return focus()
 	}

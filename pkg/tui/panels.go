@@ -5,7 +5,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
@@ -253,8 +252,8 @@ func (m *Model) newPanels() []*panel {
 	panels := []*panel{
 		{
 			name: stacksView, title: static(tr.StacksTitle), hidden: m.composeUnavailable, empty: tr.NoStacks,
-			mainTabs: m.stackMainTabs, itemKey: m.stackKey,
-			project: projectOf(m.selectedStackRow, func(s *commands.ComposeStack) string { return s.Name }),
+			mainTabs: m.stackMainTabs, itemKey: m.stacks.itemKey,
+			project: m.stacks.selectedProject,
 		},
 		{
 			name: servicesView, title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
@@ -310,6 +309,8 @@ func (m *Model) newPanels() []*panel {
 		p.awaiting = tr.Loading
 
 		switch p.name {
+		case stacksView:
+			m.stacks = m.newStacks(p)
 		case backupsView:
 			m.backups = m.newBackups(p)
 		case servicesView:
@@ -330,16 +331,6 @@ func (m *Model) newPanels() []*panel {
 	}
 
 	return panels
-}
-
-func projectOf[T any](selected func() *T, pick func(*T) string) func() string {
-	return func() string {
-		if item := selected(); item != nil {
-			return pick(item)
-		}
-
-		return ""
-	}
 }
 
 func (m *Model) composeUnavailable() bool {

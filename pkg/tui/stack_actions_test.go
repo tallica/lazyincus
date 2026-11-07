@@ -72,7 +72,7 @@ func TestAddingAStack(t *testing.T) {
 
 	assert.Equal(t, []string{"fake:" + shop.Dir}, savedStacks(t, m))
 	assert.Equal(t, "stacks", m.currentView())
-	assert.Equal(t, "shop", m.selectedStackRow().Name)
+	assert.Equal(t, "shop", m.stacks.selected().Name)
 	assert.Empty(t, m.popups)
 
 	_, err = m.saveStack(shop.Dir, "")
@@ -120,8 +120,8 @@ func TestAddingAStackOnARemote(t *testing.T) {
 
 	// Removing it removes what was saved.
 	run(m, refresh(m.fetchStacks(nil)))
-	require.Len(t, m.stacks, 2)
-	require.NoError(t, m.cfg.RemoveStack(m.stacks[0].Ref()))
+	require.Len(t, m.stacks.items, 2)
+	require.NoError(t, m.cfg.RemoveStack(m.stacks.items[0].Ref()))
 	assert.Len(t, savedStacks(t, m), 1)
 }
 
@@ -174,9 +174,9 @@ func TestRemovingTheSavedEntryOfTheLocalStack(t *testing.T) {
 	press(m, "y")
 
 	assert.Empty(t, savedStacks(t, m))
-	require.Len(t, m.stacks, 1)
-	assert.True(t, m.stacks[0].Local)
-	assert.False(t, m.stacks[0].Saved)
+	require.Len(t, m.stacks.items, 1)
+	assert.True(t, m.stacks.items[0].Local)
+	assert.False(t, m.stacks.items[0].Saved)
 }
 
 // The local stack isn't saved, so there's nothing for D to remove.
@@ -237,14 +237,14 @@ func TestSpaceSwitchesToTheStacksRemote(t *testing.T) {
 	}, 140, 40)
 
 	order := func() []string {
-		return lo.Map(m.stacks, func(stack *commands.ComposeStack, _ int) string { return stack.Name })
+		return lo.Map(m.stacks.items, func(stack *commands.ComposeStack, _ int) string { return stack.Name })
 	}
 
 	// zoo was saved with no remote, so it sorts first.
 	assert.Equal(t, []string{"zoo", "default", "shop"}, order())
 
 	press(m, "j", "j")
-	require.Equal(t, "shop", m.selectedStackRow().Name)
+	require.Equal(t, "shop", m.stacks.selected().Name)
 	assert.Equal(t, "fake", m.incus.RemoteName())
 
 	press(m, "space")
@@ -273,14 +273,14 @@ func TestSwitchingToAnUnreachableStack(t *testing.T) {
 	m := start(t, options{compose: true, savedStacks: []*commands.ComposeStack{down, gone}}, 140, 40)
 	press(m, "1")
 
-	require.Equal(t, "shop", m.selectedStackRow().Name)
+	require.Equal(t, "shop", m.stacks.selected().Name)
 	press(m, "space")
 	require.NotEmpty(t, m.popups)
 	assert.Contains(t, m.popups[0].message, "no answer")
 	assert.Equal(t, "fake", m.incus.RemoteName())
 	press(m, "esc", "j")
 
-	require.Equal(t, "old", m.selectedStackRow().Name)
+	require.Equal(t, "old", m.stacks.selected().Name)
 	press(m, "space")
 	assert.Contains(t, m.popups[0].message, `no remote "old-vm"`)
 	assert.Equal(t, "fake", m.incus.RemoteName())

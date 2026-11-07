@@ -21,7 +21,7 @@ func (m *Model) stackMainTabs() []mainTab {
 // stackInfoTask ticks for what arrives with the services once the stack is
 // selected, and for the counters.
 func (m *Model) stackInfoTask() mainTaskFunc {
-	stack, holder, tr := m.selectedStackRow(), m.composeState, m.tr
+	stack, holder, tr := m.stacks.selected(), m.composeState, m.tr
 	remote, host, home, width := m.stackRemote(stack), m.publishHostFor(stack.Remote), m.home, &m.mainWidth
 	guiConfig := m.cfg.UserConfig.Gui
 
@@ -34,7 +34,7 @@ func (m *Model) stackInfoTask() mainTaskFunc {
 
 // stackLogsTask stacks every service's logs, each instance under a heading of its own.
 func (m *Model) stackLogsTask() mainTaskFunc {
-	stack, holder, tr, width, logOf := m.selectedStackRow(), m.composeState, m.tr, &m.mainWidth, m.instanceLogText()
+	stack, holder, tr, width, logOf := m.stacks.selected(), m.composeState, m.tr, &m.mainWidth, m.instanceLogText()
 
 	return tickerTask(time.Second, func() string {
 		state, _ := holder.load()
@@ -44,7 +44,7 @@ func (m *Model) stackLogsTask() mainTaskFunc {
 }
 
 func (m *Model) stackConfigTask() mainTaskFunc {
-	dir, incus := m.selectedStackRow().Dir, m.incus
+	dir, incus := m.stacks.selected().Dir, m.incus
 
 	return renderString(func() string {
 		config, err := incus.ComposeStackConfig(dir)

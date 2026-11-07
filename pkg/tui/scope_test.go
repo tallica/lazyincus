@@ -61,7 +61,7 @@ func TestSwitchingRemote(t *testing.T) {
 
 	// fake is a remote like any other now, and still answers for its stack.
 	press(m, "1")
-	untilRemotes(t, m, func() bool { return len(m.serviceRows.items) == 1 && m.stacks[0].Status() == "Running" })
+	untilRemotes(t, m, func() bool { return len(m.serviceRows.items) == 1 && m.stacks.items[0].Status() == "Running" })
 	assert.Equal(t, "Services (default on fake)", m.servicesTitle())
 }
 

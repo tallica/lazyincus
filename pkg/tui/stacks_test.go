@@ -46,15 +46,15 @@ func TestStacksAreFocusedFirst(t *testing.T) {
 
 	assert.Equal(t, "stacks", m.currentView())
 	assert.Contains(t, screen(m)[0], "[1]─Stacks")
-	assert.Len(t, m.stacks, 1)
-	assert.Equal(t, "default", m.selectedStackRow().Name)
+	assert.Len(t, m.stacks.items, 1)
+	assert.Equal(t, "default", m.stacks.selected().Name)
 }
 
 // Without incus-compose, there is no Stacks panel and nothing reads one.
 func TestNoComposeNoStacks(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 
-	assert.Nil(t, m.stacks)
+	assert.Nil(t, m.stacks.items)
 	assert.Equal(t, "instances", m.currentView())
 	assert.True(t, m.panelNamed("stacks").isHidden())
 }
@@ -186,11 +186,11 @@ func TestAStackPinnedToARemote(t *testing.T) {
 		compose: true, savedStacks: []*commands.ComposeStack{pinned}, remotes: map[string]*incustest.Server{"pve01": pve01},
 	}, 140, 40)
 
-	assert.True(t, m.stacks[0].StatusPending)
+	assert.True(t, m.stacks.items[0].StatusPending)
 	assert.True(t, m.stacksElsewhere)
 
-	untilRemotes(t, m, func() bool { return !m.stacks[0].StatusPending })
-	assert.Equal(t, "Running", m.stacks[0].Status())
+	untilRemotes(t, m, func() bool { return !m.stacks.items[0].StatusPending })
+	assert.Equal(t, "Running", m.stacks.items[0].Status())
 	assert.Regexp(t, `pve01 +shop`, strings.Join(rowsOf(m, "stacks"), "\n"))
 }
 
@@ -204,9 +204,9 @@ func TestAStackOnAnUnreachableRemote(t *testing.T) {
 		compose: true, localStack: local, savedStacks: []*commands.ComposeStack{unreachable},
 	}, 140, 40)
 
-	untilRemotes(t, m, func() bool { return m.stacks[1].StatusErr != nil })
+	untilRemotes(t, m, func() bool { return m.stacks.items[1].StatusErr != nil })
 
-	assert.Equal(t, []string{"none", "unreachable"}, lo.Map(m.stacks, func(stack *commands.ComposeStack, _ int) string {
+	assert.Equal(t, []string{"none", "unreachable"}, lo.Map(m.stacks.items, func(stack *commands.ComposeStack, _ int) string {
 		if stack.StatusErr != nil {
 			return "unreachable"
 		}
@@ -230,8 +230,8 @@ func TestAStackOnARemoteThatIsGone(t *testing.T) {
 	m.Update(tea.WindowSizeMsg{Width: 140, Height: 40})
 	run(m, m.Init())
 
-	untilRemotes(t, m, func() bool { return m.stacks[0].StatusErr != nil })
-	assert.ErrorContains(t, m.stacks[0].StatusErr, `no remote "old-vm" in the incus CLI's config`)
+	untilRemotes(t, m, func() bool { return m.stacks.items[0].StatusErr != nil })
+	assert.ErrorContains(t, m.stacks.items[0].StatusErr, `no remote "old-vm" in the incus CLI's config`)
 }
 
 // The local stack saved too is one row, which the saved entry's remote names.
@@ -245,10 +245,10 @@ func TestTheLocalStackSavedIsOneRow(t *testing.T) {
 		remotes: map[string]*incustest.Server{"pve01": incustest.New(incustest.Server{})},
 	}, 140, 40)
 
-	require.Len(t, m.stacks, 2)
-	assert.True(t, m.stacks[0].Local && m.stacks[0].Saved)
-	assert.Equal(t, "fake:"+local.Dir, m.stacks[0].Ref())
-	assert.Equal(t, "pve01:"+local.Dir, m.stacks[1].Ref())
+	require.Len(t, m.stacks.items, 2)
+	assert.True(t, m.stacks.items[0].Local && m.stacks.items[0].Saved)
+	assert.Equal(t, "fake:"+local.Dir, m.stacks.items[0].Ref())
+	assert.Equal(t, "pve01:"+local.Dir, m.stacks.items[1].Ref())
 }
 
 // A slow remote holds up nothing: the others show at once, its stack connecting.
@@ -284,7 +284,7 @@ func TestASlowRemoteHoldsUpNothing(t *testing.T) {
 	run(m, m.Init())
 
 	status := func(name string) string {
-		for _, stack := range m.stacks {
+		for _, stack := range m.stacks.items {
 			if stack.Name == name {
 				if stack.StatusPending {
 					return "connecting"

@@ -213,8 +213,8 @@ type paletteEntry struct {
 func (m *Model) paletteSources() map[string]paletteSource {
 	return map[string]paletteSource{
 		stacksView: m.sourceOf(m.panelNamed(stacksView),
-			func(item int) string { return m.stacks[item].Ref() },
-			func(item int) string { return m.onRemote(m.stacks[item].Name, m.stacks[item].Remote) }, nil),
+			m.stacks.keyOf,
+			func(item int) string { return m.onRemote(m.stacks.items[item].Name, m.stacks.items[item].Remote) }, nil),
 		servicesView: m.sourceOf(m.panelNamed(servicesView),
 			m.serviceRows.keyOf,
 			func(item int) string {

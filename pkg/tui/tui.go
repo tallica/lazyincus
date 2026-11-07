@@ -77,7 +77,7 @@ type Model struct {
 	// notifyRemotes tells the loop a remote connected or its statuses changed.
 	notifyRemotes func()
 	home          string
-	stacks        []*commands.ComposeStack
+	stacks        list[*commands.ComposeStack]
 	stacksHere    bool
 	// stacksElsewhere is whether any listed stack is on another remote.
 	stacksElsewhere bool

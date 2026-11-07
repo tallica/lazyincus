@@ -24,7 +24,7 @@ type snapshotsSpan struct {
 func (m *Model) followSelection() {
 	switch m.currentSideView() {
 	case stacksView:
-		m.followStack(m.selectedStackRow())
+		m.followStack(m.stacks.selected())
 		// A stack hands Snapshots nothing, so it empties rather than keep the last list's.
 		if f := m.snapshotsFollow; f.label != "" || len(f.instances) > 0 || f.volume != "" {
 			m.followSnapshotsOf(snapshotsFollow{})
