@@ -364,10 +364,20 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
       else needs the CLI. A free-text duration would want parsing and an
       error path, or a `custom…` value that opens a prompt.
 
-## Testing
+## Internals
 
 - [ ] **Goldens that keep colour** - the screen tests strip escapes
       before comparing, so a lost reset or a wrong colour passes every
       golden. A few screens kept with their escapes (the normal layout, a
-      menu, an error popup) would catch it. Wanted before the frame stops
-      going through lipgloss's canvas, which re-emits all of it.
+      menu, an error popup) would catch it. Wanted before the frame below,
+      which re-emits all of it.
+
+Probably won't do:
+
+- **A frame without lipgloss's canvas** - `render()` composes every
+  window on a canvas of cells, and Bubble Tea parses the string it
+  renders back into cells. The side panels and main never overlap, so
+  the frame could be joined row by row, the canvas kept for popups. It
+  would save about 1 ms of a 2 ms keypress at 200x60, which nobody has
+  felt, at the cost of a second drawing path to keep in step with the
+  first. Worth it only if lag is ever reported.
