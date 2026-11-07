@@ -350,16 +350,18 @@ func (m *Model) flushEvents() tea.Cmd {
 func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	var fetches []fetch
 
+	l := m.incus.NewListing()
+
 	if kinds&refreshInstances != 0 {
-		fetches = append(fetches, m.instanceFetches()...)
+		fetches = append(fetches, m.instanceFetchesIn(l)...)
 	}
 
 	if kinds&refreshStacks != 0 {
-		fetches = append(fetches, m.fetchStacks())
+		fetches = append(fetches, m.fetchStacks(l))
 	}
 
 	if kinds&refreshImages != 0 {
-		fetches = append(fetches, m.fetchImages())
+		fetches = append(fetches, m.fetchImages(l))
 	}
 
 	if kinds&refreshVolumes != 0 {

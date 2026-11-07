@@ -15,11 +15,12 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (m *Model) fetchInstances() fetch {
+func (m *Model) fetchInstances(l *commands.Listing) fetch {
+	l.WithScoped()
 	ticket := m.refreshes.instances.issue()
 
 	return func() (func(), error) {
-		instances, err := m.incus.GetInstances()
+		instances, err := m.incus.GetInstances(l)
 		if err != nil {
 			return nil, err
 		}

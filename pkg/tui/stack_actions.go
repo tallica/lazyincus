@@ -63,7 +63,7 @@ func (m *Model) saveStackThen(status, input, replacing string) tea.Cmd {
 			return nil
 		}
 
-		return refresh(m.fetchStacks(), func() (func(), error) {
+		return refresh(m.fetchStacks(nil), func() (func(), error) {
 			return func() { m.selectStack(ref) }, nil
 		})
 	}))
@@ -170,7 +170,9 @@ func (m *Model) stackEditCompose(stack *commands.ComposeStack) tea.Cmd {
 	return m.runSubprocess(cmd, "", func() tea.Cmd {
 		m.stackCache.forget(stack.Dir)
 
-		return refresh(m.fetchStacks(), m.fetchServices())
+		l := m.incus.NewListing()
+
+		return refresh(m.fetchStacks(l), m.fetchServices(l))
 	})
 }
 
@@ -194,7 +196,7 @@ func (m *Model) stackRemove(stack *commands.ComposeStack) tea.Cmd {
 		cfg, ref := m.cfg, stack.Ref()
 
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, func() error { return cfg.RemoveStack(ref) },
-			m.reportOr(func() tea.Cmd { return refresh(m.fetchStacks()) }))
+			m.reportOr(func() tea.Cmd { return refresh(m.fetchStacks(nil)) }))
 	})
 
 	return nil

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With `NO_COLOR` or a terminal without colour, the selected row is shown in reverse video and the focused panel's border in bold.
 - With no stack listed, focusing Stacks empties Snapshots, as focusing a stack always has, instead of keeping the last instance's.
 - A list filter that matches nothing shows the list's empty message in the main panel, rather than the item selected before.
+- With every project in view, a refresh lists the instances once instead of four times, and the 2-second poll once instead of twice.
 - Built against the Incus 7.6 client (v7.6.0).
 
 ### Fixed

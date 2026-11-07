@@ -89,6 +89,11 @@ inferred.
   config, state and snapshots in one request, cheap enough for the
   2-second poll. The alternative, a plain list plus `GetInstanceFull` per
   instance, is one request per instance per tick.
+  The reads of one refresh share a `Listing`: with every project in view,
+  the Instances panel's listing also answers which instances use each
+  image, the compose statuses and a stack's services. A refresh without
+  the panel's read shares the recursion-1 listing instead, which leaves
+  out the state those reads don't need.
 - **Events**: `GetEventsAllProjectsByType`, or `GetEventsByType` for one
   project, is a websocket the daemon sends lifecycle events down as things
   change, whoever changed them. lazyincus keeps one open for the scope the

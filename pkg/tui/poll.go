@@ -71,7 +71,9 @@ func (m *Model) pollInstances() tea.Cmd {
 	}
 	m.instancesPolledAt = time.Now()
 
-	return refreshQuiet(next, m.fetchInstances(), m.fetchServices())
+	l := m.incus.NewListing()
+
+	return refreshQuiet(next, m.fetchInstances(l), m.fetchServices(l))
 }
 
 type syncConnectionMsg struct{}

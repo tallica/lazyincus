@@ -73,7 +73,7 @@ func MostTelling(updates map[string]UpstreamStatus, fingerprints ...string) Upst
 // So every project's images are read for it, falling back to the listed
 // ones for a client limited to some projects.
 func (c *IncusCommand) UpstreamTargets() ([]UpstreamTarget, error) {
-	images, err := c.GetImages()
+	images, err := c.GetImages(nil)
 	if err != nil {
 		return nil, err
 	}

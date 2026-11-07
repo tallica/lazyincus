@@ -123,7 +123,7 @@ func (m *Model) listStacks(saved []string) []*commands.ComposeStack {
 
 // fetchStacks reads the stacks' configs, cached, and every compose
 // instance's status: one listing a remote, whatever the number of stacks.
-func (m *Model) fetchStacks() fetch {
+func (m *Model) fetchStacks(l *commands.Listing) fetch {
 	if m.composeUnavailable() {
 		return func() (func(), error) { return func() {}, nil }
 	}
@@ -141,7 +141,7 @@ func (m *Model) fetchStacks() fetch {
 		elsewhere := slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool { return !m.onSessionRemote(stack.Remote) })
 		here := m.stacksHereIn(stacks)
 
-		if err := m.readStackStatuses(stacks); err != nil {
+		if err := m.readStackStatuses(stacks, l); err != nil {
 			return nil, err
 		}
 
@@ -160,7 +160,7 @@ func (m *Model) stacksHereIn(stacks []*commands.ComposeStack) bool {
 }
 
 // readStackStatuses: the session's remote asked, every other one's as last read.
-func (m *Model) readStackStatuses(stacks []*commands.ComposeStack) error {
+func (m *Model) readStackStatuses(stacks []*commands.ComposeStack, l *commands.Listing) error {
 	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
 		if stack.Remote == m.incus.RemoteName() {
 			return ""
@@ -177,7 +177,7 @@ func (m *Model) readStackStatuses(stacks []*commands.ComposeStack) error {
 		pending := false
 
 		if remote == "" {
-			statuses.byProject, statuses.err = m.incus.GetComposeStatuses()
+			statuses.byProject, statuses.err = m.incus.GetComposeStatuses(l)
 			sessionErr = statuses.err
 		} else {
 			var read bool
@@ -209,7 +209,7 @@ func (m *Model) remoteStatuses(remote string) (remoteStatuses, bool) {
 			return nil, err
 		}
 
-		return command.GetComposeStatuses()
+		return command.GetComposeStatuses(nil)
 	}
 
 	return m.remotes.cachedStatuses(remote, read, m.notifyRemotes)

@@ -30,14 +30,14 @@ func (m *Model) editInIncus(project string, fetches func() []fetch, args ...stri
 }
 
 func (m *Model) imageEdit(image *commands.Image) tea.Cmd {
-	return m.editInIncus(image.Image.Project, func() []fetch { return []fetch{m.fetchImages()} }, "image", "edit", image.Fingerprint)
+	return m.editInIncus(image.Image.Project, func() []fetch { return []fetch{m.fetchImages(nil)} }, "image", "edit", image.Fingerprint)
 }
 
 func (m *Model) imageDelete(image *commands.Image) tea.Cmd {
 	message := fmt.Sprintf(m.tr.DeleteImage, m.qualified(image.Label(), image.Image.Project, m.imagesSpan))
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, image.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchImages())
+			return refresh(m.fetchImages(nil))
 		}))
 	})
 
@@ -94,7 +94,7 @@ func (m *Model) confirmPruneImages(images []*commands.Image) tea.Cmd {
 				m.openError(err.Error())
 			}
 
-			return refresh(m.fetchImages())
+			return refresh(m.fetchImages(nil))
 		})
 	})
 

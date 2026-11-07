@@ -45,7 +45,7 @@ func TestServicesFollowTheSelectedStack(t *testing.T) {
 	assert.Equal(t, []string{"default/web"}, serviceNames(m))
 
 	// Fetched for default, then overtaken by the move to shop.
-	apply, err := m.fetchServices()()
+	apply, err := m.fetchServices(nil)()
 	require.NoError(t, err)
 
 	press(m, "j")
@@ -82,7 +82,7 @@ func TestAReplicatedServiceListsItsReplicas(t *testing.T) {
 	press(m, "2", "j", "j", "j")
 	require.Equal(t, "web/web-2", m.selectedServiceRow().Key())
 
-	run(m, refresh(m.fetchServices()))
+	run(m, refresh(m.fetchServices(nil)))
 	assert.Equal(t, "web/web-2", m.selectedServiceRow().Key())
 }
 
@@ -95,7 +95,7 @@ func TestAStackOnAnUnreachableRemoteHasNoServices(t *testing.T) {
 	m := start(t, options{compose: true, savedStacks: []*commands.ComposeStack{unreachable}}, 140, 40)
 
 	untilRemotes(t, m, func() bool { return m.stacks[0].StatusErr != nil })
-	run(m, refresh(m.fetchServices()))
+	run(m, refresh(m.fetchServices(nil)))
 	assert.Equal(t, fmt.Sprintf(m.tr.CannotReachRemote, "down"), m.servicesNote)
 	assert.Equal(t, []string{m.servicesNote}, rowsOf(m, "services"))
 	assert.Contains(t, m.panelNamed("services").empty, "no answer")

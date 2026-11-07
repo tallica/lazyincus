@@ -66,6 +66,7 @@ type Server struct {
 type state struct {
 	mutex     sync.Mutex
 	down      bool
+	listings  int
 	instances []api.InstanceFull
 	changed   bool
 	images    []api.Image
@@ -215,6 +216,8 @@ func (s *Server) instances() ([]api.InstanceFull, error) {
 	shared.mutex.Lock()
 	defer shared.mutex.Unlock()
 
+	shared.listings++
+
 	if shared.down {
 		return nil, errUnreachable
 	}
@@ -228,6 +231,15 @@ func (s *Server) instances() ([]api.InstanceFull, error) {
 	}
 
 	return slices.Clone(s.Instances), nil
+}
+
+// InstanceListings counts the instance listings asked for, any project's.
+func (s *Server) InstanceListings() int {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return shared.listings
 }
 
 var _ incus.InstanceServer = &Server{}

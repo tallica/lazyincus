@@ -139,7 +139,7 @@ func runTaskHere(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd {
 
 // refreshNow is a keypress's refresh of the instances, run to the end.
 func refreshNow(m *Model) {
-	run(m, refresh(m.fetchInstances()))
+	run(m, refresh(m.fetchInstances(nil)))
 }
 
 // press types keys by name, as Update would take them from KeyPressMsg.
@@ -234,7 +234,7 @@ func TestLateFetchIsDropped(t *testing.T) {
 	server.SetInstances([]api.InstanceFull{{Instance: api.Instance{Name: "old", Project: "default", Status: "Running"}}})
 	m := start(t, options{server: server}, 90, 16)
 
-	late := refresh(m.fetchInstances())()
+	late := refresh(m.fetchInstances(nil))()
 	server.SetInstances([]api.InstanceFull{{Instance: api.Instance{Name: "new", Project: "default", Status: "Running"}}})
 	refreshNow(m)
 	m.Update(late)

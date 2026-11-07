@@ -62,7 +62,7 @@ func (m *Model) composeRunThen(target composeTarget, args []string, after func()
 		m.stackCache.forget(target.dir)
 		m.showFailures(failures, target.remote)
 
-		next := refresh(m.fetchInstances(), m.fetchStacks(), m.fetchServices())
+		next := refresh(m.instanceFetches()...)
 		if after == nil {
 			return next
 		}

@@ -29,7 +29,7 @@ func getImages(t *testing.T, server *incustest.Server) map[string]*Image {
 	command := NewIncusCommandWithClient(log, NewDummyOSCommand(),
 		NewDummyAppConfig(), server, "fake")
 
-	images, err := command.GetImages()
+	images, err := command.GetImages(nil)
 	require.NoError(t, err)
 
 	byFingerprint := map[string]*Image{}

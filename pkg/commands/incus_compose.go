@@ -45,11 +45,11 @@ func (p *ComposeProject) HealthcheckScope() string {
 
 // GetProjectInstances lists one project's instances directly, regardless of
 // which project the panels are currently scoped to.
-func (c *IncusCommand) GetProjectInstances(project string) ([]*Instance, error) {
+func (c *IncusCommand) GetProjectInstances(project string, l *Listing) ([]*Instance, error) {
 	client := c.clientIn(project)
 	listing := c.runtimes.beginListing()
 
-	fulls, err := client.GetInstancesFull(api.InstanceTypeAny)
+	fulls, err := c.listingOr(l).Project(project)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +220,8 @@ func (s *ComposeService) StoppedDependencies(services []*ComposeService) []strin
 // on each (Instance.ComposeService). Orphans are the compose instances whose
 // label names no declared service - one the file has since dropped, or a
 // one-off from `incus-compose run` - which belong to no row.
-func (c *IncusCommand) GetComposeServices(stack *ComposeStack) (services []*ComposeService, orphans []*Instance, err error) {
-	instances, err := c.GetProjectInstances(stack.Name)
+func (c *IncusCommand) GetComposeServices(stack *ComposeStack, l *Listing) (services []*ComposeService, orphans []*Instance, err error) {
+	instances, err := c.GetProjectInstances(stack.Name, l)
 	if err != nil {
 		return nil, nil, err
 	}

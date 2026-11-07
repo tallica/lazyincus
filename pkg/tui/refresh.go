@@ -98,9 +98,11 @@ func (m *Model) refreshGroups(status string) tea.Cmd {
 }
 
 func (m *Model) fetchGroups() [][]fetch {
+	l := m.incus.NewListing()
+
 	return [][]fetch{
-		{m.fetchStacks(), m.fetchInstances(), m.fetchServices()},
-		{m.fetchImages()},
+		m.instanceFetchesIn(l),
+		{m.fetchImages(l)},
 		{m.fetchVolumes()},
 		{m.fetchNetworks()},
 		{m.fetchProfiles()},
@@ -239,7 +241,11 @@ func refreshEnding(ends []func(), fetches ...fetch) tea.Cmd {
 	}
 }
 
-// instanceFetches: for the panels ported so far.
+// instanceFetches reads what an instance change moves, from one listing.
 func (m *Model) instanceFetches() []fetch {
-	return []fetch{m.fetchStacks(), m.fetchInstances(), m.fetchServices()}
+	return m.instanceFetchesIn(m.incus.NewListing())
+}
+
+func (m *Model) instanceFetchesIn(l *commands.Listing) []fetch {
+	return []fetch{m.fetchStacks(l), m.fetchInstances(l), m.fetchServices(l)}
 }

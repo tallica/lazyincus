@@ -8,8 +8,6 @@ import (
 	"slices"
 	"sort"
 	"strings"
-
-	"github.com/lxc/incus/v7/shared/api"
 )
 
 // ComposeStack is a compose project directory: what its compose file
@@ -165,8 +163,8 @@ type ComposeProjectState struct {
 
 // GetComposeStatuses is every compose-labelled instance on the server, by
 // project: one listing for every stack on c's remote.
-func (c *IncusCommand) GetComposeStatuses() (map[string]ComposeProjectState, error) {
-	instances, err := c.Client().GetInstancesAllProjects(api.InstanceTypeAny)
+func (c *IncusCommand) GetComposeStatuses(l *Listing) (map[string]ComposeProjectState, error) {
+	instances, err := c.listingOr(l).AllProjects()
 	if err != nil {
 		return nil, err
 	}

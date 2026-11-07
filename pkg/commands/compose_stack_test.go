@@ -145,7 +145,7 @@ func TestGetComposeStatusesGroupsByProjectAndService(t *testing.T) {
 
 	command := NewIncusCommandWithClient(NewDummyLog(), nil, nil, server, "fake")
 
-	statuses, err := command.GetComposeStatuses()
+	statuses, err := command.GetComposeStatuses(nil)
 	require.NoError(t, err)
 	assert.Equal(t, map[string]ComposeProjectState{
 		"web":   {Statuses: map[string][]string{"web": {"Running", "Stopped"}, "db": {"Running"}}, Images: []string{"db", "we"}},

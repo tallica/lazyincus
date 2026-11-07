@@ -119,7 +119,7 @@ func TestAddingAStackOnARemote(t *testing.T) {
 	assert.Equal(t, []string{"pve01:" + shop.Dir, "fake:" + shop.Dir}, savedStacks(t, m))
 
 	// Removing it removes what was saved.
-	run(m, refresh(m.fetchStacks()))
+	run(m, refresh(m.fetchStacks(nil)))
 	require.Len(t, m.stacks, 2)
 	require.NoError(t, m.cfg.RemoveStack(m.stacks[0].Ref()))
 	assert.Len(t, savedStacks(t, m), 1)

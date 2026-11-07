@@ -423,12 +423,13 @@ func (c *IncusCommand) setConnected(connected bool) {
 
 // GetInstances lists every instance in scope, with its config, state and
 // snapshots: one request for what would otherwise be one per instance.
-func (c *IncusCommand) GetInstances() ([]*Instance, error) {
-	scope := c.scope()
+func (c *IncusCommand) GetInstances(l *Listing) ([]*Instance, error) {
+	l = c.listingOr(l)
+	scope := l.clientScope()
 	client, project, allProjects := scope.client, scope.project, scope.allProjects
 	listing := c.runtimes.beginListing()
 
-	fulls, err := listInstances(client, allProjects)
+	fulls, err := l.Scoped()
 	c.NoteError(err)
 
 	if err != nil {
@@ -491,8 +492,9 @@ func (c *IncusCommand) scope() clientScope {
 }
 
 // GetImages lists the images stored on the server.
-func (c *IncusCommand) GetImages() ([]*Image, error) {
-	client := c.Client()
+func (c *IncusCommand) GetImages(l *Listing) ([]*Image, error) {
+	l = c.listingOr(l)
+	client := l.clientScope().client
 
 	apiImages, err := c.listImages(client)
 	c.NoteError(err)
@@ -503,7 +505,7 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 
 	// The images stand without their users: a client may be allowed one
 	// and not the other.
-	users, usersErr := imageUsers(client)
+	users, usersErr := imageUsers(l)
 	if usersErr != nil {
 		c.Log.Warn().Err(usersErr).Send()
 	}
@@ -531,12 +533,19 @@ func (c *IncusCommand) GetImages() ([]*Image, error) {
 // listed in one project can be what another project's instances came from,
 // and prune has to know. A client limited to some projects falls back to
 // the ones it can see.
-func imageUsers(client incus.InstanceServer) (map[string][]string, error) {
-	instances, err := client.GetInstancesAllProjects(api.InstanceTypeAny)
-	if err != nil {
-		instances, err = client.GetInstances(api.InstanceTypeAny)
+func imageUsers(l *Listing) (map[string][]string, error) {
+	var instances []api.Instance
+
+	if all, err := l.AllProjects(); err == nil {
+		instances = all
+	} else {
+		fulls, err := l.Scoped()
 		if err != nil {
 			return nil, err
+		}
+
+		for i := range fulls {
+			instances = append(instances, fulls[i].Instance)
 		}
 	}
 

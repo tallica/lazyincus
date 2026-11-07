@@ -127,7 +127,9 @@ func projectCLIArgs(project string) []string {
 // instanceEdit: `incus config edit`, then the lists it changed.
 func (m *Model) instanceEdit(instance *commands.Instance) tea.Cmd {
 	return m.runSubprocess(m.instanceCmd(instance, "config", "edit", instance.Name), "", func() tea.Cmd {
-		return refreshQuiet(nil, m.fetchInstances(), m.fetchServices())
+		l := m.incus.NewListing()
+
+		return refreshQuiet(nil, m.fetchInstances(l), m.fetchServices(l))
 	})
 }
 
@@ -216,7 +218,9 @@ func (m *Model) instanceEditDescription(instance *commands.Instance) tea.Cmd {
 					return nil
 				}
 
-				return refresh(m.fetchInstances(), m.fetchServices())
+				l := m.incus.NewListing()
+
+				return refresh(m.fetchInstances(l), m.fetchServices(l))
 			})
 	})
 

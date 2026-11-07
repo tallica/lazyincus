@@ -359,7 +359,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		m.onProjects(msg)
 
 	case remotesChangedMsg:
-		return refreshQuiet(nil, m.fetchStacks(), m.fetchServices())
+		l := m.incus.NewListing()
+
+		return refreshQuiet(nil, m.fetchStacks(l), m.fetchServices(l))
 
 	case pollMsg:
 		return m.pollInstances()

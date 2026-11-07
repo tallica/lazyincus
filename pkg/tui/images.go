@@ -9,11 +9,11 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (m *Model) fetchImages() fetch {
+func (m *Model) fetchImages(l *commands.Listing) fetch {
 	ticket := m.refreshes.images.issue()
 
 	return func() (func(), error) {
-		images, err := m.incus.GetImages()
+		images, err := m.incus.GetImages(l)
 		if err != nil {
 			return nil, err
 		}

@@ -61,12 +61,12 @@ func (m *Model) followStack(stack *commands.ComposeStack) {
 
 		return nil
 	})
-	m.queue(refresh(m.fetchServices()))
+	m.queue(refresh(m.fetchServices(nil)))
 	m.followStackBackups()
 }
 
 // fetchServices lists the services of the stack Stacks has selected.
-func (m *Model) fetchServices() fetch {
+func (m *Model) fetchServices(l *commands.Listing) fetch {
 	if m.composeUnavailable() {
 		return func() (func(), error) { return func() {}, nil }
 	}
@@ -96,7 +96,7 @@ func (m *Model) fetchServices() fetch {
 		)
 
 		if err == nil {
-			services, orphans, err = command.GetComposeServices(stack)
+			services, orphans, err = command.GetComposeServices(stack, l)
 		}
 
 		if err != nil {

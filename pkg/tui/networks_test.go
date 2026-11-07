@@ -72,7 +72,7 @@ func TestTheNetworkStateTabFollowsTheInstanceList(t *testing.T) {
 	cache := runningInstance("cache", nil)
 	cache.State = &api.InstanceState{Status: "Running", Network: map[string]api.InstanceStateNetwork{"eth0": {HostName: "veth99"}}}
 	server.SetInstances(append(slices.Clone(server.Instances), cache))
-	run(m, refresh(m.fetchInstances()))
+	run(m, refresh(m.fetchInstances(nil)))
 
 	assert.Contains(t, state(), "veth99  cache (eth0)")
 }
