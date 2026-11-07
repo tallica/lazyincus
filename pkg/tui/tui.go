@@ -105,8 +105,7 @@ type Model struct {
 	instances     []*commands.Instance
 	images        list[*commands.Image]
 	volumes       list[*commands.Volume]
-	networks      []*commands.Network
-	networksSpan  bool
+	networks      list[*commands.Network]
 	showUnmanaged bool
 	profiles      list[*commands.Profile]
 	// networkTabs: the forward and ACL events, which the networks' tabs show.

@@ -21,7 +21,7 @@ func TestDeletingAnUnusedNetworkAsks(t *testing.T) {
 func TestTheHostsInterfacesCanNeitherBeEditedNorDeleted(t *testing.T) {
 	m := onNetworks(t, options{})
 	press(m, "e", "k")
-	require.Equal(t, "eth0", m.selectedNetwork().Name)
+	require.Equal(t, "eth0", m.networks.selected().Name)
 
 	for key, message := range map[string]string{"c": m.tr.CannotEditUnmanagedNetwork, "d": m.tr.CannotDeleteUnmanagedNetwork} {
 		press(m, key)

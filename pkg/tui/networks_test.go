@@ -56,17 +56,17 @@ func TestTheNetworkTabsInTheirOrder(t *testing.T) {
 
 func TestAForwardEventRedrawsTheNetworkTabs(t *testing.T) {
 	m := onNetworks(t, options{})
-	before := m.networkKey()
+	before := m.networks.itemKey()
 
 	m.Update(eventMsg{stream: m.events.stream, event: commands.Event{Type: api.EventTypeLifecycle, Action: api.EventLifecycleNetworkForwardCreated}})
-	assert.NotEqual(t, before, m.networkKey())
+	assert.NotEqual(t, before, m.networks.itemKey())
 }
 
 // State reads the newest listing each tick, so a port's instance listed since gets named.
 func TestTheNetworkStateTabFollowsTheInstanceList(t *testing.T) {
 	server := incustest.Fixture()
 	m := onNetworks(t, options{server: server})
-	state := m.networkState(m.selectedNetwork())
+	state := m.networkState(m.networks.selected())
 	require.NotContains(t, state(), "veth99  cache (eth0)")
 
 	cache := runningInstance("cache", nil)

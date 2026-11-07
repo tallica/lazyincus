@@ -374,7 +374,7 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	}
 
 	if kinds&refreshNetworks != 0 {
-		fetches = append(fetches, m.fetchNetworks())
+		fetches = append(fetches, m.networks.fetch(m))
 	}
 
 	if kinds&refreshProfiles != 0 {

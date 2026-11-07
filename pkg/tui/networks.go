@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"sort"
 	"strconv"
 	"time"
 
@@ -10,57 +9,31 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (m *Model) fetchNetworks() fetch {
-	ticket := m.refreshes.networks.issue()
-
-	return func() (func(), error) {
-		networks, err := m.incus.GetNetworks()
-		if err != nil {
-			return nil, err
-		}
-
-		return func() {
-			if m.refreshes.networks.admit(ticket) {
-				m.setNetworks(networks)
-			}
-		}, nil
+func (m *Model) newNetworks(p *panel) list[*commands.Network] {
+	return list[*commands.Network]{
+		panel: p, seq: &m.refreshes.networks,
+		get: func(incus *commands.IncusCommand, _ *commands.Listing) ([]*commands.Network, error) {
+			return incus.GetNetworks()
+		},
+		less:    func(a, b *commands.Network) bool { return a.Name < b.Name },
+		key:     (*commands.Network).Key,
+		project: func(network *commands.Network) string { return network.Network.Project },
+		cells:   presentation.GetNetworkDisplayStrings,
+		// Forwards and ACLs aren't in the network, so their events count in networkTabs.
+		version: func(network *commands.Network) string {
+			return utils.Fingerprint(network.Network) + "-" + strconv.FormatUint(m.networkTabs, 10)
+		},
 	}
 }
 
-func (m *Model) setNetworks(networks []*commands.Network) {
-	m.refill(m.panelNamed(networksView), func(item int) string { return m.networks[item].Key() }, func() [][]string {
-		sort.SliceStable(networks, func(a, b int) bool { return networks[a].Name < networks[b].Name })
-		m.networks = networks
-		m.networksSpan = spansProjects(networks, networkProject)
-
-		cells := make([][]string, len(networks))
-		for i, network := range networks {
-			cells[i] = presentation.GetNetworkDisplayStrings(network, m.networksSpan)
-		}
-
-		return cells
-	})
-}
-
-func networkProject(network *commands.Network) string { return network.Network.Project }
-
 // keepNetwork: the host's own interfaces wait for e.
 func (m *Model) keepNetwork(item int) bool {
-	return m.showUnmanaged || m.networks[item].IsManaged()
+	return m.showUnmanaged || m.networks.items[item].IsManaged()
 }
 
 func (m *Model) toggleUnmanagedNetworks() {
 	m.showUnmanaged = !m.showUnmanaged
 	m.filterList(m.panelNamed(networksView))
-}
-
-func (m *Model) selectedNetwork() *commands.Network {
-	item := m.panelNamed(networksView).item()
-	if item < 0 || item >= len(m.networks) {
-		return nil
-	}
-
-	return m.networks[item]
 }
 
 // networkMainTabs poll leases and state, as nothing the
@@ -81,11 +54,11 @@ func (m *Model) networkMainTabs() []mainTab {
 type networkTab func(network *commands.Network) func() string
 
 func (m *Model) networkTask(content networkTab) func() mainTaskFunc {
-	return func() mainTaskFunc { return renderString(content(m.selectedNetwork())) }
+	return func() mainTaskFunc { return renderString(content(m.networks.selected())) }
 }
 
 func (m *Model) networkTicker(interval time.Duration, content networkTab) func() mainTaskFunc {
-	return func() mainTaskFunc { return tickerTask(interval, content(m.selectedNetwork())) }
+	return func() mainTaskFunc { return tickerTask(interval, content(m.networks.selected())) }
 }
 
 func (m *Model) networkLeases(network *commands.Network) func() string {
@@ -123,14 +96,4 @@ func (m *Model) listedInstances() func() []*commands.Instance {
 func (m *Model) networkConfig(network *commands.Network) func() string {
 	loc := m.sessionLocation(network.Network.Project)
 	return func() string { return presentation.NetworkConfig(network, loc) }
-}
-
-// networkKey: forwards and ACLs aren't in the network, so their events count in networkTabs.
-func (m *Model) networkKey() string {
-	network := m.selectedNetwork()
-	if network == nil {
-		return ""
-	}
-
-	return network.Key() + "-" + utils.Fingerprint(network.Network) + "-" + strconv.FormatUint(m.networkTabs, 10)
 }

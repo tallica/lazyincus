@@ -9,7 +9,7 @@ import (
 
 func onNetwork(action func(*Model, *commands.Network) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		network := m.selectedNetwork()
+		network := m.networks.selected()
 		if network == nil {
 			return nil
 		}
@@ -24,7 +24,7 @@ func (m *Model) networkEdit(network *commands.Network) tea.Cmd {
 		return nil
 	}
 
-	return m.editInIncus(network.Network.Project, func() []fetch { return []fetch{m.fetchNetworks()} }, "network", "edit", network.Name)
+	return m.editInIncus(network.Network.Project, func() []fetch { return []fetch{m.networks.fetch(m)} }, "network", "edit", network.Name)
 }
 
 func (m *Model) networkUsers(network *commands.Network) tea.Cmd {
@@ -49,7 +49,7 @@ func (m *Model) networkDelete(network *commands.Network) tea.Cmd {
 		return nil
 	}
 
-	name := m.qualified(network.Name, network.Network.Project, m.networksSpan)
+	name := m.qualified(network.Name, network.Network.Project, m.networks.span)
 	if network.UsedByCount() > 0 {
 		m.refuseInUse(fmt.Sprintf(m.tr.NetworkNamed, name), network.UsedByCount())
 		return nil
@@ -57,7 +57,7 @@ func (m *Model) networkDelete(network *commands.Network) tea.Cmd {
 
 	m.openConfirmation(m.tr.Confirm, fmt.Sprintf(m.tr.DeleteNetwork, name), func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, network.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchNetworks())
+			return refresh(m.networks.fetch(m))
 		}))
 	})
 
