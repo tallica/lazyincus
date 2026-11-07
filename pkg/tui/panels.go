@@ -275,7 +275,7 @@ func (m *Model) newPanels() []*panel {
 		{
 			name: backupsView, title: m.backupsTitle, hidden: m.backupsAway, window: snapshotsWindow,
 			plainTitle: tr.BackupsTitle, shortTitle: tr.BackupsShort, empty: tr.NoBackups,
-			flex: m.backupFlex, mainTabs: m.backupMainTabs, itemKey: m.backupItemKey,
+			flex: m.backupFlex, mainTabs: m.backupMainTabs, itemKey: m.backups.itemKey,
 			// A backup's row is a run, not the stack it belongs to.
 			project: func() string {
 				if target, ok := m.selectedStackTarget(); ok {
@@ -310,6 +310,8 @@ func (m *Model) newPanels() []*panel {
 		p.awaiting = tr.Loading
 
 		switch p.name {
+		case backupsView:
+			m.backups = m.newBackups(p)
 		case servicesView:
 			m.serviceRows = m.newServiceRows(p)
 		case instancesView:

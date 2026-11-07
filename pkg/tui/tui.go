@@ -99,7 +99,7 @@ type Model struct {
 	snapshots          list[*commands.Snapshot]
 	// loadBackups: tests stand in for incus-compose.
 	loadBackups         func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
-	backups             []*commands.ComposeBackup
+	backups             list[*commands.ComposeBackup]
 	backupVerifications map[string]*commands.BackupVerification
 
 	instances     list[*commands.Instance]

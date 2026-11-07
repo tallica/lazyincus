@@ -24,8 +24,8 @@ func testBackup(timestamp, name string, volumes ...string) *commands.ComposeBack
 }
 
 func backupNames(m *Model) []string {
-	names := make([]string, len(m.backups))
-	for i, backup := range m.backups {
+	names := make([]string, len(m.backups.items))
+	for i, backup := range m.backups.items {
 		names[i] = backup.Name
 	}
 
@@ -90,7 +90,7 @@ func TestNewBackupIsSelected(t *testing.T) {
 	require.Len(t, *ran, 1)
 	assert.Equal(t, []string{"backup", "create"}, (*ran)[0].Args[len((*ran)[0].Args)-2:])
 	assert.Equal(t, []string{"test", ""}, backupNames(m))
-	assert.Equal(t, "test", m.selectedBackup().Name)
+	assert.Equal(t, "test", m.backups.selected().Name)
 }
 
 func TestNamedLiveBackupArguments(t *testing.T) {
@@ -138,7 +138,7 @@ func TestBackupRowKeepsItsVerification(t *testing.T) {
 	m, _ := backupsModel(t, &backups, &failure)
 
 	m.backupVerifications = map[string]*commands.BackupVerification{
-		m.backupKey(m.backups[0]): {Volumes: []commands.BackupVolumeStatus{{Status: commands.BackupVerifyOK}, {Status: commands.BackupVerifyOK}}},
+		m.backupKey(m.backups.items[0]): {Volumes: []commands.BackupVolumeStatus{{Status: commands.BackupVerifyOK}, {Status: commands.BackupVerifyOK}}},
 	}
 	run(m, refresh(m.fetchBackups()))
 	press(m, "B")

@@ -13,7 +13,7 @@ import (
 
 func onBackup(action func(*Model, *commands.ComposeBackup) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		backup := m.selectedBackup()
+		backup := m.backups.selected()
 		if backup == nil {
 			return nil
 		}
@@ -45,7 +45,7 @@ func (m *Model) backupRunThen(target composeTarget, backups func() fetch, args .
 // backupCreate moves the cursor to the new backup: incus-compose picks the timestamp, so it is the one the list lacked.
 func (m *Model) backupCreate(target composeTarget, args ...string) tea.Cmd {
 	before := map[string]bool{}
-	for _, backup := range m.backups {
+	for _, backup := range m.backups.items {
 		before[backup.Timestamp] = true
 	}
 
@@ -70,7 +70,7 @@ func (m *Model) selectNewBackup(before map[string]bool) {
 	p := m.panelNamed(backupsView)
 
 	for row, item := range p.shown {
-		if !before[m.backups[item].Timestamp] {
+		if !before[m.backups.items[item].Timestamp] {
 			p.selectRow(row, m.listRows(p))
 
 			return
@@ -136,7 +136,7 @@ func (m *Model) backupPrune() tea.Cmd {
 			return nil
 		}
 
-		count := len(m.backups)
+		count := len(m.backups.items)
 		if count <= keep {
 			m.openError(fmt.Sprintf(m.tr.NoBackupsToPrune, label, count, keep))
 
@@ -233,7 +233,7 @@ func (m *Model) backupVerify(backup *commands.ComposeBackup) tea.Cmd {
 		}
 
 		m.backupVerifications[key] = verification
-		m.setBackups(m.backups)
+		m.backups.set(m, m.backups.items)
 
 		return nil
 	}))

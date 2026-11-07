@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -28,23 +27,18 @@ func (m *Model) backupVerification(backup *commands.ComposeBackup) *commands.Bac
 	return m.backupVerifications[m.backupKey(backup)]
 }
 
-func (m *Model) selectedBackup() *commands.ComposeBackup {
-	item := m.panelNamed(backupsView).item()
-	if item < 0 || item >= len(m.backups) {
-		return nil
+// newBackups: Backups' fetch is its own, as it runs incus-compose for the selected stack.
+func (m *Model) newBackups(p *panel) list[*commands.ComposeBackup] {
+	return list[*commands.ComposeBackup]{
+		panel: p,
+		less:  func(a, b *commands.ComposeBackup) bool { return a.CreatedAt().After(b.CreatedAt()) },
+		key:   m.backupKey,
+		cells: func(backup *commands.ComposeBackup, _ bool) []string {
+			return presentation.GetBackupDisplayStrings(backup, m.backupVerification(backup), m.tr)
+		},
+		// The verification, so that a `v` redraws the tab.
+		version: func(backup *commands.ComposeBackup) string { return utils.Fingerprint(m.backupVerification(backup)) },
 	}
-
-	return m.backups[item]
-}
-
-// backupItemKey has the verification in it so that a `v` redraws the tab.
-func (m *Model) backupItemKey() string {
-	backup := m.selectedBackup()
-	if backup == nil {
-		return ""
-	}
-
-	return "backups-" + m.backupKey(backup) + "-" + utils.Fingerprint(m.backupVerification(backup))
 }
 
 func (m *Model) backupMainTabs() []mainTab {
@@ -52,7 +46,7 @@ func (m *Model) backupMainTabs() []mainTab {
 }
 
 func (m *Model) backupInfoTask() mainTaskFunc {
-	backup, stack, width, tr := m.selectedBackup(), m.selectedStack, m.main.width, m.tr
+	backup, stack, width, tr := m.backups.selected(), m.selectedStack, m.main.width, m.tr
 	verification := m.backupVerification(backup)
 
 	var loc *presentation.Location
@@ -109,22 +103,8 @@ func (m *Model) showBackups(ticket uint64, backups []*commands.ComposeBackup, em
 		}
 
 		m.panelNamed(backupsView).empty = empty
-		m.setBackups(backups)
+		m.backups.set(m, backups)
 	}
-}
-
-func (m *Model) setBackups(backups []*commands.ComposeBackup) {
-	m.refill(m.panelNamed(backupsView), func(item int) string { return m.backups[item].Timestamp }, func() [][]string {
-		slices.SortStableFunc(backups, func(a, b *commands.ComposeBackup) int { return b.CreatedAt().Compare(a.CreatedAt()) })
-		m.backups = backups
-
-		cells := make([][]string, len(backups))
-		for i, backup := range backups {
-			cells[i] = presentation.GetBackupDisplayStrings(backup, m.backupVerification(backup), m.tr)
-		}
-
-		return cells
-	})
 }
 
 func (m *Model) followStackBackups() {
@@ -133,7 +113,7 @@ func (m *Model) followStackBackups() {
 	p := m.panelNamed(backupsView)
 	p.empty, p.selected = m.tr.NoBackups, 0
 	m.refill(p, func(int) string { return "" }, func() [][]string {
-		m.backups = nil
+		m.backups.items = nil
 
 		return nil
 	})
