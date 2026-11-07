@@ -9,7 +9,7 @@ import (
 
 func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		snapshot := m.selectedSnapshot()
+		snapshot := m.snapshots.selected()
 		if snapshot == nil {
 			return nil
 		}
@@ -22,7 +22,7 @@ func onSnapshot(action func(*Model, *commands.Snapshot) tea.Cmd) func(*Model) te
 func (m *Model) selectSnapshot(key string) bool {
 	p := m.panelNamed(snapshotsView)
 	for row, item := range p.shown {
-		if m.snapshots[item].Key() == key {
+		if m.snapshots.items[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
 			return true
 		}

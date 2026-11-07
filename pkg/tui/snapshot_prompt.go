@@ -255,7 +255,7 @@ func (m *Model) snapshotNew() tea.Cmd {
 	}
 
 	if m.snapshotsShowAll {
-		if snapshot := m.selectedSnapshot(); snapshot != nil && snapshot.Instance != nil {
+		if snapshot := m.snapshots.selected(); snapshot != nil && snapshot.Instance != nil {
 			return m.snapshotCreatePrompt(snapshot.Instance)
 		}
 

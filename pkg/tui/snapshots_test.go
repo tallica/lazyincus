@@ -33,10 +33,10 @@ func TestSnapshotsKeepFollowingWhileTheirOwnListHasFocus(t *testing.T) {
 	press(m, "j", "2", "j")
 	assert.Equal(t, "snapshots", m.currentView())
 	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
-	assert.Equal(t, "daily-a", m.selectedSnapshot().Name)
+	assert.Equal(t, "daily-a", m.snapshots.selected().Name)
 
 	refreshNow(m)
-	assert.Equal(t, "daily-a", m.selectedSnapshot().Name, "the selection follows its snapshot across a refresh")
+	assert.Equal(t, "daily-a", m.snapshots.selected().Name, "the selection follows its snapshot across a refresh")
 }
 
 func TestESnapshotsListsEveryInstancesWithItsOwner(t *testing.T) {
@@ -70,7 +70,7 @@ func onWebsNewest(t *testing.T, opts options) *Model {
 	opts.fixture = opts.server == nil
 	m := start(t, opts, 140, 40)
 	press(m, "j", "2")
-	require.Equal(t, "daily-b", m.selectedSnapshot().Name)
+	require.Equal(t, "daily-b", m.snapshots.selected().Name)
 
 	return m
 }
@@ -118,7 +118,7 @@ func TestRenamingASnapshotFollowsIt(t *testing.T) {
 	typeText(m, "weekly")
 	press(m, "enter")
 
-	assert.Equal(t, "weekly", m.selectedSnapshot().Name)
+	assert.Equal(t, "weekly", m.snapshots.selected().Name)
 }
 
 func TestANewInstanceFromASnapshotIsCopiedAndFocused(t *testing.T) {
@@ -190,7 +190,7 @@ func TestNOnInstancesTakesASnapshotAndLandsOnIt(t *testing.T) {
 	press(m, "enter")
 
 	assert.Equal(t, "snapshots", m.currentView())
-	assert.Equal(t, "manual", m.selectedSnapshot().Name)
+	assert.Equal(t, "manual", m.snapshots.selected().Name)
 	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
 }
 

@@ -249,9 +249,9 @@ func (m *Model) paletteSources() map[string]paletteSource {
 				return m.onRemote(presentation.BackupLabel(m.backups[item]), m.actionRemote(backupsView))
 			}, nil),
 		snapshotsView: m.sourceOf(m.panelNamed(snapshotsView),
-			func(item int) string { return m.snapshots[item].Key() },
+			m.snapshots.keyOf,
 			func(item int) string {
-				return m.onRemote(m.snapshots[item].Owner+"/"+m.snapshots[item].Name, m.actionRemote(snapshotsView))
+				return m.onRemote(m.snapshots.items[item].Owner+"/"+m.snapshots.items[item].Name, m.actionRemote(snapshotsView))
 			}, nil),
 	}
 }

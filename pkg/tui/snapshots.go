@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"slices"
 	"sort"
 
 	"github.com/tallica/lazyincus/pkg/commands"
@@ -78,13 +77,18 @@ func (m *Model) snapshotsVolume() *commands.Volume {
 	return nil
 }
 
-// setSnapshots: the selection kept on its snapshot.
-func (m *Model) setSnapshots() {
-	key := ""
-	if selected := m.selectedSnapshot(); selected != nil {
-		key = selected.Key()
+// newSnapshots: no fetch, as the snapshots come with what they follow.
+func (m *Model) newSnapshots(p *panel) list[*commands.Snapshot] {
+	return list[*commands.Snapshot]{
+		panel:   p,
+		key:     (*commands.Snapshot).Key,
+		project: func(snapshot *commands.Snapshot) string { return snapshot.Project },
+		version: func(snapshot *commands.Snapshot) string { return utils.Fingerprint(snapshot.Details()) },
 	}
+}
 
+// setSnapshots spans instances and projects, which a list's span can't say.
+func (m *Model) setSnapshots() {
 	instances := m.snapshotsFollow.instances
 	if m.snapshotsShowAll {
 		instances = m.instances
@@ -101,19 +105,17 @@ func (m *Model) setSnapshots() {
 		}
 	}
 	sort.SliceStable(snapshots, func(a, b int) bool { return sortSnapshots(snapshots[a], snapshots[b]) })
-	m.snapshots = snapshots
 
-	p := m.panelNamed(snapshotsView)
-	p.awaiting = ""
-	p.cells = make([][]string, len(snapshots))
-	for i, snapshot := range snapshots {
-		p.cells[i] = presentation.GetSnapshotDisplayStrings(snapshot, m.snapshotOwner(snapshot))
-	}
-	m.filterList(p)
-	if row := slices.IndexFunc(p.shown, func(item int) bool { return snapshots[item].Key() == key }); row >= 0 {
-		p.selected = row
-	}
-	p.selectRow(p.selected, m.listRows(p))
+	m.refill(m.snapshots.panel, m.snapshots.keyOf, func() [][]string {
+		m.snapshots.items = snapshots
+
+		cells := make([][]string, len(snapshots))
+		for i, snapshot := range snapshots {
+			cells[i] = presentation.GetSnapshotDisplayStrings(snapshot, m.snapshotOwner(snapshot))
+		}
+
+		return cells
+	})
 }
 
 // sortSnapshots: by instance, newest first within one.
@@ -127,15 +129,6 @@ func sortSnapshots(a, b *commands.Snapshot) bool {
 	}
 
 	return a.CreatedAt().After(b.CreatedAt())
-}
-
-func (m *Model) selectedSnapshot() *commands.Snapshot {
-	item := m.panelNamed(snapshotsView).item()
-	if item < 0 || item >= len(m.snapshots) {
-		return nil
-	}
-
-	return m.snapshots[item]
 }
 
 func (m *Model) snapshotOwner(snapshot *commands.Snapshot) string {
@@ -164,7 +157,7 @@ func (m *Model) snapshotMainTabs() []mainTab {
 }
 
 func (m *Model) snapshotConfigTask() mainTaskFunc {
-	snapshot := m.selectedSnapshot()
+	snapshot := m.snapshots.selected()
 	loc := presentation.Location{}
 	switch {
 	case snapshot.Volume != nil:
@@ -174,15 +167,6 @@ func (m *Model) snapshotConfigTask() mainTaskFunc {
 	}
 
 	return renderString(func() string { return presentation.SnapshotConfig(snapshot, loc) })
-}
-
-func (m *Model) snapshotKey() string {
-	snapshot := m.selectedSnapshot()
-	if snapshot == nil {
-		return ""
-	}
-
-	return snapshot.Key() + "-" + utils.Fingerprint(snapshot.Details())
 }
 
 func (m *Model) snapshotsLabel() string {

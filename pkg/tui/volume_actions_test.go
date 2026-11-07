@@ -71,7 +71,7 @@ func TestRenamingAVolumesSnapshotFollowsIt(t *testing.T) {
 	typeText(m, "baseline")
 	press(m, "enter")
 
-	assert.Equal(t, "baseline", m.selectedSnapshot().Name)
+	assert.Equal(t, "baseline", m.snapshots.selected().Name)
 }
 
 func TestNOnAVolumeOffersNoStatefulField(t *testing.T) {

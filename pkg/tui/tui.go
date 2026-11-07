@@ -96,7 +96,7 @@ type Model struct {
 	snapshotsShowAll   bool
 	snapshotsFollow    snapshotsFollow
 	snapshotsSpan      snapshotsSpan
-	snapshots          []*commands.Snapshot
+	snapshots          list[*commands.Snapshot]
 	// loadBackups: tests stand in for incus-compose.
 	loadBackups         func(command *commands.IncusCommand, dir string) ([]*commands.ComposeBackup, error)
 	backups             []*commands.ComposeBackup
