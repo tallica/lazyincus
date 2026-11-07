@@ -1,43 +1,21 @@
 package tui
 
 import (
-	"sort"
-
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/presentation"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
-func (m *Model) fetchProfiles() fetch {
-	ticket := m.refreshes.profiles.issue()
-
-	return func() (func(), error) {
-		profiles, err := m.incus.GetProfiles()
-		if err != nil {
-			return nil, err
-		}
-
-		return func() {
-			if m.refreshes.profiles.admit(ticket) {
-				m.setProfiles(profiles)
-			}
-		}, nil
+func (m *Model) newProfiles(p *panel) list[*commands.Profile] {
+	return list[*commands.Profile]{
+		panel: p, seq: &m.refreshes.profiles,
+		get:     (*commands.IncusCommand).GetProfiles,
+		less:    sortProfiles,
+		key:     (*commands.Profile).Key,
+		project: func(profile *commands.Profile) string { return profile.Profile.Project },
+		cells:   presentation.GetProfileDisplayStrings,
+		version: func(profile *commands.Profile) string { return utils.Fingerprint(profile.Profile) },
 	}
-}
-
-func (m *Model) setProfiles(profiles []*commands.Profile) {
-	m.refill(m.panelNamed(profilesView), func(item int) string { return m.profiles[item].Key() }, func() [][]string {
-		sort.SliceStable(profiles, func(a, b int) bool { return sortProfiles(profiles[a], profiles[b]) })
-		m.profiles = profiles
-		m.profilesSpan = spansProjects(profiles, profileProject)
-
-		cells := make([][]string, len(profiles))
-		for i, profile := range profiles {
-			cells[i] = presentation.GetProfileDisplayStrings(profile, m.profilesSpan)
-		}
-
-		return cells
-	})
 }
 
 func sortProfiles(a, b *commands.Profile) bool {
@@ -48,22 +26,11 @@ func sortProfiles(a, b *commands.Profile) bool {
 	return a.Name < b.Name
 }
 
-func profileProject(profile *commands.Profile) string { return profile.Profile.Project }
-
 func (m *Model) profileFlex() []utils.FlexColumn {
 	return []utils.FlexColumn{{
-		Index:    projectColumns(m.profilesSpan) + presentation.ProfileDescriptionColumn,
+		Index:    projectColumns(m.profiles.span) + presentation.ProfileDescriptionColumn,
 		MinWidth: presentation.MinProfileDescriptionWidth,
 	}}
-}
-
-func (m *Model) selectedProfile() *commands.Profile {
-	item := m.panelNamed(profilesView).item()
-	if item < 0 || item >= len(m.profiles) {
-		return nil
-	}
-
-	return m.profiles[item]
 }
 
 func (m *Model) profileMainTabs() []mainTab {
@@ -76,23 +43,14 @@ func (m *Model) profileMainTabs() []mainTab {
 }
 
 func (m *Model) profileDevicesTask() mainTaskFunc {
-	profile, tr := m.selectedProfile(), m.tr
+	profile, tr := m.profiles.selected(), m.tr
 
 	return renderString(func() string { return presentation.ProfileDevices(profile, tr) })
 }
 
 func (m *Model) profileConfigTask() mainTaskFunc {
-	profile := m.selectedProfile()
+	profile := m.profiles.selected()
 	loc := m.sessionLocation(profile.Profile.Project)
 
 	return renderString(func() string { return presentation.ProfileConfig(profile, loc) })
-}
-
-func (m *Model) profileKey() string {
-	profile := m.selectedProfile()
-	if profile == nil {
-		return ""
-	}
-
-	return profile.Key() + "-" + utils.Fingerprint(profile.Profile)
 }

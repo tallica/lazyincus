@@ -302,12 +302,16 @@ func (m *Model) newPanels() []*panel {
 		},
 		{
 			name: profilesView, title: static(tr.ProfilesTitle), window: resourcesWindow, shortTitle: tr.ProfilesShort, empty: tr.NoProfiles,
-			flex: m.profileFlex, mainTabs: m.profileMainTabs, itemKey: m.profileKey,
-			project: projectOf(m.selectedProfile, func(p *commands.Profile) string { return p.Profile.Project }),
+			flex: m.profileFlex, mainTabs: m.profileMainTabs, itemKey: m.profiles.itemKey,
+			project: m.profiles.selectedProject,
 		},
 	}
 	for _, p := range panels {
 		p.awaiting = tr.Loading
+
+		if p.name == profilesView {
+			m.profiles = m.newProfiles(p)
+		}
 	}
 
 	return panels

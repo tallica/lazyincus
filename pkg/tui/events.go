@@ -378,7 +378,7 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	}
 
 	if kinds&refreshProfiles != 0 {
-		fetches = append(fetches, m.fetchProfiles())
+		fetches = append(fetches, m.profiles.fetch(m))
 	}
 
 	if kinds&refreshWarnings != 0 {

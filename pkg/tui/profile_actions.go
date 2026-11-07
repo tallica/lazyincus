@@ -12,7 +12,7 @@ const defaultProfile = "default"
 
 func onProfile(action func(*Model, *commands.Profile) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		profile := m.selectedProfile()
+		profile := m.profiles.selected()
 		if profile == nil {
 			return nil
 		}
@@ -26,7 +26,7 @@ func (m *Model) profileUsers(profile *commands.Profile) tea.Cmd {
 }
 
 func (m *Model) profileEdit(profile *commands.Profile) tea.Cmd {
-	return m.editInIncus(profile.Profile.Project, func() []fetch { return []fetch{m.fetchProfiles()} }, "profile", "edit", profile.Name)
+	return m.editInIncus(profile.Profile.Project, func() []fetch { return []fetch{m.profiles.fetch(m)} }, "profile", "edit", profile.Name)
 }
 
 // profileDelete: what the daemon would refuse - a default, one in use - it says rather than asks.
@@ -36,7 +36,7 @@ func (m *Model) profileDelete(profile *commands.Profile) tea.Cmd {
 		return nil
 	}
 
-	name := m.qualified(profile.Name, profile.Profile.Project, m.profilesSpan)
+	name := m.qualified(profile.Name, profile.Profile.Project, m.profiles.span)
 	if profile.UsedByCount() > 0 {
 		m.refuseInUse(fmt.Sprintf(m.tr.ProfileNamed, name), profile.UsedByCount())
 		return nil
@@ -44,7 +44,7 @@ func (m *Model) profileDelete(profile *commands.Profile) tea.Cmd {
 
 	m.openConfirmation(m.tr.Confirm, fmt.Sprintf(m.tr.DeleteProfile, name), func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, profile.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchProfiles())
+			return refresh(m.profiles.fetch(m))
 		}))
 	})
 
