@@ -100,6 +100,10 @@ func (m *Model) compose(layers []*lipgloss.Layer) string {
 }
 
 func (m *Model) dims() map[string]boxlayout.Dimensions {
+	if m.layout != nil {
+		return m.layout
+	}
+
 	return m.dimensions(m.width, m.height, m.information(), m.appStatus)
 }
 

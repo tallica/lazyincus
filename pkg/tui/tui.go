@@ -14,6 +14,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/colorprofile"
 	"github.com/fatih/color"
+	"github.com/jesseduffield/lazycore/pkg/boxlayout"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
 	"github.com/tallica/lazyincus/pkg/i18n"
@@ -32,6 +33,8 @@ type Model struct {
 	light      bool
 
 	width, height int
+	// layout is fitViews' window rectangles, for View; nil while Update changes what they depend on.
+	layout map[string]boxlayout.Dimensions
 
 	panels []*panel
 	// activeViews is each shared window's panel on show.
@@ -271,6 +274,7 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.layout = nil
 	cmd := m.update(msg)
 	m.fitViews()
 
@@ -284,6 +288,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) fitViews() {
 	m.followSelection()
 	m.fitStatus()
+	m.layout = nil
+	m.layout = m.dims()
 	m.fitLists()
 	m.fitMain()
 	m.fitFilter()
