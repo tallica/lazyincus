@@ -97,7 +97,7 @@ func TestThePaletteGoesToAnItem(t *testing.T) {
 	press(m, "enter")
 
 	assert.Equal(t, "instances", m.currentView())
-	assert.Equal(t, "db", m.selectedInstance().Name)
+	assert.Equal(t, "db", m.instances.selected().Name)
 }
 
 func TestTabListsAnItemsActions(t *testing.T) {
@@ -111,7 +111,7 @@ func TestTabListsAnItemsActions(t *testing.T) {
 	assert.Contains(t, shown, m.tr.CommandPaletteItemHint)
 	assert.NotContains(t, shown, "tab:")
 	assert.NotContains(t, shown, "next screen mode")
-	assert.Equal(t, "db", m.selectedInstance().Name)
+	assert.Equal(t, "db", m.instances.selected().Name)
 
 	typeText(m, "next tab")
 	press(m, "enter")
@@ -139,7 +139,7 @@ func TestEscFromAnItemsActionsLeavesItSelected(t *testing.T) {
 	assert.Empty(t, m.popups)
 	assert.Equal(t, "instances", m.currentView())
 	assert.False(t, m.paletteOpen())
-	assert.Equal(t, "db", m.selectedInstance().Name)
+	assert.Equal(t, "db", m.instances.selected().Name)
 }
 
 func TestThePaletteWontActOnAnotherSelection(t *testing.T) {

@@ -87,6 +87,6 @@ func TestRerenderingInstancesLeavesTheListingAlone(t *testing.T) {
 	m.incus.MarkInstance("default", "db", "Starting")
 	m.rerenderInstances()
 
-	require.NotEqual(t, before, m.instances, "the mark re-sorted the rows")
+	require.NotEqual(t, before, m.instances.items, "the mark re-sorted the rows")
 	assert.Equal(t, before, listed)
 }

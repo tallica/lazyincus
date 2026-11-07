@@ -227,9 +227,9 @@ func (m *Model) paletteSources() map[string]paletteSource {
 				return m.onRemote(name, m.actionRemote(servicesView))
 			}, nil),
 		instancesView: m.sourceOf(m.panelNamed(instancesView),
-			func(item int) string { return m.instances[item].Key() },
-			func(item int) string { return m.onRemote(m.instances[item].Name, m.instances[item].Remote) },
-			func(item int) string { return m.instances[item].Project }),
+			m.instances.keyOf,
+			func(item int) string { return m.onRemote(m.instances.items[item].Name, m.instances.items[item].Remote) },
+			func(item int) string { return m.instances.items[item].Project }),
 		imagesView: m.sourceOf(m.panelNamed(imagesView),
 			m.images.keyOf,
 			func(item int) string { return m.images.items[item].Label() }, nil),

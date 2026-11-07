@@ -223,10 +223,10 @@ func TestSelectionFollowsTheInstanceAcrossRefresh(t *testing.T) {
 	m := start(t, options{}, 90, 16)
 
 	press(m, "j")
-	require.Equal(t, "web", m.selectedInstance().Name)
+	require.Equal(t, "web", m.instances.selected().Name)
 
 	refreshNow(m)
-	assert.Equal(t, "web", m.selectedInstance().Name)
+	assert.Equal(t, "web", m.instances.selected().Name)
 }
 
 func TestLateFetchIsDropped(t *testing.T) {
@@ -239,8 +239,8 @@ func TestLateFetchIsDropped(t *testing.T) {
 	refreshNow(m)
 	m.Update(late)
 
-	require.Len(t, m.instances, 1)
-	assert.Equal(t, "new", m.instances[0].Name)
+	require.Len(t, m.instances.items, 1)
+	assert.Equal(t, "new", m.instances.items[0].Name)
 }
 
 func TestPanelsSayLoadingUntilRefreshAllLands(t *testing.T) {

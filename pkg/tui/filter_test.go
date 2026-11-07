@@ -27,7 +27,7 @@ func TestFilteringAListKeepsTheRowsWithTheNeedle(t *testing.T) {
 	typeText(m, "web")
 	assert.Contains(t, footer(m), "filter: web")
 	assert.Equal(t, 1, m.panelNamed("instances").count())
-	assert.Equal(t, "web", m.selectedInstance().Name, "main follows what's left")
+	assert.Equal(t, "web", m.instances.selected().Name, "main follows what's left")
 
 	press(m, "enter")
 	assert.Equal(t, "instances", m.currentView())
@@ -44,7 +44,7 @@ func TestACapitalInTheFilterMatchesCase(t *testing.T) {
 	press(m, "/")
 	typeText(m, "Web")
 	assert.Equal(t, 0, m.panelNamed("instances").count())
-	assert.Nil(t, m.selectedInstance())
+	assert.Nil(t, m.instances.selected())
 }
 
 // The filter matches the text on show: colour codes don't count, and case
@@ -61,14 +61,14 @@ func TestTheFilterMatchesTheCellsText(t *testing.T) {
 func TestTheSelectionFollowsItsItemThroughTheFilter(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 	press(m, "down")
-	require.Equal(t, "web", m.selectedInstance().Name)
+	require.Equal(t, "web", m.instances.selected().Name)
 
 	press(m, "/")
 	typeText(m, "e")
-	assert.Equal(t, "web", m.selectedInstance().Name)
+	assert.Equal(t, "web", m.instances.selected().Name)
 
 	press(m, "up")
-	assert.Equal(t, "cache", m.selectedInstance().Name, "up and down move the list being filtered")
+	assert.Equal(t, "cache", m.instances.selected().Name, "up and down move the list being filtered")
 	assert.Equal(t, filterView, m.currentView())
 }
 
@@ -126,7 +126,7 @@ func TestIgnoredStringsHideRows(t *testing.T) {
 	m := start(t, options{configure: func(c *config.UserConfig) { c.Ignore = []string{"cache"} }}, 140, 40)
 
 	assert.Equal(t, 2, m.panelNamed("instances").count())
-	assert.NotEqual(t, "cache", m.selectedInstance().Name)
+	assert.NotEqual(t, "cache", m.instances.selected().Name)
 }
 
 func TestTheFilterTextIsBoldAndBright(t *testing.T) {

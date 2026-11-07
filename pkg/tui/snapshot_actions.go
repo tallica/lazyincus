@@ -32,7 +32,7 @@ func (m *Model) selectSnapshot(key string) bool {
 }
 
 func (m *Model) snapshotOwnerName(snapshot *commands.Snapshot) string {
-	spans := m.showProject || m.snapshotsSpan.projects
+	spans := m.instances.span || m.snapshotsSpan.projects
 	if snapshot.Volume != nil {
 		spans = m.volumes.span
 	}

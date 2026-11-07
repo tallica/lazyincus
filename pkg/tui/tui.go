@@ -49,7 +49,7 @@ type Model struct {
 	mainTask        mainTask
 	// mainWidth is main's, for the ticking tabs to read each tick: a resize keeps the task.
 	mainWidth atomic.Int64
-	// listed is m.instances for the network tabs to read each tick; never sorted in place once stored.
+	// listed is m.instances.items for the network tabs to read each tick; never sorted in place once stored.
 	listed atomic.Pointer[[]*commands.Instance]
 	// pendingMain starts the task fitMain queued, for Update to return.
 	pendingMain tea.Cmd
@@ -102,7 +102,7 @@ type Model struct {
 	backups             []*commands.ComposeBackup
 	backupVerifications map[string]*commands.BackupVerification
 
-	instances     []*commands.Instance
+	instances     list[*commands.Instance]
 	images        list[*commands.Image]
 	volumes       list[*commands.Volume]
 	networks      list[*commands.Network]
@@ -112,7 +112,6 @@ type Model struct {
 	networkTabs uint64
 	// upstreams are the registry checks by image fingerprint, nil before the first.
 	upstreams     map[string]commands.UpstreamStatus
-	showProject   bool
 	showStopped   bool
 	instanceUsers *instanceUsers
 

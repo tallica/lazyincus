@@ -36,7 +36,7 @@ func untilRemotes(t *testing.T, m *Model, done func() bool) {
 func instanceNames(m *Model) []string {
 	p := m.panelNamed("instances")
 
-	return lo.Map(p.shown, func(item int, _ int) string { return m.instances[item].Name })
+	return lo.Map(p.shown, func(item int, _ int) string { return m.instances.items[item].Name })
 }
 
 // Stacks is [1] and focused first, its listing reading the local stack.
@@ -169,10 +169,10 @@ func TestStackFilterNarrowsTheProjectSpan(t *testing.T) {
 	}})
 
 	m := start(t, options{compose: true, server: server, savedStacks: []*commands.ComposeStack{testStack(t, root, "shop", "api")}}, 140, 40)
-	assert.False(t, m.showProject)
+	assert.False(t, m.instances.span)
 
 	press(m, "3", "C")
-	assert.True(t, m.showProject)
+	assert.True(t, m.instances.span)
 }
 
 // A stack pinned to another remote is that remote's: its statuses come
@@ -299,7 +299,7 @@ func TestASlowRemoteHoldsUpNothing(t *testing.T) {
 
 	assert.Equal(t, "Running", status("default"))
 	assert.Equal(t, "connecting", status("shop"))
-	assert.NotEmpty(t, m.instances)
+	assert.NotEmpty(t, m.instances.items)
 
 	close(answer)
 	untilRemotes(t, m, func() bool { return status("shop") == "Running" })

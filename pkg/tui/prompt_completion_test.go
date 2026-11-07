@@ -37,7 +37,7 @@ func TestTypedCommandCompletesFromTheCLI(t *testing.T) {
 
 		return completion, nil
 	}
-	project := m.selectedInstance().Project
+	project := m.instances.selected().Project
 
 	press(m, ":")
 	typeText(m, "incus s")

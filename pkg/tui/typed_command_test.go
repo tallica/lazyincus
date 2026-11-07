@@ -14,7 +14,7 @@ import (
 
 func TestTypedCommandAsksWithTheRowsProject(t *testing.T) {
 	m := start(t, options{}, 140, 40)
-	project := m.selectedInstance().Project
+	project := m.instances.selected().Project
 
 	press(m, ":")
 
@@ -118,7 +118,7 @@ func TestTypedCommandRunsOnTheTerminalAndIsRemembered(t *testing.T) {
 	m := start(t, options{}, 140, 40)
 	var ran []*exec.Cmd
 	m.runOnTerminal = finishing(&ran)
-	project := m.selectedInstance().Project
+	project := m.instances.selected().Project
 
 	press(m, ":")
 	typeText(m, "incus list")
@@ -292,7 +292,7 @@ func TestTypedCommandRecallsItsHistory(t *testing.T) {
 	require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, "info web"))
 	require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, "list"))
 	require.NoError(t, m.cfg.RecordCommand(config.ComposeHistory, "ps"))
-	seed := "--project " + m.selectedInstance().Project + " "
+	seed := "--project " + m.instances.selected().Project + " "
 
 	press(m, ":")
 	input := func() string { return m.topPrompt().input.Value() }
@@ -312,7 +312,7 @@ func TestTypedCommandRecallsItsHistory(t *testing.T) {
 // what's before the cursor, and ↓ past the newest gives back what was typed.
 func TestTypedCommandRecallsOnlyWhatStartsWithTheLine(t *testing.T) {
 	m := start(t, options{}, 140, 40)
-	seed := "--project " + m.selectedInstance().Project + " "
+	seed := "--project " + m.instances.selected().Project + " "
 	for _, line := range []string{"start web", "list", "stop web", "start db"} {
 		require.NoError(t, m.cfg.RecordCommand(config.IncusHistory, seed+line))
 	}
@@ -372,5 +372,5 @@ func TestAnUnreadableHistoryLeavesThePromptWorking(t *testing.T) {
 	press(m, ":", "up")
 
 	require.NotNil(t, m.topPrompt())
-	assert.Equal(t, "--project "+m.selectedInstance().Project+" ", m.topPrompt().input.Value())
+	assert.Equal(t, "--project "+m.instances.selected().Project+" ", m.topPrompt().input.Value())
 }

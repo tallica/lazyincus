@@ -58,7 +58,7 @@ func TestTheTopTabOfAStoppedInstanceSaysWhyItIsEmpty(t *testing.T) {
 
 	// Not a running one: the fake daemon can't exec.
 	press(m, "j", "j")
-	require.Equal(t, "db", m.selectedInstance().Name)
+	require.Equal(t, "db", m.instances.selected().Name)
 	press(m, "[")
 	assert.Equal(t, m.tr.CannotListProcessesStoppedInstance, mainText(m))
 }
@@ -100,7 +100,7 @@ func instanceIn(project, name, status string) api.InstanceFull {
 func shownInstances(m *Model) []string {
 	names := make([]string, 0, m.panelNamed("instances").count())
 	for _, item := range m.panelNamed("instances").shown {
-		names = append(names, m.instances[item].Project+"/"+m.instances[item].Name)
+		names = append(names, m.instances.items[item].Project+"/"+m.instances.items[item].Name)
 	}
 
 	return names
@@ -113,7 +113,7 @@ func TestInstancesSortByProjectThenStoppedLast(t *testing.T) {
 	m := start(t, options{server: server}, 90, 16)
 
 	assert.Equal(t, []string{"default/cache", "default/db", "shop/web", "shop/api"}, shownInstances(m))
-	assert.True(t, m.showProject)
+	assert.True(t, m.instances.span)
 }
 
 func TestEHidesStoppedInstancesAndBringsThemBack(t *testing.T) {
@@ -121,7 +121,7 @@ func TestEHidesStoppedInstancesAndBringsThemBack(t *testing.T) {
 
 	press(m, "e")
 	assert.Equal(t, []string{"default/cache", "default/web"}, shownInstances(m))
-	assert.False(t, m.showProject)
+	assert.False(t, m.instances.span)
 
 	press(m, "e")
 	assert.Equal(t, []string{"default/cache", "default/web", "default/db"}, shownInstances(m))
@@ -140,7 +140,7 @@ func rowOf(m *Model, name string) string {
 func TestStartingMarksTheRowUntilTheListingLands(t *testing.T) {
 	m := start(t, options{}, 90, 16)
 	press(m, "j", "j")
-	require.Equal(t, "db", m.selectedInstance().Name)
+	require.Equal(t, "db", m.instances.selected().Name)
 
 	_, cmd := m.Update(keyPress("S"))
 	assert.Contains(t, rowOf(m, "db"), "starting")
@@ -196,7 +196,7 @@ func TestRenamingAStoppedInstanceFollowsItToItsNewName(t *testing.T) {
 	press(m, "j", "j")
 
 	rename(m, "archive")
-	assert.Equal(t, "archive", m.selectedInstance().Name)
+	assert.Equal(t, "archive", m.instances.selected().Name)
 	assert.Equal(t, []string{"default/cache", "default/web", "default/archive"}, shownInstances(m))
 }
 
@@ -208,7 +208,7 @@ func TestRenamingARunningInstanceStopsItOnceConfirmed(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.popups[0].message), "Stop cache, rename it to redis and start it again?")
 
 	press(m, "y")
-	assert.Equal(t, "redis", m.selectedInstance().Name)
+	assert.Equal(t, "redis", m.instances.selected().Name)
 	assert.Contains(t, rowOf(m, "redis"), "running")
 }
 
@@ -218,7 +218,7 @@ func TestTheDescriptionIsSavedFromItsPrompt(t *testing.T) {
 	run(m, onInstance((*Model).instanceEditDescription)(m))
 	typeText(m, "the cache")
 	press(m, "enter")
-	assert.Equal(t, "the cache", m.selectedInstance().Instance.Description)
+	assert.Equal(t, "the cache", m.instances.selected().Instance.Description)
 }
 
 func TestACopyLandsAsATransientStatus(t *testing.T) {

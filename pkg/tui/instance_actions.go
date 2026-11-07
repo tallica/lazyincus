@@ -12,7 +12,7 @@ import (
 
 func onInstance(action func(*Model, *commands.Instance) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		instance := m.selectedInstance()
+		instance := m.instances.selected()
 		if instance == nil {
 			return nil
 		}
@@ -31,7 +31,7 @@ func (m *Model) qualified(name, project string, spans bool) string {
 }
 
 func (m *Model) qualifiedInstance(instance *commands.Instance) string {
-	return m.onRemote(m.qualified(instance.Name, instance.Project, m.showProject), instance.Remote)
+	return m.onRemote(m.qualified(instance.Name, instance.Project, m.instances.span), instance.Remote)
 }
 
 // inTransition: the row's mark comes off once the refresh after action lands.

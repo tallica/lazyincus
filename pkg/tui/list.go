@@ -19,6 +19,8 @@ type list[T comparable] struct {
 	key     func(T) string
 	project func(T) string
 	cells   func(item T, span bool) []string
+	// spans, if set, replaces spansProjects over every item.
+	spans func(items []T) bool
 	// version is what, besides key, makes main's content stale.
 	version func(T) string
 	// filled, if set, runs after each set: what follows the items.
@@ -50,7 +52,11 @@ func (l *list[T]) set(m *Model, items []T) {
 	m.refill(l.panel, l.keyOf, func() [][]string {
 		sort.SliceStable(items, func(a, b int) bool { return l.less(items[a], items[b]) })
 		l.items = items
-		l.span = spansProjects(items, l.project)
+		if l.spans != nil {
+			l.span = l.spans(items)
+		} else {
+			l.span = spansProjects(items, l.project)
+		}
 
 		cells := make([][]string, len(items))
 		for i, item := range items {

@@ -249,7 +249,7 @@ func TestSpaceSwitchesToTheStacksRemote(t *testing.T) {
 
 	press(m, "space")
 	assert.Equal(t, "pve01", m.incus.RemoteName())
-	assert.Equal(t, []string{"api-1"}, lo.Map(m.instances, func(instance *commands.Instance, _ int) string { return instance.Name }))
+	assert.Equal(t, []string{"api-1"}, lo.Map(m.instances.items, func(instance *commands.Instance, _ int) string { return instance.Name }))
 	assert.Equal(t, []string{"zoo", "default", "shop"}, order())
 	assert.Equal(t, "Services (shop)", m.servicesTitle())
 

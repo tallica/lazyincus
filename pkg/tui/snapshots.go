@@ -42,7 +42,7 @@ func (m *Model) followSelection() {
 }
 
 func (m *Model) followInstance() {
-	instance := m.selectedInstance()
+	instance := m.instances.selected()
 	if instance == nil {
 		return
 	}
@@ -91,7 +91,7 @@ func (m *Model) newSnapshots(p *panel) list[*commands.Snapshot] {
 func (m *Model) setSnapshots() {
 	instances := m.snapshotsFollow.instances
 	if m.snapshotsShowAll {
-		instances = m.instances
+		instances = m.instances.items
 	}
 
 	var snapshots []*commands.Snapshot

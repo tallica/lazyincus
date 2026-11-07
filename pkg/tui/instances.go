@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
@@ -15,66 +14,47 @@ import (
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
+func (m *Model) newInstances(p *panel) list[*commands.Instance] {
+	return list[*commands.Instance]{
+		panel: p, seq: &m.refreshes.instances,
+		get:     (*commands.IncusCommand).GetInstances,
+		less:    sortInstances,
+		key:     (*commands.Instance).Key,
+		project: instanceProject,
+		cells: func(instance *commands.Instance, span bool) []string {
+			return presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, span, m.upstreams)
+		},
+		// Over the instances Instances shows.
+		spans: func(instances []*commands.Instance) bool {
+			standalone := lo.Reject(instances, func(instance *commands.Instance, _ int) bool {
+				return !m.showStackInstances && m.isStackInstance(instance)
+			})
+
+			return spansProjects(standalone, instanceProject)
+		},
+		version: func(instance *commands.Instance) string {
+			return instance.Instance.Status + "-" + instance.ConfigFingerprint()
+		},
+		// The snapshots come with the instances.
+		filled: func() {
+			instances := m.instances.items
+			m.listed.Store(&instances)
+			m.setSnapshots()
+		},
+	}
+}
+
 func (m *Model) fetchInstances(l *commands.Listing) fetch {
 	l.WithScoped()
-	ticket := m.refreshes.instances.issue()
 
-	return func() (func(), error) {
-		instances, err := m.incus.GetInstances(l)
-		if err != nil {
-			return nil, err
-		}
-
-		return func() {
-			if m.refreshes.instances.admit(ticket) {
-				m.setInstances(instances)
-			}
-		}, nil
-	}
-}
-
-func (m *Model) selectedInstance() *commands.Instance {
-	item := m.panelNamed(instancesView).item()
-	if item < 0 || item >= len(m.instances) {
-		return nil
-	}
-
-	return m.instances[item]
-}
-
-// setInstances keeps the selection on the same instance across a refresh.
-func (m *Model) setInstances(instances []*commands.Instance) {
-	key := ""
-	if selected := m.selectedInstance(); selected != nil {
-		key = selected.Key()
-	}
-
-	sort.SliceStable(instances, func(a, b int) bool { return sortInstances(instances[a], instances[b]) })
-	m.instances = instances
-	m.listed.Store(&instances)
-	m.setInstancesSpan()
-
-	p := m.panelNamed(instancesView)
-	p.awaiting = ""
-	p.cells = m.instanceCells()
-	m.filterList(p)
-	for row, item := range p.shown {
-		if instances[item].Key() == key {
-			p.selected = row
-			break
-		}
-	}
-	p.selectRow(p.selected, m.listRows(p))
-
-	// The snapshots come with the instances.
-	m.setSnapshots()
+	return m.instances.fetchIn(m, l)
 }
 
 // selectInstance: the cursor onto the instance with key, if shown.
 func (m *Model) selectInstance(key string) bool {
 	p := m.panelNamed(instancesView)
 	for row, item := range p.shown {
-		if m.instances[item].Key() == key {
+		if m.instances.items[item].Key() == key {
 			p.selectRow(row, m.listRows(p))
 			return true
 		}
@@ -85,8 +65,8 @@ func (m *Model) selectInstance(key string) bool {
 
 // rerenderInstances shows the rows' marks, which their status reads.
 func (m *Model) rerenderInstances() {
-	if m.instances != nil {
-		m.setInstances(slices.Clone(m.instances))
+	if m.instances.items != nil {
+		m.instances.set(m, slices.Clone(m.instances.items))
 	}
 }
 
@@ -127,28 +107,19 @@ func instanceProject(instance *commands.Instance) string { return instance.Proje
 // keepInstance keeps every user while the list is narrowed.
 func (m *Model) keepInstance(item int) bool {
 	if m.instanceUsers != nil {
-		return m.instanceUsers.uses(m.instances[item])
+		return m.instanceUsers.uses(m.instances.items[item])
 	}
 
-	if !m.showStopped && isStopped(m.instances[item]) {
+	if !m.showStopped && isStopped(m.instances.items[item]) {
 		return false
 	}
 
-	return m.showStackInstances || !m.isStackInstance(m.instances[item])
+	return m.showStackInstances || !m.isStackInstance(m.instances.items[item])
 }
 
 // isStackInstance is whether a listed stack's service claims the instance.
 func (m *Model) isStackInstance(instance *commands.Instance) bool {
 	return m.stackServices[instance.Project][instance.ComposeService()]
-}
-
-// setInstancesSpan is computed over the instances Instances shows.
-func (m *Model) setInstancesSpan() {
-	standalone := lo.Reject(m.instances, func(instance *commands.Instance, _ int) bool {
-		return !m.showStackInstances && m.isStackInstance(instance)
-	})
-
-	m.showProject = spansProjects(standalone, instanceProject)
 }
 
 func (m *Model) toggleStackInstances() {
@@ -161,18 +132,9 @@ func (m *Model) toggleStoppedInstances() {
 	m.filterList(m.panelNamed(instancesView))
 }
 
-func (m *Model) instanceCells() [][]string {
-	cells := make([][]string, len(m.instances))
-	for i, instance := range m.instances {
-		cells[i] = presentation.GetInstanceDisplayStrings(&m.cfg.UserConfig.Gui, instance, m.showProject, m.upstreams)
-	}
-
-	return cells
-}
-
 func (m *Model) instanceFlex() []utils.FlexColumn {
 	return []utils.FlexColumn{{
-		Index:    presentation.InstanceImageColumn(&m.cfg.UserConfig.Gui, m.showProject),
+		Index:    presentation.InstanceImageColumn(&m.cfg.UserConfig.Gui, m.instances.span),
 		MinWidth: presentation.MinImageAliasWidth,
 	}}
 }
@@ -192,7 +154,7 @@ func (m *Model) instanceMainTabs() []mainTab {
 // instanceTask renders content for the instance selected when it starts.
 func (m *Model) instanceTask(content func(*commands.Instance) string) func() mainTaskFunc {
 	return func() mainTaskFunc {
-		instance := m.selectedInstance()
+		instance := m.instances.selected()
 
 		return renderString(func() string { return content(instance) })
 	}
@@ -200,7 +162,7 @@ func (m *Model) instanceTask(content func(*commands.Instance) string) func() mai
 
 // instanceInfoTask redraws from the newest listing, asking the daemon nothing.
 func (m *Model) instanceInfoTask() mainTaskFunc {
-	instance := m.selectedInstance()
+	instance := m.instances.selected()
 	loc, host := m.instanceLocation(instance), m.publishHostFor(instance.Remote)
 
 	return tickerTask(time.Second, func() string {
@@ -210,7 +172,7 @@ func (m *Model) instanceInfoTask() mainTaskFunc {
 
 // ofSelectedInstance is a tab of the instance selected when its task starts.
 func (m *Model) ofSelectedInstance(task func(*commands.Instance) mainTaskFunc) func() mainTaskFunc {
-	return func() mainTaskFunc { return task(m.selectedInstance()) }
+	return func() mainTaskFunc { return task(m.instances.selected()) }
 }
 
 func (m *Model) instanceLogsTask(instance *commands.Instance) mainTaskFunc {
@@ -287,15 +249,6 @@ func (m *Model) instanceLocation(instance *commands.Instance) presentation.Locat
 	return loc
 }
 
-func (m *Model) instanceKey() string {
-	instance := m.selectedInstance()
-	if instance == nil {
-		return ""
-	}
-
-	return instance.Key() + "-" + instance.Instance.Status + "-" + instance.ConfigFingerprint()
-}
-
 func (m *Model) viewInstanceLogs() {
 	m.setMainTab(m.panelNamed(instancesView), "logs")
 	m.enterMain()
@@ -311,7 +264,7 @@ type instanceUsers struct {
 
 // showUsers: Instances narrowed to what uses a resource, focused.
 func (m *Model) showUsers(label string, uses func(*commands.Instance) bool) tea.Cmd {
-	if !slices.ContainsFunc(m.instances, uses) {
+	if !slices.ContainsFunc(m.instances.items, uses) {
 		m.openError(fmt.Sprintf(m.tr.NothingUses, label))
 		return nil
 	}

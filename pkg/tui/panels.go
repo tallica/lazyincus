@@ -263,8 +263,8 @@ func (m *Model) newPanels() []*panel {
 		},
 		{
 			name: instancesView, title: m.instancesTitle, empty: tr.NoInstances,
-			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instanceKey, keep: m.keepInstance,
-			project: projectOf(m.selectedInstance, func(i *commands.Instance) string { return i.Project }),
+			flex: m.instanceFlex, mainTabs: m.instanceMainTabs, itemKey: m.instances.itemKey, keep: m.keepInstance,
+			project: m.instances.selectedProject,
 		},
 		{
 			name: snapshotsView, title: m.snapshotsTitle, window: snapshotsWindow,
@@ -310,6 +310,8 @@ func (m *Model) newPanels() []*panel {
 		p.awaiting = tr.Loading
 
 		switch p.name {
+		case instancesView:
+			m.instances = m.newInstances(p)
 		case snapshotsView:
 			m.snapshots = m.newSnapshots(p)
 		case imagesView:

@@ -18,7 +18,7 @@ func TestSnapshotsFollowTheSelectedInstanceNewestFirst(t *testing.T) {
 
 	assert.Empty(t, rowsOf(m, "snapshots"), "a-name-long-enough-to-be-cut-off has none")
 	press(m, "j")
-	require.Equal(t, "web", m.selectedInstance().Name)
+	require.Equal(t, "web", m.instances.selected().Name)
 	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
 
 	rows := rowsOf(m, "snapshots")
@@ -141,7 +141,7 @@ func TestANewInstanceFromASnapshotIsCopiedAndFocused(t *testing.T) {
 
 	assert.Equal(t, []string{"incus", "--project", "default", "copy", "web/daily-b", "web-daily-b"}, ran)
 	assert.Equal(t, "instances", m.currentView())
-	assert.Equal(t, "web-daily-b", m.selectedInstance().Name)
+	assert.Equal(t, "web-daily-b", m.instances.selected().Name)
 	assert.Equal(t, "Snapshots (web-daily-b)", m.snapshotsTitle())
 }
 

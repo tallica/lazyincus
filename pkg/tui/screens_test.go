@@ -196,7 +196,7 @@ func TestDeletePromptsNameTheProjectOnlyWhenListsSpanSeveral(t *testing.T) {
 	shows := func(spans bool, open func() tea.Cmd, want string) {
 		t.Helper()
 
-		m.showProject, m.images.span, m.volumes.span, m.networks.span, m.profiles.span = spans, spans, spans, spans, spans
+		m.instances.span, m.images.span, m.volumes.span, m.networks.span, m.profiles.span = spans, spans, spans, spans, spans
 		open()
 		require.Len(t, m.popups, 1, want)
 		assert.Contains(t, ansi.Strip(m.popups[0].message), want)
