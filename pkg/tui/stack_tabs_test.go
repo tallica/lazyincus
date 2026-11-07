@@ -116,7 +116,7 @@ func TestServiceInfoOnAReplicaNumbersIt(t *testing.T) {
 	m := replicatedStack(t, composeFixture("default", "web-1", "web"), composeFixture("default", "web-2", "web"))
 
 	press(m, "2", "j", "j")
-	require.Equal(t, "web/web-2", m.selectedServiceRow().Key())
+	require.Equal(t, "web/web-2", m.serviceRows.selected().Key())
 
 	text := mainText(m)
 	assert.Contains(t, text, "Service:")
@@ -154,7 +154,7 @@ func TestServiceEnvAndTopAreTheInstances(t *testing.T) {
 	m := replicatedStack(t, stopped(composeFixture("default", "web-1", "web")), stopped(composeFixture("default", "web-2", "web")))
 
 	press(m, "2")
-	require.Equal(t, "web", m.selectedServiceRow().Key())
+	require.Equal(t, "web", m.serviceRows.selected().Key())
 
 	p := m.panelNamed("services")
 	openTab(m, p, "env")
@@ -164,7 +164,7 @@ func TestServiceEnvAndTopAreTheInstances(t *testing.T) {
 	assert.Equal(t, m.tr.ServiceMultipleInstances, mainText(m))
 
 	press(m, "j")
-	require.Equal(t, "web/web-1", m.selectedServiceRow().Key())
+	require.Equal(t, "web/web-1", m.serviceRows.selected().Key())
 	assert.Equal(t, m.tr.CannotListProcessesStoppedInstance, mainText(m))
 
 	openTab(m, p, "env")

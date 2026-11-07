@@ -258,8 +258,8 @@ func (m *Model) newPanels() []*panel {
 		},
 		{
 			name: servicesView, title: m.servicesTitle, hidden: m.composeUnavailable, empty: tr.NoStackSelected,
-			mainTabs: m.serviceMainTabs, itemKey: m.serviceKey, flex: m.serviceFlex, note: func() string { return m.servicesNote },
-			project: projectOf(m.selectedServiceRow, func(r *commands.ServiceRow) string { return r.Service.Project }),
+			mainTabs: m.serviceMainTabs, itemKey: m.serviceRows.itemKey, flex: m.serviceFlex, note: func() string { return m.servicesNote },
+			project: m.serviceRows.selectedProject,
 		},
 		{
 			name: instancesView, title: m.instancesTitle, empty: tr.NoInstances,
@@ -310,6 +310,8 @@ func (m *Model) newPanels() []*panel {
 		p.awaiting = tr.Loading
 
 		switch p.name {
+		case servicesView:
+			m.serviceRows = m.newServiceRows(p)
 		case instancesView:
 			m.instances = m.newInstances(p)
 		case snapshotsView:

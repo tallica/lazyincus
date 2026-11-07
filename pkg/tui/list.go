@@ -52,9 +52,10 @@ func (l *list[T]) set(m *Model, items []T) {
 	m.refill(l.panel, l.keyOf, func() [][]string {
 		sort.SliceStable(items, func(a, b int) bool { return l.less(items[a], items[b]) })
 		l.items = items
-		if l.spans != nil {
+		switch {
+		case l.spans != nil:
 			l.span = l.spans(items)
-		} else {
+		case l.project != nil:
 			l.span = spansProjects(items, l.project)
 		}
 

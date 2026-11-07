@@ -22,7 +22,7 @@ func (m *Model) serviceMainTabs() []mainTab {
 // serviceInfoTask ticks like an instance's Info tab: the identity half is
 // static, the counters under it aren't.
 func (m *Model) serviceInfoTask() mainTaskFunc {
-	row, holder, tr, width := m.selectedServiceRow(), m.composeState, m.tr, &m.mainWidth
+	row, holder, tr, width := m.serviceRows.selected(), m.composeState, m.tr, &m.mainWidth
 
 	service := row.Service
 	remote := service.Remote
@@ -56,7 +56,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 // instance; a replicated service's own row stacks every replica's under a
 // heading of its own.
 func (m *Model) serviceLogsTask() mainTaskFunc {
-	row, tr, width, logOf := m.selectedServiceRow(), m.tr, &m.mainWidth, m.instanceLogText()
+	row, tr, width, logOf := m.serviceRows.selected(), m.tr, &m.mainWidth, m.instanceLogText()
 
 	if instance, ok := row.SelectedInstance(); ok {
 		return m.instanceLogsTask(instance)
@@ -75,7 +75,7 @@ func (m *Model) serviceLogsTask() mainTaskFunc {
 // serviceConfigTask is both halves of a service's configuration: what the
 // compose file declares, then what the daemon made of it.
 func (m *Model) serviceConfigTask() mainTaskFunc {
-	row, incus, tr, width := m.selectedServiceRow(), m.incus, m.tr, m.main.width
+	row, incus, tr, width := m.serviceRows.selected(), m.incus, m.tr, m.main.width
 
 	return renderString(func() string {
 		definition, found, err := incus.ComposeServiceConfig(row.Service.Dir, row.Service.Name)
@@ -88,7 +88,7 @@ func (m *Model) serviceConfigTask() mainTaskFunc {
 // replica answers for it, as does a lone service's only instance.
 func (m *Model) serviceInstanceTab(task func(*commands.Instance) mainTaskFunc) func() mainTaskFunc {
 	return func() mainTaskFunc {
-		row := m.selectedServiceRow()
+		row := m.serviceRows.selected()
 
 		instance, ok := row.SelectedInstance()
 		if !ok {

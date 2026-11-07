@@ -200,7 +200,7 @@ func failedStart(t *testing.T, c failedStartCase) {
 	}
 	if c.remote != "" {
 		press(m, "1")
-		untilRemotes(t, m, func() bool { return len(m.serviceRows) == 1 })
+		untilRemotes(t, m, func() bool { return len(m.serviceRows.items) == 1 })
 	}
 
 	failure := operationEvent(t, api.Operation{

@@ -90,7 +90,7 @@ type Model struct {
 	// selectedStack is what Services and Backups follow; nil for none.
 	selectedStack      *commands.ComposeStack
 	composeState       *composeHolder
-	serviceRows        []*commands.ServiceRow
+	serviceRows        list[*commands.ServiceRow]
 	servicesNote       string
 	showStackInstances bool
 	snapshotsShowAll   bool

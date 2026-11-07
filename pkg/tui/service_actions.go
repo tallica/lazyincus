@@ -16,7 +16,7 @@ func serviceTarget(service *commands.ComposeService) composeTarget {
 // onService: the service whatever row is selected, for the verbs only a service has.
 func onService(action func(*Model, *commands.ComposeService) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		row := m.selectedServiceRow()
+		row := m.serviceRows.selected()
 		if row == nil {
 			return nil
 		}
@@ -35,7 +35,7 @@ func onServiceRow(
 	serviceAction func(*Model, *commands.ComposeService) tea.Cmd,
 ) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		row := m.selectedServiceRow()
+		row := m.serviceRows.selected()
 		if row == nil {
 			return nil
 		}
@@ -50,7 +50,7 @@ func onServiceRow(
 
 // composeRowDescription is what a key with two scopes does from the selected row: `d` downs a service but deletes a replica.
 func (m *Model) composeRowDescription(service, replica string) string {
-	if row := m.selectedServiceRow(); row != nil && row.Instance != nil {
+	if row := m.serviceRows.selected(); row != nil && row.Instance != nil {
 		return replica
 	}
 
@@ -71,9 +71,9 @@ func (m *Model) instanceForceStop(instance *commands.Instance) tea.Cmd {
 }
 
 func (m *Model) composeServices() []*commands.ComposeService {
-	services := make([]*commands.ComposeService, 0, len(m.serviceRows))
+	services := make([]*commands.ComposeService, 0, len(m.serviceRows.items))
 
-	for _, row := range m.serviceRows {
+	for _, row := range m.serviceRows.items {
 		if row.Instance == nil {
 			services = append(services, row.Service)
 		}
@@ -118,7 +118,7 @@ func servicePause(m *Model, service *commands.ComposeService) tea.Cmd {
 // withServiceInstance runs an instance action on the row's instance, asking which first on a service's own row with replicas.
 func withServiceInstance(title func(*Model) string, action func(*Model, *commands.Instance) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		row := m.selectedServiceRow()
+		row := m.serviceRows.selected()
 		if row == nil {
 			return nil
 		}
@@ -187,7 +187,7 @@ func (m *Model) serviceBindings() []*binding {
 	}
 
 	order := "udUSsrpfbgmMnEy"
-	if row := m.selectedServiceRow(); row != nil && row.Instance != nil {
+	if row := m.serviceRows.selected(); row != nil && row.Instance != nil {
 		order = "SsrpdfnmMyEuUbg"
 	}
 

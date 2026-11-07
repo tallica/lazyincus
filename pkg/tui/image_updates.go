@@ -50,7 +50,7 @@ func (m *Model) imageUpdatesFetch(report bool) fetch {
 				m.images.set(m, m.images.items)
 			}
 			m.rerenderStacks()
-			m.rerenderServices()
+			m.serviceRows.set(m, m.serviceRows.items)
 			m.rerenderInstances()
 		}, nil
 	}

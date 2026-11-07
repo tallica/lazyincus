@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"strconv"
 	"sync/atomic"
 
@@ -57,7 +56,7 @@ func (m *Model) followStack(stack *commands.ComposeStack) {
 
 	p.selected = 0
 	m.refill(p, func(int) string { return "" }, func() [][]string {
-		m.serviceRows = nil
+		m.serviceRows.items = nil
 
 		return nil
 	})
@@ -78,7 +77,7 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 		return func() (func(), error) {
 			return func() {
 				if m.refreshes.services.admit(ticket) {
-					m.setServices(nil)
+					m.serviceRows.set(m, nil)
 				}
 			}, nil
 		}
@@ -133,7 +132,7 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 			m.composeState.instances.Store(&presentation.StackInstances{Remote: stack.Remote, Project: stack.Name, Services: services, Orphans: orphans})
 			m.panelNamed(servicesView).empty = m.tr.NoServices
 			m.servicesNote = ""
-			m.setServices(commands.ServiceRows(services))
+			m.serviceRows.set(m, commands.ServiceRows(services))
 			m.setSnapshots()
 		}, nil
 	}
@@ -150,22 +149,22 @@ func (m *Model) showServicesUnreachable(ticket uint64, err error, note string) f
 		m.composeState.instances.Store(nil)
 		m.servicesNote = note
 		m.panelNamed(servicesView).empty = err.Error()
-		m.setServices(nil)
+		m.serviceRows.set(m, nil)
 	}
 }
 
-func (m *Model) setServices(rows []*commands.ServiceRow) {
-	m.refill(m.panelNamed(servicesView), func(item int) string { return m.serviceRows[item].Key() }, func() [][]string {
-		sort.SliceStable(rows, func(a, b int) bool { return sortServiceRows(rows[a], rows[b]) })
-		m.serviceRows = rows
-
-		return m.serviceCells()
-	})
-}
-
-// rerenderServices shows the rows' marks, which their status reads.
-func (m *Model) rerenderServices() {
-	m.refill(m.panelNamed(servicesView), func(item int) string { return m.serviceRows[item].Key() }, m.serviceCells)
+// newServiceRows: Services' fetch is its own, as it reads the selected stack's remote.
+func (m *Model) newServiceRows(p *panel) list[*commands.ServiceRow] {
+	return list[*commands.ServiceRow]{
+		panel:   p,
+		less:    sortServiceRows,
+		key:     (*commands.ServiceRow).Key,
+		project: func(row *commands.ServiceRow) string { return row.Service.Project },
+		cells: func(row *commands.ServiceRow, _ bool) []string {
+			return presentation.GetServiceRowDisplayStrings(&m.cfg.UserConfig.Gui, row, m.upstreams)
+		},
+		version: m.serviceVersion,
+	}
 }
 
 // sortServiceRows: by name, a service's replicas after it, in order.
@@ -181,15 +180,6 @@ func sortServiceRows(a, b *commands.ServiceRow) bool {
 	return a.Instance != nil && a.Instance.Name < b.Instance.Name
 }
 
-func (m *Model) serviceCells() [][]string {
-	cells := make([][]string, len(m.serviceRows))
-	for i, row := range m.serviceRows {
-		cells[i] = presentation.GetServiceRowDisplayStrings(&m.cfg.UserConfig.Gui, row, m.upstreams)
-	}
-
-	return cells
-}
-
 func (m *Model) serviceFlex() []utils.FlexColumn {
 	return []utils.FlexColumn{{
 		Index:    presentation.ServiceImageColumn(&m.cfg.UserConfig.Gui),
@@ -197,24 +187,10 @@ func (m *Model) serviceFlex() []utils.FlexColumn {
 	}}
 }
 
-func (m *Model) selectedServiceRow() *commands.ServiceRow {
-	item := m.panelNamed(servicesView).item()
-	if item < 0 || item >= len(m.serviceRows) {
-		return nil
-	}
-
-	return m.serviceRows[item]
-}
-
-func (m *Model) serviceKey() string {
-	row := m.selectedServiceRow()
-	if row == nil {
-		return ""
-	}
-
+func (m *Model) serviceVersion(row *commands.ServiceRow) string {
 	// Each refresh builds new ComposeService values, so the instance count
 	// is part of the key: a replica coming or going must restart the tab.
-	key := "services-" + row.Key() + "-" + row.Service.Status() + "-" + strconv.Itoa(len(row.Service.Instances))
+	key := row.Service.Status() + "-" + strconv.Itoa(len(row.Service.Instances))
 
 	if row.Instance != nil {
 		key += "-" + row.Instance.Instance.Status
@@ -241,7 +217,7 @@ func (m *Model) servicesTitle() string {
 // followServices points Snapshots at the selected row's instances: a
 // service's own row means every replica of it.
 func (m *Model) followServices() {
-	row := m.selectedServiceRow()
+	row := m.serviceRows.selected()
 	if row == nil {
 		return
 	}

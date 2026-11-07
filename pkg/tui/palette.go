@@ -216,9 +216,9 @@ func (m *Model) paletteSources() map[string]paletteSource {
 			func(item int) string { return m.stacks[item].Ref() },
 			func(item int) string { return m.onRemote(m.stacks[item].Name, m.stacks[item].Remote) }, nil),
 		servicesView: m.sourceOf(m.panelNamed(servicesView),
-			func(item int) string { return m.serviceRows[item].Key() },
+			m.serviceRows.keyOf,
 			func(item int) string {
-				row := m.serviceRows[item]
+				row := m.serviceRows.items[item]
 				name := row.Service.Name
 				if row.Instance != nil {
 					name = row.Instance.Name

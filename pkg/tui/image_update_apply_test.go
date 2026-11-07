@@ -167,7 +167,7 @@ func TestServiceInfoFollowsAnImageCheck(t *testing.T) {
 	m, _, _ := updatesModel(t, map[string]commands.UpstreamState{"cache": commands.UpstreamNewer})
 
 	press(m, "2")
-	require.Equal(t, "cache", m.selectedServiceRow().Key())
+	require.Equal(t, "cache", m.serviceRows.selected().Key())
 	assert.NotContains(t, mainText(m), "the tag has a newer build")
 
 	run(m, refresh(m.imageUpdatesFetch(false)))

@@ -16,7 +16,7 @@ import (
 )
 
 func serviceNames(m *Model) []string {
-	return lo.Map(m.serviceRows, func(row *commands.ServiceRow, _ int) string { return row.Service.Project + "/" + row.Key() })
+	return lo.Map(m.serviceRows.items, func(row *commands.ServiceRow, _ int) string { return row.Service.Project + "/" + row.Key() })
 }
 
 // withSnapshot is instance with one snapshot of its own.
@@ -80,10 +80,10 @@ func TestAReplicatedServiceListsItsReplicas(t *testing.T) {
 	assert.Equal(t, []string{"default/db", "default/web", "default/web/web-1", "default/web/web-2"}, serviceNames(m))
 
 	press(m, "2", "j", "j", "j")
-	require.Equal(t, "web/web-2", m.selectedServiceRow().Key())
+	require.Equal(t, "web/web-2", m.serviceRows.selected().Key())
 
 	run(m, refresh(m.fetchServices(nil)))
-	assert.Equal(t, "web/web-2", m.selectedServiceRow().Key())
+	assert.Equal(t, "web/web-2", m.serviceRows.selected().Key())
 }
 
 // A stack on a remote that isn't answering empties the list, with a note
@@ -113,11 +113,11 @@ func TestAStackPinnedToARemoteHasItsServices(t *testing.T) {
 		server: incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("shop", "web", "api")}}),
 	}, 140, 40)
 
-	untilRemotes(t, m, func() bool { return len(m.serviceRows) > 0 })
+	untilRemotes(t, m, func() bool { return len(m.serviceRows.items) > 0 })
 	assert.Equal(t, "Services (shop on pve01)", m.servicesTitle())
 	assert.Equal(t, []string{"shop/api"}, serviceNames(m))
 
-	instance := m.serviceRows[0].Service.Instances[0]
+	instance := m.serviceRows.items[0].Service.Instances[0]
 	assert.Equal(t, "api-1", instance.Name)
 	assert.Equal(t, "pve01", instance.Remote)
 
@@ -135,7 +135,7 @@ func TestSnapshotsFollowAServicesRows(t *testing.T) {
 	m := start(t, options{compose: true, server: server, localStack: testStack(t, t.TempDir(), "default", "web")}, 140, 40)
 
 	press(m, "2")
-	require.Equal(t, "web", m.selectedServiceRow().Key())
+	require.Equal(t, "web", m.serviceRows.selected().Key())
 	assert.Equal(t, "Snapshots (web)", m.snapshotsTitle())
 	assert.Equal(t, []string{"one web-1", "two web-2"}, snapshotRows(m))
 
@@ -162,7 +162,7 @@ func TestNewSnapshotOfAServiceAsksWhichReplica(t *testing.T) {
 	m := start(t, options{compose: true, server: server, localStack: testStack(t, t.TempDir(), "default", "web")}, 140, 40)
 
 	press(m, "2")
-	require.Equal(t, "web", m.selectedServiceRow().Key())
+	require.Equal(t, "web", m.serviceRows.selected().Key())
 	press(m, "4", "n")
 
 	require.NotNil(t, m.topMenu())

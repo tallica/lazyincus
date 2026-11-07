@@ -188,7 +188,7 @@ func (m *Model) backupServices() []*commands.ComposeService {
 		return len(service.NamedVolumes()) == 0
 	})
 
-	row := m.selectedServiceRow()
+	row := m.serviceRows.selected()
 	if row == nil {
 		return services
 	}

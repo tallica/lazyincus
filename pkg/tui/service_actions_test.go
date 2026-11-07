@@ -22,7 +22,7 @@ func replicaModel(t *testing.T) (*Model, *[]*exec.Cmd) {
 	m.runOnTerminal = finishing(&ran)
 
 	press(m, "2")
-	require.Equal(t, "web", m.selectedServiceRow().Key())
+	require.Equal(t, "web", m.serviceRows.selected().Key())
 
 	return m, &ran
 }

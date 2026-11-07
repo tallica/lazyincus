@@ -208,7 +208,7 @@ func (m *Model) reloadAfterScopeChange() tea.Cmd {
 		}
 	}
 
-	m.instances.items, m.serviceRows, m.snapshots.items = nil, nil, nil
+	m.instances.items, m.serviceRows.items, m.snapshots.items = nil, nil, nil
 	m.listed.Store(nil)
 	m.images.items, m.volumes.items, m.networks.items, m.profiles.items = nil, nil, nil, nil
 	m.composeState.instances.Store(nil)
