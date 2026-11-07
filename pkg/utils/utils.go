@@ -11,8 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rivo/uniseg"
-
+	"github.com/charmbracelet/x/ansi"
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml"
 	"github.com/goccy/go-yaml/lexer"
@@ -21,9 +20,9 @@ import (
 
 // DisplayWidth is how many terminal columns str takes, colour escapes
 // taking none. Every width lazyincus lays out goes through here, measured
-// by grapheme cluster with uniseg.
+// by grapheme cluster with x/ansi, as lipgloss and Bubble Tea measure.
 func DisplayWidth(str string) int {
-	return uniseg.StringWidth(Decolorise(str))
+	return ansi.StringWidth(str)
 }
 
 // WithPadding pads a string as much as you want
@@ -199,7 +198,7 @@ var colorEscapePattern = regexp.MustCompile(`\x1B\[[0-9;]*[mK]`)
 
 // Decolorise strips a string of color
 func Decolorise(str string) string {
-	return colorEscapePattern.ReplaceAllString(str, "")
+	return ansi.Strip(str)
 }
 
 // Truncate shortens a string to the given display width, marking the cut
@@ -227,13 +226,9 @@ func Truncate(str string, width int) string {
 
 	// Reports whether the limit was reached, which is where the line ends.
 	writeText := func(text string) bool {
-		state := -1
-
 		for text != "" {
-			var cluster string
-			var clusterWidth int
-
-			cluster, text, clusterWidth, state = uniseg.FirstGraphemeClusterInString(text, state)
+			cluster, clusterWidth := ansi.FirstGraphemeCluster(text, ansi.GraphemeWidth)
+			text = text[len(cluster):]
 			if used+clusterWidth > limit {
 				return true
 			}

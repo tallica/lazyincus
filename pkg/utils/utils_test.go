@@ -83,12 +83,16 @@ func TestDisplayWidthCountsColumnsNotRunes(t *testing.T) {
 	assert.Equal(t, 1, DisplayWidth("é"))
 	assert.Equal(t, 2, DisplayWidth("👨‍👩‍👧"))
 	assert.Equal(t, 3, DisplayWidth("\x1b[32mrun\x1b[0m"))
+	// uniseg counted a keycap as one column; lipgloss draws it as two.
+	assert.Equal(t, 2, DisplayWidth("1️⃣"))
+	assert.Equal(t, 2, DisplayWidth("\x1b]8;;https://example.com\x1b\\up\x1b]8;;\x1b\\"))
 }
 
 func TestTruncateKeepsGraphemeClustersWhole(t *testing.T) {
 	assert.Equal(t, "日本…", Truncate("日本語テキスト", 5))
 	assert.Equal(t, "café…", Truncate("café au lait", 5))
 	assert.Equal(t, "👨‍👩‍👧…", Truncate("👨‍👩‍👧 family", 3))
+	assert.Equal(t, "1️⃣…", Truncate("1️⃣ first", 3))
 }
 
 func TestPaddingLinesUpWideCells(t *testing.T) {
