@@ -2,7 +2,6 @@ package tui
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -49,35 +48,6 @@ type remoteFailure struct {
 type remoteStatuses struct {
 	byProject map[string]commands.ComposeProjectState
 	err       error
-}
-
-// commandFor is the command a stack pinned to remote goes through: the
-// session's own for no remote, or for the session's remote by name. The
-// first call for another remote starts connecting to it, and answers
-// errConnecting until that's done.
-func (m *Model) commandFor(remote string) (*commands.IncusCommand, error) {
-	if m.onSessionRemote(remote) {
-		return m.incus, nil
-	}
-
-	if !m.remotes.known(remote) {
-		return nil, m.unknownRemote(remote)
-	}
-
-	return m.remotes.get(remote)
-}
-
-// unknownRemote is a stack's remote gone from the CLI's config, renamed or
-// removed since the stack was saved, saying how to point the stack at
-// another.
-func (m *Model) unknownRemote(remote string) error {
-	return fmt.Errorf(m.tr.UnknownRemote, remote)
-}
-
-// onSessionRemote is whether a stack pinned to remote is on the remote the
-// rest of the panels show.
-func (m *Model) onSessionRemote(remote string) bool {
-	return remote == "" || remote == m.incus.RemoteName()
 }
 
 // stackRemote is the remote a stack is on, the session's when it names none.

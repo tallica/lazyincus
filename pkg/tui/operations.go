@@ -13,12 +13,12 @@ import (
 type operationsRecountMsg struct{}
 
 func (m *Model) fetchOperations() fetch {
-	ticket := m.refreshes.operations.issue()
+	ticket, incus := m.refreshes.operations.issue(), m.incus
 
 	return func() (func(), error) {
 		asked := time.Now()
 
-		operations, err := m.incus.GetOperations()
+		operations, err := incus.GetOperations()
 		if err != nil {
 			return nil, err
 		}

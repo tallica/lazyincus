@@ -9,7 +9,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/presentation"
 )
@@ -72,55 +71,6 @@ func (c *stackCache) forget(dir string) {
 	delete(c.stacks, dir)
 }
 
-// listStacks: every stack with its config, each a copy of the cached one.
-func (m *Model) listStacks(saved []string) []*commands.ComposeStack {
-	stacks := []*commands.ComposeStack{}
-	byRef := map[string]*commands.ComposeStack{}
-
-	// Keyed by the remote each is on now, so the local stack and the same
-	// directory saved for the session's remote are one row.
-	add := func(remote, dir string, local bool) {
-		on := remote
-		if on == "" {
-			on = m.incus.RemoteName()
-		}
-
-		ref := commands.StackRef(on, dir)
-		if existing, ok := byRef[ref]; ok {
-			existing.Local = existing.Local || local
-			existing.Saved = existing.Saved || !local
-
-			if !local {
-				existing.Remote = remote
-			}
-
-			return
-		}
-
-		cached := m.stackCache.get(dir, !local || m.localStackExplicit, m.loadStack)
-		if local && !m.localStackExplicit && cached.Err != nil {
-			return
-		}
-
-		stack := *cached
-		stack.Remote = remote
-		stack.Local, stack.Saved = local, !local
-		byRef[ref] = &stack
-		stacks = append(stacks, &stack)
-	}
-
-	if m.localStackDir != "" {
-		add("", m.localStackDir, true)
-	}
-
-	for _, ref := range saved {
-		remote, dir := commands.ParseStackRef(ref)
-		add(remote, dir, false)
-	}
-
-	return stacks
-}
-
 // fetchStacks reads the stacks' configs, cached, and every compose
 // instance's status: one listing a remote, whatever the number of stacks.
 func (m *Model) fetchStacks(l *commands.Listing) fetch {
@@ -129,7 +79,7 @@ func (m *Model) fetchStacks(l *commands.Listing) fetch {
 	}
 
 	ticket := m.refreshes.stacks.issue()
-	cfg := m.cfg
+	cfg, src := m.cfg, m.sources()
 
 	return func() (func(), error) {
 		state, err := cfg.LoadAppState()
@@ -137,11 +87,11 @@ func (m *Model) fetchStacks(l *commands.Listing) fetch {
 			return nil, err
 		}
 
-		stacks := m.listStacks(state.Stacks)
-		elsewhere := slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool { return !m.onSessionRemote(stack.Remote) })
-		here := m.stacksHereIn(stacks)
+		stacks := src.listStacks(state.Stacks)
+		elsewhere := slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool { return !src.onSessionRemote(stack.Remote) })
+		here := src.stacksHereIn(stacks)
 
-		if err := m.readStackStatuses(stacks, l); err != nil {
+		if err := src.readStackStatuses(stacks, l); err != nil {
 			return nil, err
 		}
 
@@ -151,68 +101,6 @@ func (m *Model) fetchStacks(l *commands.Listing) fetch {
 			}
 		}, nil
 	}
-}
-
-func (m *Model) stacksHereIn(stacks []*commands.ComposeStack) bool {
-	return slices.ContainsFunc(stacks, func(stack *commands.ComposeStack) bool {
-		return m.onSessionRemote(stack.Remote)
-	})
-}
-
-// readStackStatuses: the session's remote asked, every other one's as last read.
-func (m *Model) readStackStatuses(stacks []*commands.ComposeStack, l *commands.Listing) error {
-	byRemote := lo.GroupBy(stacks, func(stack *commands.ComposeStack) string {
-		if stack.Remote == m.incus.RemoteName() {
-			return ""
-		}
-
-		return stack.Remote
-	})
-
-	var sessionErr error
-
-	for remote, remoteStacks := range byRemote {
-		var statuses remoteStatuses
-
-		pending := false
-
-		if remote == "" {
-			statuses.byProject, statuses.err = m.incus.GetComposeStatuses(l)
-			sessionErr = statuses.err
-		} else {
-			var read bool
-
-			statuses, read = m.remoteStatuses(remote)
-			pending = !read
-		}
-
-		for _, stack := range remoteStacks {
-			stack.StatusPending = pending
-			stack.StatusErr = statuses.err
-
-			if stack.Name != "" {
-				project := statuses.byProject[stack.Name]
-				stack.Statuses, stack.Images = project.Statuses, project.Images
-			}
-		}
-	}
-
-	return sessionErr
-}
-
-// remoteStatuses is another remote's compose statuses as last read, false
-// before any has been, asking again in the background.
-func (m *Model) remoteStatuses(remote string) (remoteStatuses, bool) {
-	read := func() (map[string]commands.ComposeProjectState, error) {
-		command, err := m.commandFor(remote)
-		if err != nil {
-			return nil, err
-		}
-
-		return command.GetComposeStatuses(nil)
-	}
-
-	return m.remotes.cachedStatuses(remote, read, m.notifyRemotes)
 }
 
 // newStacks: Stacks' fetch and fill are its own, as they span remotes.

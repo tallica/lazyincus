@@ -18,10 +18,10 @@ type warningsPollMsg struct{}
 const warningsPollInterval = 30 * time.Second
 
 func (m *Model) fetchWarnings() fetch {
-	ticket := m.refreshes.warnings.issue()
+	ticket, incus := m.refreshes.warnings.issue(), m.incus
 
 	return func() (func(), error) {
-		warnings, err := m.incus.GetWarnings()
+		warnings, err := incus.GetWarnings()
 		if err != nil {
 			return nil, err
 		}

@@ -71,7 +71,7 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 	}
 
 	ticket := m.refreshes.services.issue()
-	stack := m.selectedStack
+	stack, src := m.selectedStack, m.sources()
 
 	if stack == nil || stack.Name == "" {
 		return func() (func(), error) {
@@ -84,9 +84,9 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 	}
 
 	return func() (func(), error) {
-		command, err := m.commandFor(stack.Remote)
-		if err == nil && !m.onSessionRemote(stack.Remote) {
-			err = m.remotes.remoteStatusErr(stack.Remote)
+		command, err := src.commandFor(stack.Remote)
+		if err == nil && !src.onSessionRemote(stack.Remote) {
+			err = src.remotes.remoteStatusErr(stack.Remote)
 		}
 
 		var (
@@ -99,24 +99,24 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 		}
 
 		if err != nil {
-			if m.onSessionRemote(stack.Remote) {
+			if src.onSessionRemote(stack.Remote) {
 				return nil, err
 			}
 
-			note := fmt.Sprintf(m.tr.CannotReachRemote, stack.Remote)
+			note := fmt.Sprintf(src.tr.CannotReachRemote, stack.Remote)
 			if errors.Is(err, errConnecting) {
-				err = fmt.Errorf(m.tr.ConnectingTo, stack.Remote)
+				err = fmt.Errorf(src.tr.ConnectingTo, stack.Remote)
 				note = err.Error()
 			}
 
 			// Another remote's silence is its stack's row's to report, not a popup on every poll.
-			return m.showServicesUnreachable(ticket, err, note), nil
+			return func() { m.showServicesUnreachable(ticket, err, note) }, nil
 		}
 
 		// The project's own config backs the Info tabs' healthcheck line.
 		project, projectErr := command.GetComposeProject(stack.Name)
 		if projectErr != nil {
-			m.incus.Log.Warn().Err(projectErr).Send()
+			src.incus.Log.Warn().Err(projectErr).Send()
 		}
 
 		return func() {
@@ -140,17 +140,15 @@ func (m *Model) fetchServices(l *commands.Listing) fetch {
 
 // showServicesUnreachable empties Services for a stack whose remote didn't
 // answer, with a note in the list and why in main.
-func (m *Model) showServicesUnreachable(ticket uint64, err error, note string) func() {
-	return func() {
-		if !m.refreshes.services.admit(ticket) {
-			return
-		}
-
-		m.composeState.instances.Store(nil)
-		m.servicesNote = note
-		m.panelNamed(servicesView).empty = err.Error()
-		m.serviceRows.set(m, nil)
+func (m *Model) showServicesUnreachable(ticket uint64, err error, note string) {
+	if !m.refreshes.services.admit(ticket) {
+		return
 	}
+
+	m.composeState.instances.Store(nil)
+	m.servicesNote = note
+	m.panelNamed(servicesView).empty = err.Error()
+	m.serviceRows.set(m, nil)
 }
 
 // newServiceRows: Services' fetch is its own, as it reads the selected stack's remote.

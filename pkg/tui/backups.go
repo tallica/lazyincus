@@ -69,42 +69,43 @@ func (m *Model) fetchBackups() fetch {
 	}
 
 	ticket := m.refreshes.backups.issue()
-	stack := m.selectedStack
+	stack, src := m.selectedStack, m.sources()
 
 	if stack == nil || stack.Name == "" {
-		return func() (func(), error) { return m.showBackups(ticket, nil, m.tr.NoStackSelected), nil }
+		empty := src.tr.NoStackSelected
+
+		return func() (func(), error) { return func() { m.showBackups(ticket, nil, empty) }, nil }
 	}
 
 	return func() (func(), error) {
-		command, err := m.commandFor(stack.Remote)
-		if err == nil && !m.onSessionRemote(stack.Remote) {
-			err = m.remotes.remoteStatusErr(stack.Remote)
+		command, err := src.commandFor(stack.Remote)
+		if err == nil && !src.onSessionRemote(stack.Remote) {
+			err = src.remotes.remoteStatusErr(stack.Remote)
 		}
 
 		var backups []*commands.ComposeBackup
 		if err == nil {
-			backups, err = m.loadBackups(command, stack.Dir)
+			backups, err = src.loadBackups(command, stack.Dir)
 		}
 
+		empty := src.tr.NoBackups
 		if err != nil {
-			m.incus.Log.Warn().Err(err).Send()
+			src.incus.Log.Warn().Err(err).Send()
 
-			return m.showBackups(ticket, nil, fmt.Sprintf(m.tr.BackupsUnavailable, firstLine(err.Error()))), nil
+			backups, empty = nil, fmt.Sprintf(src.tr.BackupsUnavailable, firstLine(err.Error()))
 		}
 
-		return m.showBackups(ticket, backups, m.tr.NoBackups), nil
+		return func() { m.showBackups(ticket, backups, empty) }, nil
 	}
 }
 
-func (m *Model) showBackups(ticket uint64, backups []*commands.ComposeBackup, empty string) func() {
-	return func() {
-		if !m.refreshes.backups.admit(ticket) {
-			return
-		}
-
-		m.panelNamed(backupsView).empty = empty
-		m.backups.set(m, backups)
+func (m *Model) showBackups(ticket uint64, backups []*commands.ComposeBackup, empty string) {
+	if !m.refreshes.backups.admit(ticket) {
+		return
 	}
+
+	m.panelNamed(backupsView).empty = empty
+	m.backups.set(m, backups)
 }
 
 func (m *Model) followStackBackups() {
