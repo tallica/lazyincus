@@ -38,7 +38,7 @@ func (m *Model) backupRun(target composeTarget, args ...string) tea.Cmd {
 
 func (m *Model) backupRunThen(target composeTarget, backups func() fetch, args ...string) tea.Cmd {
 	return m.composeRunThen(target, append([]string{"backup"}, args...), func() tea.Cmd {
-		return refresh(backups(), m.fetchVolumes())
+		return refresh(backups(), m.volumes.fetch(m))
 	})
 }
 

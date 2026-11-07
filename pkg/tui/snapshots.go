@@ -36,7 +36,7 @@ func (m *Model) followSelection() {
 		m.followInstance()
 	case volumesView:
 		// The other volumes' snapshots are their instance's.
-		if volume := m.selectedVolume(); volume != nil && volume.IsCustom() && volume.Key() != m.snapshotsFollow.volume {
+		if volume := m.volumes.selected(); volume != nil && volume.IsCustom() && volume.Key() != m.snapshotsFollow.volume {
 			m.followSnapshotsOf(snapshotsFollow{label: volume.Name, volume: volume.Key()})
 		}
 	}
@@ -69,7 +69,7 @@ func (m *Model) snapshotsVolume() *commands.Volume {
 		return nil
 	}
 
-	for _, volume := range m.volumes {
+	for _, volume := range m.volumes.items {
 		if volume.Key() == m.snapshotsFollow.volume {
 			return volume
 		}

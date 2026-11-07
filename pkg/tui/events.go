@@ -365,7 +365,7 @@ func (m *Model) fetchesFor(kinds refreshKind) []fetch {
 	}
 
 	if kinds&refreshVolumes != 0 {
-		fetches = append(fetches, m.fetchVolumes())
+		fetches = append(fetches, m.volumes.fetch(m))
 	}
 
 	// A backup is a volume.

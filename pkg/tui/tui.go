@@ -104,8 +104,7 @@ type Model struct {
 
 	instances     []*commands.Instance
 	images        list[*commands.Image]
-	volumes       []*commands.Volume
-	volumesSpan   bool
+	volumes       list[*commands.Volume]
 	networks      []*commands.Network
 	networksSpan  bool
 	showUnmanaged bool

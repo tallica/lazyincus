@@ -292,8 +292,8 @@ func (m *Model) newPanels() []*panel {
 		},
 		{
 			name: volumesView, title: static(tr.VolumesTitle), window: resourcesWindow, shortTitle: tr.VolumesShort, empty: tr.NoVolumes,
-			flex: m.volumeFlex, mainTabs: m.volumeMainTabs, itemKey: m.volumeKey,
-			project: projectOf(m.selectedVolume, func(v *commands.Volume) string { return v.Volume.Project }),
+			flex: m.volumeFlex, mainTabs: m.volumeMainTabs, itemKey: m.volumes.itemKey,
+			project: m.volumes.selectedProject,
 		},
 		{
 			name: networksView, title: static(tr.NetworksTitle), window: resourcesWindow, shortTitle: tr.NetworksShort, empty: tr.NoNetworks,
@@ -312,6 +312,8 @@ func (m *Model) newPanels() []*panel {
 		switch p.name {
 		case imagesView:
 			m.images = m.newImages(p)
+		case volumesView:
+			m.volumes = m.newVolumes(p)
 		case profilesView:
 			m.profiles = m.newProfiles(p)
 		}

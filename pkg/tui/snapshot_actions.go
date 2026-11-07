@@ -34,7 +34,7 @@ func (m *Model) selectSnapshot(key string) bool {
 func (m *Model) snapshotOwnerName(snapshot *commands.Snapshot) string {
 	spans := m.showProject || m.snapshotsSpan.projects
 	if snapshot.Volume != nil {
-		spans = m.volumesSpan
+		spans = m.volumes.span
 	}
 
 	owner := m.qualified(snapshot.Owner, snapshot.Project, spans)
@@ -148,7 +148,7 @@ func (m *Model) focusInstance(key string) {
 // snapshotOwnerFetches: what carries the snapshot.
 func (m *Model) snapshotOwnerFetches(snapshot *commands.Snapshot) []fetch {
 	if snapshot.Volume != nil {
-		return []fetch{m.fetchVolumes()}
+		return []fetch{m.volumes.fetch(m)}
 	}
 
 	return m.instanceFetches()

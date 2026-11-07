@@ -21,6 +21,8 @@ type list[T comparable] struct {
 	cells   func(item T, span bool) []string
 	// version is what, besides key, makes main's content stale.
 	version func(T) string
+	// filled, if set, runs after each set: what follows the items.
+	filled func()
 }
 
 func (l *list[T]) fetch(m *Model) fetch { return l.fetchIn(m, nil) }
@@ -57,6 +59,10 @@ func (l *list[T]) set(m *Model, items []T) {
 
 		return cells
 	})
+
+	if l.filled != nil {
+		l.filled()
+	}
 }
 
 func (l *list[T]) keyOf(item int) string { return l.key(l.items[item]) }

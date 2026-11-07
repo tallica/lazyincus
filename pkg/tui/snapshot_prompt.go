@@ -233,7 +233,7 @@ func (m *Model) createVolumeSnapshot(volume *commands.Volume, name string, opts 
 
 	return m.withWaitingStatusThen(m.tr.SnapshottingStatus, func() error { return volume.CreateSnapshot(name, opts) },
 		m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchVolumes(), func() (func(), error) {
+			return refresh(m.volumes.fetch(m), func() (func(), error) {
 				return func() {
 					m.followSnapshotsOf(snapshotsFollow{label: volume.Name, volume: volume.Key()})
 					m.focusSnapshot(key)

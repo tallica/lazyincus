@@ -9,7 +9,7 @@ import (
 
 func onVolume(action func(*Model, *commands.Volume) tea.Cmd) func(*Model) tea.Cmd {
 	return func(m *Model) tea.Cmd {
-		volume := m.selectedVolume()
+		volume := m.volumes.selected()
 		if volume == nil {
 			return nil
 		}
@@ -19,7 +19,7 @@ func onVolume(action func(*Model, *commands.Volume) tea.Cmd) func(*Model) tea.Cm
 }
 
 func (m *Model) volumeEdit(volume *commands.Volume) tea.Cmd {
-	return m.editInIncus(volume.Volume.Project, func() []fetch { return []fetch{m.fetchVolumes()} },
+	return m.editInIncus(volume.Volume.Project, func() []fetch { return []fetch{m.volumes.fetch(m)} },
 		"storage", "volume", "edit", volume.Pool, volume.Volume.Type+"/"+volume.Name)
 }
 
@@ -43,7 +43,7 @@ func (m *Model) volumeDelete(volume *commands.Volume) tea.Cmd {
 		return nil
 	}
 
-	name := m.qualified(volume.Name, volume.Volume.Project, m.volumesSpan)
+	name := m.qualified(volume.Name, volume.Volume.Project, m.volumes.span)
 	if volume.UsedByCount() > 0 {
 		m.refuseInUse(fmt.Sprintf(m.tr.VolumeNamed, name), volume.UsedByCount())
 		return nil
@@ -51,7 +51,7 @@ func (m *Model) volumeDelete(volume *commands.Volume) tea.Cmd {
 
 	m.openConfirmation(m.tr.Confirm, fmt.Sprintf(m.tr.DeleteVolume, name), func() tea.Cmd {
 		return m.withWaitingStatusThen(m.tr.RemovingStatus, volume.Delete, m.reportOr(func() tea.Cmd {
-			return refresh(m.fetchVolumes())
+			return refresh(m.volumes.fetch(m))
 		}))
 	})
 
