@@ -326,7 +326,8 @@ What the keys run on a service's own row, each of them `incus-compose
   → to, all ticked, `space` to untick one, `o` to open what changed;
   `enter` confirms and recreates them on a pull (`up --recreate --pull
   always --no-deps`)
-- `T` — over the whole stack: the services incus-beacon found a newer tag
+- `T` — over the whole stack: the services
+  [incus-beacon](https://github.com/tallica/incus-beacon) found a newer tag
   for, ticked the same way; `enter` confirms, moves each `image:` in the
   compose file to it and recreates them (`up --recreate --pull missing
   --no-deps`)
