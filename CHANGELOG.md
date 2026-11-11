@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `g` on Images checks the OCI images in use for a newer build of their tag, marking them and what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.
 - `W`'s popup filters by name with `/`, and `f` shows only the failed or succeeded operations.
 - `G` on Stacks or Services lists the stack's services with a newer image build, from → to, to tick and pull and recreate together; `o` opens what changed, an official image's project release notes.
-- Stacks, services and replicas created from an older compose file read `changed`: what `u` recreates, from incus-compose 1.4.0.
+- Stacks, services and replicas created from an older compose file are marked `changed` (`↻` in Services): what `u` recreates, from incus-compose 1.4.0.
 - The terminal's title names the remote and project, and says when the remote is read-only, so a tab shows which daemon it's on.
 - `y` copies through the terminal when no clipboard command is found, as over SSH. tmux needs `set-clipboard on` to pass it on.
 - On a light terminal background, the theme keys you haven't set take light defaults, and a selected row is neither bold nor brightened, which washed its colours out.

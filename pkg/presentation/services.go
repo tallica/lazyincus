@@ -40,7 +40,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 		return displayServiceSnapshotCount(service)
 	},
 	"update": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
-		return DisplayChanged(guiConfig, len(service.ChangedInstances()) > 0)
+		return displayChangedMarker(guiConfig, len(service.ChangedInstances()) > 0)
 	},
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return utils.ColoredString(displayServiceAddresses(service, "inet"), color.FgYellow)
@@ -86,7 +86,7 @@ func GetServiceRowDisplayStrings(
 			cell = serviceColumnRenderers[column](guiConfig, row.Service)
 		case column == "update":
 			// Only the service knows the file's hash.
-			cell = DisplayChanged(guiConfig, row.Service.ConfigChanged(row.Instance))
+			cell = displayChangedMarker(guiConfig, row.Service.ConfigChanged(row.Instance))
 		default:
 			cell = replicaCell(guiConfig, column, row.Instance)
 		}
@@ -182,6 +182,20 @@ func DisplayChanged(guiConfig *config.GuiConfig, changed bool) string {
 	}
 
 	return styledStackState(guiConfig, "changed", changedStyles, color.FgYellow)
+}
+
+// displayChangedMarker is the update column's: a glyph, a letter under short.
+func displayChangedMarker(guiConfig *config.GuiConfig, changed bool) string {
+	if !changed {
+		return ""
+	}
+
+	marker := changedStyles["icon"]
+	if guiConfig.InstanceStatusStyle == "short" {
+		marker = changedStyles["short"]
+	}
+
+	return utils.ColoredString(marker, color.FgYellow)
 }
 
 // serviceStatusStyles covers the two states no instance is ever in; the

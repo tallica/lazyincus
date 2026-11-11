@@ -366,7 +366,7 @@ func TestAChangedServiceIsMarked(t *testing.T) {
 	text := strings.Join(screen(m), "\n")
 
 	assert.Contains(t, text, "│default running changed")
-	assert.Contains(t, text, "│web running changed")
+	assert.Contains(t, text, "│web running ↻")
 	assert.Contains(t, text, "1 instance from an older config, recreate with u")
 }
 
@@ -407,7 +407,7 @@ func TestAnEditedComposeFileReloadsTheStack(t *testing.T) {
 	require.NoError(t, os.WriteFile(file, []byte("services: {web: {image: nginx}}\n"), 0o644))
 	poll()
 	assert.Equal(t, 1, loads)
-	assert.Contains(t, strings.Join(screen(m), "\n"), "│web running changed")
+	assert.Contains(t, strings.Join(screen(m), "\n"), "│web running ↻")
 }
 
 // A cached stack is read again once its compose file changes on disk, and

@@ -105,7 +105,7 @@ func TestServiceImageMarker(t *testing.T) {
 
 	service.Hash = "v1:new"
 	instance.Instance.ExpandedConfig = map[string]string{"user.label.incus-compose.config-hash": "v1:old"}
-	assert.Equal(t, []string{"web", "nginx:alpine", "changed ↑"},
+	assert.Equal(t, []string{"web", "nginx:alpine", "↻ ↑"},
 		plain(GetServiceRowDisplayStrings(withUpdate, &commands.ServiceRow{Service: service}, updates)))
 
 	updates["old"] = commands.UpstreamStatus{State: commands.UpstreamCurrent}
@@ -127,10 +127,10 @@ func TestGetServiceRowDisplayStringsChanged(t *testing.T) {
 	service := &commands.ComposeService{Name: "web", Hash: "v1:new", Replicas: 2, Instances: []*commands.Instance{current, old}}
 	columns := &config.GuiConfig{ServiceColumns: []string{"name", "update"}}
 
-	assert.Equal(t, []string{"web", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service}, nil))
+	assert.Equal(t, []string{"web", "↻"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service}, nil))
 	assert.Equal(t, []string{"  web-1", ""}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: current}, nil))
-	assert.Equal(t, []string{"  web-2", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: old}, nil))
+	assert.Equal(t, []string{"  web-2", "↻"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: old}, nil))
 
-	icons := &config.GuiConfig{InstanceStatusStyle: "icon", ServiceColumns: []string{"update"}}
-	assert.Equal(t, []string{"↻"}, GetServiceRowDisplayStrings(icons, &commands.ServiceRow{Service: service}, nil))
+	short := &config.GuiConfig{InstanceStatusStyle: "short", ServiceColumns: []string{"update"}}
+	assert.Equal(t, []string{"C"}, GetServiceRowDisplayStrings(short, &commands.ServiceRow{Service: service}, nil))
 }
