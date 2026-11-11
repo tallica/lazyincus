@@ -163,6 +163,20 @@ func ImageUpstream(status commands.UpstreamStatus, tr *i18n.TranslationSet) stri
 		utils.WithPadding("Checked: ", IdentityPadding) + status.CheckedAt.Local().Format(time.DateTime) + "\n"
 }
 
+// NewerBuild is a service's Newer build line.
+func NewerBuild(status commands.UpstreamStatus, tr *i18n.TranslationSet) string {
+	switch status.State {
+	case commands.UpstreamNewer:
+		return tr.NewerBuildFound
+	case commands.UpstreamCurrent:
+		return tr.NewerBuildNone
+	case commands.UpstreamFailed:
+		return status.Err.Error()
+	}
+
+	return ""
+}
+
 // UpstreamVerdict is what a check found, empty for none.
 func UpstreamVerdict(status commands.UpstreamStatus, tr *i18n.TranslationSet) string {
 	switch status.State {

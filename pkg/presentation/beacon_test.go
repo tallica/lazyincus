@@ -54,9 +54,19 @@ func TestBeaconLine(t *testing.T) {
 	since := time.Date(2026, 11, 10, 9, 12, 0, 0, time.Local)
 
 	assert.Empty(t, BeaconLine(commands.BeaconVerdict{}))
-	assert.Equal(t, "1.31 (incus-beacon, since "+LocalTime(since)+")",
+	assert.Equal(t, "1.31 (incus-beacon since "+LocalTime(since)+")",
 		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.31", Since: since}))
+	assert.Equal(t, "none, the tag has a newer build (incus-beacon)",
+		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.27@sha256:0123456789ab"}))
+	assert.Equal(t, "none (incus-beacon)", BeaconLine(commands.BeaconVerdict{Status: commands.BeaconCurrent}))
 	assert.Equal(t, "error: registry said 401 (incus-beacon)",
 		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconError, Error: "registry said 401"}))
 	assert.Equal(t, "unknown (incus-beacon)", BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUnknown}))
+}
+
+func TestSinceTime(t *testing.T) {
+	now := time.Date(2026, 11, 11, 19, 40, 0, 0, time.Local)
+
+	assert.Equal(t, now.Add(-time.Hour).Format("15:04 MST"), sinceTime(now.Add(-time.Hour), now))
+	assert.Equal(t, LocalTime(now.AddDate(0, 0, -1)), sinceTime(now.AddDate(0, 0, -1), now))
 }

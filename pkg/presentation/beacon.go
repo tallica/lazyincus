@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/samber/lo"
@@ -46,7 +47,7 @@ func shortNewerTag(verdict commands.BeaconVerdict) string {
 	return latest
 }
 
-// BeaconLine is the Info tab's Update line, empty until beacon has checked.
+// BeaconLine is the Info tab's Newer tag line, empty until beacon has checked.
 func BeaconLine(verdict commands.BeaconVerdict) string {
 	var what string
 
@@ -55,6 +56,11 @@ func BeaconLine(verdict commands.BeaconVerdict) string {
 		return ""
 	case commands.BeaconUpdateAvailable:
 		what = verdict.Latest
+		if verdict.Rebuilt() {
+			what = "none, the tag has a newer build"
+		}
+	case commands.BeaconCurrent:
+		what = "none"
 	case commands.BeaconError, commands.BeaconUnknown:
 		what = strings.TrimSpace(verdict.Status + ": " + verdict.Error)
 		what = strings.TrimSuffix(what, ":")
@@ -64,8 +70,17 @@ func BeaconLine(verdict commands.BeaconVerdict) string {
 
 	source := "incus-beacon"
 	if !verdict.Since.IsZero() {
-		source += ", since " + LocalTime(verdict.Since)
+		source += " since " + sinceTime(verdict.Since, time.Now())
 	}
 
 	return what + " (" + source + ")"
+}
+
+// sinceTime leaves today's date out.
+func sinceTime(since, now time.Time) string {
+	if since.Local().Format(time.DateOnly) == now.Local().Format(time.DateOnly) {
+		return since.Local().Format("15:04 MST")
+	}
+
+	return LocalTime(since)
 }

@@ -31,7 +31,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 	}
 
 	loc := presentation.Location{Remote: remote, Project: service.Project, Stack: m.stackLabel(remote, service.Project)}
-	verdict := presentation.UpstreamVerdict(commands.MostTelling(m.upstreams, presentation.BaseImages(row.Instances())...), tr)
+	verdict := presentation.NewerBuild(commands.MostTelling(m.upstreams, presentation.BaseImages(row.Instances())...), tr)
 
 	locations := map[string]presentation.Location{}
 	hosts := map[string]string{}

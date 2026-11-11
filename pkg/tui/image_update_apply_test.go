@@ -168,8 +168,8 @@ func TestServiceInfoFollowsAnImageCheck(t *testing.T) {
 
 	press(m, "2")
 	require.Equal(t, "cache", m.serviceRows.selected().Key())
-	assert.NotContains(t, mainText(m), "the tag has a newer build")
+	assert.NotContains(t, mainText(m), "Newer build:")
 
 	run(m, refresh(m.imageUpdatesFetch(false)))
-	assert.Contains(t, mainText(m), "Registry:     the tag has a newer build")
+	assert.Contains(t, mainText(m), "Newer build:  yes, G takes it")
 }

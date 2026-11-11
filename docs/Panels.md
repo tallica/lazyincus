@@ -577,31 +577,31 @@ one a listed stack is on and that's connected. The image gets a `↑` ahead
 of its label, where a narrow panel doesn't cut it off. What runs it gets
 one too: an instance, service or replica in its `update` column, after
 `↻`, else in its `image` column, else by its name; a stack after its
-status. A service's Info tab says what the registry said. Recreating with
-a pull, `U`, takes the new build. `G` on Stacks or Services does it for
-the services of the stack you tick, in one `up`; `--no-deps` keeps it to
-them, since with `--recreate` `up` would recreate what they depend on
-too. Each row says from → to: the `org.opencontainers.image.version`
-label, else a changed `*_VERSION` variable, as the official images set -
-the one named for the image first, any other shown by name - else the
-build date; `o` opens the GitHub comparison of the two builds' revisions,
-or the releases, when the image's labels name its source. An official
-image's source is Docker's packaging repository, whose commits are only
-its Dockerfile's, so `o` opens the release of the new version in the
-project it packages instead - `redis/redis` for
-`redis/docker-library-redis` - or, where GitHub has no such release or
-the packaging isn't on GitHub, the image's page on Docker Hub. Reading
-both builds' configs costs a newer build a manifest GET or two, which
-Docker Hub counts as pulls. It checks first when none of the stack's
-images has been checked yet, and checks again after, for the images the
-services now run. The tag comes from the copy Incus pulled, so an image
-incus-compose built has none and isn't checked, and neither is a service
-with no instances yet. The check runs from this machine, not the daemon,
-with the credentials in your `~/.docker/config.json`; a registry only the
-daemon can reach shows its error on the Config tab. A tag that hasn't
-moved costs a HEAD, which Docker Hub doesn't count against its pull
-limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag,
-`2.1` to `2.2`, isn't looked for here - see
+status. A service's Info tab says it on its `Newer build` line.
+Recreating with a pull, `U`, takes the new build. `G` on Stacks or
+Services does it for the services of the stack you tick, in one `up`;
+`--no-deps` keeps it to them, since with `--recreate` `up` would recreate
+what they depend on too. Each row says from → to: the
+`org.opencontainers.image.version` label, else a changed `*_VERSION`
+variable, as the official images set - the one named for the image first,
+any other shown by name - else the build date; `o` opens the GitHub
+comparison of the two builds' revisions, or the releases, when the
+image's labels name its source. An official image's source is Docker's
+packaging repository, whose commits are only its Dockerfile's, so `o`
+opens the release of the new version in the project it packages instead -
+`redis/redis` for `redis/docker-library-redis` - or, where GitHub has no
+such release or the packaging isn't on GitHub, the image's page on Docker
+Hub. Reading both builds' configs costs a newer build a manifest GET or
+two, which Docker Hub counts as pulls. It checks first when none of the
+stack's images has been checked yet, and checks again after, for the
+images the services now run. The tag comes from the copy Incus pulled, so
+an image incus-compose built has none and isn't checked, and neither is a
+service with no instances yet. The check runs from this machine, not the
+daemon, with the credentials in your `~/.docker/config.json`; a registry
+only the daemon can reach shows its error on the Config tab. A tag that
+hasn't moved costs a HEAD, which Docker Hub doesn't count against its
+pull limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer
+tag, `2.1` to `2.2`, isn't looked for here - see
 [BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped). incus-beacon finds
 them, [below](#incus-beacon);
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
@@ -670,18 +670,19 @@ up:
 [incus-beacon](https://github.com/tallica/incus-beacon) checks each
 instance's image on the daemon's side and writes what it found to the
 instance's `user.incus-beacon.*` keys, which lazyincus reads and never
-writes. The Info tab's `Update` line is its verdict: the newer tag, or
-`<tag>@sha256:…` for the same tag rebuilt, `current`, or the error, with
-when it last changed. The `update` column says the same in a glyph, after
-`↻` and `g`'s `↑`: `↑1.31` for a newer tag, less a variant both tags
-share - `1.31-alpine` over `1.18-alpine` - `↑` for a rebuild - one `↑`
-when `g` found it too - red `!` for an error, `?` for unknown, nothing
-when current. A service's is its most telling replica's, and a stack's
-row has `↑` or `!` after its status, the tag left to the services. A
-rebuild is what `G` already applies; beacon's own check doesn't feed it,
-since `G` pulls and a pull can't move a tag. Beacon's keys from before
-0.5, `user.beacon.*`, aren't read: it moves them to the new names on its
-next write.
+writes. The Info tab's `Newer tag` line is its verdict: the tag, `none`,
+or the error, with when it last changed - the time alone when that was
+today. A newer build of the same tag is `g`'s to say, on the `Newer
+build` line beside it, but beacon finds those too, and says so here. The
+`update` column says the same in a glyph, after `↻` and `g`'s `↑`:
+`↑1.31` for a newer tag, less a variant both tags share - `1.31-alpine`
+over `1.18-alpine` - `↑` for a rebuild - one `↑` when `g` found it too -
+red `!` for an error, `?` for unknown, nothing when current. A service's
+is its most telling replica's, and a stack's row has `↑` or `!` after its
+status, the tag left to the services. A rebuild is what `G` already
+applies; beacon's own check doesn't feed it, since `G` pulls and a pull
+can't move a tag. Beacon's keys from before 0.5, `user.beacon.*`, aren't
+read: it moves them to the new names on its next write.
 
 `T` on Stacks or Services is that move: the services with a newer tag,
 all ticked, as `G` lists them; `enter` confirms, rewrites the value of

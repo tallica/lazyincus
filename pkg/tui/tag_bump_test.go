@@ -58,7 +58,7 @@ func TestBeaconVerdictShows(t *testing.T) {
 	assert.Contains(t, text, "│web running ↑1.31")
 
 	press(m, "j")
-	assert.Contains(t, strings.Join(screen(m), "\n"), "Update:       1.31 (incus-beacon)")
+	assert.Contains(t, strings.Join(screen(m), "\n"), "Newer tag:    1.31 (incus-beacon)")
 }
 
 // T moves the ticked services to their newer tag in the compose file, and

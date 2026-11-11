@@ -50,6 +50,8 @@ type TranslationSet struct {
 	NoImagesToCheck              string
 	ImageUpdatesSummary          string
 	UpstreamNewer                string
+	NewerBuildFound              string
+	NewerBuildNone               string
 	UpstreamCurrent              string
 	ShowUsers                    string
 	InstancesUsing               string
@@ -438,6 +440,8 @@ func englishSet() TranslationSet {
 		ImageUpdatesSummary:          "%d with a newer build, %d current, %d couldn't be checked",
 		UpstreamNewer:                "the tag has a newer build",
 		UpstreamCurrent:              "current",
+		NewerBuildFound:              "yes, G takes it",
+		NewerBuildNone:               "none",
 		ShowUsers:                    "show the instances using it",
 		InstancesUsing:               "Instances using %s",
 		NothingUses:                  "No instance uses %s.",
