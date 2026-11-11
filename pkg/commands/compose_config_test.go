@@ -91,3 +91,12 @@ func TestParseComposeConfigInvalidJSON(t *testing.T) {
 	_, _, err := parseComposeConfig("not json")
 	assert.Error(t, err)
 }
+
+// `config --hash` prints a `<service> <hash>` line each; anything else is
+// skipped rather than taken for a hash.
+func TestParseComposeHashes(t *testing.T) {
+	assert.Equal(t,
+		map[string]string{"db": "v1:bbb", "web": "v1:aaa"},
+		parseComposeHashes("db v1:bbb\n\nweb v1:aaa\nwarning: something odd\n"))
+	assert.Empty(t, parseComposeHashes(""))
+}

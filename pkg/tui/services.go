@@ -3,6 +3,7 @@ package tui
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"strconv"
 	"sync/atomic"
@@ -41,6 +42,11 @@ func (m *Model) followStack(stack *commands.ComposeStack) {
 	m.selectedStack = stack
 
 	if stackIdentity(previous) == stackIdentity(stack) {
+		// A reloaded compose file would otherwise wait for the services poll.
+		if previous != nil && !reflect.DeepEqual(previous.Services, stack.Services) {
+			m.queue(refreshQuiet(nil, m.fetchServices(nil)))
+		}
+
 		return
 	}
 
@@ -188,7 +194,7 @@ func (m *Model) serviceFlex() []utils.FlexColumn {
 func (m *Model) serviceVersion(row *commands.ServiceRow) string {
 	// Each refresh builds new ComposeService values, so the instance count
 	// is part of the key: a replica coming or going must restart the tab.
-	key := row.Service.Status() + "-" + strconv.Itoa(len(row.Service.Instances))
+	key := row.Service.Status() + "-" + strconv.Itoa(len(row.Service.Instances)) + "-" + row.Service.Hash
 
 	if row.Instance != nil {
 		key += "-" + row.Instance.Instance.Status

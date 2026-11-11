@@ -2,6 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -346,4 +348,93 @@ func TestTheStacksPollWatchesOtherRemotes(t *testing.T) {
 	m.stacksElsewhere = true
 	m.Update(slowPollMsg{refreshStacks})
 	assert.True(t, m.polledAt[refreshStacks].After(recent))
+}
+
+const hashKey = "user.label.incus-compose.config-hash"
+
+// A service whose instance was created from another config than the file
+// declares reads changed on its row, its stack's, and the stack's Info tab.
+func TestAChangedServiceIsMarked(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	local.Services[0].Hash = "v1:new"
+
+	web := composeFixture("default", "web", "web")
+	web.ExpandedConfig[hashKey] = "v1:old"
+	server := incustest.New(incustest.Server{Version: "7.4", Instances: []api.InstanceFull{web}})
+
+	m := start(t, options{compose: true, server: server, localStack: local}, 140, 40)
+	text := strings.Join(screen(m), "\n")
+
+	assert.Contains(t, text, "│default running changed")
+	assert.Contains(t, text, "│web running changed")
+	assert.Contains(t, text, "1 instance from an older config, recreate with u")
+}
+
+// An edit to a listed stack's compose file, which no daemon event
+// announces, reloads the stack at the next stat and re-marks its services.
+func TestAnEditedComposeFileReloadsTheStack(t *testing.T) {
+	local := testStack(t, t.TempDir(), "default", "web")
+	local.Services[0].Hash = "v1:old"
+	file := filepath.Join(local.Dir, "compose.yaml")
+	require.NoError(t, os.WriteFile(file, []byte("services: {web: {}}\n"), 0o644))
+
+	web := composeFixture("default", "web", "web")
+	web.ExpandedConfig[hashKey] = "v1:old"
+	server := incustest.New(incustest.Server{Version: "7.4", Instances: []api.InstanceFull{web}})
+
+	m := start(t, options{compose: true, server: server, localStack: local}, 140, 40)
+	require.NotContains(t, strings.Join(screen(m), "\n"), "changed")
+
+	poll := func() {
+		_, cmd := m.Update(stackFilesPollMsg{})
+		run(m, cmd)
+	}
+
+	loads := 0
+	load := m.loadStack
+	m.loadStack = func(dir string) *commands.ComposeStack {
+		loads++
+		stack := load(dir)
+		stack.Services = slices.Clone(stack.Services)
+		stack.Services[0].Hash = "v1:new"
+
+		return stack
+	}
+
+	poll()
+	assert.Zero(t, loads, "an unchanged file is not read again")
+
+	require.NoError(t, os.WriteFile(file, []byte("services: {web: {image: nginx}}\n"), 0o644))
+	poll()
+	assert.Equal(t, 1, loads)
+	assert.Contains(t, strings.Join(screen(m), "\n"), "│web running changed")
+}
+
+// A cached stack is read again once its compose file changes on disk, and
+// not before.
+func TestStackCacheReloadsAnEditedFile(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "compose.yaml")
+	require.NoError(t, os.WriteFile(file, []byte("services: {}\n"), 0o644))
+
+	loads := 0
+	load := func(dir string) *commands.ComposeStack {
+		loads++
+		return &commands.ComposeStack{Dir: dir}
+	}
+
+	var cache stackCache
+
+	cache.get(dir, false, load)
+	cache.get(dir, false, load)
+	assert.Equal(t, 1, loads)
+
+	assert.False(t, cache.edited([]string{dir, t.TempDir()}))
+
+	require.NoError(t, os.WriteFile(file, []byte("services: {web: {}}\n"), 0o644))
+	assert.True(t, cache.edited([]string{dir}))
+
+	cache.get(dir, false, load)
+	assert.Equal(t, 2, loads)
+	assert.False(t, cache.edited([]string{dir}))
 }

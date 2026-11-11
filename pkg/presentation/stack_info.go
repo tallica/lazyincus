@@ -414,9 +414,19 @@ func pluralInstances(count int) string {
 	return fmt.Sprintf("%d instances", count)
 }
 
+// serviceChanged is the service's Drift line for its changed instances.
+func serviceChanged(service *commands.ComposeService) string {
+	changed := len(service.ChangedInstances())
+	if changed == 0 {
+		return ""
+	}
+
+	return pluralInstances(changed) + " from an older config, recreate with u"
+}
+
 // StackDrift is where the daemon and the compose file disagree: compose
-// instances of a service the file doesn't declare, and a declared service
-// with no instances.
+// instances of a service the file doesn't declare, a declared service with
+// no instances, and instances created from an older config.
 func StackDrift(state *StackInstances) string {
 	drift := map[string]string{}
 
@@ -433,6 +443,8 @@ func StackDrift(state *StackInstances) string {
 	for _, service := range state.Services {
 		if len(service.Instances) == 0 {
 			drift[service.Name] = "declared, not created"
+		} else if changed := serviceChanged(service); changed != "" {
+			drift[service.Name] = changed
 		}
 	}
 

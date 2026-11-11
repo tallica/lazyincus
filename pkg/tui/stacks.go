@@ -30,38 +30,66 @@ func localStackDir() (string, bool) {
 	return dir, false
 }
 
-// stackCache: each stack's compose config by directory, read once.
+// stackCache: each stack's compose config by directory, read once and
+// again when its files change.
 type stackCache struct {
 	mutex  sync.Mutex
-	stacks map[string]*commands.ComposeStack
+	stacks map[string]cachedStack
 }
 
-// get is dir's config, loading it if it isn't held - or, with retry, if
-// what's held is a failure.
+type cachedStack struct {
+	stack *commands.ComposeStack
+	stamp string
+}
+
+// get is dir's config, loading it if it isn't held, if its files changed
+// since - or, with retry, if what's held is a failure.
 func (c *stackCache) get(dir string, retry bool, load func(string) *commands.ComposeStack) *commands.ComposeStack {
+	// Before the load, so an edit made during it is seen next time.
+	stamp := commands.StackFilesStamp(dir)
+
 	c.mutex.Lock()
-	stack, ok := c.stacks[dir]
+	cached, ok := c.stacks[dir]
 	c.mutex.Unlock()
 
-	if ok && (stack.Err == nil || !retry) {
-		return stack
+	if ok && cached.stamp == stamp && (cached.stack.Err == nil || !retry) {
+		return cached.stack
 	}
 
-	stack = load(dir)
-	c.put(stack)
+	stack := load(dir)
+	c.store(stack, stamp)
 
 	return stack
 }
 
+// edited is whether any of dirs' files changed since they were read.
+func (c *stackCache) edited(dirs []string) bool {
+	for _, dir := range dirs {
+		c.mutex.Lock()
+		cached, ok := c.stacks[dir]
+		c.mutex.Unlock()
+
+		if ok && cached.stamp != commands.StackFilesStamp(dir) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *stackCache) put(stack *commands.ComposeStack) {
+	c.store(stack, commands.StackFilesStamp(stack.Dir))
+}
+
+func (c *stackCache) store(stack *commands.ComposeStack, stamp string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	if c.stacks == nil {
-		c.stacks = map[string]*commands.ComposeStack{}
+		c.stacks = map[string]cachedStack{}
 	}
 
-	c.stacks[stack.Dir] = stack
+	c.stacks[stack.Dir] = cachedStack{stack: stack, stamp: stamp}
 }
 
 func (c *stackCache) forget(dir string) {
@@ -110,7 +138,7 @@ func (m *Model) newStacks(p *panel) list[*commands.ComposeStack] {
 		key:     (*commands.ComposeStack).Ref,
 		project: func(stack *commands.ComposeStack) string { return stack.Name },
 		version: func(stack *commands.ComposeStack) string {
-			return stack.Name + "-" + fmt.Sprint(stack.Statuses) +
+			return stack.Name + "-" + fmt.Sprint(stack.Statuses, stack.Changed()) +
 				"-" + fmt.Sprint(stack.StatusErr, stack.StatusPending) + "-" + fmt.Sprint(stack.Local, stack.Saved)
 		},
 	}

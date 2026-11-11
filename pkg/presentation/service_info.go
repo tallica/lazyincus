@@ -45,6 +45,7 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output += line("Volumes", strings.Join(service.Volumes, ", "))
 	output += line("Devices", strings.Join(service.Devices, ", "))
 	output += line("Depends on", strings.Join(service.DependsOn, ", "))
+	output += line("Changed", serviceChanged(service))
 
 	if len(service.Instances) == 0 {
 		return output + "\n" + tr.ServiceNotRunning

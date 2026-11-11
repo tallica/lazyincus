@@ -12,6 +12,7 @@ import (
 const (
 	instancesPollInterval = 2 * time.Second
 	configPollInterval    = 2 * time.Second
+	stackFilesInterval    = 2 * time.Second
 	// resourcesPollInterval and watchedPollInterval: see
 	// docs/Incus.md, "Events".
 	resourcesPollInterval = 10 * time.Second
@@ -27,11 +28,16 @@ type configPollMsg struct{}
 
 type configStatMsg struct{ modTime time.Time }
 
+type stackFilesPollMsg struct{}
+
+type stackFilesStatMsg struct{ edited bool }
+
 // pollers start once the startup read is under way.
 func (m *Model) pollers() tea.Cmd {
 	return tea.Batch(
 		m.tick(instancesPollInterval, pollMsg{}),
 		m.tick(configPollInterval, configPollMsg{}),
+		m.tick(stackFilesInterval, stackFilesPollMsg{}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshImages}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshVolumes}),
 		m.tick(resourcesPollInterval, slowPollMsg{refreshNetworks}),
@@ -74,6 +80,31 @@ func (m *Model) pollInstances() tea.Cmd {
 	l := m.incus.NewListing()
 
 	return refreshQuiet(next, m.fetchInstances(l), m.fetchServices(l))
+}
+
+// statStackFiles catches compose edits, which no event announces.
+func (m *Model) statStackFiles() tea.Cmd {
+	if m.composeUnavailable() || m.awaySkips(m.stackFilesPolledAt) {
+		return m.tick(stackFilesInterval, stackFilesPollMsg{})
+	}
+	m.stackFilesPolledAt = time.Now()
+
+	cache := m.stackCache
+	dirs := make([]string, 0, len(m.stacks.items))
+	for _, stack := range m.stacks.items {
+		dirs = append(dirs, stack.Dir)
+	}
+
+	return func() tea.Msg { return stackFilesStatMsg{edited: cache.edited(dirs)} }
+}
+
+func (m *Model) onStackFilesStat(edited bool) tea.Cmd {
+	next := m.tick(stackFilesInterval, stackFilesPollMsg{})
+	if !edited {
+		return next
+	}
+
+	return refreshQuiet(next, m.fetchStacks(nil))
 }
 
 type syncConnectionMsg struct{}

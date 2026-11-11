@@ -292,12 +292,14 @@ The Services rows come from the compose file rather than the daemon, so a
 service the file declares but nothing is running still gets one, in state
 `none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
-disagree. The service instances of every listed stack on the active
-remote move out of the instances panel, which becomes **Standalone
-Instances** (`3`); a project no stack lists keeps its instances there, as
-does an instance of a service the compose file no longer declares. `C`
-there puts the stacks' instances back for a while, in one list with
-everything else.
+disagree. A service, replica or stack created from an older version of the
+compose file reads `changed` until `u` recreates it ([needs incus-compose
+1.4.0](docs/Panels.md#changed-config)). The service instances of
+every listed stack on the active remote move out of the instances panel,
+which becomes **Standalone Instances** (`3`); a project no stack lists
+keeps its instances there, as does an instance of a service the compose
+file no longer declares. `C` there puts the stacks' instances back for a
+while, in one list with everything else.
 
 A service with replicas lists them under it, one indented row each,
 rendered in the same columns as the service. Selecting a replica points
@@ -308,9 +310,10 @@ always meant.
 What the keys run on a service's own row, each of them `incus-compose
 <verb> <service>`:
 
-- `u` — `up --detach`; `U` asks for `up --recreate` with
-  `--pull never` or `--pull always`, to apply an edited compose file or pick
-  up an image its tag now resolves to (it confirms first)
+- `u` — `up --detach`, which recreates what's marked `changed`; `U` asks
+  for `up --recreate` with `--pull never` or `--pull always`, to recreate
+  all of it or pick up an image its tag now resolves to (it confirms
+  first)
 - `S`, `s`, `r` — `start`, `stop`, `restart`; `s` confirms. When a
   service it depends on is stopped, `S` asks whether to start it along with
   them (`start --with-deps`) or alone — incus-compose's `start` leaves
