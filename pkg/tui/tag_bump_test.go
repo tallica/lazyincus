@@ -11,6 +11,7 @@ import (
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 	"github.com/tallica/lazyincus/pkg/config"
 )
@@ -19,6 +20,12 @@ import (
 // with 1.31 as the latest, and db, which it says is current, from a
 // compose file on disk.
 func beaconModel(t *testing.T, webStatus string) (*Model, string, *[]*exec.Cmd) {
+	t.Helper()
+
+	return beaconModelLatest(t, webStatus, "1.31")
+}
+
+func beaconModelLatest(t *testing.T, webStatus, latest string) (*Model, string, *[]*exec.Cmd) {
 	t.Helper()
 
 	stack := testStack(t, t.TempDir(), "default", "web", "db")
@@ -30,9 +37,10 @@ func beaconModel(t *testing.T, webStatus string) (*Model, string, *[]*exec.Cmd) 
 	web := composeFixture("default", "web-1", "web")
 	web.ExpandedConfig["user.incus-beacon.status"] = webStatus
 	web.ExpandedConfig["user.incus-beacon.current"] = "docker.io/library/nginx:1.27"
-	web.ExpandedConfig["user.incus-beacon.latest"] = "1.31"
+	web.ExpandedConfig["user.incus-beacon.latest"] = latest
 	db := composeFixture("default", "db-1", "db")
 	db.ExpandedConfig["user.incus-beacon.status"] = "current"
+	db.Config = map[string]string{"volatile.base_image": "db-image"}
 
 	server := incustest.New(incustest.Server{Instances: []api.InstanceFull{web, db}})
 	m := start(t, options{
@@ -61,18 +69,18 @@ func TestBeaconVerdictShows(t *testing.T) {
 	assert.Contains(t, strings.Join(screen(m), "\n"), "Newer tag:    1.31 (incus-beacon)")
 }
 
-// T moves the ticked services to their newer tag in the compose file, and
+// G moves the ticked services to their newer tag in the compose file, and
 // recreates those alone.
-func TestBumpTagsEditsTheFileAndRecreates(t *testing.T) {
+func TestUpdateImagesMovesTagsAndRecreates(t *testing.T) {
 	m, file, ran := beaconModel(t, "update-available")
 
-	press(m, "2", "T")
+	press(m, "2", "G")
 	require.NotNil(t, m.topMenu())
 	assert.Equal(t, []string{"web nginx:1.27 → nginx:1.31"}, menuLabels(m))
 
 	press(m, "enter")
 	require.Len(t, m.popups, 1)
-	assert.Contains(t, ansi.Strip(m.popups[0].message), "move web to nginx:1.31, and recreate them")
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "move web to nginx:1.31, then pull the newer images of web and recreate them")
 
 	press(m, "y")
 	data, err := os.ReadFile(file)
@@ -80,24 +88,48 @@ func TestBumpTagsEditsTheFileAndRecreates(t *testing.T) {
 	assert.Equal(t, "services:\n  web:\n    image: nginx:1.31\n  db:\n    image: postgres:16\n", string(data))
 
 	require.Len(t, *ran, 1)
-	assert.Equal(t, []string{"up", "--recreate", "--pull", "missing", "--no-deps", "--detach", "web"}, (*ran)[0].Args[len((*ran)[0].Args)-7:])
+	assert.Equal(t, []string{"up", "--recreate", "--pull", "always", "--no-deps", "--detach", "web"}, (*ran)[0].Args[len((*ran)[0].Args)-7:])
 }
 
 // A file that no longer names the image is left alone, and nothing runs.
-func TestBumpTagsLeavesAnEditedFile(t *testing.T) {
+// A newer build and a newer tag are one list, and one recreate on a pull.
+func TestUpdateImagesTakesBuildsAndTagsTogether(t *testing.T) {
+	m, _, ran := beaconModel(t, "update-available")
+	m.upstreams = map[string]commands.UpstreamStatus{"db-image": {
+		State: commands.UpstreamNewer, Ref: "docker.io/library/postgres:16",
+		From: &commands.BuildInfo{Version: "16.1"}, To: &commands.BuildInfo{Version: "16.2"},
+	}}
+
+	press(m, "2", "G")
+	assert.Equal(t, []string{"db docker.io/library/postgres:16 16.1 → 16.2", "web nginx:1.27 → nginx:1.31"}, menuLabels(m))
+
+	press(m, "enter", "y")
+	require.Len(t, *ran, 1)
+	assert.Equal(t, []string{"--no-deps", "--detach", "db", "web"}, (*ran)[0].Args[len((*ran)[0].Args)-4:])
+}
+
+// A rebuild only incus-beacon has seen is G's to take too.
+func TestUpdateImagesTakesBeaconsRebuild(t *testing.T) {
+	m, _, _ := beaconModelLatest(t, "update-available", "1.27@sha256:0123456789ab")
+
+	press(m, "2", "G")
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 newer build (incus-beacon)"}, menuLabels(m))
+}
+
+func TestUpdateImagesLeavesAnEditedFile(t *testing.T) {
 	m, file, ran := beaconModel(t, "update-available")
 	require.NoError(t, os.WriteFile(file, []byte("services:\n  web:\n    image: nginx:${TAG}\n"), 0o644))
 
-	press(m, "2", "T", "enter", "y")
+	press(m, "2", "G", "enter", "y")
 	require.Len(t, m.popups, 1)
 	assert.Contains(t, ansi.Strip(m.popups[0].message), "The compose file was left as it was")
 	assert.Empty(t, *ran)
 }
 
-func TestBumpTagsWithNothingNewer(t *testing.T) {
+func TestUpdateImagesWithNoNewerTag(t *testing.T) {
 	m, _, _ := beaconModel(t, "current")
 
-	press(m, "2", "T")
+	press(m, "2", "G")
 	assert.Nil(t, m.topMenu())
-	assert.Contains(t, footer(m), "incus-beacon found no newer tag for a service of default")
+	assert.Contains(t, footer(m), "no service of default has a newer image build or tag")
 }

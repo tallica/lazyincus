@@ -144,7 +144,7 @@ Deliberately deferred (don't re-pitch unprompted):
 
 - **Looking for newer image tags itself** — `g` on Images says only
   whether a tag has a newer build. Whether `2.2` has followed `2.1` is
-  [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `T` makes
+  [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `G` makes
   the edit to the compose file it ends at.
 - **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
   new build for a stack's services. An instance launched from an OCI

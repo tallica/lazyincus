@@ -181,7 +181,6 @@ func (m *Model) serviceBindings() []*binding {
 		service("g", m.serviceScopedDescription(m.tr.ComposePull), true, onServiceTarget(composeVerb("", "pull"))),
 		// The stack's, whichever row is selected.
 		{view: servicesView, key: "G", description: m.tr.ComposeUpdateImages, mutates: true, noSelection: true, handler: onStack(updateImages)},
-		{view: servicesView, key: "T", description: m.tr.ComposeBumpTags, mutates: true, noSelection: true, handler: onStack(bumpTags)},
 		service("M", m.serviceScopedDescription(m.tr.ComposeLogs), false, onServiceTarget(composeVerb("", "logs", "--follow"))),
 		{view: servicesView, key: "B", description: m.focusPanelDescription(m.tr.BackupsTitle), noSelection: true, handler: (*Model).goToBackups},
 		service(";", m.tr.TypedComposeCommand, true, onServiceTarget(typedComposeCommand)),

@@ -435,8 +435,8 @@ never reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account, unless `gui.returnImmediately` skips the prompt that
 keeps it on screen: then the popup names the command and how it exited.
 `s`, `d` and `f` confirm, `U` asks which kind of recreate and then confirms,
-`G` and `T` their checklists and then confirm, `S`/`r`/`u`/`p`/`b`/`g`
-don't — same rule as the instances panel.
+`G` its checklist and then confirms, `S`/`r`/`u`/`p`/`b`/`g` don't —
+same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
@@ -680,24 +680,24 @@ newer tag, less a variant both tags share - `1.31-alpine` over
 `1.18-alpine` - `↑` for a rebuild - one `↑` when `g` found it too - red
 `!` for an error, `?` for unknown, nothing when current. A service's is
 its most telling replica's, and a stack's row has `↑` or `!` after its
-status, the tag left to the services. A rebuild is what `G` already
-applies; beacon's own check doesn't feed it, since `G` pulls and a pull
-can't move a tag. Beacon looks for a newer tag only with `track: semver`,
-and its settings belong in the service's `labels:`, as
-`incus-beacon.track: semver`, or on a profile ([its instance
-keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`,
-`G` and `T` recreate the instance, and a key set on it goes with it.
-Beacon's keys from before 0.5, `user.beacon.*`, aren't read: it moves
-them to the new names on its next write.
+status, the tag left to the services. Beacon looks for a newer tag only
+with `track: semver`, and its settings belong in the service's `labels:`,
+as `incus-beacon.track: semver`, or on a profile ([its instance
+keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`
+and `G` recreate the instance, and a key set on it goes with it. Beacon's
+keys from before 0.5, `user.beacon.*`, aren't read: it moves them to the
+new names on its next write.
 
-`T` on Stacks or Services is that move: the services with a newer tag,
-all ticked, as `G` lists them; `enter` confirms, rewrites the value of
-each one's `image:` line in the compose file and nothing else of it, and
-recreates them on it (`up --recreate --pull missing --no-deps`). A
-service is listed only when beacon tracked the very image and tag the
-file names, so not one whose `user.incus-beacon.image` points elsewhere.
-An `image:` the compose file doesn't spell out itself - a variable, an
-override file's, an `extends` - leaves the file as it was, saying which.
+`G` on Stacks or Services lists beacon's findings with `g`'s: a newer tag
+as from → to, which on `enter` rewrites the value of the service's
+`image:` line in the compose file and nothing else of it, and a rebuild
+beacon saw where `g` found none; the confirmation names each move, and
+isn't one `a` can skip, being an edit to the file. A service is listed
+for a tag only when beacon tracked the very image and tag the file names,
+so not one whose `user.incus-beacon.image` points elsewhere. An `image:`
+the compose file doesn't spell out itself - a variable, an override
+file's, an `extends` - leaves the file as it was, saying which, and
+recreates nothing.
 
 ## Snapshots
 

@@ -257,11 +257,9 @@ type TranslationSet struct {
 	ComposeUpdateImagesTitle      string
 	ConfirmComposeUpdateImages    string
 	NoNewerImages                 string
-	ComposeBumpTags               string
-	ComposeBumpTagsTitle          string
+	BeaconRebuilt                 string
 	ConfirmComposeBumpTags        string
 	ComposeBumpTagsFailed         string
-	NoNewerTags                   string
 	ConfirmComposeStop            string
 	ConfirmComposeKill            string
 
@@ -633,15 +631,13 @@ func englishSet() TranslationSet {
 		ConfirmComposeDownWithVolumes: "Are you sure you want to bring down %s and delete its volumes?",
 		ConfirmComposeRecreate:        "Are you sure you want to recreate %s? Running instances will be replaced.",
 		ConfirmComposeRecreatePull:    "Are you sure you want to pull the latest images and recreate %s? Running instances will be replaced.",
-		ComposeUpdateImages:           "update images with a newer build",
+		ComposeUpdateImages:           "update images to a newer build or tag",
 		ComposeUpdateImagesTitle:      "Update images",
 		ConfirmComposeUpdateImages:    "Are you sure you want to pull the newer images of %s and recreate them? Running instances will be replaced.",
-		NoNewerImages:                 "no service of %s has a newer image build",
-		ComposeBumpTags:               "move images to the newer tag incus-beacon found",
-		ComposeBumpTagsTitle:          "Move to newer tags",
-		ConfirmComposeBumpTags:        "Are you sure you want to edit the compose file to move %s, and recreate them? Running instances will be replaced.",
+		NoNewerImages:                 "no service of %s has a newer image build or tag",
+		BeaconRebuilt:                 "newer build (incus-beacon)",
+		ConfirmComposeBumpTags:        "Are you sure you want to edit the compose file to move %s, then pull the newer images of %s and recreate them? Running instances will be replaced.",
 		ComposeBumpTagsFailed:         "The compose file was left as it was: %v",
-		NoNewerTags:                   "incus-beacon found no newer tag for a service of %s",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 

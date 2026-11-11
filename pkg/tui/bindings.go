@@ -146,7 +146,6 @@ func (m *Model) bindings() []*binding {
 		&binding{view: stacksView, key: "b", description: m.tr.ComposeBuild, mutates: true, handler: onStackTarget(composeVerb("", "build"))},
 		&binding{view: stacksView, key: "g", description: m.tr.ComposePull, mutates: true, handler: onStackTarget(composeVerb("", "pull"))},
 		&binding{view: stacksView, key: "G", description: m.tr.ComposeUpdateImages, mutates: true, handler: onStack(updateImages)},
-		&binding{view: stacksView, key: "T", description: m.tr.ComposeBumpTags, mutates: true, handler: onStack(bumpTags)},
 		&binding{view: stacksView, key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewStackLogs)},
 		&binding{view: stacksView, key: "M", description: m.tr.ComposeLogs, handler: onStackTarget(composeVerb("", "logs", "--follow"))},
 		&binding{view: stacksView, key: "y", description: m.tr.Copy, handler: onStackRow((*Model).stackCopy)},
