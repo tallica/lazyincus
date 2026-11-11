@@ -47,13 +47,31 @@ func shortNewerTag(verdict commands.BeaconVerdict) string {
 	return latest
 }
 
-const (
-	newerBuildFound = "yes, G takes it"
-	newerNone       = "none"
-)
+const newerNone = "none"
+
+// newerBuildFound names the key that takes the build, where one does.
+func newerBuildFound(key string) string {
+	if key == "" {
+		return "yes"
+	}
+
+	return "yes, " + key + " takes it"
+}
+
+// updateKey is the key that takes an instance's newer image.
+func updateKey(instance *commands.Instance) string {
+	switch {
+	case instance.ComposeService() != "":
+		return "G"
+	case instance.IsOCI():
+		return "U"
+	}
+
+	return ""
+}
 
 // BeaconLines are the Info tab's Newer build and Newer tag lines: docs/Panels.md, "incus-beacon".
-func BeaconLines(verdict commands.BeaconVerdict) (build, tag string) {
+func BeaconLines(verdict commands.BeaconVerdict, key string) (build, tag string) {
 	var what string
 
 	switch verdict.Status {
@@ -61,7 +79,7 @@ func BeaconLines(verdict commands.BeaconVerdict) (build, tag string) {
 		return "", ""
 	case commands.BeaconUpdateAvailable:
 		if verdict.Rebuilt() {
-			return withBeaconSource(newerBuildFound, verdict), ""
+			return withBeaconSource(newerBuildFound(key), verdict), ""
 		}
 
 		return "", withBeaconSource(verdict.Latest, verdict)
@@ -84,7 +102,7 @@ func BeaconLines(verdict commands.BeaconVerdict) (build, tag string) {
 func newerBuildLine(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict, beaconLine string) string {
 	switch {
 	case upstream.State == commands.UpstreamNewer:
-		return newerBuildFound
+		return newerBuildFound("G")
 	case verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt():
 		return beaconLine
 	case upstream.State == commands.UpstreamCurrent:

@@ -98,7 +98,7 @@ func InstanceIdentity(instance *commands.Instance, loc Location, publishHost str
 	output += line("Status", strings.ToLower(instance.Instance.Status))
 	output += line("Type", InstanceType(instance))
 	output += line("Image", instance.Image())
-	build, tag := BeaconLines(instance.Beacon())
+	build, tag := BeaconLines(instance.Beacon(), updateKey(instance))
 	output += line("Newer build", build)
 	output += line("Newer tag", tag)
 	output += line("Health", instance.HealthStatus())

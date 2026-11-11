@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/config"
@@ -55,7 +56,7 @@ func TestDisplayUpdate(t *testing.T) {
 func TestBeaconLines(t *testing.T) {
 	since := time.Date(2026, 11, 10, 9, 12, 0, 0, time.Local)
 	lines := func(verdict commands.BeaconVerdict) []string {
-		build, tag := BeaconLines(verdict)
+		build, tag := BeaconLines(verdict, "G")
 		return []string{build, tag}
 	}
 
@@ -92,7 +93,7 @@ func TestNewerBuildLine(t *testing.T) {
 	none := commands.UpstreamStatus{State: commands.UpstreamCurrent}
 
 	line := func(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict) string {
-		build, _ := BeaconLines(verdict)
+		build, _ := BeaconLines(verdict, "G")
 		return newerBuildLine(upstream, verdict, build)
 	}
 
@@ -101,4 +102,16 @@ func TestNewerBuildLine(t *testing.T) {
 	assert.Equal(t, "none", line(none, current))
 	assert.Equal(t, "none (incus-beacon)", line(commands.UpstreamStatus{}, current))
 	assert.Empty(t, line(commands.UpstreamStatus{}, commands.BeaconVerdict{}))
+}
+
+// The Newer build line names the key that takes it, from the row it's on.
+func TestUpdateKey(t *testing.T) {
+	instance := func(config map[string]string) *commands.Instance {
+		return &commands.Instance{Instance: api.InstanceFull{Instance: api.Instance{ExpandedConfig: config}}}
+	}
+
+	assert.Equal(t, "G", updateKey(instance(map[string]string{"user.label.incus-compose.service": "web", "volatile.container.oci": "true"})))
+	assert.Equal(t, "U", updateKey(instance(map[string]string{"volatile.container.oci": "true"})))
+	assert.Empty(t, updateKey(instance(nil)))
+	assert.Equal(t, "yes", newerBuildFound(""))
 }
