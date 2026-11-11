@@ -63,8 +63,15 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	}
 
 	for _, instance := range row.Instances() {
-		output += "\n" + InstanceHeading(service, instance, width, tr) + "\n"
-		output += "\n" + instanceInfo(instance.Latest(), omit...)
+		output += "\n" + InstanceHeading(service, instance, width, tr) + "\n\n"
+
+		// A lone instance's change is the Changed line above.
+		if config := instanceConfig(service, instance.Latest()); config != "" &&
+			(len(service.Instances) > 1 || !service.ConfigChanged(instance.Latest())) {
+			output += line("Config", config)
+		}
+
+		output += instanceInfo(instance.Latest(), omit...)
 	}
 
 	return output

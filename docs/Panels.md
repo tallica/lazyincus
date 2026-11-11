@@ -279,14 +279,15 @@ Main panel tabs:
   and its status - or, while its remote is connecting or away, why - then
   the declared services counted by status and what's rolled up over its
   instances: health, dates, snapshots. Under headings of their own:
-  **Endpoints**, each instance's address and the ports its proxy devices
-  publish (incus-compose's `ports:`, listening on the daemon's host, so a
-  wildcard reads as the stack's remote's host - `publishHostFor` - or `*`
-  where its URL doesn't give one: a unix socket, or loopback, which an SSH
-  tunnel to the API is); **Usage**, the instance counters summed, a custom
-  volume shared by replicas counted once; and **Drift**, compose instances
-  whose service the file no longer declares, declared services with none,
-  and services with instances [from an older config](#changed-config).
+  **Drift** first, compose instances whose service the file no longer
+  declares, declared services with none, and services with instances
+  [from an older config](#changed-config); **Endpoints**, each instance's
+  address and the ports its proxy devices publish (incus-compose's
+  `ports:`, listening on the daemon's host, so a wildcard reads as the
+  stack's remote's host - `publishHostFor` - or `*` where its URL doesn't
+  give one: a unix socket, or loopback, which an SSH tunnel to the API
+  is); and **Usage**, the instance counters summed, a custom volume
+  shared by replicas counted once.
   Everything past the services count comes from `Model.composeState` (a
   `composeHolder`), which `fetchServices` fills for the selected stack, so
   the tab ticks until they arrive.
@@ -546,8 +547,10 @@ service's config hash (`user.label.incus-compose.config-hash`);
 `LoadComposeStack` asks `config --hash '*'` for the file's, cached with
 the rest of the config. The comparison is incus-compose's own: an
 instance created before it hashed has no label and never reads changed,
-and an incus-compose without `--hash` leaves the column blank. What the
-hash covers is incus-compose's to say
+and an incus-compose without `--hash` leaves the column blank. In a
+service's Info tab each instance's block has a Config line, `changed` or
+`not tracked` (no label); a lone instance's change is the service's own
+Changed line. What the hash covers is incus-compose's to say
 ([lxc/incus-compose#234](https://github.com/lxc/incus-compose/pull/234)).
 A compose file edited outside lazyincus shows within two seconds, no
 daemon event saying so: `statStackFiles` stats each listed stack's
