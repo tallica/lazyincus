@@ -48,6 +48,11 @@ func TestComposeServiceBeacon(t *testing.T) {
 	assert.Equal(t, BeaconUpdateAvailable, service.Beacon().Status)
 
 	assert.Empty(t, (&ComposeService{}).Beacon().Status)
+
+	rebuilt := beaconInstance("web-5", map[string]string{beaconStatusKey: BeaconUpdateAvailable, beaconLatestKey: "1.27@sha256:0123456789ab"})
+	tagged := beaconInstance("web-6", map[string]string{beaconStatusKey: BeaconUpdateAvailable, beaconLatestKey: "1.31"})
+	service.Instances = []*Instance{rebuilt, tagged}
+	assert.Equal(t, "1.31", service.Beacon().Latest, "a newer tag over a rebuild, whichever replica comes first")
 }
 
 func TestBeaconCurrentTag(t *testing.T) {

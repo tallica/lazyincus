@@ -94,12 +94,30 @@ func (s *ComposeService) Beacon() BeaconVerdict {
 	return best
 }
 
-// moreTelling ranks an update over an error over unknown over current.
+// moreTelling is the higher-ranked of a and b, a on a tie.
 func moreTelling(a, b BeaconVerdict) BeaconVerdict {
-	rank := map[string]int{BeaconCurrent: 1, BeaconUnknown: 2, BeaconError: 3, BeaconUpdateAvailable: 4}
-	if rank[b.Status] > rank[a.Status] {
+	if b.rank() > a.rank() {
 		return b
 	}
 
 	return a
+}
+
+func (v BeaconVerdict) rank() int {
+	switch v.Status {
+	case BeaconUpdateAvailable:
+		if v.Rebuilt() {
+			return 4
+		}
+
+		return 5
+	case BeaconError:
+		return 3
+	case BeaconUnknown:
+		return 2
+	case BeaconCurrent:
+		return 1
+	}
+
+	return 0
 }
