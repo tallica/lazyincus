@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `P`'s menu no longer lists the old remote's projects when `R` moved the session before they arrived.
 
 ### Security
-- Built with Go 1.27.3, fixing GO-2026-6809: `crypto/x509` trusted compromised intermediate certificates when verifying a server.
+- Built with Go 1.27.4, fixing GO-2026-6809: `crypto/x509` trusted compromised intermediate certificates when verifying a server; and GO-2026-6859, a `net/http` crash.
 
 ## [0.16.1] - 2026-10-18
 
