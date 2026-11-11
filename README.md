@@ -129,8 +129,8 @@ ways that point at the wrong component.
 ## Usage
 
 Three side panels: **Instances** (`1`), listing both containers and VMs,
-**Snapshots** (`2`) for whichever instance or custom volume is selected,
-or every instance's, and **Resources** (`3`), which holds **Images**,
+**Snapshots** (`2`) for whichever instance or custom volume is selected, or
+every instance's, and **Resources** (`3`), which holds **Images**,
 **Volumes**, **Networks** and **Profiles** as tabs — `←`/`→` or `h`/`l`
 reach each of them in turn, as does pressing `3` again or clicking a tab's
 name. All list every Incus project by default; `P` scopes them to a single
@@ -138,12 +138,14 @@ project instead, `R` moves them to another remote
 ([docs/Remotes.md](docs/Remotes.md)), and the footer shows the current
 remote and scope, how many operations are running or have failed since you
 last looked at them, and how many of the daemon's warnings no one has
-acknowledged — `W` lists both, the operations to cancel (`d`), the
-warnings to acknowledge (`a`) or delete (`d`). A project column appears on
-any panel whose contents actually span projects, and actions run against
-the project the item came from. Every Info tab, and the top of every
-Config tab, says where the item lives: its remote, its project, and for a
-compose instance its stack and service.
+acknowledged — `W` lists both, the operations to cancel (`d`), the warnings
+to acknowledge (`a`) or delete (`d`). The terminal's title names the remote
+and project too, and says when the remote is read-only, so a tab shows
+which daemon it's on. A project column appears on any panel whose contents
+actually span projects, and actions run against the project the item came
+from. Every Info tab, and the top of every Config tab, says where the item
+lives: its remote, its project, and for a compose instance its stack and
+service.
 
 With [incus-compose](#compose-stacks) installed, two more panels come
 first: **Stacks** (`1`) and the selected stack's **Services** (`2`), the
