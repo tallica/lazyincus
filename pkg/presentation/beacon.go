@@ -47,27 +47,40 @@ func shortNewerTag(verdict commands.BeaconVerdict) string {
 	return latest
 }
 
-// BeaconLine is the Info tab's Newer tag line, empty until beacon has checked.
-func BeaconLine(verdict commands.BeaconVerdict) string {
+const (
+	newerBuildFound = "yes, G takes it"
+	newerNone       = "none"
+)
+
+// BeaconLines are the Info tab's Newer build and Newer tag lines: docs/Panels.md, "incus-beacon".
+func BeaconLines(verdict commands.BeaconVerdict) (build, tag string) {
 	var what string
 
 	switch verdict.Status {
 	case "":
-		return ""
+		return "", ""
 	case commands.BeaconUpdateAvailable:
-		what = verdict.Latest
 		if verdict.Rebuilt() {
-			what = "none, the tag has a newer build"
+			return withBeaconSource(newerBuildFound, verdict), ""
 		}
+
+		return "", withBeaconSource(verdict.Latest, verdict)
 	case commands.BeaconCurrent:
-		what = "none"
+		what = newerNone
 	case commands.BeaconError, commands.BeaconUnknown:
-		what = strings.TrimSpace(verdict.Status + ": " + verdict.Error)
-		what = strings.TrimSuffix(what, ":")
+		what = strings.TrimSuffix(strings.TrimSpace(verdict.Status+": "+verdict.Error), ":")
 	default:
 		what = verdict.Status
 	}
 
+	if verdict.Semver {
+		return "", withBeaconSource(what, verdict)
+	}
+
+	return withBeaconSource(what, verdict), ""
+}
+
+func withBeaconSource(what string, verdict commands.BeaconVerdict) string {
 	source := "incus-beacon"
 	if !verdict.Since.IsZero() {
 		source += " since " + sinceTime(verdict.Since, time.Now())

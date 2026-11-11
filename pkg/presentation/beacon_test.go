@@ -50,18 +50,31 @@ func TestDisplayUpdate(t *testing.T) {
 	assert.Equal(t, "C ↑1.31", utils.Decolorise(displayUpdate(short, true, false, newerTag)))
 }
 
-func TestBeaconLine(t *testing.T) {
+// Beacon answers Newer tag only when it looks for tags; otherwise, and
+// for a rebuild whatever it looks for, its answer is about the build.
+func TestBeaconLines(t *testing.T) {
 	since := time.Date(2026, 11, 10, 9, 12, 0, 0, time.Local)
+	lines := func(verdict commands.BeaconVerdict) []string {
+		build, tag := BeaconLines(verdict)
+		return []string{build, tag}
+	}
 
-	assert.Empty(t, BeaconLine(commands.BeaconVerdict{}))
-	assert.Equal(t, "1.31 (incus-beacon since "+LocalTime(since)+")",
-		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.31", Since: since}))
-	assert.Equal(t, "none, the tag has a newer build (incus-beacon)",
-		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.27@sha256:0123456789ab"}))
-	assert.Equal(t, "none (incus-beacon)", BeaconLine(commands.BeaconVerdict{Status: commands.BeaconCurrent}))
-	assert.Equal(t, "error: registry said 401 (incus-beacon)",
-		BeaconLine(commands.BeaconVerdict{Status: commands.BeaconError, Error: "registry said 401"}))
-	assert.Equal(t, "unknown (incus-beacon)", BeaconLine(commands.BeaconVerdict{Status: commands.BeaconUnknown}))
+	assert.Equal(t, []string{"", ""}, lines(commands.BeaconVerdict{}))
+	assert.Equal(t, []string{"", "1.31 (incus-beacon since " + LocalTime(since) + ")"},
+		lines(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.31", Since: since, Semver: true}))
+	assert.Equal(t, []string{"", "none (incus-beacon)"}, lines(commands.BeaconVerdict{Status: commands.BeaconCurrent, Semver: true}))
+
+	rebuilt := commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.27@sha256:0123456789ab"}
+	assert.Equal(t, []string{"yes, G takes it (incus-beacon)", ""}, lines(rebuilt))
+	rebuilt.Semver = true
+	assert.Equal(t, []string{"yes, G takes it (incus-beacon)", ""}, lines(rebuilt))
+
+	assert.Equal(t, []string{"none (incus-beacon)", ""}, lines(commands.BeaconVerdict{Status: commands.BeaconCurrent}))
+	assert.Equal(t, []string{"", "1.31 (incus-beacon)"}, lines(commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.31"}),
+		"a newer tag is one whichever key asked for it")
+	assert.Equal(t, []string{"error: registry said 401 (incus-beacon)", ""},
+		lines(commands.BeaconVerdict{Status: commands.BeaconError, Error: "registry said 401"}))
+	assert.Equal(t, []string{"", "unknown (incus-beacon)"}, lines(commands.BeaconVerdict{Status: commands.BeaconUnknown, Semver: true}))
 }
 
 func TestSinceTime(t *testing.T) {

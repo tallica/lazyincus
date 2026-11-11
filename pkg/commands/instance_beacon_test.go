@@ -60,3 +60,10 @@ func TestBeaconCurrentTag(t *testing.T) {
 		assert.Equal(t, want, BeaconVerdict{Current: current}.CurrentTag(), current)
 	}
 }
+
+func TestBeaconSemver(t *testing.T) {
+	assert.False(t, beaconVerdict(map[string]string{}).Semver)
+	assert.True(t, beaconVerdict(map[string]string{beaconTrackLabel: "semver"}).Semver)
+	assert.False(t, beaconVerdict(map[string]string{beaconTrackKey: "digest", beaconTrackLabel: "semver"}).Semver,
+		"the instance's own key wins")
+}

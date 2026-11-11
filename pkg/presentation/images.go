@@ -167,9 +167,9 @@ func ImageUpstream(status commands.UpstreamStatus, tr *i18n.TranslationSet) stri
 func NewerBuild(status commands.UpstreamStatus, tr *i18n.TranslationSet) string {
 	switch status.State {
 	case commands.UpstreamNewer:
-		return tr.NewerBuildFound
+		return newerBuildFound
 	case commands.UpstreamCurrent:
-		return tr.NewerBuildNone
+		return newerNone
 	case commands.UpstreamFailed:
 		return status.Err.Error()
 	}

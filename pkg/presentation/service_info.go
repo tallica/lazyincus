@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/utils"
@@ -31,10 +32,12 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output := LocationLines(loc)
 	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
-	output += line("Newer build", verdict)
+
+	build, tag := BeaconLines(service.Beacon())
+	output += line("Newer build", lo.CoalesceOrEmpty(verdict, build))
+	output += line("Newer tag", tag)
 	output += line("Replicas", ServiceReplicas(service))
 	output += line("Health", service.Health())
-	output += line("Newer tag", BeaconLine(service.Beacon()))
 
 	if project != nil {
 		output += line("Healthcheck", ComposeHealthcheck(project, tr))
@@ -57,10 +60,10 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	// heading of its own, and minus the lines the service or that heading
 	// has just said: where it lives and its image are the same for every
 	// replica, the name and which replica it is are the heading's, and a
-	// lone instance's health and newer tag are what the service's roll up to.
+	// lone instance's health and newer image are what the service's roll up to.
 	omit := []string{"Remote", "Project", "Stack", "Service", "Image", "Name"}
 	if len(service.Instances) == 1 {
-		omit = append(omit, "Health", "Newer tag")
+		omit = append(omit, "Health", "Newer build", "Newer tag")
 	}
 
 	for _, instance := range row.Instances() {

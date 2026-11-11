@@ -3,6 +3,8 @@ package commands
 import (
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
 )
 
 // The keys incus-beacon writes: docs/Panels.md, "incus-beacon".
@@ -12,6 +14,9 @@ const (
 	beaconLatestKey  = "user.incus-beacon.latest"
 	beaconErrorKey   = "user.incus-beacon.error"
 	beaconSinceKey   = "user.incus-beacon.since"
+	beaconTrackKey   = "user.incus-beacon.track"
+	// An incus-compose label; the plain key wins.
+	beaconTrackLabel = "user.label.incus-beacon.track"
 )
 
 const (
@@ -30,6 +35,8 @@ type BeaconVerdict struct {
 	Current string
 	Error   string
 	Since   time.Time
+	// Semver is beacon looking for newer tags, not only rebuilds of this one.
+	Semver bool
 }
 
 // Rebuilt is a newer build of the same tag rather than a newer tag.
@@ -66,6 +73,7 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 		Latest:  config[beaconLatestKey],
 		Current: config[beaconCurrentKey],
 		Error:   config[beaconErrorKey],
+		Semver:  lo.CoalesceOrEmpty(config[beaconTrackKey], config[beaconTrackLabel]) == "semver",
 	}
 
 	if since, err := time.Parse(time.RFC3339, config[beaconSinceKey]); err == nil {
