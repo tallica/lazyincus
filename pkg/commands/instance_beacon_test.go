@@ -72,3 +72,21 @@ func TestBeaconSemver(t *testing.T) {
 	assert.False(t, beaconVerdict(map[string]string{beaconTrackKey: "digest", beaconTrackLabel: "semver"}).Semver,
 		"the instance's own key wins")
 }
+
+// A verdict about the tag an instance ran before a rebuild is no verdict.
+func TestBeaconVerdictOutrun(t *testing.T) {
+	config := map[string]string{
+		beaconStatusKey: BeaconUpdateAvailable, beaconCurrentKey: "docker.io/library/nginx:1.27-alpine", beaconLatestKey: "1.28-alpine",
+		"image.id": "library/nginx:1.28-alpine",
+	}
+	assert.Equal(t, BeaconVerdict{}, beaconVerdict(config))
+
+	config["image.id"] = "library/nginx:1.27-alpine"
+	assert.Equal(t, BeaconUpdateAvailable, beaconVerdict(config).Status)
+
+	config["image.id"] = "library/nginx@sha256:0123"
+	assert.Equal(t, BeaconUpdateAvailable, beaconVerdict(config).Status, "a digest names no tag to compare")
+
+	config["user.image_alias"] = "docker.io/library/nginx:1.28-alpine"
+	assert.Equal(t, BeaconVerdict{}, beaconVerdict(config), "incus-compose's alias says what it runs")
+}

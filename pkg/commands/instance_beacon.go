@@ -80,7 +80,20 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 		verdict.Since = since
 	}
 
+	if outrun(verdict.Current, lo.CoalesceOrEmpty(config["user.image_alias"], config["image.id"])) {
+		return BeaconVerdict{}
+	}
+
 	return verdict
+}
+
+// outrun: a rebuild keeps beacon's keys about the tag it moved off.
+func outrun(checked, running string) bool {
+	if checked == "" || running == "" || strings.Contains(checked+running, "@") {
+		return false
+	}
+
+	return checked[len(withoutTag(checked)):] != running[len(withoutTag(running)):]
 }
 
 // Beacon is the most telling of its instances' verdicts.
