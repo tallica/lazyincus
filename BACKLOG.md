@@ -356,6 +356,22 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
   and a backup, is in README's [Compose stacks](README.md#compose-stacks):
   nothing to fix here.
 
+### incus-beacon
+
+- [ ] **A tag move an override file undoes.** `G` edits only the base
+  compose file, so an override that repeats the image keeps the old tag
+  and `G` offers the same move again. Leave out a service whose image an
+  override file sets.
+- [ ] **A stack's `↑` that `G` won't act on.** The Stacks row counts any
+  newer tag beacon found, including one for a `${TAG}` image, a tracked
+  image other than the file's, or an instance of a service the file no
+  longer declares. `G` then says there's nothing to do. Count only what
+  `G` would list.
+- [ ] **Stale verdicts.** `G` trusts beacon's keys on every instance,
+  however old: a beacon that stopped running leaves them behind.
+  `user.incus-beacon.since` is when a verdict last changed, not when it was
+  last checked, so this wants beacon to record that first.
+
 ## Snapshots panel
 
 - [ ] Custom expiry — the field cycles never, 1, 7 and 30 days; anything
