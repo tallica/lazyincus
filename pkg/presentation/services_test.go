@@ -115,12 +115,12 @@ func TestGetServiceRowDisplayStringsChanged(t *testing.T) {
 
 	current, old := instance("web-1", "v1:new"), instance("web-2", "v1:old")
 	service := &commands.ComposeService{Name: "web", Hash: "v1:new", Replicas: 2, Instances: []*commands.Instance{current, old}}
-	columns := &config.GuiConfig{ServiceColumns: []string{"name", "changed"}}
+	columns := &config.GuiConfig{ServiceColumns: []string{"name", "update"}}
 
 	assert.Equal(t, []string{"web", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service}, nil))
 	assert.Equal(t, []string{"  web-1", ""}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: current}, nil))
 	assert.Equal(t, []string{"  web-2", "changed"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: old}, nil))
 
-	icons := &config.GuiConfig{InstanceStatusStyle: "icon", ServiceColumns: []string{"changed"}}
+	icons := &config.GuiConfig{InstanceStatusStyle: "icon", ServiceColumns: []string{"update"}}
 	assert.Equal(t, []string{"↻"}, GetServiceRowDisplayStrings(icons, &commands.ServiceRow{Service: service}, nil))
 }

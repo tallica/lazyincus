@@ -13,7 +13,8 @@ import (
 
 // serviceColumnRenderers is the Services panel's counterpart to
 // instanceColumnRenderers: the same column names, rendered from the
-// service's instances rolled up, plus "replicas" which only a service has.
+// service's instances rolled up, plus "replicas" and "update", which only a
+// service has.
 var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.ComposeService) string{
 	"name": func(_ *config.GuiConfig, service *commands.ComposeService) string { return service.Name },
 	"status": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
@@ -38,7 +39,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	"snapshots": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return displayServiceSnapshotCount(service)
 	},
-	"changed": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
+	"update": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
 		return DisplayChanged(guiConfig, len(service.ChangedInstances()) > 0)
 	},
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
@@ -83,7 +84,7 @@ func GetServiceRowDisplayStrings(
 		switch {
 		case row.Instance == nil:
 			cell = serviceColumnRenderers[column](guiConfig, row.Service)
-		case column == "changed":
+		case column == "update":
 			// Only the service knows the file's hash.
 			cell = DisplayChanged(guiConfig, row.Service.ConfigChanged(row.Instance))
 		default:

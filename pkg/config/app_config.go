@@ -160,9 +160,10 @@ type GuiConfig struct {
 	InstanceColumns []string `yaml:"instanceColumns,omitempty"`
 
 	// ServiceColumns controls which columns the Services panel shows, and in
-	// what order. Valid values: "name", "status", "replicas", "type", "ipv4",
-	// "ipv6", "health", "image", "snapshots". Everything but "replicas" rolls
-	// the service's instances up the way the Instances panel renders one.
+	// what order. Valid values: "name", "status", "update", "replicas",
+	// "type", "ipv4", "ipv6", "health", "image", "snapshots". Everything but
+	// "replicas" and "update" rolls the service's instances up the way the
+	// Instances panel renders one.
 	ServiceColumns []string `yaml:"serviceColumns,omitempty"`
 
 	// CheckImageUpdatesOnStart checks the OCI images instances were created
@@ -177,7 +178,7 @@ var DefaultInstanceColumns = []string{"name", "status", "health", "type", "ipv4"
 
 // DefaultServiceColumns is the Services panel's column set/order when the
 // user hasn't customized ServiceColumns.
-var DefaultServiceColumns = []string{"name", "status", "changed", "replicas", "health", "ipv4", "snapshots"}
+var DefaultServiceColumns = []string{"name", "status", "update", "replicas", "health", "ipv4", "snapshots"}
 
 // OSConfig contains config on the level of the os
 type OSConfig struct {

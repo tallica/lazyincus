@@ -541,16 +541,17 @@ panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 
 ### Changed config
 
-`changed` marks the instances `up` would recreate, and a service or stack
-with any. From 1.4.0, incus-compose labels each instance with its
-service's config hash (`user.label.incus-compose.config-hash`);
-`LoadComposeStack` asks `config --hash '*'` for the file's, cached with
-the rest of the config. The comparison is incus-compose's own: an
-instance created before it hashed has no label and never reads changed,
-and an incus-compose without `--hash` leaves the column blank. In a
-service's Info tab each instance's block has a Config line, `changed` or
-`not tracked` (no label); a lone instance's change is the service's own
-Changed line. What the hash covers is incus-compose's to say
+Services' `update` column reads `changed` for an instance `up` would
+recreate and a service with any, and a stack's status gains it too. From
+1.4.0, incus-compose labels each instance with its service's config hash
+(`user.label.incus-compose.config-hash`); `LoadComposeStack` asks
+`config --hash '*'` for the file's, cached with the rest of the config.
+The comparison is incus-compose's own: an instance created before it
+hashed has no label and never reads changed, and an incus-compose
+without `--hash` leaves the column blank. In a service's Info tab each
+instance's block has a Config line, `changed` or `not tracked` (no
+label); a lone instance's change is the service's own Changed line. What
+the hash covers is incus-compose's to say
 ([lxc/incus-compose#234](https://github.com/lxc/incus-compose/pull/234)).
 A compose file edited outside lazyincus shows within two seconds, no
 daemon event saying so: `statStackFiles` stats each listed stack's
