@@ -27,10 +27,10 @@ func TestStackImageMarker(t *testing.T) {
 			func(cell string, _ int) string { return utils.Decolorise(cell) })
 	}
 
-	assert.Equal(t, []string{"web", "running changed ↑"}, row())
+	assert.Equal(t, []string{"web", "running ↻ ↑"}, row())
 
 	stack.Images = []string{"current"}
-	assert.Equal(t, []string{"web", "running changed"}, row())
+	assert.Equal(t, []string{"web", "running ↻"}, row())
 }
 
 // A stack with an instance from an older config says so after its status.
@@ -46,5 +46,5 @@ func TestGetStackDisplayStringsChanged(t *testing.T) {
 	assert.Equal(t, []string{"web", "running", "/srv/web"}, GetStackDisplayStrings(&config.GuiConfig{}, stack, "/home", nil, nil))
 
 	stack.Hashes["web"] = []string{"v1:old"}
-	assert.Equal(t, []string{"web", "running changed", "/srv/web"}, GetStackDisplayStrings(&config.GuiConfig{}, stack, "/home", nil, nil))
+	assert.Equal(t, []string{"web", "running ↻", "/srv/web"}, GetStackDisplayStrings(&config.GuiConfig{}, stack, "/home", nil, nil))
 }

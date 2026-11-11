@@ -365,7 +365,7 @@ func TestAChangedServiceIsMarked(t *testing.T) {
 	m := start(t, options{compose: true, server: server, localStack: local}, 140, 40)
 	text := strings.Join(screen(m), "\n")
 
-	assert.Contains(t, text, "│default running changed")
+	assert.Contains(t, text, "│default running ↻")
 	assert.Contains(t, text, "│web running ↻")
 	assert.Contains(t, text, "1 instance from an older config, recreate with u")
 }

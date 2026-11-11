@@ -293,13 +293,13 @@ service the file declares but nothing is running still gets one, in state
 `none`. Otherwise a service carries the status of the instances under it —
 `running`, `frozen`, whatever they are, or `partial` when replicas
 disagree. A service, replica or stack created from an older version of the
-compose file is marked `↻` in Services and `changed` on its stack until `u`
-recreates it ([needs incus-compose 1.4.0](docs/Panels.md#changed-config)).
-The service instances of every listed stack on the active remote move out
-of the instances panel, which becomes **Standalone Instances** (`3`); a
-project no stack lists keeps its instances there, as does an instance of a
-service the compose file no longer declares. `C` there puts the stacks'
-instances back for a while, in one list with everything else.
+compose file is marked `↻` until `u` recreates it ([needs incus-compose
+1.4.0](docs/Panels.md#changed-config)). The service instances of every
+listed stack on the active remote move out of the instances panel, which
+becomes **Standalone Instances** (`3`); a project no stack lists keeps its
+instances there, as does an instance of a service the compose file no
+longer declares. `C` there puts the stacks' instances back for a while, in
+one list with everything else.
 
 A service with replicas lists them under it, one indented row each,
 rendered in the same columns as the service. Selecting a replica points
