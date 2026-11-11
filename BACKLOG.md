@@ -193,9 +193,6 @@ Known rough edges, carried over from the gocui version:
 
 - A main-panel search doesn't find a needle split by a wrapped line's
   break.
-- `sortVolumes`, and any other sort that can call two rows equal, should
-  end on the project, so same-named items in different projects sort the
-  same way everywhere.
 - Search highlight colours are fixed, black on yellow and cyan; they could
   come from the theme.
 - `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do

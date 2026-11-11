@@ -15,7 +15,7 @@ func (m *Model) newNetworks(p *panel) list[*commands.Network] {
 		get: func(incus *commands.IncusCommand, _ *commands.Listing) ([]*commands.Network, error) {
 			return incus.GetNetworks()
 		},
-		less:    func(a, b *commands.Network) bool { return a.Name < b.Name },
+		less:    sortNetworks,
 		key:     (*commands.Network).Key,
 		project: func(network *commands.Network) string { return network.Network.Project },
 		cells:   presentation.GetNetworkDisplayStrings,
@@ -96,4 +96,12 @@ func (m *Model) listedInstances() func() []*commands.Instance {
 func (m *Model) networkConfig(network *commands.Network) func() string {
 	loc := m.sessionLocation(network.Network.Project)
 	return func() string { return presentation.NetworkConfig(network, loc) }
+}
+
+func sortNetworks(a, b *commands.Network) bool {
+	if a.Name != b.Name {
+		return a.Name < b.Name
+	}
+
+	return a.Network.Project < b.Network.Project
 }

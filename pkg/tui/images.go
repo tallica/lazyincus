@@ -28,14 +28,18 @@ func (m *Model) newImages(p *panel) list[*commands.Image] {
 	}
 }
 
-// sortImages: by the label shown, the fingerprint breaking ties.
+// sortImages: by the label shown, then fingerprint, then project.
 func sortImages(a, b *commands.Image) bool {
 	left, right := strings.ToLower(a.Label()), strings.ToLower(b.Label())
 	if left != right {
 		return left < right
 	}
 
-	return a.Fingerprint < b.Fingerprint
+	if a.Fingerprint != b.Fingerprint {
+		return a.Fingerprint < b.Fingerprint
+	}
+
+	return a.Image.Project < b.Image.Project
 }
 
 func (m *Model) imageFlex() []utils.FlexColumn {

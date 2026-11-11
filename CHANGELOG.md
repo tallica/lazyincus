@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The lists keep refreshing after the screen fails to come back from a subprocess, instead of freezing for the rest of the session.
 - A long line in a prompt puts the cursor where the next character goes, not at the end of the first row.
 - Rows that sort equal keep the daemon's order, instead of swapping places between refreshes.
+- Same-named volumes, networks or images in two projects sort by project, as instances and profiles do.
 - A name with a keycap emoji such as `1️⃣` no longer shifts the columns after it one place right of the other rows'.
 - Confirming a cancel or delete in `W` after `R` moved the session sends nothing, instead of sending it to the new remote.
 - `P`'s menu no longer lists the old remote's projects when `R` moved the session before they arrived.

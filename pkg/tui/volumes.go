@@ -41,7 +41,11 @@ func sortVolumes(a, b *commands.Volume) bool {
 		return a.Volume.Type < b.Volume.Type
 	}
 
-	return a.Name < b.Name
+	if a.Name != b.Name {
+		return a.Name < b.Name
+	}
+
+	return a.Volume.Project < b.Volume.Project
 }
 
 func (m *Model) volumeFlex() []utils.FlexColumn {

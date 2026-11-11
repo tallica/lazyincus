@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/lxc/incus/v7/shared/api"
+	"github.com/tallica/lazyincus/pkg/commands"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,4 +39,27 @@ func TestTheVolumeConfigTabNamesItsPool(t *testing.T) {
 	assert.Contains(t, text, "Name:         data")
 	assert.Contains(t, text, "Pool space:")
 	assert.Contains(t, text, "Used by:      "+m.tr.UsedByNothing)
+}
+
+func TestSameNamedItemsInTwoProjectsSortByProject(t *testing.T) {
+	volumes := []*commands.Volume{
+		{Pool: "default", Name: "data", Volume: api.StorageVolume{Type: "custom", Project: "shop"}},
+		{Pool: "default", Name: "data", Volume: api.StorageVolume{Type: "custom", Project: "default"}},
+	}
+	assert.True(t, sortVolumes(volumes[1], volumes[0]))
+	assert.False(t, sortVolumes(volumes[0], volumes[1]))
+
+	networks := []*commands.Network{
+		{Name: "lan", Network: api.Network{Project: "shop"}},
+		{Name: "lan", Network: api.Network{Project: "default"}},
+	}
+	assert.True(t, sortNetworks(networks[1], networks[0]))
+	assert.False(t, sortNetworks(networks[0], networks[1]))
+
+	images := []*commands.Image{
+		{Fingerprint: "abc", Image: api.Image{Project: "shop"}},
+		{Fingerprint: "abc", Image: api.Image{Project: "default"}},
+	}
+	assert.True(t, sortImages(images[1], images[0]))
+	assert.False(t, sortImages(images[0], images[1]))
 }
