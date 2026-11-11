@@ -76,7 +76,7 @@ func GetServiceRowDisplayStrings(
 	guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus,
 ) []string {
 	columns := serviceColumns(guiConfig)
-	marked := markedColumn(columns)
+	marked := serviceMarkedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
@@ -99,6 +99,15 @@ func GetServiceRowDisplayStrings(
 	}
 
 	return cells
+}
+
+// serviceMarkedColumn is where ↑ goes: update, else where Instances puts it.
+func serviceMarkedColumn(columns []string) string {
+	if lo.Contains(columns, "update") {
+		return "update"
+	}
+
+	return markedColumn(columns)
 }
 
 // replicaCell renders a replica's row through the instances panel's own

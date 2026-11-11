@@ -98,6 +98,16 @@ func TestServiceImageMarker(t *testing.T) {
 		plain(GetServiceRowDisplayStrings(&config.GuiConfig{ServiceColumns: []string{"name"}},
 			&commands.ServiceRow{Service: service, Instance: instance}, updates))[0])
 
+	// With an update column, there, after changed: on that column alone.
+	withUpdate := &config.GuiConfig{ServiceColumns: []string{"name", "image", "update"}}
+	assert.Equal(t, []string{"web", "nginx:alpine", "↑"},
+		plain(GetServiceRowDisplayStrings(withUpdate, &commands.ServiceRow{Service: service}, updates)))
+
+	service.Hash = "v1:new"
+	instance.Instance.ExpandedConfig = map[string]string{"user.label.incus-compose.config-hash": "v1:old"}
+	assert.Equal(t, []string{"web", "nginx:alpine", "changed ↑"},
+		plain(GetServiceRowDisplayStrings(withUpdate, &commands.ServiceRow{Service: service}, updates)))
+
 	updates["old"] = commands.UpstreamStatus{State: commands.UpstreamCurrent}
 	assert.Equal(t, []string{"web", "nginx:alpine"},
 		plain(GetServiceRowDisplayStrings(guiConfig, &commands.ServiceRow{Service: service}, updates)))
