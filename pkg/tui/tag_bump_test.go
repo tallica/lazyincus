@@ -76,7 +76,7 @@ func TestUpdateImagesMovesTagsAndRecreates(t *testing.T) {
 
 	press(m, "2", "G")
 	require.NotNil(t, m.topMenu())
-	assert.Equal(t, []string{"web nginx:1.27 → nginx:1.31"}, menuLabels(m))
+	assert.Equal(t, []string{"web nginx:1.27 → 1.31"}, menuLabels(m))
 
 	press(m, "enter")
 	require.Len(t, m.popups, 1)
@@ -101,7 +101,7 @@ func TestUpdateImagesTakesBuildsAndTagsTogether(t *testing.T) {
 	}}
 
 	press(m, "2", "G")
-	assert.Equal(t, []string{"db docker.io/library/postgres:16 16.1 → 16.2", "web nginx:1.27 → nginx:1.31"}, menuLabels(m))
+	assert.Equal(t, []string{"db docker.io/library/postgres:16 16.1 → 16.2", "web nginx:1.27 → 1.31"}, menuLabels(m))
 
 	press(m, "enter", "y")
 	require.Len(t, *ran, 1)

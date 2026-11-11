@@ -103,7 +103,7 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 		switch {
 		case update.bump != nil:
 			items = append(items, &menuItem{
-				labelColumns: []string{update.service, update.bump.From, "→ " + update.bump.To}, checked: true,
+				labelColumns: []string{update.service, update.bump.From, "→ " + update.bump.Tag()}, checked: true,
 			})
 
 			continue

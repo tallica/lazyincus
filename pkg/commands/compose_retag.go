@@ -18,6 +18,10 @@ type ComposeTagBump struct {
 	From, To string
 }
 
+func (b ComposeTagBump) Tag() string {
+	return b.To[strings.LastIndex(b.To, ":")+1:]
+}
+
 // TagBump is false unless beacon tracked the very image and tag the file names.
 func (s *ComposeService) TagBump() (ComposeTagBump, bool) {
 	verdict := s.Beacon()
