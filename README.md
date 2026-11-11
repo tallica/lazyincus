@@ -29,11 +29,12 @@ six-minute walkthrough on asciinema.org.
 
 Past the MVP it started as, and in daily use — still pre-1.0. Panels for
 instances, snapshots, images, volumes, networks, profiles and — with
-incus-compose installed — compose stacks and their services, plus the Incus concepts
-lazydocker has no analog for: projects and remotes. Parity with lazydocker
-in the corners — custom and bulk commands, non-English translations —
-isn't there; see "What's not here yet" below, and
-[BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
+incus-compose installed — compose stacks and their services, plus the Incus
+concepts lazydocker has no analog for: projects and remotes. With
+incus-beacon on the server, it also shows which images have a newer tag.
+Parity with lazydocker in the corners — custom and bulk commands,
+non-English translations — isn't there; see "What's not here yet" below,
+and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 ## Requirements
 
@@ -49,6 +50,9 @@ isn't there; see "What's not here yet" below, and
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in
   Homebrew core; on macOS, `brew install tallica/tap/incus-compose`.
+- Optional: [incus-beacon](https://github.com/tallica/incus-beacon#install--run),
+  installed on the Incus server rather than here, if you want newer image
+  tags found — see [Image updates](#image-updates) below.
 
 ## Install / run
 
@@ -386,6 +390,31 @@ A `U` whose recreated instance then can't start — a published port already
 taken, say — leaves it stopped, and the Error popup once you're back from
 the terminal is the daemon's reason. One that fails creating the instance,
 after the old one is deleted, leaves the service with none.
+
+## Image updates
+
+Two sources say an image has something newer, and both land in the same
+places: the `update` column, a stack's row after its status, and the Info
+tab's **Newer build** and **Newer tag** lines.
+
+**`g` on Images, from here.** It asks each image's registry whether the tag
+it was pulled by has a newer build, from this machine and with your
+`~/.docker/config.json`; `gui.checkImageUpdatesOnStart` asks at startup
+too. It finds rebuilds of the tag you run, never a newer tag.
+
+**[incus-beacon](https://github.com/tallica/incus-beacon), on the server.**
+It runs as an instance beside the ones it watches, checks their images on
+its own schedule and records what it found on each, which lazyincus reads
+the way it reads incus-compose's keys: nothing to install here, and the
+same answer from any machine. With `track: semver` it finds newer tags too.
+Its settings belong in the service's `labels:`, where a recreate keeps
+them.
+
+**`G` on Stacks or Services acts on either**: one checklist of the services
+with a newer build or tag, recreated together on a pull, each newer tag
+written into the compose file first. Where beacon has checked every
+instance of the stack, `G` asks no registry. The details are in
+[docs/Panels.md](docs/Panels.md#incus-beacon).
 
 ## Supporting upstream
 
