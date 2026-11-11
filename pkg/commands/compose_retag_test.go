@@ -32,6 +32,8 @@ func TestComposeServiceTagBump(t *testing.T) {
 		"another tag":        beaconService("nginx:1.27", "docker.io/library/nginx:1.26", BeaconUpdateAvailable, "1.31"),
 		"no tag":             beaconService("nginx", "docker.io/library/nginx:latest", BeaconUpdateAvailable, "1.31"),
 		"pinned to a digest": beaconService("nginx@sha256:"+sixtyFourHex, "docker.io/library/nginx:1.27", BeaconUpdateAvailable, "1.31"),
+		"YAML for a tag":     beaconService("nginx:1.27", "docker.io/library/nginx:1.27", BeaconUpdateAvailable, "1.31\n    privileged: true"),
+		"a comment":          beaconService("nginx:1.27", "docker.io/library/nginx:1.27", BeaconUpdateAvailable, "1.31 # x"),
 	}
 	for name, service := range refused {
 		_, ok := service.TagBump()

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/goccy/go-yaml/ast"
@@ -27,7 +28,7 @@ func (s *ComposeService) TagBump() (ComposeTagBump, bool) {
 	verdict := s.Beacon()
 
 	tag := verdict.NewerTag()
-	if tag == "" || strings.Contains(s.Image, "$") {
+	if !validTag.MatchString(tag) || strings.Contains(s.Image, "$") {
 		return ComposeTagBump{}, false
 	}
 
@@ -58,6 +59,10 @@ func (s *ComposeService) trackedRef() string {
 
 	return ""
 }
+
+// validTag is the registry's tag grammar: beacon's key is anyone's to set,
+// and what it says goes into the compose file.
+var validTag = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`)
 
 // errImageNotInFile: an image from an override file or an extends.
 var errImageNotInFile = errors.New("no image line of its own")
