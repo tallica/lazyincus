@@ -699,7 +699,8 @@ for a tag only when beacon tracked the very image and tag the file names,
 so not one whose `user.incus-beacon.image` points elsewhere. An `image:`
 the compose file doesn't spell out itself - a variable, an override
 file's, an `extends` - leaves the file as it was, saying which, and
-recreates nothing.
+recreates nothing. The file is replaced in one rename, never seen
+half-written.
 
 ## Snapshots
 

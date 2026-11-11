@@ -105,3 +105,26 @@ func TestRetagComposeImagesRefuses(t *testing.T) {
 		assert.Equal(t, original, string(data), name)
 	}
 }
+
+// A symlinked compose file is edited where it points, the link kept.
+func TestRetagComposeImagesThroughSymlink(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "real.yaml")
+	link := filepath.Join(dir, "compose.yaml")
+	require.NoError(t, os.WriteFile(target, []byte("services:\n  web:\n    image: nginx:1.27\n"), 0o600))
+	require.NoError(t, os.Symlink(target, link))
+
+	require.NoError(t, RetagComposeImages(link, []ComposeTagBump{{Service: "web", From: "nginx:1.27", To: "nginx:1.31"}}))
+
+	info, err := os.Lstat(link)
+	require.NoError(t, err)
+	assert.NotZero(t, info.Mode()&os.ModeSymlink)
+
+	info, err = os.Stat(target)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+	assert.Len(t, entries, 2, "no temp file left")
+}

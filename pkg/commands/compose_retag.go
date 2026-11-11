@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -87,7 +88,37 @@ func RetagComposeImages(file string, bumps []ComposeTagBump) error {
 		}
 	}
 
-	return os.WriteFile(file, []byte(strings.Join(lines, "")), info.Mode().Perm())
+	return replaceFile(file, []byte(strings.Join(lines, "")), info.Mode().Perm())
+}
+
+// replaceFile swaps data in whole, so the stack poller or incus-compose
+// never reads a half-written compose file; a symlink keeps pointing at it.
+func replaceFile(file string, data []byte, perm os.FileMode) error {
+	file, err := filepath.EvalSymlinks(file)
+	if err != nil {
+		return err
+	}
+
+	temp, err := os.CreateTemp(filepath.Dir(file), "."+filepath.Base(file)+".*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temp.Name())
+
+	if _, err := temp.Write(data); err != nil {
+		temp.Close()
+		return err
+	}
+
+	if err := temp.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(temp.Name(), perm); err != nil {
+		return err
+	}
+
+	return os.Rename(temp.Name(), file)
 }
 
 func retagLine(data []byte, lines []string, bump ComposeTagBump) error {
