@@ -26,7 +26,7 @@ the short per-feature demos the CHANGELOG links to is
 ## Status
 
 Past the MVP it started as and in daily use; still pre-1.0. Developed
-against Incus 7.4, new enough for incus-compose, so the Services panel's
+against Incus 7.6, new enough for incus-compose, so the Services panel's
 verbs are exercised for real, and with a VM alongside the containers.
 
 - Module: `github.com/tallica/lazyincus`

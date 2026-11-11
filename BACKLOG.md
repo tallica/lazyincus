@@ -237,7 +237,7 @@ stack's instances, networks and volumes, plus a separate
 That's why project awareness came first: without it a compose stack was
 invisible unless the user pointed their `incus` CLI remote at its project.
 Every project is listed by default now, `P` scopes to one, and the footer
-says which — see CLAUDE.md. Nothing outstanding here.
+says which — see [README](README.md#usage). Nothing outstanding here.
 
 ### 2. Compose grouping on top
 
