@@ -83,20 +83,24 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 
 // beaconCovers is incus-beacon having checked every instance of the services.
 func beaconCovers(services []*commands.ComposeService) bool {
-	covered := false
-
+	var instances []*commands.Instance
 	for _, service := range services {
-		for _, instance := range service.Instances {
-			switch instance.Beacon().Status {
-			case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
-				covered = true
-			default:
-				return false
-			}
+		instances = append(instances, service.Instances...)
+	}
+
+	return beaconCoversInstances(instances)
+}
+
+func beaconCoversInstances(instances []*commands.Instance) bool {
+	for _, instance := range instances {
+		switch instance.Beacon().Status {
+		case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
+		default:
+			return false
 		}
 	}
 
-	return covered
+	return len(instances) > 0
 }
 
 // stackServiceList are the stack's services the services panel has, by name

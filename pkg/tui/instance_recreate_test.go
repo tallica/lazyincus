@@ -1,12 +1,15 @@
 package tui
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/commands/incustest"
 )
 
@@ -137,11 +140,129 @@ func TestUpdatingOCIContainers(t *testing.T) {
 	assert.Equal(t, []string{"web=library/nginx:1.31"}, server.Rebuilds())
 }
 
-// Nothing newer, or only an instance with snapshots, leaves G nothing to list.
-func TestUpdatingOCIContainersWithNothingToTake(t *testing.T) {
+// An instance with snapshots and something newer is named, not dropped:
+// alone it's the error, beside others the checklist's subtitle.
+func TestUpdatingOCIContainersWithSnapshots(t *testing.T) {
 	server := ociServer()
 	_, err := server.CreateInstanceSnapshot("web", api.InstanceSnapshotsPost{Name: "snap0"})
 	require.NoError(t, err)
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	assert.Nil(t, m.topMenu())
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "every one here with something newer has some (web)")
+
+	server = twoOCIServer(nil)
+	_, err = server.CreateInstanceSnapshot("api", api.InstanceSnapshotsPost{Name: "snap0"})
+	require.NoError(t, err)
+	m = start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	require.NotNil(t, m.topMenu())
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
+	assert.Equal(t, "left out, with snapshots: api", m.topMenu().subtitle)
+}
+
+// twoOCIServer adds api, a second OCI container beacon has a newer tag for.
+func twoOCIServer(rebuildErrors map[string]error) *incustest.Server {
+	web := ociServer().Instances[0]
+	other := runningInstance("api", map[string]string{
+		"volatile.container.oci":    "true",
+		"user.incus-beacon.status":  "update-available",
+		"user.incus-beacon.current": "docker.io/acme/api:2.0",
+		"user.incus-beacon.latest":  "2.1",
+	})
+	other.Config = map[string]string{"volatile.base_image": "api-image"}
+
+	return incustest.New(incustest.Server{
+		Version: "7.4", Instances: []api.InstanceFull{other, web}, RebuildErrors: rebuildErrors,
+		Images: append(ociServer().Images, api.Image{
+			Fingerprint: "api-image", Project: "default",
+			UpdateSource: &api.ImageSource{Protocol: "oci", Server: "https://docker.io", Alias: "acme/api:2.0"},
+		}),
+	})
+}
+
+// One container failing leaves the others recreated, the error naming it.
+func TestUpdatingOCIContainersPastAFailure(t *testing.T) {
+	server := twoOCIServer(map[string]error{"api": errors.New("registry said 401")})
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	require.Len(t, menuLabels(m), 2)
+
+	press(m, "enter", "y")
+	assert.Equal(t, []string{"web=library/nginx:1.31"}, server.Rebuilds())
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "api: registry said 401")
+}
+
+// With nothing checked and beacon not on every container, G asks the
+// registries first, as on Services, and again after the recreate; beacon
+// on every one, and it asks nothing.
+func TestUpdatingOCIContainersChecksFirst(t *testing.T) {
+	for beacon, wantChecks := range map[bool]int{true: 0, false: 2} {
+		server := ociServer()
+		if !beacon {
+			instances := server.Instances
+			delete(instances[0].ExpandedConfig, "user.incus-beacon.status")
+			server.SetInstances(instances)
+		}
+
+		m := start(t, options{server: server}, 140, 40)
+
+		checks := 0
+		m.checkUpstreams = func(_ context.Context, targets []commands.UpstreamTarget) map[string]commands.UpstreamStatus {
+			checks++
+			return map[string]commands.UpstreamStatus{"nginx-image": {State: commands.UpstreamNewer, Ref: "docker.io/library/nginx:1.27"}}
+		}
+
+		press(m, "G")
+		require.NotNil(t, m.topMenu(), "beacon %v", beacon)
+
+		press(m, "enter", "y")
+		assert.Equal(t, wantChecks, checks, "beacon %v", beacon)
+	}
+}
+
+// The Info tab says what g found, as the update column does.
+func TestInstanceInfoSaysWhatGFound(t *testing.T) {
+	server := ociServer()
+	instances := server.Instances
+	delete(instances[0].ExpandedConfig, "user.incus-beacon.status")
+	server.SetInstances(instances)
+	m := start(t, options{server: server}, 140, 40)
+	m.checkUpstreams = func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus {
+		return map[string]commands.UpstreamStatus{"nginx-image": {State: commands.UpstreamNewer, Ref: "docker.io/library/nginx:1.27"}}
+	}
+
+	assert.NotContains(t, mainText(m), "Newer build:")
+	run(m, refresh(m.imageUpdatesFetch(false)))
+	assert.Contains(t, mainText(m), "Newer build:  yes, G takes it")
+}
+
+// U and G change the daemon, so a read-only remote refuses both.
+func TestRecreatingIsRefusedReadOnly(t *testing.T) {
+	server := ociServer()
+	m := start(t, options{server: server, readOnly: true}, 140, 40)
+
+	for _, key := range []string{"U", "G"} {
+		press(m, key)
+		assert.Nil(t, m.topMenu(), key)
+		require.Len(t, m.popups, 1, key)
+		press(m, "esc")
+	}
+
+	assert.Empty(t, server.Rebuilds())
+}
+
+// Nothing newer leaves G nothing to list.
+func TestUpdatingOCIContainersWithNothingToTake(t *testing.T) {
+	server := ociServer()
+	instances := server.Instances
+	instances[0].ExpandedConfig["user.incus-beacon.status"] = "current"
+	server.SetInstances(instances)
 	m := start(t, options{server: server}, 140, 40)
 
 	press(m, "G")

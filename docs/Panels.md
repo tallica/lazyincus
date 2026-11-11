@@ -637,12 +637,13 @@ undone. Config, devices and volumes stay; a running instance is stopped
 and started again. `G` is Services' `G` for the OCI containers no stack
 owns: a checklist of those with a newer build, `g`'s or beacon's, or a
 newer tag [incus-beacon](#incus-beacon) found, from → to, each recreated
-on a pull of it in turn, one failing leaving the rest to go. It goes by
-what's already known rather than checking first. Both are an Incus
-rebuild underneath: the registry is read off the instance's image, or off
-the image keys Incus copied onto the instance once the image has expired
-- then plain recreate isn't offered - and Incus refuses an instance with
-snapshots, which `U` says and `G` leaves out ([docs/Incus.md](Incus.md),
+on a pull of it in turn, one failing leaving the rest to go. It asks the
+registries first and after as Services' `G` does, and as there not when
+beacon has checked every one. Both are an Incus rebuild underneath: the
+registry is read off the instance's image, or off the image keys Incus
+copied onto the instance once the image has expired - then plain recreate
+isn't offered - and Incus refuses an instance with snapshots, which `U`
+says and `G` names in its subtitle ([docs/Incus.md](Incus.md),
 "Rebuild"). A compose service's instance is the Services panel's.
 
 Rename has no key and isn't on the Services panel: a compose instance's
