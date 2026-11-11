@@ -176,33 +176,41 @@ func (m *Model) confirmInstanceUpdates(chosen []instanceUpdate, recheck bool) te
 	message := fmt.Sprintf(m.tr.ConfirmUpdateInstances, strings.Join(names, ", "))
 
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
-		return m.withWaitingStatusThen(m.tr.RecreatingStatus, func() error {
-			var failed []error
-
-			for _, update := range chosen {
-				pull := update.source
-				if update.tag != "" {
-					pull = pull.WithTag(update.tag)
-				}
-
-				if err := update.instance.Recreate(&pull); err != nil {
-					failed = append(failed, fmt.Errorf("%s: %w", update.instance.Name, err))
-				}
-			}
-
-			return errors.Join(failed...)
-		}, func(err error) tea.Cmd {
-			if err != nil {
-				m.openError(err.Error())
-			}
-
-			if recheck {
-				return tea.Batch(refresh(m.instanceFetches()...), refreshQuiet(nil, m.imageUpdatesFetch(false)))
-			}
-
-			return refresh(m.instanceFetches()...)
-		})
+		return m.recreateInTurn(chosen, nil, recheck)
 	})
-
 	return nil
+}
+
+// recreateInTurn goes through the loop between containers, so each row's mark shows.
+func (m *Model) recreateInTurn(chosen []instanceUpdate, failed []error, recheck bool) tea.Cmd {
+	if len(chosen) == 0 {
+		if err := errors.Join(failed...); err != nil {
+			m.openError(err.Error())
+		}
+
+		if recheck {
+			return refreshQuiet(nil, m.imageUpdatesFetch(false))
+		}
+
+		return nil
+	}
+
+	update := chosen[0]
+	pull := update.source
+	if update.tag != "" {
+		pull = pull.WithTag(update.tag)
+	}
+
+	end := update.instance.BeginTransition("Recreating")
+	m.rerenderInstances()
+
+	return m.withWaitingStatusThen(m.tr.RecreatingStatus, func() error {
+		return update.instance.Recreate(&pull)
+	}, func(err error) tea.Cmd {
+		if err != nil {
+			failed = append(failed, fmt.Errorf("%s: %w", update.instance.Name, err))
+		}
+
+		return tea.Batch(refreshEnding([]func(){end}, m.instanceFetches()...), m.recreateInTurn(chosen[1:], failed, recheck))
+	})
 }

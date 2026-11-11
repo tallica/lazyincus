@@ -51,8 +51,10 @@ type Server struct {
 	// InstancesError fails the instance listings alone, as for a client
 	// allowed the images but not the instances.
 	InstancesError error
-	// RebuildErrors fails RebuildInstanceFromImage for the instances named.
+	// RebuildErrors fails RebuildInstanceFromImage for the instances named;
+	// OnRebuild, when set, is called with the name as each one starts.
 	RebuildErrors map[string]error
+	OnRebuild     func(name string)
 	// Version is what GetServer reports, URL where GetConnectionInfo says
 	// the daemon is.
 	Version string
@@ -383,6 +385,10 @@ func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, image api.Image, 
 
 	if refused {
 		return nil, api.StatusErrorf(http.StatusBadRequest, "Instance must be stopped to be rebuilt")
+	}
+
+	if s.OnRebuild != nil {
+		s.OnRebuild(name)
 	}
 
 	if err := s.RebuildErrors[name]; err != nil {

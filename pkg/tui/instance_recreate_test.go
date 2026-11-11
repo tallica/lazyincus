@@ -288,3 +288,23 @@ func TestUpdatingOCIContainersShowsWhatChanged(t *testing.T) {
 	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 1.27.1 → 1.27.2"}, menuLabels(m))
 	assert.Contains(t, m.topMenu().items[0].keys, "o")
 }
+
+// Each container reads recreating while its turn runs, not before.
+func TestUpdatingOCIContainersMarksEachInTurn(t *testing.T) {
+	server := twoOCIServer(nil)
+
+	var m *Model
+
+	seen := map[string][2]string{}
+	server.OnRebuild = func(name string) {
+		seen[name] = [2]string{rowOf(m, "api"), rowOf(m, "web")}
+	}
+	m = start(t, options{server: server}, 140, 40)
+
+	press(m, "G", "enter", "y")
+	require.Len(t, seen, 2)
+	assert.Contains(t, seen["api"][0], "recreating")
+	assert.NotContains(t, seen["api"][1], "recreating", "web's turn hasn't come")
+	assert.NotContains(t, seen["web"][0], "recreating", "api's is over")
+	assert.Contains(t, seen["web"][1], "recreating")
+}
