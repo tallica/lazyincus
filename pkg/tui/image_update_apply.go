@@ -67,7 +67,7 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 		})
 	})
 
-	if checked {
+	if checked || beaconCovers(m.stackServiceList(stack)) {
 		return m.updateImagesMenu(stack)
 	}
 
@@ -79,6 +79,24 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 
 		return m.updateImagesMenu(stack)
 	}, m.imageUpdatesFetch(false))
+}
+
+// beaconCovers is incus-beacon having checked every instance of the services.
+func beaconCovers(services []*commands.ComposeService) bool {
+	covered := false
+
+	for _, service := range services {
+		for _, instance := range service.Instances {
+			switch instance.Beacon().Status {
+			case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
+				covered = true
+			default:
+				return false
+			}
+		}
+	}
+
+	return covered
 }
 
 // stackServiceList are the stack's services the services panel has, by name
@@ -142,11 +160,12 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 				}
 			}
 
+			recheck := !beaconCovers(m.stackServiceList(stack))
 			if len(bumps) > 0 {
-				return m.confirmTagBumps(stackTarget(stack), bumps, names)
+				return m.confirmTagBumps(stackTarget(stack), bumps, names, recheck)
 			}
 
-			return m.composeUpdateImages(stackTarget(stack), names)
+			return m.composeUpdateImages(stackTarget(stack), names, recheck)
 		},
 	})
 
@@ -164,17 +183,22 @@ func openBuildLink(links []string) func(*Model) tea.Cmd {
 	}
 }
 
-func (m *Model) composeUpdateImages(target composeTarget, services []string) tea.Cmd {
+func (m *Model) composeUpdateImages(target composeTarget, services []string, recheck bool) tea.Cmd {
 	message := fmt.Sprintf(m.tr.ConfirmComposeUpdateImages, m.onRemote(strings.Join(services, ", "), target.remote))
 
 	return m.openSkippableConfirmation("update-images", m.tr.Confirm, message, func() tea.Cmd {
-		return m.recreateOnPull(target, services)
+		return m.recreateOnPull(target, services, recheck)
 	})
 }
 
 // recreateOnPull: without --no-deps, `up --recreate` would recreate what the services depend on too.
-func (m *Model) recreateOnPull(target composeTarget, services []string) tea.Cmd {
+func (m *Model) recreateOnPull(target composeTarget, services []string, recheck bool) tea.Cmd {
 	args := append([]string{"up", "--recreate", "--pull", "always", "--no-deps", "--detach"}, services...)
 
-	return m.composeRunThen(target, args, func() tea.Cmd { return refreshQuiet(nil, m.imageUpdatesFetch(false)) })
+	var after func() tea.Cmd
+	if recheck {
+		after = func() tea.Cmd { return refreshQuiet(nil, m.imageUpdatesFetch(false)) }
+	}
+
+	return m.composeRunThen(target, args, after)
 }

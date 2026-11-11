@@ -12,11 +12,12 @@ import (
 type tagBumpedMsg struct {
 	target   composeTarget
 	services []string
+	recheck  bool
 	err      error
 }
 
 // confirmTagBumps can't be skipped with a: it edits the compose file.
-func (m *Model) confirmTagBumps(target composeTarget, bumps []commands.ComposeTagBump, services []string) tea.Cmd {
+func (m *Model) confirmTagBumps(target composeTarget, bumps []commands.ComposeTagBump, services []string, recheck bool) tea.Cmd {
 	moves := make([]string, 0, len(bumps))
 	for _, bump := range bumps {
 		moves = append(moves, bump.Service+" to "+bump.To)
@@ -32,7 +33,7 @@ func (m *Model) confirmTagBumps(target composeTarget, bumps []commands.ComposeTa
 				err = commands.RetagComposeImages(file, bumps)
 			}
 
-			return tagBumpedMsg{target: target, services: services, err: err}
+			return tagBumpedMsg{target: target, services: services, recheck: recheck, err: err}
 		}
 	})
 
@@ -47,5 +48,5 @@ func (m *Model) onTagBumped(msg tagBumpedMsg) tea.Cmd {
 		return nil
 	}
 
-	return m.recreateOnPull(msg.target, msg.services)
+	return m.recreateOnPull(msg.target, msg.services, msg.recheck)
 }

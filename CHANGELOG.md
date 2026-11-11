@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
 - `g` on Images checks the OCI images in use for a newer build of their tag, marking them and what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.
 - `W`'s popup filters by name with `/`, and `f` shows only the failed or succeeded operations.
-- `G` on Stacks or Services lists the services with a newer image build or incus-beacon's newer tag, from → to, to tick and recreate together; `o` opens what changed.
+- `G` on Stacks or Services lists the services with a newer image build or incus-beacon's newer tag, from → to, to tick and recreate together; `o` opens what changed. With beacon on every instance, it asks no registry.
 - Stacks, services and replicas created from an older compose file are marked `↻`: what `u` recreates, from incus-compose 1.4.0.
 - The terminal's title names the remote and project, and says when the remote is read-only, so a tab shows which daemon it's on.
 - `y` copies through the terminal when no clipboard command is found, as over SSH. tmux needs `set-clipboard on` to pass it on.

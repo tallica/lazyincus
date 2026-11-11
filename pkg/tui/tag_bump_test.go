@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,10 +23,10 @@ import (
 func beaconModel(t *testing.T, webStatus string) (*Model, string, *[]*exec.Cmd) {
 	t.Helper()
 
-	return beaconModelLatest(t, webStatus, "1.31")
+	return beaconModelWith(t, webStatus, "1.31", "current")
 }
 
-func beaconModelLatest(t *testing.T, webStatus, latest string) (*Model, string, *[]*exec.Cmd) {
+func beaconModelWith(t *testing.T, webStatus, latest, dbStatus string) (*Model, string, *[]*exec.Cmd) {
 	t.Helper()
 
 	stack := testStack(t, t.TempDir(), "default", "web", "db")
@@ -39,7 +40,7 @@ func beaconModelLatest(t *testing.T, webStatus, latest string) (*Model, string, 
 	web.ExpandedConfig["user.incus-beacon.current"] = "docker.io/library/nginx:1.27"
 	web.ExpandedConfig["user.incus-beacon.latest"] = latest
 	db := composeFixture("default", "db-1", "db")
-	db.ExpandedConfig["user.incus-beacon.status"] = "current"
+	db.ExpandedConfig["user.incus-beacon.status"] = dbStatus
 	db.Config = map[string]string{"volatile.base_image": "db-image"}
 
 	server := incustest.New(incustest.Server{Instances: []api.InstanceFull{web, db}})
@@ -110,10 +111,29 @@ func TestUpdateImagesTakesBuildsAndTagsTogether(t *testing.T) {
 
 // A rebuild only incus-beacon has seen is G's to take too.
 func TestUpdateImagesTakesBeaconsRebuild(t *testing.T) {
-	m, _, _ := beaconModelLatest(t, "update-available", "1.27@sha256:0123456789ab")
+	m, _, _ := beaconModelWith(t, "update-available", "1.27@sha256:0123456789ab", "current")
 
 	press(m, "2", "G")
 	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 newer build (incus-beacon)"}, menuLabels(m))
+}
+
+// With incus-beacon's verdict on every instance, G asks no registry,
+// before the list or after the recreate; one instance without it, and G
+// checks as it always has.
+func TestUpdateImagesGoesByBeacon(t *testing.T) {
+	for status, wantChecks := range map[string]int{"current": 0, "": 1} {
+		m, _, ran := beaconModelWith(t, "update-available", "1.31", status)
+
+		checks := 0
+		m.checkUpstreams = func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus {
+			checks++
+			return nil
+		}
+
+		press(m, "2", "G", "enter", "y")
+		require.Len(t, *ran, 1, "db's beacon status %q", status)
+		assert.Equal(t, wantChecks*2, checks, "db's beacon status %q", status)
+	}
 }
 
 func TestUpdateImagesLeavesAnEditedFile(t *testing.T) {
