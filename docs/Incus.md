@@ -240,9 +240,13 @@ inferred.
   (`internal/server/storage/backend.go`) refuses a root volume that has
   any, on every driver, so a snapshot first can't be the way back. It pulls
   before it wipes, so a failed pull leaves the old disk, which is started
-  again. An incus-compose copy's `update_source` names the Incus server,
-  not the registry, which is one more reason its instances are the Services
-  panel's `U`.
+  again. A cached OCI image expires (`images.remote_cache_expiry`, 10 days
+  by default) while instances made from it run on, so with the image gone
+  the registry comes from what Incus copied onto the instance at creation:
+  `image.description` (`docker.io/library/nginx (OCI)`) for the registry
+  and `image.id` for the repository and tag. An incus-compose copy's
+  `update_source` names the Incus server, not the registry, which is one
+  more reason its instances are the Services panel's `U`.
 - **Logs**: `GetInstanceConsoleLog` returns an `io.ReadCloser` over the
   console ring buffer — pull-based, not a stream like Docker's
   `ContainerLogs(..., Follow: true)`, and **drain-on-read**: each read

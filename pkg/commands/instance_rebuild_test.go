@@ -28,3 +28,24 @@ func TestBeaconNewerTagForARebuild(t *testing.T) {
 	assert.Empty(t, instance("docker.io/library/nginx:1.27", "1.31\nx: y").BeaconNewerTag(source), "not a tag")
 	assert.Empty(t, instance("docker.io/library/nginx:1.27", "1.27@sha256:0123456789ab").BeaconNewerTag(source), "a rebuild")
 }
+
+// An image Incus has expired leaves the keys it copied onto the instance.
+func TestOCISourceFromConfig(t *testing.T) {
+	source, ok := ociSourceFromConfig("docker.io/semaphoreui/semaphore (OCI)", "semaphoreui/semaphore:latest")
+	assert.True(t, ok)
+	assert.Equal(t, OCIRebuild{Server: "https://docker.io", Ref: "semaphoreui/semaphore:latest"}, source)
+
+	source, ok = ociSourceFromConfig("registry.example:5000/acme/api (OCI)", "acme/api:2.0")
+	assert.True(t, ok)
+	assert.Equal(t, "registry.example:5000/acme/api:2.0", source.Image())
+
+	for name, keys := range map[string][2]string{
+		"no description":   {"", "library/nginx:1.27"},
+		"no tag":           {"docker.io/library/nginx (OCI)", "library/nginx"},
+		"another image":    {"docker.io/library/caddy (OCI)", "library/nginx:1.27"},
+		"not an OCI image": {"Alpine 3.22 amd64 (20261111_13:00)", "alpine/3.22"},
+	} {
+		_, ok := ociSourceFromConfig(keys[0], keys[1])
+		assert.False(t, ok, name)
+	}
+}

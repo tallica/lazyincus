@@ -26,19 +26,34 @@ func (r OCIRebuild) WithTag(tag string) OCIRebuild {
 	return r
 }
 
-// ErrNoOCISource is an instance whose image no longer says where it came from.
-var ErrNoOCISource = errors.New("its image isn't on the server any more to say which registry it came from")
+// ErrNoOCISource is an instance that doesn't say which registry its image came from.
+var ErrNoOCISource = errors.New("neither it nor its image says which registry it came from")
 
-// OCIRebuildSource is read off the image: the instance keeps only its fingerprint.
-func (i *Instance) OCIRebuildSource() (OCIRebuild, error) {
+// OCIRebuildSource, and whether the image is still held: docs/Incus.md, "Rebuild".
+func (i *Instance) OCIRebuildSource() (source OCIRebuild, held bool, err error) {
 	image, _, err := i.Client.GetImage(i.BaseImage())
-	if err != nil || ociRef(image.UpdateSource) == "" {
-		return OCIRebuild{}, ErrNoOCISource
+	if err == nil && ociRef(image.UpdateSource) != "" {
+		ref, _, _ := strings.Cut(image.UpdateSource.Alias, "@")
+		return OCIRebuild{Server: image.UpdateSource.Server, Ref: ref}, true, nil
 	}
 
-	ref, _, _ := strings.Cut(image.UpdateSource.Alias, "@")
+	if source, ok := ociSourceFromConfig(i.config("image.description"), i.config("image.id")); ok {
+		return source, err == nil, nil
+	}
 
-	return OCIRebuild{Server: image.UpdateSource.Server, Ref: ref}, nil
+	return OCIRebuild{}, false, ErrNoOCISource
+}
+
+// ociSourceFromConfig reads "docker.io/library/nginx (OCI)" and "library/nginx:1.27".
+func ociSourceFromConfig(description, id string) (OCIRebuild, bool) {
+	repository := withoutTag(id)
+	registry, ok := strings.CutSuffix(strings.TrimSuffix(description, " (OCI)"), "/"+repository)
+
+	if !ok || registry == "" || repository == id || strings.ContainsAny(registry, "/ ") {
+		return OCIRebuild{}, false
+	}
+
+	return OCIRebuild{Server: "https://" + registry, Ref: id}, true
 }
 
 // ErrRebuildSnapshots: docs/Incus.md, "Rebuild".

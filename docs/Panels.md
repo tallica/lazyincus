@@ -636,10 +636,11 @@ the latest build of its tag - or onto the newer tag
 [incus-beacon](#incus-beacon) found - after a confirmation that says it
 can't be undone. Config, devices and volumes stay; a running instance is
 stopped and started again. It's an Incus rebuild underneath: the registry
-is read off the instance's image, so one whose image has since been
-deleted can't be recreated, and Incus refuses one with snapshots, which
-have to go first ([docs/Incus.md](Incus.md), "Rebuild"). A compose
-service's instance is the Services panel's `U`.
+is read off the instance's image, or off the image keys Incus copied onto
+the instance once the image has expired - then only the pulls are offered
+- and Incus refuses one with snapshots, which have to go first
+([docs/Incus.md](Incus.md), "Rebuild"). A compose service's instance is
+the Services panel's `U`.
 
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a

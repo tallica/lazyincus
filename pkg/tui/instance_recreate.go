@@ -20,11 +20,14 @@ func (m *Model) instanceRecreate(instance *commands.Instance) tea.Cmd {
 		return nil
 	}
 
-	var source commands.OCIRebuild
+	var (
+		source commands.OCIRebuild
+		held   bool
+	)
 
 	return m.withWaitingStatusThen(m.tr.CheckingImagesStatus, func() error {
 		var err error
-		source, err = instance.OCIRebuildSource()
+		source, held, err = instance.OCIRebuildSource()
 
 		return err
 	}, func(err error) tea.Cmd {
@@ -38,22 +41,24 @@ func (m *Model) instanceRecreate(instance *commands.Instance) tea.Cmd {
 			return nil
 		}
 
-		m.openMenu(menuOptions{title: m.tr.RecreateTitle, items: m.recreateItems(instance, source)})
+		m.openMenu(menuOptions{title: m.tr.RecreateTitle, items: m.recreateItems(instance, source, held)})
 
 		return nil
 	})
 }
 
 // recreateItems are U on Services' two, and beacon's newer tag.
-func (m *Model) recreateItems(instance *commands.Instance, source commands.OCIRebuild) []*menuItem {
+func (m *Model) recreateItems(instance *commands.Instance, source commands.OCIRebuild, held bool) []*menuItem {
 	item := func(label, image string, pull *commands.OCIRebuild) *menuItem {
 		return &menuItem{label: label, onPress: func(m *Model) tea.Cmd { return m.confirmRecreate(instance, image, pull) }}
 	}
 
-	items := []*menuItem{
-		item(m.tr.RecreateCurrentImage, source.Image(), nil),
-		item(fmt.Sprintf(m.tr.RecreatePullFirst, source.Image()), source.Image(), &source),
+	var items []*menuItem
+	if held {
+		items = append(items, item(m.tr.RecreateCurrentImage, source.Image(), nil))
 	}
+
+	items = append(items, item(fmt.Sprintf(m.tr.RecreatePullFirst, source.Image()), source.Image(), &source))
 
 	if tag := instance.BeaconNewerTag(source); tag != "" {
 		newer := source.WithTag(tag)

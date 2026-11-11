@@ -91,7 +91,9 @@ func TestRecreatingNeedsAnOCIContainer(t *testing.T) {
 	assert.Contains(t, footer(m), "only an OCI container can be recreated from its image")
 }
 
-// An image deleted since leaves nothing to say which registry to pull from.
+// An image Incus has expired since can't be recreated from as it is, but
+// the instance's own keys still say where to pull it from; with neither,
+// there's nothing to go on.
 func TestRecreatingWithTheImageGone(t *testing.T) {
 	server := ociServer()
 	server.SetImages(nil)
@@ -101,4 +103,22 @@ func TestRecreatingWithTheImageGone(t *testing.T) {
 	assert.Nil(t, m.topMenu())
 	require.Len(t, m.popups, 1)
 	assert.Contains(t, ansi.Strip(m.popups[0].message), "web can't be recreated")
+
+	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+	require.NoError(t, err)
+	web := instances[0]
+	web.ExpandedConfig["image.description"] = "docker.io/library/nginx (OCI)"
+	web.ExpandedConfig["image.id"] = "library/nginx:1.27"
+	server = incustest.New(incustest.Server{Version: "7.4", Instances: []api.InstanceFull{web}})
+	m = start(t, options{server: server}, 140, 40)
+
+	press(m, "U")
+	require.NotNil(t, m.topMenu())
+	assert.Equal(t, []string{
+		"pull the latest build of docker.io/library/nginx:1.27 first",
+		"onto docker.io/library/nginx:1.31, the newer tag incus-beacon found",
+	}, itemLabels(m)[:2])
+
+	press(m, "enter", "y")
+	assert.Equal(t, []string{"web=library/nginx:1.27"}, server.Rebuilds())
 }
