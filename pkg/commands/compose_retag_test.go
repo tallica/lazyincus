@@ -59,10 +59,12 @@ services:
 `
 	require.NoError(t, os.WriteFile(file, []byte(original), 0o640))
 
-	require.NoError(t, RetagComposeImages(file, []ComposeTagBump{
+	made, err := RetagComposeImages(file, []ComposeTagBump{
 		{Service: "web", From: "nginx:1.27", To: "nginx:1.31"},
 		{Service: "api", From: "ghcr.io/acme/api:2.0.1-alpine", To: "ghcr.io/acme/api:2.1.0-alpine"},
-	}))
+	})
+	require.NoError(t, err)
+	assert.Len(t, made, 2)
 
 	data, err := os.ReadFile(file)
 	require.NoError(t, err)
@@ -83,8 +85,8 @@ services:
 	assert.Equal(t, os.FileMode(0o640), info.Mode().Perm())
 }
 
-// A file that doesn't name the image as the bump expects is left alone,
-// whichever bump fails.
+// A bump the file doesn't name the image for as expected is refused; the
+// others still land.
 func TestRetagComposeImagesRefuses(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "compose.yaml")
 	original := "services:\n  web:\n    image: nginx:1.27\n  api:\n    image: ghcr.io/acme/api:${TAG}\n  worker:\n    extends: api\n"
@@ -98,12 +100,22 @@ func TestRetagComposeImagesRefuses(t *testing.T) {
 		"no such service":   {Service: "cache", From: "redis:7", To: "redis:8"},
 		"an image moved on": {Service: "web", From: "nginx:1.26", To: "nginx:1.31"},
 	} {
-		assert.Error(t, RetagComposeImages(file, []ComposeTagBump{web, bump}), name)
+		made, err := RetagComposeImages(file, []ComposeTagBump{bump})
+		assert.Error(t, err, name)
+		assert.Empty(t, made, name)
 
 		data, err := os.ReadFile(file)
 		require.NoError(t, err)
 		assert.Equal(t, original, string(data), name)
 	}
+
+	made, err := RetagComposeImages(file, []ComposeTagBump{web, {Service: "worker", From: "a:1", To: "a:2"}})
+	assert.ErrorContains(t, err, "worker: ")
+	assert.Equal(t, []ComposeTagBump{web}, made)
+
+	data, err := os.ReadFile(file)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "image: nginx:1.31\n")
 }
 
 // A symlinked compose file is edited where it points, the link kept.
@@ -114,7 +126,8 @@ func TestRetagComposeImagesThroughSymlink(t *testing.T) {
 	require.NoError(t, os.WriteFile(target, []byte("services:\n  web:\n    image: nginx:1.27\n"), 0o600))
 	require.NoError(t, os.Symlink(target, link))
 
-	require.NoError(t, RetagComposeImages(link, []ComposeTagBump{{Service: "web", From: "nginx:1.27", To: "nginx:1.31"}}))
+	_, err := RetagComposeImages(link, []ComposeTagBump{{Service: "web", From: "nginx:1.27", To: "nginx:1.31"}})
+	require.NoError(t, err)
 
 	info, err := os.Lstat(link)
 	require.NoError(t, err)

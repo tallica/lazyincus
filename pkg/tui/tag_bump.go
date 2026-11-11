@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -28,12 +29,20 @@ func (m *Model) confirmTagBumps(target composeTarget, bumps []commands.ComposeTa
 
 	m.openConfirmation(m.tr.Confirm, message, func() tea.Cmd {
 		return func() tea.Msg {
+			var made []commands.ComposeTagBump
+
 			file, err := commands.ComposeFile(target.dir)
 			if err == nil {
-				err = commands.RetagComposeImages(file, bumps)
+				made, err = commands.RetagComposeImages(file, bumps)
 			}
 
-			return tagBumpedMsg{target: target, services: services, recheck: recheck, err: err}
+			// A move not made leaves its service out; the rest still go.
+			kept := slices.DeleteFunc(slices.Clone(services), func(service string) bool {
+				moved := func(bump commands.ComposeTagBump) bool { return bump.Service == service }
+				return slices.ContainsFunc(bumps, moved) && !slices.ContainsFunc(made, moved)
+			})
+
+			return tagBumpedMsg{target: target, services: kept, recheck: recheck, err: err}
 		}
 	})
 
@@ -45,6 +54,9 @@ func (m *Model) onTagBumped(msg tagBumpedMsg) tea.Cmd {
 
 	if msg.err != nil {
 		m.openError(fmt.Sprintf(m.tr.ComposeBumpTagsFailed, msg.err))
+	}
+
+	if len(msg.services) == 0 {
 		return nil
 	}
 

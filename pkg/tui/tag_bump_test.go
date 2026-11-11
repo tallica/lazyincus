@@ -142,8 +142,21 @@ func TestUpdateImagesLeavesAnEditedFile(t *testing.T) {
 
 	press(m, "2", "G", "enter", "y")
 	require.Len(t, m.popups, 1)
-	assert.Contains(t, ansi.Strip(m.popups[0].message), "The compose file was left as it was")
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "so those services weren't recreated")
 	assert.Empty(t, *ran)
+}
+
+// A tag move the file can't take still lets the newer builds ticked with it go.
+func TestUpdateImagesRecreatesBuildsPastAFailedMove(t *testing.T) {
+	m, file, ran := beaconModel(t, "update-available")
+	require.NoError(t, os.WriteFile(file, []byte("services:\n  web:\n    image: nginx:${TAG}\n  db:\n    image: postgres:16\n"), 0o644))
+	m.upstreams = map[string]commands.UpstreamStatus{"db-image": {State: commands.UpstreamNewer, Ref: "docker.io/library/postgres:16"}}
+
+	press(m, "2", "G", "enter", "y")
+	require.Len(t, *ran, 1)
+	assert.Equal(t, []string{"--detach", "db"}, (*ran)[0].Args[len((*ran)[0].Args)-2:])
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "web: ")
 }
 
 func TestUpdateImagesWithNoNewerTag(t *testing.T) {

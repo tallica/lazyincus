@@ -637,7 +637,7 @@ func englishSet() TranslationSet {
 		NoNewerImages:                 "no service of %s has a newer image build or tag",
 		BeaconRebuilt:                 "newer build (incus-beacon)",
 		ConfirmComposeBumpTags:        "Are you sure you want to edit the compose file to move %s, then pull the newer images of %s and recreate them? Running instances will be replaced.",
-		ComposeBumpTagsFailed:         "The compose file was left as it was: %v",
+		ComposeBumpTagsFailed:         "Not every newer tag could go into the compose file, so those services weren't recreated: %v",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 

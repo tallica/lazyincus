@@ -68,27 +68,41 @@ var validTag = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`)
 // errImageNotInFile: an image from an override file or an extends.
 var errImageNotInFile = errors.New("no image line of its own")
 
-// RetagComposeImages edits only the image values, and writes nothing unless every bump applies.
-func RetagComposeImages(file string, bumps []ComposeTagBump) error {
+// RetagComposeImages edits only the image values, and returns the bumps it made.
+func RetagComposeImages(file string, bumps []ComposeTagBump) ([]ComposeTagBump, error) {
 	info, err := os.Stat(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	lines := strings.SplitAfter(string(data), "\n")
 
+	var (
+		made   []ComposeTagBump
+		failed []error
+	)
+
 	for _, bump := range bumps {
 		if err := retagLine(data, lines, bump); err != nil {
-			return fmt.Errorf("%s: %w", bump.Service, err)
+			failed = append(failed, fmt.Errorf("%s: %w", bump.Service, err))
+			continue
+		}
+
+		made = append(made, bump)
+	}
+
+	if len(made) > 0 {
+		if err := replaceFile(file, []byte(strings.Join(lines, "")), info.Mode().Perm()); err != nil {
+			return nil, err
 		}
 	}
 
-	return replaceFile(file, []byte(strings.Join(lines, "")), info.Mode().Perm())
+	return made, errors.Join(failed...)
 }
 
 // replaceFile swaps data in whole, so the stack poller or incus-compose
