@@ -367,6 +367,17 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
   however old: a beacon that stopped running leaves them behind.
   `user.incus-beacon.since` is when a verdict last changed, not when it was
   last checked, so this wants beacon to record that first.
+- [ ] **A registry check that learns nothing.** `G` asks the registries
+  unless beacon has a verdict on every instance, counting ones `g` can't
+  check either: an OCI container whose cached image Incus has expired
+  sends `G` to check every other image in use and still knows nothing of
+  its own. Leave those out of the count.
+- [ ] **Checking every image for one gap.** When beacon is missing on a
+  single instance, `G` checks every image in use, the ones beacon covers
+  too. Check only the images it doesn't.
+- [ ] **`U` on a compose instance in Instances.** With `C` showing the
+  stacks' instances, `U` there says to use Services. It could open
+  Services' recreate menu for that service instead.
 
 ## Snapshots panel
 
