@@ -109,6 +109,15 @@ type TranslationSet struct {
 	RestartingStatus             string
 	StartingStatus               string
 	StoppingStatus               string
+	RebuildingStatus             string
+	Rebuild                      string
+	RebuildTitle                 string
+	RebuildNewestBuild           string
+	RebuildOntoTag               string
+	ConfirmRebuild               string
+	RebuildNoSource              string
+	RebuildNotOCI                string
+	RebuildComposeInstance       string
 	PausingStatus                string
 	ResumingStatus               string
 	RemovingStatus               string
@@ -378,13 +387,22 @@ type TranslationSet struct {
 
 func englishSet() TranslationSet {
 	return TranslationSet{
-		RestartingStatus:    "restarting",
-		StartingStatus:      "starting",
-		StoppingStatus:      "stopping",
-		PausingStatus:       "pausing",
-		ResumingStatus:      "resuming",
-		RemovingStatus:      "removing",
-		ForceRemovingStatus: "stopping and deleting",
+		RestartingStatus:       "restarting",
+		StartingStatus:         "starting",
+		StoppingStatus:         "stopping",
+		RebuildingStatus:       "rebuilding",
+		Rebuild:                "rebuild from its OCI image",
+		RebuildTitle:           "Rebuild",
+		RebuildNewestBuild:     "from the newest build of %s",
+		RebuildOntoTag:         "onto %s, the newer tag incus-beacon found",
+		ConfirmRebuild:         "Are you sure you want to rebuild %s from %s? Its root disk is replaced with a fresh pull, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again.",
+		RebuildNoSource:        "%s can't be rebuilt: %v",
+		RebuildNotOCI:          "only an OCI container can be rebuilt from its image",
+		RebuildComposeInstance: "a compose service's instance: U on Services recreates it",
+		PausingStatus:          "pausing",
+		ResumingStatus:         "resuming",
+		RemovingStatus:         "removing",
+		ForceRemovingStatus:    "stopping and deleting",
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
 		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that --remote, INCUS_REMOTE or the CLI's default-remote names the one you meant.",

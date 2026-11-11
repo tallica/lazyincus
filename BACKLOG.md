@@ -146,10 +146,6 @@ Deliberately deferred (don't re-pitch unprompted):
   whether a tag has a newer build. Whether `2.2` has followed `2.1` is
   [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `G` makes
   the edit to the compose file it ends at.
-- **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
-  new build for a stack's services. An instance launched from an OCI
-  image by hand gets the `↑` but no key: `incus rebuild` discards its
-  root disk, which is no thing to put behind one keypress.
 - **A background image check** — lazyincus is opened for minutes at a
   time, not left running for days, so a check on a timer would rarely
   fire. `gui.checkImageUpdatesOnStart` and `g` cover it.

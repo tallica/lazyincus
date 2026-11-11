@@ -229,6 +229,17 @@ inferred.
   that Incus discards on stop). The message match can't be replaced with an
   `IsRunning()` pre-check: the daemon counts a *frozen* instance as running,
   ours only matches status `Running`.
+- **Rebuild**: `U` on Instances is `RebuildInstanceFromImage` with a
+  `ConnectOCI` server for the registry the image's `update_source` names
+  and the reference as the alias - all `getSourceImageConnectionInfo` reads
+  of a public image, so nothing here runs `skopeo`; the daemon pulls.
+  incusd rebuilds only a stopped instance, and none with snapshots:
+  `DeleteInstance` (`internal/server/storage/backend.go`) refuses a root
+  volume that has any, on every driver, so a snapshot first can't be the
+  way back. It pulls before it wipes, so a failed pull leaves the old disk,
+  which is started again. An incus-compose copy's `update_source` names the
+  Incus server, not the registry, which is one more reason its instances
+  are the Services panel's `U`.
 - **Logs**: `GetInstanceConsoleLog` returns an `io.ReadCloser` over the
   console ring buffer — pull-based, not a stream like Docker's
   `ContainerLogs(..., Follow: true)`, and **drain-on-read**: each read

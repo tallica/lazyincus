@@ -85,6 +85,8 @@ type state struct {
 	url string
 	// warnings are what GetWarnings returns, updated in place.
 	warnings []api.Warning
+	// rebuilds are RebuildInstanceFromImage's, as instance=alias.
+	rebuilds []string
 }
 
 // New is a Server answering from fixture.
@@ -356,6 +358,47 @@ func (s *Server) GetImages() ([]api.Image, error) {
 	return inProject(s.images(), s.scope(), func(i api.Image) string { return i.Project }), nil
 }
 
+// GetImage is the image by fingerprint, wherever it lives.
+func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
+	for _, image := range s.images() {
+		if image.Fingerprint == fingerprint {
+			return &image, "", nil
+		}
+	}
+
+	return nil, "", api.StatusErrorf(http.StatusNotFound, "Image not found")
+}
+
+// RebuildInstanceFromImage records the rebuild, refusing a running instance as incusd does.
+func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, _ api.Image, name string, req api.InstanceRebuildPost) (incus.RemoteOperation, error) {
+	refused := false
+
+	_, err := s.updateInstance(name, func(instance *api.InstanceFull) { refused = instance.Status == "Running" })
+	if err != nil {
+		return nil, err
+	}
+
+	if refused {
+		return nil, api.StatusErrorf(http.StatusBadRequest, "Instance must be stopped to be rebuilt")
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.rebuilds = append(shared.rebuilds, name+"="+req.Source.Alias)
+	shared.mutex.Unlock()
+
+	return doneRemoteOperation{}, nil
+}
+
+// Rebuilds are the rebuilds asked for so far, as instance=alias.
+func (s *Server) Rebuilds() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.rebuilds)
+}
+
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
 	if err := s.reachable(); err != nil {
 		return nil, err
@@ -612,6 +655,10 @@ func (s *Server) DeleteWarning(uuid string) error {
 type doneOperation struct{ incus.Operation }
 
 func (doneOperation) Wait() error { return nil }
+
+type doneRemoteOperation struct{ incus.RemoteOperation }
+
+func (doneRemoteOperation) Wait() error { return nil }
 
 func (s *Server) GetInstance(name string) (*api.Instance, string, error) {
 	instances, err := s.instances()
