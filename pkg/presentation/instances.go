@@ -42,9 +42,8 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
 	},
-	"update": func(guiConfig *config.GuiConfig, instance *commands.Instance) string {
-		return displayUpdate(guiConfig, false, false, instance.Beacon())
-	},
+	// Drawn by GetInstanceDisplayStrings, which has the registry's answers.
+	"update": nil,
 }
 
 // GetInstanceDisplayStrings renders one row; updates are the registry
@@ -91,12 +90,16 @@ func WithImageMarker(cell string, updates map[string]commands.UpstreamStatus, fi
 		return cell
 	}
 
-	marker := utils.ColoredString("↑", color.FgYellow)
+	marker := newerMarker()
 	if cell == "" {
 		return marker
 	}
 
 	return cell + " " + marker
+}
+
+func newerMarker() string {
+	return utils.ColoredString("↑", color.FgYellow)
 }
 
 func imageNewer(updates map[string]commands.UpstreamStatus, fingerprints ...string) bool {

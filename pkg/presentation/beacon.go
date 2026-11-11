@@ -16,7 +16,7 @@ func displayUpdate(guiConfig *config.GuiConfig, changed, newerBuild bool, verdic
 	markers := []string{displayChanged(guiConfig, changed)}
 
 	if newerBuild || verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() {
-		markers = append(markers, utils.ColoredString("↑", color.FgYellow))
+		markers = append(markers, newerMarker())
 	}
 
 	switch verdict.Status {

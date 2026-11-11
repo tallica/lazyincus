@@ -27,7 +27,7 @@ const MinImageLabelWidth = 28
 func GetImageDisplayStrings(image *commands.Image, showProject bool, newer bool) []string {
 	label := image.Label()
 	if newer {
-		label = utils.ColoredString("↑", color.FgYellow) + " " + label
+		label = newerMarker() + " " + label
 	}
 
 	cells := []string{

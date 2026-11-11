@@ -53,7 +53,7 @@ func GetStackDisplayStrings(
 func withStackMarkers(status string, stack *commands.ComposeStack, updates map[string]commands.UpstreamStatus) string {
 	switch {
 	case imageNewer(updates, stack.Images...) || stack.Beacon.Status == commands.BeaconUpdateAvailable:
-		return status + " " + utils.ColoredString("↑", color.FgYellow)
+		return status + " " + newerMarker()
 	case stack.Beacon.Status == commands.BeaconError:
 		return status + " " + utils.ColoredString("!", color.FgRed)
 	}

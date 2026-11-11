@@ -39,9 +39,8 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	"snapshots": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return displayServiceSnapshotCount(service)
 	},
-	"update": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
-		return displayUpdate(guiConfig, len(service.ChangedInstances()) > 0, false, service.Beacon())
-	},
+	// Drawn by serviceRowUpdate, which has the registry's answers.
+	"update": nil,
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return utils.ColoredString(displayServiceAddresses(service, "inet"), color.FgYellow)
 	},
