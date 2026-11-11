@@ -681,8 +681,13 @@ red `!` for an error, `?` for unknown, nothing when current. A service's
 is its most telling replica's, and a stack's row has `↑` or `!` after its
 status, the tag left to the services. A rebuild is what `G` already
 applies; beacon's own check doesn't feed it, since `G` pulls and a pull
-can't move a tag. Beacon's keys from before 0.5, `user.beacon.*`, aren't
-read: it moves them to the new names on its next write.
+can't move a tag. Beacon looks for a newer tag only with `track: semver`,
+and its settings belong in the service's `labels:`, as
+`incus-beacon.track: semver`, or on a profile ([its instance
+keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`,
+`G` and `T` recreate the instance, and a key set on it goes with it.
+Beacon's keys from before 0.5, `user.beacon.*`, aren't read: it moves
+them to the new names on its next write.
 
 `T` on Stacks or Services is that move: the services with a newer tag,
 all ticked, as `G` lists them; `enter` confirms, rewrites the value of
