@@ -57,14 +57,18 @@ func (v BeaconVerdict) CurrentTag() string {
 }
 
 func (i *Instance) Beacon() BeaconVerdict {
+	return beaconVerdict(i.Instance.ExpandedConfig)
+}
+
+func beaconVerdict(config map[string]string) BeaconVerdict {
 	verdict := BeaconVerdict{
-		Status:  i.config(beaconStatusKey),
-		Latest:  i.config(beaconLatestKey),
-		Current: i.config(beaconCurrentKey),
-		Error:   i.config(beaconErrorKey),
+		Status:  config[beaconStatusKey],
+		Latest:  config[beaconLatestKey],
+		Current: config[beaconCurrentKey],
+		Error:   config[beaconErrorKey],
 	}
 
-	if since, err := time.Parse(time.RFC3339, i.config(beaconSinceKey)); err == nil {
+	if since, err := time.Parse(time.RFC3339, config[beaconSinceKey]); err == nil {
 		verdict.Since = since
 	}
 
@@ -73,15 +77,21 @@ func (i *Instance) Beacon() BeaconVerdict {
 
 // Beacon is the most telling of its instances' verdicts.
 func (s *ComposeService) Beacon() BeaconVerdict {
-	rank := map[string]int{BeaconCurrent: 1, BeaconUnknown: 2, BeaconError: 3, BeaconUpdateAvailable: 4}
-
 	var best BeaconVerdict
 
 	for _, instance := range s.SortedInstances() {
-		if verdict := instance.Beacon(); rank[verdict.Status] > rank[best.Status] {
-			best = verdict
-		}
+		best = moreTelling(best, instance.Beacon())
 	}
 
 	return best
+}
+
+// moreTelling ranks an update over an error over unknown over current.
+func moreTelling(a, b BeaconVerdict) BeaconVerdict {
+	rank := map[string]int{BeaconCurrent: 1, BeaconUnknown: 2, BeaconError: 3, BeaconUpdateAvailable: 4}
+	if rank[b.Status] > rank[a.Status] {
+		return b
+	}
+
+	return a
 }

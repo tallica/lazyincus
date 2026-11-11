@@ -31,6 +31,12 @@ func TestStackImageMarker(t *testing.T) {
 
 	stack.Images = []string{"current"}
 	assert.Equal(t, []string{"web", "running ↻"}, row())
+
+	stack.Beacon = commands.BeaconVerdict{Status: commands.BeaconError}
+	assert.Equal(t, []string{"web", "running ↻ !"}, row())
+
+	stack.Beacon = commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.31"}
+	assert.Equal(t, []string{"web", "running ↻ ↑"}, row(), "beacon's newer tag is the same ↑")
 }
 
 // A stack with an instance from an older config says so after its status.

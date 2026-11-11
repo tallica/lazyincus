@@ -672,11 +672,12 @@ instance's image on the daemon's side and writes what it found to the
 instance's `user.incus-beacon.*` keys, which lazyincus reads and never
 writes. The Info tab's `Update` line is its verdict: the newer tag, or
 `<tag>@sha256:…` for the same tag rebuilt, `current`, or the error, with
-when it last changed. The `update` column says the same in a glyph,
-after `↻` and `g`'s `↑`: `↑1.31` for a newer tag, less a variant both
-tags share - `1.31-alpine` over `1.18-alpine` - `↑` for a rebuild - one
-`↑` when `g` found it too - red `!` for an error, `?` for unknown,
-nothing when current. A service's is its most telling replica's. A
+when it last changed. The `update` column says the same in a glyph, after
+`↻` and `g`'s `↑`: `↑1.31` for a newer tag, less a variant both tags
+share - `1.31-alpine` over `1.18-alpine` - `↑` for a rebuild - one `↑`
+when `g` found it too - red `!` for an error, `?` for unknown, nothing
+when current. A service's is its most telling replica's, and a stack's
+row has `↑` or `!` after its status, the tag left to the services. A
 rebuild is what `G` already applies; beacon's own check doesn't feed it,
 since `G` pulls and a pull can't move a tag. Beacon's keys from before
 0.5, `user.beacon.*`, aren't read: it moves them to the new names on its

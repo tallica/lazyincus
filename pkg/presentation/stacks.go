@@ -26,15 +26,14 @@ type StackRemote struct {
 }
 
 // GetStackDisplayStrings is a Stacks row: its remote when there's one to
-// show, then name, status and directory, home written as `~`. The status
-// carries ↑ when an image the stack runs has a newer build upstream.
+// show, then name, status and directory, home written as `~`.
 func GetStackDisplayStrings(
 	guiConfig *config.GuiConfig, stack *commands.ComposeStack, home string, remote *StackRemote,
 	updates map[string]commands.UpstreamStatus,
 ) []string {
 	cells := []string{
 		stack.Title(),
-		WithImageMarker(displayStackStatus(guiConfig, stack), updates, stack.Images...),
+		withStackMarkers(displayStackStatus(guiConfig, stack), stack, updates),
 		commands.ShortenHome(stack.Dir, home),
 	}
 
@@ -48,6 +47,18 @@ func GetStackDisplayStrings(
 	}
 
 	return append([]string{name}, cells...)
+}
+
+// withStackMarkers adds ↑ for a newer build or tag, else ! for beacon's error.
+func withStackMarkers(status string, stack *commands.ComposeStack, updates map[string]commands.UpstreamStatus) string {
+	switch {
+	case imageNewer(updates, stack.Images...) || stack.Beacon.Status == commands.BeaconUpdateAvailable:
+		return status + " " + utils.ColoredString("↑", color.FgYellow)
+	case stack.Beacon.Status == commands.BeaconError:
+		return status + " " + utils.ColoredString("!", color.FgRed)
+	}
+
+	return status
 }
 
 // StackPath is the stack's Ref with home written as `~`.
