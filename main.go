@@ -119,7 +119,7 @@ func main() {
 	if err != nil {
 		if errMessage, known := lazyincusApp.KnownError(err); known {
 			log.Println(errMessage)
-			os.Exit(0)
+			os.Exit(1)
 		}
 
 		lazyincusApp.Log.Error().Err(err).Send()
