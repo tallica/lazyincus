@@ -632,15 +632,18 @@ can't save `/etc/hosts` or `/etc/hostname` on an OCI app container
 
 `U` recreates an OCI container from its image, the way `U` on Services
 recreates a service: from the image it runs, as it is, or after pulling
-the latest build of its tag - or onto the newer tag
-[incus-beacon](#incus-beacon) found - after a confirmation that says it
-can't be undone. Config, devices and volumes stay; a running instance is
-stopped and started again. It's an Incus rebuild underneath: the registry
-is read off the instance's image, or off the image keys Incus copied onto
-the instance once the image has expired - then only the pulls are offered
-- and Incus refuses one with snapshots, which have to go first
-([docs/Incus.md](Incus.md), "Rebuild"). A compose service's instance is
-the Services panel's `U`.
+the latest build of its tag, after a confirmation that says it can't be
+undone. Config, devices and volumes stay; a running instance is stopped
+and started again. `G` is Services' `G` for the OCI containers no stack
+owns: a checklist of those with a newer build, `g`'s or beacon's, or a
+newer tag [incus-beacon](#incus-beacon) found, from → to, each recreated
+on a pull of it in turn, one failing leaving the rest to go. It goes by
+what's already known rather than checking first. Both are an Incus
+rebuild underneath: the registry is read off the instance's image, or off
+the image keys Incus copied onto the instance once the image has expired
+- then plain recreate isn't offered - and Incus refuses an instance with
+snapshots, which `U` says and `G` leaves out ([docs/Incus.md](Incus.md),
+"Rebuild"). A compose service's instance is the Services panel's.
 
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a

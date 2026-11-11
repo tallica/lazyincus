@@ -6,12 +6,13 @@
 │                      │p         pause/resume                     ▐                     │
 │                      │d         delete                           ▐                     │
 │                      │U         recreate from its OCI image      ▐                     │
+│                      │G         update to a newer build or tag   ▐                     │
 │                      │e         show/hide stopped instances      ▐                     │
 │                      │n         new snapshot                     ▐                     │
 │                      │m         view logs                        ▐                     │
-│                      │y         copy name, address…              ▐                     │
-╰──────────────────────│a         attach to console                ▐                     │
-╭─[2]─Snapshots (a-name│c         edit config in $EDITOR           ▐                     │
+╰──────────────────────│y         copy name, address…              ▐                     │
+╭─[2]─Snapshots (a-name│a         attach to console                ▐                     │
+│                      │c         edit config in $EDITOR           ▐                     │
 │                      │F         edit a file in $EDITOR           ▐                     │
 │                      │          rename                           ▐                     │
 │                      │          edit description                 ▐                     │
@@ -22,19 +23,18 @@
 │                      │/         filter list                      ▐                     │
 │                      │                                           ▐                     │
 │                      │ctrl+p    command palette                  ▐                     │
-│                      │:         run an incus command             ▐                     │
-╰──────────────────────│o         open lazyincus config            ▐                     │
-╭─[3]─Img - Vol - Net -│O         edit lazyincus config            ▐                     │
-│Alpine 3.22 amd64 2 01│P         switch project                   ▐                     │
-│Debian 13 amd64   0 fe│W         operations and warnings          ▐                     │
+╰──────────────────────│:         run an incus command             ▐                     │
+╭─[3]─Img - Vol - Net -│o         open lazyincus config            ▐                     │
+│Alpine 3.22 amd64 2 01│O         edit lazyincus config            ▐                     │
+│Debian 13 amd64   0 fe│P         switch project                   ▐                     │
+│                      │W         operations and warnings          ▐                     │
 │                      │R         switch remote                    ▐                     │
 │                      │+         next screen mode (normal/half/fu…▐                     │
 │                      │_         prev screen mode                 ▐                     │
-│                      │=         expand/collapse the focused side…▐                     │
-│                      │tab       next panel                       ▐                     │
+│                      │=         expand/collapse the focused side…│                     │
+│                      │tab       next panel                       │                     │
 │                      │shift+tab previous panel                   │                     │
 │                      │◄         previous list                    │                     │
 │                      │h         previous list                    │                     │
-│                      │►         next list                        │                     │
 ╰──────────────────────╰───────────────────────────────────────────╯─────────────────────╯
 enter: execute, esc: close, ↑ ↓: navigate           Incus v7.4 (fake/all projects) ●  test

@@ -111,7 +111,7 @@ func TestUpdateKey(t *testing.T) {
 	}
 
 	assert.Equal(t, "G", updateKey(instance(map[string]string{"user.label.incus-compose.service": "web", "volatile.container.oci": "true"})))
-	assert.Equal(t, "U", updateKey(instance(map[string]string{"volatile.container.oci": "true"})))
+	assert.Equal(t, "G", updateKey(instance(map[string]string{"volatile.container.oci": "true"})))
 	assert.Empty(t, updateKey(instance(nil)))
 	assert.Equal(t, "yes", newerBuildFound(""))
 }

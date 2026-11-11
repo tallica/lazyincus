@@ -229,8 +229,8 @@ inferred.
   that Incus discards on stop). The message match can't be replaced with an
   `IsRunning()` pre-check: the daemon counts a *frozen* instance as running,
   ours only matches status `Running`.
-- **Rebuild**: `U` on Instances is `RebuildInstanceFromImage`, in two
-  forms. From the instance's own base image, the source is the client
+- **Rebuild**: `U` and `G` on Instances are `RebuildInstanceFromImage`, in
+  two forms. From the instance's own base image, the source is the client
   itself, which it sends as a local fingerprint: nothing is pulled. From
   the registry, it's a `ConnectOCI` server for the registry the image's
   `update_source` names, with the reference as the alias - all

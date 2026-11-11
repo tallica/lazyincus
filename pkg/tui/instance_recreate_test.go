@@ -37,10 +37,10 @@ func itemLabels(m *Model) []string {
 }
 
 // U offers what U on Services does - the current image, or the latest
-// build pulled first - and beacon's newer tag; recreating stops the
-// instance, and starts it again after.
+// build pulled first; recreating stops the instance, and starts it again
+// after.
 func TestRecreatingAnOCIContainer(t *testing.T) {
-	for choice, want := range map[int]string{0: "web=nginx-image", 1: "web=library/nginx:1.27", 2: "web=library/nginx:1.31"} {
+	for choice, want := range map[int]string{0: "web=nginx-image", 1: "web=library/nginx:1.27"} {
 		server := ociServer()
 		m := start(t, options{server: server}, 140, 40)
 
@@ -49,8 +49,7 @@ func TestRecreatingAnOCIContainer(t *testing.T) {
 		assert.Equal(t, []string{
 			"recreate",
 			"pull & recreate",
-			"recreate onto docker.io/library/nginx:1.31, incus-beacon's newer tag",
-		}, itemLabels(m)[:3])
+		}, itemLabels(m)[:2])
 
 		for range choice {
 			press(m, "j")
@@ -114,11 +113,38 @@ func TestRecreatingWithTheImageGone(t *testing.T) {
 
 	press(m, "U")
 	require.NotNil(t, m.topMenu())
-	assert.Equal(t, []string{
-		"pull & recreate",
-		"recreate onto docker.io/library/nginx:1.31, incus-beacon's newer tag",
-	}, itemLabels(m)[:2])
+	assert.Equal(t, "pull & recreate", itemLabels(m)[0])
 
 	press(m, "enter", "y")
 	assert.Equal(t, []string{"web=library/nginx:1.27"}, server.Rebuilds())
+}
+
+// G lists the OCI containers of no stack with something newer, beacon's
+// tag as from -> to, and recreates the ticked ones onto it.
+func TestUpdatingOCIContainers(t *testing.T) {
+	server := ociServer()
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	require.NotNil(t, m.topMenu())
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
+
+	press(m, "enter")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "recreate web from docker.io/library/nginx:1.31?")
+
+	press(m, "y")
+	assert.Equal(t, []string{"web=library/nginx:1.31"}, server.Rebuilds())
+}
+
+// Nothing newer, or only an instance with snapshots, leaves G nothing to list.
+func TestUpdatingOCIContainersWithNothingToTake(t *testing.T) {
+	server := ociServer()
+	_, err := server.CreateInstanceSnapshot("web", api.InstanceSnapshotsPost{Name: "snap0"})
+	require.NoError(t, err)
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	assert.Nil(t, m.topMenu())
+	assert.Contains(t, footer(m), "no OCI container here has a newer image build or tag to take")
 }

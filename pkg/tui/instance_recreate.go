@@ -47,7 +47,7 @@ func (m *Model) instanceRecreate(instance *commands.Instance) tea.Cmd {
 	})
 }
 
-// recreateItems are U on Services' two, and beacon's newer tag.
+// recreateItems are U on Services' two; a newer tag is G's.
 func (m *Model) recreateItems(instance *commands.Instance, source commands.OCIRebuild, held bool) []*menuItem {
 	item := func(label, image string, pull *commands.OCIRebuild) *menuItem {
 		return &menuItem{label: label, onPress: func(m *Model) tea.Cmd { return m.confirmRecreate(instance, image, pull) }}
@@ -59,11 +59,6 @@ func (m *Model) recreateItems(instance *commands.Instance, source commands.OCIRe
 	}
 
 	items = append(items, item(m.tr.ComposeRecreatePullOption, source.Image(), &source))
-
-	if tag := instance.BeaconNewerTag(source); tag != "" {
-		newer := source.WithTag(tag)
-		items = append(items, item(fmt.Sprintf(m.tr.RecreateOntoTag, newer.Image()), newer.Image(), &newer))
-	}
 
 	return items
 }

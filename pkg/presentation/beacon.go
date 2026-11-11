@@ -60,11 +60,8 @@ func newerBuildFound(key string) string {
 
 // updateKey is the key that takes an instance's newer image.
 func updateKey(instance *commands.Instance) string {
-	switch {
-	case instance.ComposeService() != "":
+	if instance.ComposeService() != "" || instance.IsOCI() {
 		return "G"
-	case instance.IsOCI():
-		return "U"
 	}
 
 	return ""
