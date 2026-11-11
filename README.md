@@ -310,7 +310,7 @@ always meant.
 What the keys run on a service's own row, each of them `incus-compose
 <verb> <service>`:
 
-- `u` — `up --detach`, which recreates what's marked `changed`; `U` asks
+- `u` — `up --detach`, which recreates what's marked `↻`; `U` asks
   for `up --recreate` with `--pull never` or `--pull always`, to recreate
   all of it or pick up an image its tag now resolves to (it confirms
   first)

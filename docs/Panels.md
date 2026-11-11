@@ -577,7 +577,7 @@ one a listed stack is on and that's connected. The image gets a `↑` ahead
 of its label, where a narrow panel doesn't cut it off. What runs it gets
 one too: an instance in its `image` column, or by its name where that
 isn't shown; a service or replica in its `update` column, after
-`changed`, or where an instance's goes without it; a stack after its
+`↻`, or where an instance's goes without it; a stack after its
 status. A service's Info tab says what the registry said. Recreating with
 a pull, `U`, takes the new build. `G` on Stacks or Services does it for
 the services of the stack you tick, in one `up`; `--no-deps` keeps it to
