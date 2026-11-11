@@ -111,9 +111,6 @@ type TranslationSet struct {
 	StoppingStatus               string
 	RecreatingStatus             string
 	Recreate                     string
-	RecreateTitle                string
-	RecreateCurrentImage         string
-	RecreatePullFirst            string
 	RecreateOntoTag              string
 	ConfirmRecreateCurrent       string
 	ConfirmRecreatePulled        string
@@ -395,10 +392,7 @@ func englishSet() TranslationSet {
 		StoppingStatus:          "stopping",
 		RecreatingStatus:        "recreating",
 		Recreate:                "recreate from its OCI image",
-		RecreateTitle:           "Recreate",
-		RecreateCurrentImage:    "with the current image",
-		RecreatePullFirst:       "pull the latest build of %s first",
-		RecreateOntoTag:         "onto %s, the newer tag incus-beacon found",
+		RecreateOntoTag:         "recreate onto %s, incus-beacon's newer tag",
 		ConfirmRecreateCurrent:  "Are you sure you want to recreate %s from the %s it runs? Its root disk is replaced with a fresh copy of the image, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again.",
 		ConfirmRecreatePulled:   "Are you sure you want to recreate %s from a fresh pull of %s? Its root disk is replaced, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again.",
 		RecreateNoSource:        "%s can't be recreated: %v",

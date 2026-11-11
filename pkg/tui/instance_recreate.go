@@ -41,7 +41,7 @@ func (m *Model) instanceRecreate(instance *commands.Instance) tea.Cmd {
 			return nil
 		}
 
-		m.openMenu(menuOptions{title: m.tr.RecreateTitle, items: m.recreateItems(instance, source, held)})
+		m.openMenu(menuOptions{title: m.tr.ComposeRecreateMenuTitle, subtitle: source.Image(), items: m.recreateItems(instance, source, held)})
 
 		return nil
 	})
@@ -55,10 +55,10 @@ func (m *Model) recreateItems(instance *commands.Instance, source commands.OCIRe
 
 	var items []*menuItem
 	if held {
-		items = append(items, item(m.tr.RecreateCurrentImage, source.Image(), nil))
+		items = append(items, item(m.tr.ComposeRecreate, source.Image(), nil))
 	}
 
-	items = append(items, item(fmt.Sprintf(m.tr.RecreatePullFirst, source.Image()), source.Image(), &source))
+	items = append(items, item(m.tr.ComposeRecreatePullOption, source.Image(), &source))
 
 	if tag := instance.BeaconNewerTag(source); tag != "" {
 		newer := source.WithTag(tag)

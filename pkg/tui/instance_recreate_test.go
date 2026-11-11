@@ -47,9 +47,9 @@ func TestRecreatingAnOCIContainer(t *testing.T) {
 		press(m, "U")
 		require.NotNil(t, m.topMenu())
 		assert.Equal(t, []string{
-			"with the current image",
-			"pull the latest build of docker.io/library/nginx:1.27 first",
-			"onto docker.io/library/nginx:1.31, the newer tag incus-beacon found",
+			"recreate",
+			"pull & recreate",
+			"recreate onto docker.io/library/nginx:1.31, incus-beacon's newer tag",
 		}, itemLabels(m)[:3])
 
 		for range choice {
@@ -115,8 +115,8 @@ func TestRecreatingWithTheImageGone(t *testing.T) {
 	press(m, "U")
 	require.NotNil(t, m.topMenu())
 	assert.Equal(t, []string{
-		"pull the latest build of docker.io/library/nginx:1.27 first",
-		"onto docker.io/library/nginx:1.31, the newer tag incus-beacon found",
+		"pull & recreate",
+		"recreate onto docker.io/library/nginx:1.31, incus-beacon's newer tag",
 	}, itemLabels(m)[:2])
 
 	press(m, "enter", "y")
