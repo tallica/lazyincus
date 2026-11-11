@@ -29,11 +29,12 @@ six-minute walkthrough on asciinema.org.
 
 Past the MVP it started as, and in daily use — still pre-1.0. Panels for
 instances, snapshots, images, volumes, networks, profiles and — with
-incus-compose installed — compose stacks and their services, plus the Incus concepts
-lazydocker has no analog for: projects and remotes. Parity with lazydocker
-in the corners — custom and bulk commands, non-English translations —
-isn't there; see "What's not here yet" below, and
-[BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
+incus-compose installed — compose stacks and their services, plus the Incus
+concepts lazydocker has no analog for: projects and remotes. With
+incus-beacon on the server, it also shows which images have a newer tag.
+Parity with lazydocker in the corners — custom and bulk commands,
+non-English translations — isn't there; see "What's not here yet" below,
+and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 
 ## Requirements
 
@@ -49,6 +50,9 @@ isn't there; see "What's not here yet" below, and
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in
   Homebrew core; on macOS, `brew install tallica/tap/incus-compose`.
+- Optional: [incus-beacon](https://github.com/tallica/incus-beacon#install--run),
+  installed on the Incus server rather than here, if you want newer image
+  tags found — see [Image updates](#image-updates) below.
 
 ## Install / run
 
@@ -153,14 +157,14 @@ others shifting down two numbers, and on a remote with a stack listed,
 Snapshots gains a **Backups** tab: the selected stack's `incus-compose
 backup` runs.
 
-The instances panel's columns (name, status, health, type, IPv4, snapshot
-count) can be reordered or hidden via `gui.instanceColumns` in the config
-file, and the Services panel's (name, status, replicas, health, IPv4,
-snapshot count) via `gui.serviceColumns` - see
-[docs/Config.md](docs/Config.md). Health comes
-from `ic-healthd`, so it's blank for anything created outside
-incus-compose, and for an instance that isn't running: ic-healthd takes
-seconds to catch up with a pause or stop, and never does while it's down.
+The instances panel's columns (name, status, update, health, type, IPv4,
+snapshot count) can be reordered or hidden via `gui.instanceColumns` in
+the config file, and the Services panel's (name, status, update,
+replicas, health, IPv4, snapshot count) via `gui.serviceColumns` - see
+[docs/Config.md](docs/Config.md). Health comes from `ic-healthd`, so it's
+blank for anything created outside incus-compose, and for an instance that
+isn't running: ic-healthd takes seconds to catch up with a pause or stop,
+and never does while it's down.
 
 | Key | Action |
 |---|---|
@@ -196,7 +200,7 @@ seconds to catch up with a pause or stop, and never does while it's down.
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
-| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
+| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build, or a newer tag [incus-beacon](docs/Panels.md#incus-beacon) found, to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -321,10 +325,12 @@ What the keys run on a service's own row, each of them `incus-compose
 - `d` — `down`, plain or `--volumes`, after a confirmation
 - `p` — `pause`, or `unpause` when the service is already frozen
 - `f`, `b`, `g` — `kill`, `build`, `pull`; `f` confirms
-- `G` — over the whole stack: the services with a newer image build, from
-  → to, all ticked, `space` to untick one, `o` to open what changed;
-  `enter` confirms and recreates them on a pull (`up --recreate --pull
-  always --no-deps`)
+- `G` — over the whole stack: the services with a newer image build, or a
+  newer tag [incus-beacon](https://github.com/tallica/incus-beacon) found,
+  from → to, all ticked, `space` to untick one, `o` to open what changed;
+  `enter` confirms, moves each newer tag's `image:` in the compose file to
+  it, and recreates them on a pull (`up --recreate --pull always
+  --no-deps`)
 - `M` — `logs --follow`, every replica's interleaved, until `ctrl+c`. It
   starts empty: a container's console log is handed out once, and the Logs
   tabs have read what's there, so it shows what's written from then on
@@ -384,6 +390,31 @@ A `U` whose recreated instance then can't start — a published port already
 taken, say — leaves it stopped, and the Error popup once you're back from
 the terminal is the daemon's reason. One that fails creating the instance,
 after the old one is deleted, leaves the service with none.
+
+## Image updates
+
+Two sources say an image has something newer, and both land in the same
+places: the `update` column, a stack's row after its status, and the Info
+tab's **Newer build** and **Newer tag** lines.
+
+**`g` on Images, from here.** It asks each image's registry whether the tag
+it was pulled by has a newer build, from this machine and with your
+`~/.docker/config.json`; `gui.checkImageUpdatesOnStart` asks at startup
+too. It finds rebuilds of the tag you run, never a newer tag.
+
+**[incus-beacon](https://github.com/tallica/incus-beacon), on the server.**
+It runs as an instance beside the ones it watches, checks their images on
+its own schedule and records what it found on each, which lazyincus reads
+the way it reads incus-compose's keys: nothing to install here, and the
+same answer from any machine. With `track: semver` it finds newer tags too.
+Its settings belong in the service's `labels:`, where a recreate keeps
+them.
+
+**`G` on Stacks or Services acts on either**: one checklist of the services
+with a newer build or tag, recreated together on a pull, each newer tag
+written into the compose file first. Where beacon has checked every
+instance of the stack, `G` asks no registry. The details are in
+[docs/Panels.md](docs/Panels.md#incus-beacon).
 
 ## Supporting upstream
 

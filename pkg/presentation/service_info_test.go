@@ -22,7 +22,7 @@ func TestServiceInfoConfig(t *testing.T) {
 		row := &commands.ServiceRow{Service: service}
 		noInfo := func(*commands.Instance, ...string) string { return "" }
 
-		return utils.Decolorise(ServiceInfo(row, Location{}, "", nil, noInfo, 40, tr))
+		return utils.Decolorise(ServiceInfo(row, Location{}, commands.UpstreamStatus{}, nil, noInfo, 40, tr))
 	}
 
 	replicas := info(&commands.ComposeService{Name: "web", Hash: "v1:new", Replicas: 3, Instances: []*commands.Instance{

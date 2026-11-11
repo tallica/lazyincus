@@ -3,9 +3,9 @@
 ╭─[2]─Services────────────────────────────────╮│Project:      default                                                                      │
 ╰─────────────────────────────────────────────╯│Name:         a-name-long-enough-to-be-cut-off                                             │
 ╭─[3]─Instances───────────────────────────────╮│Status:       running                                                                      │
-│a-name-long-enough-to-be-cut-off running  co…││Type:         container                                                                    │
-│web                              running  co…││Image:        Alpine 3.22 amd64                                                            │
-│db                               stopped  co…││Architecture: x86_64                                                                       │
+│a-name-long-enough-to-be-cut-off running   c…││Type:         container                                                                    │
+│web                              running   c…││Image:        Alpine 3.22 amd64                                                            │
+│db                               stopped   c…││Architecture: x86_64                                                                       │
 │                                             ││IPv4:         192.0.2.144                                                                  │
 │                                             ││Snapshots:    0                                                                            │
 │                                             ││                                                                                           │

@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││LISTEN       PROTOCOL PORT TARGET         INSTANCE DESCRIPTION                             │
-│web                              running  co…││198.51.100.7 tcp      443  192.0.2.10:443 web      https                                   │
-│db                               stopped  co…││                                                                                           │
+│a-name-long-enough-to-be-cut-off running   c…││LISTEN       PROTOCOL PORT TARGET         INSTANCE DESCRIPTION                             │
+│web                              running   c…││198.51.100.7 tcp      443  192.0.2.10:443 web      https                                   │
+│db                               stopped   c…││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

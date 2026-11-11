@@ -142,9 +142,10 @@ own merits.
 
 Deliberately deferred (don't re-pitch unprompted):
 
-- **Newer image tags** — `g` on Images says only whether a tag has a newer
-  build. Whether `2.2` has followed `2.1` is the compose file's question,
-  and answering it here would end at an edit to that file anyway.
+- **Looking for newer image tags itself** — `g` on Images says only
+  whether a tag has a newer build. Whether `2.2` has followed `2.1` is
+  [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `G` makes
+  the edit to the compose file it ends at.
 - **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
   new build for a stack's services. An instance launched from an OCI
   image by hand gets the `↑` but no key: `incus rebuild` discards its
@@ -354,6 +355,22 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 - What fails incus-compose's own way on a daemon that isn't local, `U`
   and a backup, is in README's [Compose stacks](README.md#compose-stacks):
   nothing to fix here.
+
+### incus-beacon
+
+- [ ] **A tag move an override file undoes.** `G` edits only the base
+  compose file, so an override that repeats the image keeps the old tag
+  and `G` offers the same move again. Leave out a service whose image an
+  override file sets.
+- [ ] **A stack's `↑` that `G` won't act on.** The Stacks row counts any
+  newer tag beacon found, including one for a `${TAG}` image, a tracked
+  image other than the file's, or an instance of a service the file no
+  longer declares. `G` then says there's nothing to do. Count only what
+  `G` would list.
+- [ ] **Stale verdicts.** `G` trusts beacon's keys on every instance,
+  however old: a beacon that stopped running leaves them behind.
+  `user.incus-beacon.since` is when a verdict last changed, not when it was
+  last checked, so this wants beacon to record that first.
 
 ## Snapshots panel
 

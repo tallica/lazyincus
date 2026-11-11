@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││On the network:         isolate                                                            │
-│web                              running  co…││Unmatched ingress:      reject (default)                                                   │
-│db                               stopped  co…││Unmatched egress:       allow                                                              │
+│a-name-long-enough-to-be-cut-off running   c…││On the network:         isolate                                                            │
+│web                              running   c…││Unmatched ingress:      reject (default)                                                   │
+│db                               stopped   c…││Unmatched egress:       allow                                                              │
 │                                             ││                                                                                           │
 │                                             ││On single NICs:                                                                            │
 │                                             ││  web (eth0) web-only                                                                      │

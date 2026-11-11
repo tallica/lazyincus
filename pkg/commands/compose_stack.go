@@ -43,6 +43,9 @@ type ComposeStack struct {
 	// Hashes are the config hashes those instances were created from.
 	Hashes map[string][]string
 
+	// Beacon is the most telling of those instances' incus-beacon verdicts.
+	Beacon BeaconVerdict
+
 	// StatusErr is why the stack's remote gave no statuses, and
 	// StatusPending that it hasn't yet: it's still being connected to.
 	StatusErr     error
@@ -182,6 +185,7 @@ type ComposeProjectState struct {
 	Images []string
 	// Hashes are the config hashes they were created from, by service.
 	Hashes map[string][]string
+	Beacon BeaconVerdict
 }
 
 // GetComposeStatuses is every compose-labelled instance on the server, by
@@ -214,6 +218,8 @@ func (c *IncusCommand) GetComposeStatuses(l *Listing) (map[string]ComposeProject
 
 			project.Hashes[service] = append(project.Hashes[service], hash)
 		}
+
+		project.Beacon = moreTelling(project.Beacon, beaconVerdict(instance.ExpandedConfig))
 
 		image := instance.Config[baseImageKey]
 		if image != "" && !slices.Contains(project.Images, image) {

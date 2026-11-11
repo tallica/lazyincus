@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Info - Logs - Config - Env - Top──────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││Remote:       fake                                                                         │
-│web                              running  co…││Project:      default                                                                      │
-│db                               stopped  co…││Name:         a-name-long-enough-to-be-cut-off                                             │
+│a-name-long-enough-to-be-cut-off running   c…││Remote:       fake                                                                         │
+│web                              running   c…││Project:      default                                                                      │
+│db                               stopped   c…││Name:         a-name-long-enough-to-be-cut-off                                             │
 │                                             ││Status:       running                                                                      │
 │                                             ││Type:         container                                                                    │
 │                                             ││Image:        Alpine 3.22 amd64                                                            │

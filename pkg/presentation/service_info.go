@@ -11,7 +11,7 @@ import (
 )
 
 // ServiceInfo is the service's lines, then each instance's Info tab under them.
-func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project *commands.ComposeProject,
+func ServiceInfo(row *commands.ServiceRow, loc Location, upstream commands.UpstreamStatus, project *commands.ComposeProject,
 	instanceInfo func(instance *commands.Instance, omit ...string) string,
 	width int, tr *i18n.TranslationSet,
 ) string {
@@ -31,7 +31,11 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output := LocationLines(loc)
 	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
-	output += line("Registry", verdict)
+
+	verdict := service.Beacon()
+	build, tag := BeaconLines(verdict)
+	output += line("Newer build", newerBuildLine(upstream, verdict, build))
+	output += line("Newer tag", tag)
 	output += line("Replicas", ServiceReplicas(service))
 	output += line("Health", service.Health())
 
@@ -56,10 +60,10 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	// heading of its own, and minus the lines the service or that heading
 	// has just said: where it lives and its image are the same for every
 	// replica, the name and which replica it is are the heading's, and a
-	// lone instance's health is what the service's rolls up to.
+	// lone instance's health and newer image are what the service's roll up to.
 	omit := []string{"Remote", "Project", "Stack", "Service", "Image", "Name"}
 	if len(service.Instances) == 1 {
-		omit = append(omit, "Health")
+		omit = append(omit, "Health", "Newer build", "Newer tag")
 	}
 
 	for _, instance := range row.Instances() {

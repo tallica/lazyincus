@@ -435,8 +435,8 @@ never reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account, unless `gui.returnImmediately` skips the prompt that
 keeps it on screen: then the popup names the command and how it exited.
 `s`, `d` and `f` confirm, `U` asks which kind of recreate and then confirms,
-`G` its checklist and then confirms, `S`/`r`/`u`/`p`/`b`/`g` don't — same
-rule as the instances panel.
+`G` its checklist and then confirms, `S`/`r`/`u`/`p`/`b`/`g` don't —
+same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
@@ -575,37 +575,39 @@ selection to whatever took its place.
 of the tag they were pulled by, on the session's remote and every other
 one a listed stack is on and that's connected. The image gets a `↑` ahead
 of its label, where a narrow panel doesn't cut it off. What runs it gets
-one too: an instance in its `image` column, or by its name where that
-isn't shown; a service or replica in its `update` column, after
-`↻`, or where an instance's goes without it; a stack after its
-status. A service's Info tab says what the registry said. Recreating with
-a pull, `U`, takes the new build. `G` on Stacks or Services does it for
-the services of the stack you tick, in one `up`; `--no-deps` keeps it to
-them, since with `--recreate` `up` would recreate what they depend on
-too. Each row says from → to: the `org.opencontainers.image.version`
-label, else a changed `*_VERSION` variable, as the official images set -
-the one named for the image first, any other shown by name - else the
-build date; `o` opens the GitHub comparison of the two builds' revisions,
-or the releases, when the image's labels name its source. An official
-image's source is Docker's packaging repository, whose commits are only
-its Dockerfile's, so `o` opens the release of the new version in the
-project it packages instead - `redis/redis` for
-`redis/docker-library-redis` - or, where GitHub has no such release or
-the packaging isn't on GitHub, the image's page on Docker Hub. Reading
-both builds' configs costs a newer build a manifest GET or two, which
-Docker Hub counts as pulls. It checks first when none of the stack's
-images has been checked yet, and checks again after, for the images the
-services now run. The tag comes from the copy Incus pulled, so an image
+one too: an instance, service or replica in its `update` column, after
+`↻`, else in its `image` column, else by its name; a stack after its
+status. A service's Info tab says it on its `Newer build` line.
+Recreating with a pull, `U`, takes the new build. `G` on Stacks or
+Services does it for the services of the stack you tick, in one `up`;
+`--no-deps` keeps it to them, since with `--recreate` `up` would recreate
+what they depend on too. Each row says from → to: the
+`org.opencontainers.image.version` label, else a changed `*_VERSION`
+variable, as the official images set - the one named for the image first,
+any other shown by name - else the build date; `o` opens the GitHub
+comparison of the two builds' revisions, or the releases, when the
+image's labels name its source. An official image's source is Docker's
+packaging repository, whose commits are only its Dockerfile's, so `o`
+opens the release of the new version in the project it packages instead -
+`redis/redis` for `redis/docker-library-redis` - or, where GitHub has no
+such release or the packaging isn't on GitHub, the image's page on Docker
+Hub. Reading both builds' configs costs a newer build a manifest GET or
+two, which Docker Hub counts as pulls. It checks first when none of the
+stack's images has been checked yet, and checks again after, for the
+images the services now run - neither when [incus-beacon](#incus-beacon)
+has checked every instance of the stack, whose verdicts it goes by
+instead. The tag comes from the copy Incus pulled, so an image
 incus-compose built has none and isn't checked, and neither is a service
 with no instances yet. The check runs from this machine, not the daemon,
 with the credentials in your `~/.docker/config.json`; a registry only the
 daemon can reach shows its error on the Config tab. A tag that hasn't
 moved costs a HEAD, which Docker Hub doesn't count against its pull
 limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag,
-`2.1` to `2.2`, isn't looked for - see
-[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);
+`2.1` to `2.2`, isn't looked for here - see
+[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped). incus-beacon finds
+them, [below](#incus-beacon);
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
-on the compose file's repository is one way to catch those.
+on the compose file's repository is another way.
 
 Which columns show, and in what order, is user-configurable via
 `gui.instanceColumns`. `service`, `health` and `image` read incus-compose
@@ -638,9 +640,9 @@ Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
 
 - **Info** — where the instance lives ([above](#where-an-item-lives)),
-  then what it is (name, description, status, type, image, health where it
-  has one, architecture, dates, addresses, proxy devices as ports, snapshot
-  count),
+  then what it is (name, description, status, type, image, health and
+  [update](#incus-beacon) where it has them, architecture, dates,
+  addresses, proxy devices as ports, snapshot count),
   then the counters from `InstanceFull.State`: CPU, memory, process count,
   disk, network. A gap sets those off rather than a heading — CPU and
   memory say what they are, and a ruled heading would weigh the same as the
@@ -664,6 +666,43 @@ up:
   shell-out). Images without a `ps` and VMs without the guest agent get the
   daemon's error instead of a list; the flag set that works is cached per
   instance, since busybox and util-linux `ps` disagree on all of them.
+
+### incus-beacon
+
+[incus-beacon](https://github.com/tallica/incus-beacon) checks each
+instance's image on the daemon's side and writes what it found to the
+instance's `user.incus-beacon.*` keys, which lazyincus reads and never
+writes. The Info tab says what it found, with when that last changed -
+the time alone when that was today: a newer tag on its `Newer tag` line,
+a newer build of the same tag on `Newer build`, and `none` or an error on
+whichever beacon was asked - tags only with `track: semver`. A newer
+build either of them found is what `Newer build` says, as the column and
+`G` go by; otherwise `g`'s answer, when it has one, takes the line over
+beacon's. The `update` column says the same in a glyph, after `↻` and
+`g`'s `↑`: `↑1.31` for a newer tag, less a variant both tags share -
+`1.31-alpine` over `1.18-alpine` - `↑` for a rebuild - one `↑` when `g`
+found it too - red `!` for an error, `?` for unknown, nothing when
+current. A service's is its most telling replica's, and a stack's row has
+`↑` or `!` after its status, the tag left to the services. Beacon looks
+for a newer tag only with `track: semver`, and its settings belong in the
+service's `labels:`, as `incus-beacon.track: semver`, or on a profile
+([its instance
+keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`
+and `G` recreate the instance, and a key set on it goes with it. Beacon's
+keys from before 0.5, `user.beacon.*`, aren't read: it moves them to the
+new names on its next write.
+
+`G` on Stacks or Services lists beacon's findings with `g`'s: a newer tag
+as from → to, which on `enter` rewrites the value of the service's
+`image:` line in the compose file and nothing else of it, and a rebuild
+beacon saw where `g` found none; the confirmation names each move, and
+isn't one `a` can skip, being an edit to the file. A service is listed
+for a tag only when beacon tracked the very image and tag the file names,
+so not one whose `user.incus-beacon.image` points elsewhere. An `image:`
+the compose file doesn't spell out itself - a variable, an override
+file's, an `extends` - keeps its line and its service as they were,
+saying which; the rest go ahead. The file is replaced in one rename,
+never seen half-written.
 
 ## Snapshots
 

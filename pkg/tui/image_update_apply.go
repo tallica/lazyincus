@@ -13,20 +13,29 @@ import (
 	"github.com/tallica/lazyincus/pkg/presentation"
 )
 
-// serviceUpdate is a service with a newer build of an image it runs.
+// serviceUpdate is a service with a newer build, or beacon's newer tag.
 type serviceUpdate struct {
 	service string
 	status  commands.UpstreamStatus
+	bump    *commands.ComposeTagBump
+	// rebuilt is beacon's newer build, g having found none.
+	rebuilt string
 }
 
-// servicesWithUpdates are the services running an image with a newer build.
 func servicesWithUpdates(services []*commands.ComposeService, updates map[string]commands.UpstreamStatus) []serviceUpdate {
 	var found []serviceUpdate
 
 	for _, service := range services {
+		if bump, ok := service.TagBump(); ok {
+			found = append(found, serviceUpdate{service: service.Name, bump: &bump})
+			continue
+		}
+
 		status := commands.MostTelling(updates, presentation.BaseImages(service.SortedInstances())...)
 		if status.State == commands.UpstreamNewer {
 			found = append(found, serviceUpdate{service: service.Name, status: status})
+		} else if verdict := service.Beacon(); verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() {
+			found = append(found, serviceUpdate{service: service.Name, rebuilt: verdict.Current})
 		}
 	}
 
@@ -58,7 +67,7 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 		})
 	})
 
-	if checked {
+	if checked || beaconCovers(m.stackServiceList(stack)) {
 		return m.updateImagesMenu(stack)
 	}
 
@@ -70,6 +79,24 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 
 		return m.updateImagesMenu(stack)
 	}, m.imageUpdatesFetch(false))
+}
+
+// beaconCovers is incus-beacon having checked every instance of the services.
+func beaconCovers(services []*commands.ComposeService) bool {
+	covered := false
+
+	for _, service := range services {
+		for _, instance := range service.Instances {
+			switch instance.Beacon().Status {
+			case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
+				covered = true
+			default:
+				return false
+			}
+		}
+	}
+
+	return covered
 }
 
 // stackServiceList are the stack's services the services panel has, by name
@@ -91,6 +118,19 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 
 	items := make([]*menuItem, 0, len(found))
 	for _, update := range found {
+		switch {
+		case update.bump != nil:
+			items = append(items, &menuItem{
+				labelColumns: []string{update.service, update.bump.From, "→ " + update.bump.Tag()}, checked: true,
+			})
+
+			continue
+		case update.rebuilt != "":
+			items = append(items, &menuItem{labelColumns: []string{update.service, update.rebuilt, m.tr.BeaconRebuilt}, checked: true})
+
+			continue
+		}
+
 		item := &menuItem{
 			labelColumns: []string{update.service, update.status.Ref, buildChangeStr(update.status)},
 			checked:      true,
@@ -108,11 +148,24 @@ func (m *Model) updateImagesMenu(stack *commands.ComposeStack) tea.Cmd {
 		items: items,
 		onConfirm: func(picked []*menuItem) tea.Cmd {
 			names := make([]string, 0, len(picked))
+			var bumps []commands.ComposeTagBump
+
 			for _, item := range picked {
 				names = append(names, item.labelColumns[0])
+
+				for _, update := range found {
+					if update.service == item.labelColumns[0] && update.bump != nil {
+						bumps = append(bumps, *update.bump)
+					}
+				}
 			}
 
-			return m.composeUpdateImages(stackTarget(stack), names)
+			recheck := !beaconCovers(m.stackServiceList(stack))
+			if len(bumps) > 0 {
+				return m.confirmTagBumps(stackTarget(stack), bumps, names, recheck)
+			}
+
+			return m.composeUpdateImages(stackTarget(stack), names, recheck)
 		},
 	})
 
@@ -130,13 +183,22 @@ func openBuildLink(links []string) func(*Model) tea.Cmd {
 	}
 }
 
-// composeUpdateImages recreates the services on a pull; without --no-deps,
-// `up --recreate` would recreate what they depend on too.
-func (m *Model) composeUpdateImages(target composeTarget, services []string) tea.Cmd {
+func (m *Model) composeUpdateImages(target composeTarget, services []string, recheck bool) tea.Cmd {
 	message := fmt.Sprintf(m.tr.ConfirmComposeUpdateImages, m.onRemote(strings.Join(services, ", "), target.remote))
-	args := append([]string{"up", "--recreate", "--pull", "always", "--no-deps", "--detach"}, services...)
 
 	return m.openSkippableConfirmation("update-images", m.tr.Confirm, message, func() tea.Cmd {
-		return m.composeRunThen(target, args, func() tea.Cmd { return refreshQuiet(nil, m.imageUpdatesFetch(false)) })
+		return m.recreateOnPull(target, services, recheck)
 	})
+}
+
+// recreateOnPull: without --no-deps, `up --recreate` would recreate what the services depend on too.
+func (m *Model) recreateOnPull(target composeTarget, services []string, recheck bool) tea.Cmd {
+	args := append([]string{"up", "--recreate", "--pull", "always", "--no-deps", "--detach"}, services...)
+
+	var after func() tea.Cmd
+	if recheck {
+		after = func() tea.Cmd { return refreshQuiet(nil, m.imageUpdatesFetch(false)) }
+	}
+
+	return m.composeRunThen(target, args, after)
 }

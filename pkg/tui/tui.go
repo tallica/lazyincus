@@ -391,6 +391,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case stackFilesStatMsg:
 		return m.onStackFilesStat(msg.edited)
 
+	case tagBumpedMsg:
+		return m.onTagBumped(msg)
+
 	case watchReadyMsg:
 		return msg.start()
 

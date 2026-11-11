@@ -31,7 +31,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 	}
 
 	loc := presentation.Location{Remote: remote, Project: service.Project, Stack: m.stackLabel(remote, service.Project)}
-	verdict := presentation.UpstreamVerdict(commands.MostTelling(m.upstreams, presentation.BaseImages(row.Instances())...), tr)
+	upstream := commands.MostTelling(m.upstreams, presentation.BaseImages(row.Instances())...)
 
 	locations := map[string]presentation.Location{}
 	hosts := map[string]string{}
@@ -48,7 +48,7 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 	return tickerTask(time.Second, func() string {
 		_, project := holder.load()
 
-		return presentation.ServiceInfo(row, loc, verdict, project, instanceInfo, int(width.Load()), tr)
+		return presentation.ServiceInfo(row, loc, upstream, project, instanceInfo, int(width.Load()), tr)
 	})
 }
 
