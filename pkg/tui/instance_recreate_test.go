@@ -36,33 +36,41 @@ func itemLabels(m *Model) []string {
 	return labels
 }
 
-// U offers the newest build of the tag and beacon's newer tag; the rebuild
-// stops the instance, and starts it again after.
-func TestRebuildingAnOCIContainer(t *testing.T) {
-	server := ociServer()
-	m := start(t, options{server: server}, 140, 40)
+// U offers what U on Services does - the current image, or the latest
+// build pulled first - and beacon's newer tag; recreating stops the
+// instance, and starts it again after.
+func TestRecreatingAnOCIContainer(t *testing.T) {
+	for choice, want := range map[int]string{0: "web=nginx-image", 1: "web=library/nginx:1.27", 2: "web=library/nginx:1.31"} {
+		server := ociServer()
+		m := start(t, options{server: server}, 140, 40)
 
-	press(m, "U")
-	require.NotNil(t, m.topMenu())
-	assert.Equal(t, []string{
-		"from the newest build of docker.io/library/nginx:1.27",
-		"onto docker.io/library/nginx:1.31, the newer tag incus-beacon found",
-	}, itemLabels(m)[:2])
+		press(m, "U")
+		require.NotNil(t, m.topMenu())
+		assert.Equal(t, []string{
+			"with the current image",
+			"pull the latest build of docker.io/library/nginx:1.27 first",
+			"onto docker.io/library/nginx:1.31, the newer tag incus-beacon found",
+		}, itemLabels(m)[:3])
 
-	press(m, "j", "enter")
-	require.Len(t, m.popups, 1)
-	assert.Contains(t, ansi.Strip(m.popups[0].message), "rebuild web from docker.io/library/nginx:1.31? Its root disk is replaced")
+		for range choice {
+			press(m, "j")
+		}
 
-	press(m, "y")
-	assert.Equal(t, []string{"web=library/nginx:1.31"}, server.Rebuilds())
+		press(m, "enter")
+		require.Len(t, m.popups, 1)
+		assert.Contains(t, ansi.Strip(m.popups[0].message), "Are you sure you want to recreate web")
 
-	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
-	require.NoError(t, err)
-	assert.Equal(t, "Running", instances[0].Status)
+		press(m, "y")
+		assert.Equal(t, []string{want}, server.Rebuilds())
+
+		instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+		require.NoError(t, err)
+		assert.Equal(t, "Running", instances[0].Status)
+	}
 }
 
 // incusd won't rebuild an instance with snapshots, so U says so up front.
-func TestRebuildingAnInstanceWithSnapshots(t *testing.T) {
+func TestRecreatingAnInstanceWithSnapshots(t *testing.T) {
 	server := ociServer()
 	_, err := server.CreateInstanceSnapshot("web", api.InstanceSnapshotsPost{Name: "snap0"})
 	require.NoError(t, err)
@@ -71,20 +79,20 @@ func TestRebuildingAnInstanceWithSnapshots(t *testing.T) {
 	press(m, "U")
 	assert.Nil(t, m.topMenu())
 	require.Len(t, m.popups, 1)
-	assert.Contains(t, ansi.Strip(m.popups[0].message), "it has snapshots")
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "Incus only recreates an instance without snapshots, and web has 1: delete them")
 	assert.Empty(t, server.Rebuilds())
 }
 
-func TestRebuildingNeedsAnOCIContainer(t *testing.T) {
+func TestRecreatingNeedsAnOCIContainer(t *testing.T) {
 	m := start(t, options{server: instancesServer(nil, runningInstance("web", nil))}, 140, 40)
 
 	press(m, "U")
 	assert.Nil(t, m.topMenu())
-	assert.Contains(t, footer(m), "only an OCI container can be rebuilt from its image")
+	assert.Contains(t, footer(m), "only an OCI container can be recreated from its image")
 }
 
 // An image deleted since leaves nothing to say which registry to pull from.
-func TestRebuildingWithTheImageGone(t *testing.T) {
+func TestRecreatingWithTheImageGone(t *testing.T) {
 	server := ociServer()
 	server.SetImages(nil)
 	m := start(t, options{server: server}, 140, 40)
@@ -92,5 +100,5 @@ func TestRebuildingWithTheImageGone(t *testing.T) {
 	press(m, "U")
 	assert.Nil(t, m.topMenu())
 	require.Len(t, m.popups, 1)
-	assert.Contains(t, ansi.Strip(m.popups[0].message), "web can't be rebuilt")
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "web can't be recreated")
 }

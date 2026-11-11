@@ -4,6 +4,7 @@
 package incustest
 
 import (
+	"cmp"
 	"errors"
 	"io"
 	"maps"
@@ -85,7 +86,7 @@ type state struct {
 	url string
 	// warnings are what GetWarnings returns, updated in place.
 	warnings []api.Warning
-	// rebuilds are RebuildInstanceFromImage's, as instance=alias.
+	// rebuilds are RebuildInstanceFromImage's, as instance=alias, or fingerprint for a local image.
 	rebuilds []string
 }
 
@@ -370,7 +371,7 @@ func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
 }
 
 // RebuildInstanceFromImage records the rebuild, refusing a running instance as incusd does.
-func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, _ api.Image, name string, req api.InstanceRebuildPost) (incus.RemoteOperation, error) {
+func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, image api.Image, name string, req api.InstanceRebuildPost) (incus.RemoteOperation, error) {
 	refused := false
 
 	_, err := s.updateInstance(name, func(instance *api.InstanceFull) { refused = instance.Status == "Running" })
@@ -384,7 +385,7 @@ func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, _ api.Image, name
 
 	shared := s.shared()
 	shared.mutex.Lock()
-	shared.rebuilds = append(shared.rebuilds, name+"="+req.Source.Alias)
+	shared.rebuilds = append(shared.rebuilds, name+"="+cmp.Or(req.Source.Alias, image.Fingerprint))
 	shared.mutex.Unlock()
 
 	return doneRemoteOperation{}, nil

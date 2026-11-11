@@ -88,7 +88,7 @@ func (m *Model) bindings() []*binding {
 		&binding{view: instancesView, key: "r", description: m.tr.Restart, mutates: true, handler: onInstance((*Model).instanceRestart)},
 		&binding{view: instancesView, key: "p", description: m.tr.Pause, mutates: true, handler: onInstance((*Model).instancePauseResume)},
 		&binding{view: instancesView, key: "d", description: m.tr.Remove, mutates: true, handler: onInstance((*Model).instanceDelete)},
-		&binding{view: instancesView, key: "U", description: m.tr.Rebuild, mutates: true, handler: onInstance((*Model).instanceRebuild)},
+		&binding{view: instancesView, key: "U", description: m.tr.Recreate, mutates: true, handler: onInstance((*Model).instanceRecreate)},
 		&binding{view: instancesView, key: "e", description: m.tr.HideStopped, noSelection: true, handler: do((*Model).toggleStoppedInstances)},
 		&binding{view: instancesView, key: "n", description: m.tr.NewSnapshot, mutates: true, handler: onInstance((*Model).snapshotCreatePrompt)},
 		&binding{view: instancesView, key: "m", description: m.tr.ViewLogs, handler: do((*Model).viewInstanceLogs)},

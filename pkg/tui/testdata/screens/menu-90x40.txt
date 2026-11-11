@@ -5,7 +5,7 @@
 │                      │r         restart                          ▐                     │
 │                      │p         pause/resume                     ▐                     │
 │                      │d         delete                           ▐                     │
-│                      │U         rebuild from its OCI image       ▐                     │
+│                      │U         recreate from its OCI image      ▐                     │
 │                      │e         show/hide stopped instances      ▐                     │
 │                      │n         new snapshot                     ▐                     │
 │                      │m         view logs                        ▐                     │

@@ -185,7 +185,7 @@ and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking); Instances panel: rebuild an OCI container from the newest build of its tag, or incus-beacon's newer tag |
+| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking); Instances panel: recreate an OCI container from its image the same two ways, or onto incus-beacon's newer tag |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -413,9 +413,10 @@ them.
 **`G` on Stacks or Services acts on either**: one checklist of the services
 with a newer build or tag, recreated together on a pull, each newer tag
 written into the compose file first. Where beacon has checked every
-instance of the stack, `G` asks no registry. On Instances, `U` does the
-same for an OCI container launched by hand, rebuilding it from its image.
-The details are in [docs/Panels.md](docs/Panels.md#incus-beacon).
+instance of the stack, `G` asks no registry. On Instances, `U` recreates an
+OCI container launched by hand from its image, pulling the latest build
+first or moving it onto beacon's newer tag. The details are in
+[docs/Panels.md](docs/Panels.md#incus-beacon).
 
 ## Supporting upstream
 

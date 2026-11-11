@@ -630,14 +630,16 @@ doesn't convey: `s`/`d` confirm before acting, `p` toggles between
 can't save `/etc/hosts` or `/etc/hostname` on an OCI app container
 ([docs/Incus.md](Incus.md), "Files").
 
-`U` rebuilds an OCI container from its image: the newest build of the tag
-it was pulled by, or the newer tag [incus-beacon](#incus-beacon) found,
-after a confirmation that says it can't be undone. Config, devices and
-volumes stay; a running instance is stopped and started again. The
-registry is read off the instance's image, so one whose image has since
-been deleted can't be rebuilt, and incus won't rebuild one with snapshots
-([docs/Incus.md](Incus.md), "Rebuild"). A compose service's instance is
-the Services panel's `U` to recreate.
+`U` recreates an OCI container from its image, the way `U` on Services
+recreates a service: from the image it runs, as it is, or after pulling
+the latest build of its tag - or onto the newer tag
+[incus-beacon](#incus-beacon) found - after a confirmation that says it
+can't be undone. Config, devices and volumes stay; a running instance is
+stopped and started again. It's an Incus rebuild underneath: the registry
+is read off the instance's image, so one whose image has since been
+deleted can't be recreated, and Incus refuses one with snapshots, which
+have to go first ([docs/Incus.md](Incus.md), "Rebuild"). A compose
+service's instance is the Services panel's `U`.
 
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a

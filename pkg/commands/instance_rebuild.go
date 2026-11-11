@@ -42,10 +42,10 @@ func (i *Instance) OCIRebuildSource() (OCIRebuild, error) {
 }
 
 // ErrRebuildSnapshots: docs/Incus.md, "Rebuild".
-var ErrRebuildSnapshots = errors.New("it has snapshots, which incus won't rebuild past: delete them first")
+var ErrRebuildSnapshots = errors.New("incus rebuilds no instance with snapshots")
 
-// RebuildFromOCI stops a running instance for it, and starts it again after.
-func (i *Instance) RebuildFromOCI(source OCIRebuild) error {
+// Recreate rebuilds from the image it runs, or a fresh pull, stopping a running one for it.
+func (i *Instance) Recreate(pull *OCIRebuild) error {
 	if len(i.Instance.Snapshots) > 0 {
 		return ErrRebuildSnapshots
 	}
@@ -58,13 +58,30 @@ func (i *Instance) RebuildFromOCI(source OCIRebuild) error {
 		}
 	}
 
-	err := i.rebuildFromOCI(source)
+	var err error
+	if pull == nil {
+		err = i.rebuildFromBaseImage()
+	} else {
+		err = i.rebuildFromOCI(*pull)
+	}
 
 	if running {
 		err = errors.Join(err, i.updateState("start", -1, false))
 	}
 
 	return err
+}
+
+// rebuildFromBaseImage: docs/Incus.md, "Rebuild".
+func (i *Instance) rebuildFromBaseImage() error {
+	i.Log.Warn().Msgf("rebuilding instance %s from its image %s", i.Name, i.BaseImage())
+
+	op, err := i.Client.RebuildInstanceFromImage(i.Client, api.Image{Fingerprint: i.BaseImage()}, i.Name, api.InstanceRebuildPost{})
+	if err != nil {
+		return err
+	}
+
+	return op.Wait()
 }
 
 func (i *Instance) rebuildFromOCI(source OCIRebuild) error {
