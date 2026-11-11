@@ -204,7 +204,7 @@ func (s sources) readStackStatuses(stacks []*commands.ComposeStack, l *commands.
 
 			if stack.Name != "" {
 				project := statuses.byProject[stack.Name]
-				stack.Statuses, stack.Images = project.Statuses, project.Images
+				stack.Statuses, stack.Images, stack.Hashes = project.Statuses, project.Images, project.Hashes
 			}
 		}
 	}

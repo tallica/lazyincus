@@ -45,6 +45,7 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output += line("Volumes", strings.Join(service.Volumes, ", "))
 	output += line("Devices", strings.Join(service.Devices, ", "))
 	output += line("Depends on", strings.Join(service.DependsOn, ", "))
+	output += line("Changed", serviceChanged(service))
 
 	if len(service.Instances) == 0 {
 		return output + "\n" + tr.ServiceNotRunning
@@ -62,8 +63,15 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	}
 
 	for _, instance := range row.Instances() {
-		output += "\n" + InstanceHeading(service, instance, width, tr) + "\n"
-		output += "\n" + instanceInfo(instance.Latest(), omit...)
+		output += "\n" + InstanceHeading(service, instance, width, tr) + "\n\n"
+
+		// A lone instance's change is the Changed line above.
+		if config := instanceConfig(service, instance.Latest()); config != "" &&
+			(len(service.Instances) > 1 || !service.ConfigChanged(instance.Latest())) {
+			output += line("Config", config)
+		}
+
+		output += instanceInfo(instance.Latest(), omit...)
 	}
 
 	return output

@@ -13,7 +13,8 @@ import (
 
 // serviceColumnRenderers is the Services panel's counterpart to
 // instanceColumnRenderers: the same column names, rendered from the
-// service's instances rolled up, plus "replicas" which only a service has.
+// service's instances rolled up, plus "replicas" and "update", which only a
+// service has.
 var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.ComposeService) string{
 	"name": func(_ *config.GuiConfig, service *commands.ComposeService) string { return service.Name },
 	"status": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
@@ -37,6 +38,9 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 	},
 	"snapshots": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return displayServiceSnapshotCount(service)
+	},
+	"update": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
+		return displayChanged(guiConfig, len(service.ChangedInstances()) > 0)
 	},
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return utils.ColoredString(displayServiceAddresses(service, "inet"), color.FgYellow)
@@ -72,14 +76,18 @@ func GetServiceRowDisplayStrings(
 	guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus,
 ) []string {
 	columns := serviceColumns(guiConfig)
-	marked := markedColumn(columns)
+	marked := serviceMarkedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
 		var cell string
-		if row.Instance == nil {
+		switch {
+		case row.Instance == nil:
 			cell = serviceColumnRenderers[column](guiConfig, row.Service)
-		} else {
+		case column == "update":
+			// Only the service knows the file's hash.
+			cell = displayChanged(guiConfig, row.Service.ConfigChanged(row.Instance))
+		default:
 			cell = replicaCell(guiConfig, column, row.Instance)
 		}
 
@@ -91,6 +99,15 @@ func GetServiceRowDisplayStrings(
 	}
 
 	return cells
+}
+
+// serviceMarkedColumn is where ↑ goes: update, else where Instances puts it.
+func serviceMarkedColumn(columns []string) string {
+	if lo.Contains(columns, "update") {
+		return "update"
+	}
+
+	return markedColumn(columns)
 }
 
 // replicaCell renders a replica's row through the instances panel's own
@@ -153,6 +170,20 @@ func ServiceReplicas(service *commands.ComposeService) string {
 	}
 
 	return strconv.Itoa(len(service.Instances)) + "/" + strconv.Itoa(service.Replicas)
+}
+
+// displayChanged marks what `up` would recreate: ↻, or C under short.
+func displayChanged(guiConfig *config.GuiConfig, changed bool) string {
+	if !changed {
+		return ""
+	}
+
+	marker := "↻"
+	if guiConfig.InstanceStatusStyle == "short" {
+		marker = "C"
+	}
+
+	return utils.ColoredString(marker, color.FgYellow)
 }
 
 // serviceStatusStyles covers the two states no instance is ever in; the

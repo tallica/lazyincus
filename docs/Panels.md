@@ -279,16 +279,18 @@ Main panel tabs:
   and its status - or, while its remote is connecting or away, why - then
   the declared services counted by status and what's rolled up over its
   instances: health, dates, snapshots. Under headings of their own:
-  **Endpoints**, each instance's address and the ports its proxy devices
-  publish (incus-compose's `ports:`, listening on the daemon's host, so a
-  wildcard reads as the stack's remote's host - `publishHostFor` - or `*`
-  where its URL doesn't give one: a unix socket, or loopback, which an SSH
-  tunnel to the API is); **Usage**, the instance counters summed, a custom
-  volume shared by replicas counted once; and **Drift**, compose instances
-  whose service the file no longer declares and declared services with
-  none. Everything past the services count comes from
-  `Model.composeState` (a `composeHolder`), which `fetchServices`
-  fills for the selected stack, so the tab ticks until they arrive.
+  **Drift** first, compose instances whose service the file no longer
+  declares, declared services with none, and services with instances
+  [from an older config](#changed-config); **Endpoints**, each instance's
+  address and the ports its proxy devices publish (incus-compose's
+  `ports:`, listening on the daemon's host, so a wildcard reads as the
+  stack's remote's host - `publishHostFor` - or `*` where its URL doesn't
+  give one: a unix socket, or loopback, which an SSH tunnel to the API
+  is); and **Usage**, the instance counters summed, a custom volume
+  shared by replicas counted once.
+  Everything past the services count comes from `Model.composeState` (a
+  `composeHolder`), which `fetchServices` fills for the selected stack, so
+  the tab ticks until they arrive.
 - **Logs** — every instance's console log, services in name order, each
   under a heading naming its replica, or its service when it has only the
   one instance. `m` jumps here, as it does on the other panels.
@@ -537,6 +539,25 @@ Main panel tabs:
 The credits tab and the interleaved logs tab from lazydocker's Project
 panel aren't ported — see [BACKLOG.md](../BACKLOG.md#3-project-panel).
 
+### Changed config
+
+`↻` (`C` under the `short` style) marks an instance `up` would recreate
+and a service or stack with any: in Services' `update` column, and after
+a stack's status. From 1.4.0, incus-compose labels each instance with its
+service's config hash (`user.label.incus-compose.config-hash`);
+`LoadComposeStack` asks `config --hash '*'` for the file's, cached with
+the rest of the config. The comparison is incus-compose's own: an
+instance created before it hashed has no label and never reads changed,
+and an incus-compose without `--hash` leaves the column blank. In a
+service's Info tab each instance's block has a Config line, `changed` or
+`not tracked` (no label); a lone instance's change is the service's own
+Changed line. What the hash covers is incus-compose's to say
+([lxc/incus-compose#234](https://github.com/lxc/incus-compose/pull/234)).
+A compose file edited outside lazyincus shows within two seconds, no
+daemon event saying so: `statStackFiles` stats each listed stack's
+compose file and `.env` (`StackFilesStamp`), and `stackCache` reloads the
+one that moved.
+
 ## Instances
 
 Lists containers and VMs across every project of the session's remote by
@@ -554,33 +575,34 @@ selection to whatever took its place.
 of the tag they were pulled by, on the session's remote and every other
 one a listed stack is on and that's connected. The image gets a `↑` ahead
 of its label, where a narrow panel doesn't cut it off. What runs it gets
-one too - an instance, a service or replica, a stack - in its `image`
-column, or by its name where that isn't shown, and a service's Info tab
-says what the registry said. Recreating with a pull, `U`, takes the new
-build. `G` on Stacks or Services does it for the services of the stack
-you tick, in one `up`; `--no-deps` keeps it to them, since with
-`--recreate` `up` would recreate what they depend on too. Each row says
-from → to: the `org.opencontainers.image.version` label, else a changed
-`*_VERSION` variable, as the official images set - the one named for the
-image first, any other shown by name - else the build date; `o` opens the
-GitHub comparison of the two builds' revisions, or the releases, when the
-image's labels name its source. An official image's source is Docker's
-packaging repository, whose commits are only its Dockerfile's, so `o`
-opens the release of the new version in the project it packages instead -
-`redis/redis` for `redis/docker-library-redis` - or, where GitHub has no
-such release or the packaging isn't on GitHub, the image's page on Docker
-Hub. Reading both builds' configs costs a newer build a manifest GET or
-two, which Docker Hub counts as pulls. It checks first when none of the
-stack's images has been checked yet, and checks again after, for the
-images the services now run. The tag comes from the copy Incus pulled, so
-an image incus-compose built has none and isn't checked, and neither is a
-service with no instances yet. The check runs from this machine, not the
-daemon, with the credentials in your `~/.docker/config.json`; a registry
-only the daemon can reach shows its error on the Config tab. A tag that
-hasn't moved costs a HEAD, which Docker Hub doesn't count against its pull
-limit.
-`gui.checkImageUpdatesOnStart` checks at startup too. A newer tag, `2.1`
-to `2.2`, isn't looked for - see
+one too: an instance in its `image` column, or by its name where that
+isn't shown; a service or replica in its `update` column, after
+`↻`, or where an instance's goes without it; a stack after its
+status. A service's Info tab says what the registry said. Recreating with
+a pull, `U`, takes the new build. `G` on Stacks or Services does it for
+the services of the stack you tick, in one `up`; `--no-deps` keeps it to
+them, since with `--recreate` `up` would recreate what they depend on
+too. Each row says from → to: the `org.opencontainers.image.version`
+label, else a changed `*_VERSION` variable, as the official images set -
+the one named for the image first, any other shown by name - else the
+build date; `o` opens the GitHub comparison of the two builds' revisions,
+or the releases, when the image's labels name its source. An official
+image's source is Docker's packaging repository, whose commits are only
+its Dockerfile's, so `o` opens the release of the new version in the
+project it packages instead - `redis/redis` for
+`redis/docker-library-redis` - or, where GitHub has no such release or
+the packaging isn't on GitHub, the image's page on Docker Hub. Reading
+both builds' configs costs a newer build a manifest GET or two, which
+Docker Hub counts as pulls. It checks first when none of the stack's
+images has been checked yet, and checks again after, for the images the
+services now run. The tag comes from the copy Incus pulled, so an image
+incus-compose built has none and isn't checked, and neither is a service
+with no instances yet. The check runs from this machine, not the daemon,
+with the credentials in your `~/.docker/config.json`; a registry only the
+daemon can reach shows its error on the Config tab. A tag that hasn't
+moved costs a HEAD, which Docker Hub doesn't count against its pull
+limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag,
+`2.1` to `2.2`, isn't looked for - see
 [BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
 on the compose file's repository is one way to catch those.

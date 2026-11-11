@@ -132,8 +132,8 @@ type Model struct {
 	// eventsLive is whether an event stream is open: the slow polls wait on it.
 	eventsLive bool
 	// away is whether the terminal has reported losing focus.
-	away                                bool
-	instancesPolledAt, warningsPolledAt time.Time
+	away                                                    bool
+	instancesPolledAt, warningsPolledAt, stackFilesPolledAt time.Time
 	// polledAt is when each slow poll last asked the daemon.
 	polledAt       map[refreshKind]time.Time
 	connectionLost bool
@@ -384,6 +384,12 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 	case configStatMsg:
 		return m.onConfigStat(msg.modTime)
+
+	case stackFilesPollMsg:
+		return m.statStackFiles()
+
+	case stackFilesStatMsg:
+		return m.onStackFilesStat(msg.edited)
 
 	case watchReadyMsg:
 		return msg.start()

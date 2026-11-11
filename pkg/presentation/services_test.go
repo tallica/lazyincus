@@ -15,7 +15,7 @@ func TestGetServiceRowDisplayStrings(t *testing.T) {
 	row := &commands.ServiceRow{Service: service}
 
 	assert.Equal(t,
-		[]string{"web", "none", "0/2", "", "", "0"},
+		[]string{"web", "none", "", "0/2", "", "", "0"},
 		GetServiceRowDisplayStrings(&config.GuiConfig{}, row, nil))
 
 	// The replica count is blank when it matches what was declared, and the
@@ -98,7 +98,39 @@ func TestServiceImageMarker(t *testing.T) {
 		plain(GetServiceRowDisplayStrings(&config.GuiConfig{ServiceColumns: []string{"name"}},
 			&commands.ServiceRow{Service: service, Instance: instance}, updates))[0])
 
+	// With an update column, there, after changed: on that column alone.
+	withUpdate := &config.GuiConfig{ServiceColumns: []string{"name", "image", "update"}}
+	assert.Equal(t, []string{"web", "nginx:alpine", "↑"},
+		plain(GetServiceRowDisplayStrings(withUpdate, &commands.ServiceRow{Service: service}, updates)))
+
+	service.Hash = "v1:new"
+	instance.Instance.ExpandedConfig = map[string]string{"user.label.incus-compose.config-hash": "v1:old"}
+	assert.Equal(t, []string{"web", "nginx:alpine", "↻ ↑"},
+		plain(GetServiceRowDisplayStrings(withUpdate, &commands.ServiceRow{Service: service}, updates)))
+
 	updates["old"] = commands.UpstreamStatus{State: commands.UpstreamCurrent}
 	assert.Equal(t, []string{"web", "nginx:alpine"},
 		plain(GetServiceRowDisplayStrings(guiConfig, &commands.ServiceRow{Service: service}, updates)))
+}
+
+// A service is changed while any instance is, and each replica row says
+// whether it is itself.
+func TestGetServiceRowDisplayStringsChanged(t *testing.T) {
+	instance := func(name, hash string) *commands.Instance {
+		instance := &commands.Instance{Name: name}
+		instance.Instance.ExpandedConfig = map[string]string{"user.label.incus-compose.config-hash": hash}
+
+		return instance
+	}
+
+	current, old := instance("web-1", "v1:new"), instance("web-2", "v1:old")
+	service := &commands.ComposeService{Name: "web", Hash: "v1:new", Replicas: 2, Instances: []*commands.Instance{current, old}}
+	columns := &config.GuiConfig{ServiceColumns: []string{"name", "update"}}
+
+	assert.Equal(t, []string{"web", "↻"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service}, nil))
+	assert.Equal(t, []string{"  web-1", ""}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: current}, nil))
+	assert.Equal(t, []string{"  web-2", "↻"}, GetServiceRowDisplayStrings(columns, &commands.ServiceRow{Service: service, Instance: old}, nil))
+
+	short := &config.GuiConfig{InstanceStatusStyle: "short", ServiceColumns: []string{"update"}}
+	assert.Equal(t, []string{"C"}, GetServiceRowDisplayStrings(short, &commands.ServiceRow{Service: service}, nil))
 }

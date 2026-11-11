@@ -47,8 +47,8 @@ func (s *StackInstances) All() []*commands.Instance {
 }
 
 // StackInfo is laid out the way an instance's Info tab is, with what
-// only a stack has - where to reach it, and where the daemon and the
-// compose file disagree - under headings of its own.
+// only a stack has - where the daemon and the compose file disagree, and
+// where to reach it - under headings of its own.
 func StackInfo(stack *commands.ComposeStack, remote, home string, state *StackInstances,
 	project *commands.ComposeProject, publishHost string, width int,
 	guiConfig *config.GuiConfig, tr *i18n.TranslationSet,
@@ -72,9 +72,9 @@ func StackInfo(stack *commands.ComposeStack, remote, home string, state *StackIn
 
 	instances := state.All()
 
+	output += section(tr.DriftTitle, StackDrift(state))
 	output += section(tr.EndpointsTitle, StackEndpoints(state.Services, publishHost))
 	output += section(tr.UsageTitle, StackUsage(instances))
-	output += section(tr.DriftTitle, StackDrift(state))
 
 	return output
 }
@@ -414,9 +414,33 @@ func pluralInstances(count int) string {
 	return fmt.Sprintf("%d instances", count)
 }
 
+// serviceChanged is the service's Drift line for its changed instances.
+func serviceChanged(service *commands.ComposeService) string {
+	changed := len(service.ChangedInstances())
+	if changed == 0 {
+		return ""
+	}
+
+	return pluralInstances(changed) + " from an older config, recreate with u"
+}
+
+// instanceConfig is an instance's Config line: changed, or predating the hash.
+func instanceConfig(service *commands.ComposeService, instance *commands.Instance) string {
+	switch {
+	case service.Hash == "":
+		return ""
+	case instance.ComposeHash() == "":
+		return "not tracked, created before incus-compose 1.4.0"
+	case service.ConfigChanged(instance):
+		return utils.ColoredString("changed", color.FgYellow) + ", recreate with u"
+	default:
+		return ""
+	}
+}
+
 // StackDrift is where the daemon and the compose file disagree: compose
-// instances of a service the file doesn't declare, and a declared service
-// with no instances.
+// instances of a service the file doesn't declare, a declared service with
+// no instances, and instances created from an older config.
 func StackDrift(state *StackInstances) string {
 	drift := map[string]string{}
 
@@ -433,6 +457,8 @@ func StackDrift(state *StackInstances) string {
 	for _, service := range state.Services {
 		if len(service.Instances) == 0 {
 			drift[service.Name] = "declared, not created"
+		} else if changed := serviceChanged(service); changed != "" {
+			drift[service.Name] = changed
 		}
 	}
 
