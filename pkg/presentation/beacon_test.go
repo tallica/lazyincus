@@ -35,6 +35,17 @@ func TestDisplayUpdate(t *testing.T) {
 		assert.Equal(t, test.want, utils.Decolorise(displayUpdate(long, test.changed, test.newerBuild, test.verdict)), test)
 	}
 
+	alpine := commands.BeaconVerdict{
+		Status: commands.BeaconUpdateAvailable, Latest: "1.31-alpine", Current: "docker.io/library/nginx:1.18-alpine",
+	}
+	assert.Equal(t, "↑1.31", utils.Decolorise(displayUpdate(long, false, false, alpine)))
+
+	alpine.Current = "registry.example:5000/nginx:1.18"
+	assert.Equal(t, "↑1.31-alpine", utils.Decolorise(displayUpdate(long, false, false, alpine)), "a variant only the new tag has stays")
+
+	alpine.Current, alpine.Latest = "nginx:1.18-alpine3.20", "1.31-alpine3.21"
+	assert.Equal(t, "↑1.31-alpine3.21", utils.Decolorise(displayUpdate(long, false, false, alpine)))
+
 	short := &config.GuiConfig{InstanceStatusStyle: "short"}
 	assert.Equal(t, "C ↑1.31", utils.Decolorise(displayUpdate(short, true, false, newerTag)))
 }

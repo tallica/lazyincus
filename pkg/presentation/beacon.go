@@ -21,7 +21,7 @@ func displayUpdate(guiConfig *config.GuiConfig, changed, newerBuild bool, verdic
 	switch verdict.Status {
 	case commands.BeaconUpdateAvailable:
 		if !verdict.Rebuilt() {
-			markers = append(markers, utils.ColoredString("↑"+verdict.Latest, color.FgYellow))
+			markers = append(markers, utils.ColoredString("↑"+shortNewerTag(verdict), color.FgYellow))
 		}
 	case commands.BeaconError:
 		markers = append(markers, utils.ColoredString("!", color.FgRed))
@@ -30,6 +30,20 @@ func displayUpdate(guiConfig *config.GuiConfig, changed, newerBuild bool, verdic
 	}
 
 	return strings.Join(lo.Compact(markers), " ")
+}
+
+// shortNewerTag drops the variant both tags share: 1.31-alpine over 1.18-alpine is 1.31.
+func shortNewerTag(verdict commands.BeaconVerdict) string {
+	latest, current := verdict.Latest, verdict.CurrentTag()
+
+	for i, r := range latest {
+		variant := latest[i:]
+		if i > 0 && (r == '-' || r == '_') && len(current) > len(variant) && strings.HasSuffix(current, variant) {
+			return latest[:i]
+		}
+	}
+
+	return latest
 }
 
 // BeaconLine is the Info tab's Update line, empty until beacon has checked.

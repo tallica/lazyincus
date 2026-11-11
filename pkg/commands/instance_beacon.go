@@ -26,8 +26,10 @@ type BeaconVerdict struct {
 	Status string
 	// Latest is the newer tag, or <tag>@sha256:<12 hex> for the same tag rebuilt.
 	Latest string
-	Error  string
-	Since  time.Time
+	// Current is the image beacon checked, tag and all.
+	Current string
+	Error   string
+	Since   time.Time
 }
 
 // Rebuilt is a newer build of the same tag rather than a newer tag.
@@ -44,11 +46,22 @@ func (v BeaconVerdict) NewerTag() string {
 	return v.Latest
 }
 
+// CurrentTag is Current's tag, empty when it names none.
+func (v BeaconVerdict) CurrentTag() string {
+	name := v.Current[strings.LastIndex(v.Current, "/")+1:]
+	if i := strings.LastIndex(name, ":"); i >= 0 {
+		return name[i+1:]
+	}
+
+	return ""
+}
+
 func (i *Instance) Beacon() BeaconVerdict {
 	verdict := BeaconVerdict{
-		Status: i.config(beaconStatusKey),
-		Latest: i.config(beaconLatestKey),
-		Error:  i.config(beaconErrorKey),
+		Status:  i.config(beaconStatusKey),
+		Latest:  i.config(beaconLatestKey),
+		Current: i.config(beaconCurrentKey),
+		Error:   i.config(beaconErrorKey),
 	}
 
 	if since, err := time.Parse(time.RFC3339, i.config(beaconSinceKey)); err == nil {

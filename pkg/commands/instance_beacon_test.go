@@ -49,3 +49,14 @@ func TestComposeServiceBeacon(t *testing.T) {
 
 	assert.Empty(t, (&ComposeService{}).Beacon().Status)
 }
+
+func TestBeaconCurrentTag(t *testing.T) {
+	for current, want := range map[string]string{
+		"docker.io/library/nginx:1.18-alpine": "1.18-alpine",
+		"registry.example:5000/nginx:1.18":    "1.18",
+		"registry.example:5000/nginx":         "",
+		"":                                    "",
+	} {
+		assert.Equal(t, want, BeaconVerdict{Current: current}.CurrentTag(), current)
+	}
+}
