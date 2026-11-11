@@ -76,7 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.16.0] - 2026-10-17
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `:` runs an `incus` command you type, on the focused side panel's remote and starting from its selected row's `--project` ([demo](https://asciinema.org/a/1268864)).
 - `;` on Stacks or Services runs an `incus-compose` command you type in the stack's directory, on its remote.
 - `tab` in the `:` and `;` prompts completes the word before the cursor: incus's verbs, flags and names from the daemon, or incus-compose's verbs and the stack's services.
@@ -98,7 +97,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.15.0] - 2026-10-10
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `/` in the main panel searches it, highlighting the matches: `n`/`N` step through them, `esc` clears.
 - `B` on the Stacks or Services panel goes straight to the stack's Backups tab, switching to the stack's remote first if it's elsewhere.
 - An instance's Info tab lists its proxy devices on a Ports line, as `host:port → target`.
@@ -121,7 +119,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.14.0] - 2026-10-08
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `remotes.<name>.readOnly` in the config, or `--read-only` for every remote, refuses any key that would change something there; the footer says `read-only` ([demo](https://asciinema.org/a/1268023)).
 - `ctrl+p` opens a command palette: every panel's actions, each naming the item it acts on, and once you type, every listed item to go to; `tab` lists an item's actions ([demo](https://asciinema.org/a/1268020)).
 - `remotes.<name>.color` colours that remote's name in the footer and the borders of panels acting on it.
@@ -162,7 +159,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.12.0] - 2026-10-02
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - A Stacks panel lists compose stacks: the working directory's, plus any added with `a` and removed with `D`, saved in `state.yml`.
 - Stacks run the Services panel's compose verbs against the whole stack.
 - A stack's Info tab shows its endpoints, summed usage, and drift: instances the compose file no longer declares, services never created.
@@ -197,7 +193,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.11.0] - 2026-09-28
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `--debug` logs every Incus event to `development.log`.
 
 ### Changed
@@ -223,7 +218,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.10.0] - 2026-09-27
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - A **Profiles** tab in Resources: each profile's users and devices; `u` lists its instances, `c` edits it, `d` deletes it.
 - Custom volumes have snapshots: select one to see them in Snapshots; `n` takes one, `r` restores, `d` deletes.
 - A network **Forwards** tab: each published port, where it goes, and the instance holding that address.
@@ -258,7 +252,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - 2026-09-25
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `=` expands the focused side panel and collapses it back, so the space the side column gives each list is now a decision you make while reading rather than one you commit to in the config file. `gui.expandFocusedSidePanel` still says which way a session starts, and `=` owns it from then on — a config reload won't pull it back.
 - Releases carry prebuilt binaries for macOS and Linux, on both amd64 and arm64, so installing no longer means having a Go toolchain and building from source, and a `checksums.txt` to verify the archive you downloaded against. v0.8.1 got its set after it was published; from this release on, every tag builds and publishes them.
 - lazyincus installs with Homebrew on macOS — `brew install tallica/tap/lazyincus` pours the release binary.
@@ -291,7 +284,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.0] - 2026-09-20
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `--remote <name>` (`-r`) picks the daemon for the session, an alternative to `INCUS_REMOTE=<name> lazyincus` and to changing the CLI's default. The flag sets that same variable at startup, so `incus console`, `incus exec` and every incus-compose verb — subprocesses that read the environment themselves — land on the daemon the panels are showing. See [docs/Remotes.md](docs/Remotes.md).
 - `--project-directory <dir>` (`-P`) points the Services panel at a compose file somewhere other than the working directory, an alternative to `INCUS_COMPOSE_PROJECT_DIRECTORY`, whose name it borrows and whose variable it sets. A path that isn't a directory is refused at startup rather than showing up as a missing panel.
 
@@ -313,7 +305,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2026-09-19
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - **Services** side panel, for [incus-compose](https://github.com/lxc/incus-compose) stacks. It appears only when a compose file is in the working directory, and then it's panel `1` — one row per service that file declares, with everything else shifting down a number. Because the rows come from the compose file rather than the daemon, a service that's declared but not running still gets one, in state `none`; the title names the compose project, every row sharing it. Tabs: Info (what the compose file declares for the service — image, command, restart policy, ports, volumes, devices, depends-on — then each of its instances' own Info tab), Logs, Config (the service's slice of `incus-compose config`, then the daemon's own dump for each instance), Env and Top. Logs, Env and Top show the service's one instance, and say so when it has replicas. See [docs/Panels.md](docs/Panels.md#services).
 - `u`/`U`/`S`/`s`/`r`/`d` on the Services panel run `incus-compose up`/`up --pull always --recreate`/`start`/`stop`/`restart`/`down` for the selected service, confirmed the way the instances panel's own keys are, and named the way its keys are: bring up, pull & recreate, start, stop, restart, bring down. `C` opens the verbs without a key of their own — `kill`, `pause`, `unpause`, `build`, `pull`, `logs --follow` — each listed for the service and for the whole project.
 - `m`/`n`/`a`/`E`/`y` work on the Services panel too, acting on the service's instance and asking which one when it has replicas.
@@ -338,7 +329,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Failing to connect at startup prints the remote and what went wrong with it, instead of a stack trace.
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - [docs/Remotes.md](docs/Remotes.md): connecting to a daemon that isn't the local one — picking a remote with `INCUS_REMOTE`, adding one with a trust token, reaching one over an SSH tunnel, and the three things that go wrong when incusd runs in a local VM. macOS Local Network Privacy and guest clock skew both fail with errors that accuse the wrong component. `scripts/check-local-network.sh` tells the first one apart from a genuinely unreachable host.
 
 ## [0.6.0] - 2026-09-12
@@ -348,14 +338,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text typed into a prompt stuck around for the next one, so naming two snapshots in a row produced the two names concatenated. An editable view keeps its contents in a text area that outlives the popup.
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `n` takes a snapshot from the instances panel as well as the snapshots one, and lands you on the new snapshot afterwards.
 - Snapshots can now carry an expiry (after which Incus deletes them) and include the instance's running state. `n` opens a name field with an options box under it — `tab` moves between them, `← →` change the focused field's value, and `enter` or `ctrl+s` creates from either box. Both fields default to off, so name-and-enter is the plain snapshot it always was. Snapshots that expire say so in the panel. Space activates a menu row too, which the binding carried since the port had never actually done.
 
 ## [0.5.0] - 2026-09-12
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - All projects are now listed at once, and that's the default: instances, images, volumes and networks from every project, with `P` to scope down to a single one. Actions run against the project the item came from rather than whichever one the client is scoped to, so starting, deleting or snapshotting an instance from another project works from the aggregate view. A project column appears only on panels whose contents actually span projects, so a server with one project looks exactly as it did.
 - Optional `service` column for the instances panel, showing the [incus-compose](https://github.com/lxc/incus-compose) service an instance came from (`user.label.incus-compose.service`). Off by default — add it to `gui.instanceColumns` — and blank for instances created any other way.
 - `a` attaches to the selected instance's console, shelling out to `incus console` the way `E` does for exec. Detaching is Incus's own ctrl+a q, which it prints on connect.
@@ -367,7 +355,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-09-12
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - `tab` and `shift+tab` cycle through the side panels, wrapping at both ends, as an alternative to the number keys.
 - `gui.expandFocusedSidePanel` gives the focused side panel the space the others aren't using, collapsing them to their title and first row — worth turning on now that there are five panels sharing the side column. Off by default; falls back to an even split on a terminal too short to fit them all collapsed.
 - Snapshots panel, showing the selected instance's snapshots and following that selection: `n` takes a new one, `r` restores, `d` deletes, each with a confirmation. This replaces the read-only Snapshots tab in the main panel, which showed the same table with nothing to do to it.
@@ -384,7 +371,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-09-12
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - Project awareness: `P` opens a menu of the server's Incus projects and re-scopes the instance list to the one picked, and the footer now shows which project it's scoped to alongside the remote (e.g. `Incus v6.11 (colima/default) ●`). Instances in any other project were previously invisible — including every `incus-compose` stack, since incus-compose gives each compose project an Incus project of its own.
 - `o` opens the lazyincus config file with the configured open command, and `O` opens it in `$VISUAL`/`$EDITOR`. Both are global keybindings.
 - [docs/Port.md](docs/Port.md): the lazydocker rename map and package layout, moved out of CLAUDE.md.
@@ -402,14 +388,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-08-25
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - Deleting a running instance now offers to stop it first and retry, instead of just surfacing Incus's refusal. Mirrors `incus delete --force`: stops without waiting for a clean shutdown, then deletes (skipping the delete for ephemeral instances, which Incus discards on stop).
 - Instances panel: `y` copies the selected instance's IPv4 address to the system clipboard (the first address, if it has several). The clipboard tool is auto-detected from `pbcopy`/`wl-copy`/`xclip`/`xsel`, and can be overridden with the new `oS.copyToClipboardCommand` config option.
 
 ## [0.1.0] - 2026-08-22
 
 ### Added
-- `U` on Instances rebuilds an OCI container from the newest build of its tag, or incus-beacon's newer tag. Incus won't rebuild one with snapshots.
 - Initial MVP port of [lazydocker](https://github.com/jesseduffield/lazydocker) targeting [Incus](https://linuxcontainers.org/incus/) instead of Docker.
 - Instances panel: list containers and VMs, start/stop/restart, pause/unfreeze, delete, view console logs, exec a shell into an instance.
 - Main panel Logs and Config tabs for the selected instance.
