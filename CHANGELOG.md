@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With every project in view, a refresh lists the instances once instead of four times, and the 2-second poll once instead of twice.
 - Internals: every panel's list now runs on one generic list, and refreshes read the daemon off the UI loop through captured sources. No change to what you see.
 - Built against the Incus 7.6 client (v7.6.0).
+- THIRD_PARTY_NOTICES.md in the release archives now carries the licence of every Go module the binary links.
 
 ### Fixed
 - Failing to reach the daemon at startup, or being refused its socket, now exits with status 1 instead of 0.

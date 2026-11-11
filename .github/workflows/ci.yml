@@ -21,3 +21,4 @@ jobs:
       contents: write # the release job creates the GitHub release
     with:
       format: false # no Prettier in this repo
+      notices: true

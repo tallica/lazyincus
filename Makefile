@@ -1,4 +1,4 @@
-.PHONY: run build install test vet lint audit release-check release-snapshot clean
+.PHONY: run build install test vet lint audit notices notices-check release-check release-snapshot clean
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo unversioned)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null)
@@ -27,6 +27,14 @@ lint:
 # Vulnerabilities the code can reach, from the Go vulnerability database.
 audit:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+# THIRD_PARTY_NOTICES.md from the modules the release binaries link, after a
+# licence check; CI runs notices-check, which fails when the file is stale.
+notices:
+	@scripts/notices.sh
+
+notices-check:
+	@scripts/notices.sh --check
 
 release-check:
 	goreleaser check

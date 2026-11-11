@@ -211,7 +211,15 @@ make vet
 make test
 make lint        # golangci-lint, configured by .golangci.yml
 make audit       # govulncheck: reachable vulnerabilities; CI runs it weekly too
+make notices     # rewrite THIRD_PARTY_NOTICES.md; CI runs make notices-check
 ```
+
+THIRD_PARTY_NOTICES.md is generated: the code adapted from lazydocker and
+gocui is credited in `scripts/notices.sh`'s header, the rest is each module
+the release binaries link. A dependency added or dropped means `make
+notices` in the same commit, as CI fails on a stale file; a version bump
+alone changes nothing. A licence outside the script's allowed list stops
+it - the maintainer's call, not a line to add.
 
 No `vendor/` directory — plain module mode.
 
