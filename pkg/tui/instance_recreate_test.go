@@ -269,3 +269,22 @@ func TestUpdatingOCIContainersWithNothingToTake(t *testing.T) {
 	assert.Nil(t, m.topMenu())
 	assert.Contains(t, footer(m), "no OCI container here has a newer image build or tag to take")
 }
+
+// A newer build g found reads as G on Services words it, from -> to with o
+// to open what changed; one only beacon saw says so.
+func TestUpdatingOCIContainersShowsWhatChanged(t *testing.T) {
+	server := ociServer()
+	instances := server.Instances
+	delete(instances[0].ExpandedConfig, "user.incus-beacon.status")
+	server.SetInstances(instances)
+	m := start(t, options{server: server}, 140, 40)
+	m.upstreams = map[string]commands.UpstreamStatus{"nginx-image": {
+		State: commands.UpstreamNewer, Ref: "docker.io/library/nginx:1.27",
+		From: &commands.BuildInfo{Version: "1.27.1", Source: "https://github.com/acme/nginx", Revision: "aaa"},
+		To:   &commands.BuildInfo{Version: "1.27.2", Source: "https://github.com/acme/nginx", Revision: "bbb"},
+	}}
+
+	press(m, "G")
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 1.27.1 → 1.27.2"}, menuLabels(m))
+	assert.Contains(t, m.topMenu().items[0].keys, "o")
+}

@@ -16,6 +16,8 @@ type instanceUpdate struct {
 	instance *commands.Instance
 	source   commands.OCIRebuild
 	tag      string
+	// status is g's newer build, State empty when only beacon saw one.
+	status commands.UpstreamStatus
 }
 
 // updateInstanceImages is `G` on Instances: docs/Panels.md, "Instances".
@@ -88,6 +90,9 @@ func instanceUpdates(candidates []*commands.Instance, upstreams map[string]comma
 		}
 
 		update := instanceUpdate{instance: instance, source: source, tag: tag}
+		if status := commands.MostTelling(upstreams, instance.BaseImage()); status.State == commands.UpstreamNewer {
+			update.status = status
+		}
 		if len(instance.Instance.Snapshots) > 0 {
 			blocked = append(blocked, update)
 		} else {
@@ -96,6 +101,18 @@ func instanceUpdates(candidates []*commands.Instance, upstreams map[string]comma
 	}
 
 	return found, blocked
+}
+
+// instanceUpdateChange is the row's from → to, as G on Services words it.
+func (m *Model) instanceUpdateChange(update instanceUpdate) string {
+	switch {
+	case update.tag != "":
+		return "→ " + update.tag
+	case update.status.State == commands.UpstreamNewer:
+		return buildChangeStr(update.status)
+	}
+
+	return m.tr.BeaconRebuilt
 }
 
 func updateNames(updates []instanceUpdate) string {
@@ -112,12 +129,14 @@ func (m *Model) openInstanceUpdates(found, blocked []instanceUpdate, recheck boo
 	updates := make(map[*menuItem]instanceUpdate, len(found))
 
 	for _, update := range found {
-		change := m.tr.NewerBuild
-		if update.tag != "" {
-			change = "→ " + update.tag
+		item := &menuItem{labelColumns: []string{update.instance.Name, update.source.Image(), m.instanceUpdateChange(update)}, checked: true}
+
+		if update.tag == "" && update.status.State == commands.UpstreamNewer {
+			if links := commands.BuildLinks(update.status.Ref, update.status.From, update.status.To); len(links) > 0 {
+				item.keys = map[string]menuKey{"o": {handler: openBuildLink(links)}}
+			}
 		}
 
-		item := &menuItem{labelColumns: []string{update.instance.Name, update.source.Image(), change}, checked: true}
 		items = append(items, item)
 		updates[item] = update
 	}

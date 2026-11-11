@@ -116,7 +116,6 @@ type TranslationSet struct {
 	UpdateInstancesSnapshots     string
 	UpdateInstancesLeftOut       string
 	ConfirmUpdateInstances       string
-	NewerBuild                   string
 	ConfirmRecreateCurrent       string
 	ConfirmRecreatePulled        string
 	RecreateNoSource             string
@@ -402,7 +401,6 @@ func englishSet() TranslationSet {
 		UpdateInstancesSnapshots: "Incus only recreates an instance without snapshots, and every one here with something newer has some (%s): delete them from the Snapshots panel (d) first.",
 		UpdateInstancesLeftOut:   "left out, with snapshots: %s",
 		ConfirmUpdateInstances:   "Are you sure you want to recreate %s? Each root disk is replaced with a fresh pull, which can't be undone; config, devices and volumes stay. Running instances are stopped and started again.",
-		NewerBuild:               "newer build",
 		ConfirmRecreateCurrent:   "Are you sure you want to recreate %s from the %s it runs? Its root disk is replaced with a fresh copy of the image, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again.",
 		ConfirmRecreatePulled:    "Are you sure you want to recreate %s from a fresh pull of %s? Its root disk is replaced, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again.",
 		RecreateNoSource:         "%s can't be recreated: %v",
