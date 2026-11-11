@@ -197,6 +197,7 @@ and never does while it's down.
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
 | `G` | Stacks and Services panels: pick which of the stack's services with a newer image build to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
+| `T` | Stacks and Services panels: pick which of the stack's services to move to the newer tag [incus-beacon](docs/Panels.md#incus-beacon) found, editing the compose file, and recreate |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -325,6 +326,10 @@ What the keys run on a service's own row, each of them `incus-compose
   → to, all ticked, `space` to untick one, `o` to open what changed;
   `enter` confirms and recreates them on a pull (`up --recreate --pull
   always --no-deps`)
+- `T` — over the whole stack: the services incus-beacon found a newer tag
+  for, ticked the same way; `enter` confirms, moves each `image:` in the
+  compose file to it and recreates them (`up --recreate --pull missing
+  --no-deps`)
 - `M` — `logs --follow`, every replica's interleaved, until `ctrl+c`. It
   starts empty: a container's console log is handed out once, and the Logs
   tabs have read what's there, so it shows what's written from then on

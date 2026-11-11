@@ -435,8 +435,8 @@ never reached the daemon - `up` waiting on ic-healthd - leaves only the
 terminal's account, unless `gui.returnImmediately` skips the prompt that
 keeps it on screen: then the popup names the command and how it exited.
 `s`, `d` and `f` confirm, `U` asks which kind of recreate and then confirms,
-`G` its checklist and then confirms, `S`/`r`/`u`/`p`/`b`/`g` don't — same
-rule as the instances panel.
+`G` and `T` their checklists and then confirm, `S`/`r`/`u`/`p`/`b`/`g`
+don't — same rule as the instances panel.
 The same verbs over the whole stack are the Stacks panel's. `U` can fail
 on a non-local daemon for reasons that are incus-compose's, not ours — see
 README's [Compose stacks](../README.md#compose-stacks).
@@ -680,6 +680,15 @@ rebuild is what `G` already applies; beacon's own check doesn't feed it,
 since `G` pulls and a pull can't move a tag. Beacon's keys from before
 0.5, `user.beacon.*`, aren't read: it moves them to the new names on its
 next write.
+
+`T` on Stacks or Services is that move: the services with a newer tag,
+all ticked, as `G` lists them; `enter` confirms, rewrites the value of
+each one's `image:` line in the compose file and nothing else of it, and
+recreates them on it (`up --recreate --pull missing --no-deps`). A
+service is listed only when beacon tracked the very image and tag the
+file names, so not one whose `user.incus-beacon.image` points elsewhere.
+An `image:` the compose file doesn't spell out itself - a variable, an
+override file's, an `extends` - leaves the file as it was, saying which.
 
 ## Snapshots
 

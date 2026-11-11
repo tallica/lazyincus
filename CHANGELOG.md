@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - incus-beacon's verdict shows on the Info tab and in the `update` column, now on Instances too: `↑1.31` for a newer tag, `!` for an error.
+- `T` on Stacks or Services moves the services to the newer tag incus-beacon found, editing the compose file's `image:` lines, and recreates them.
 - `make install` builds lazyincus into `~/go/bin`.
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.
 - `g` on Images checks the OCI images in use for a newer build of their tag, marking them and what runs them, stacks included, with `↑`; `gui.checkImageUpdatesOnStart` checks at startup too.

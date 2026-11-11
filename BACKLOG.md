@@ -142,9 +142,10 @@ own merits.
 
 Deliberately deferred (don't re-pitch unprompted):
 
-- **Newer image tags** — `g` on Images says only whether a tag has a newer
-  build. Whether `2.2` has followed `2.1` is the compose file's question,
-  and answering it here would end at an edit to that file anyway.
+- **Looking for newer image tags itself** — `g` on Images says only
+  whether a tag has a newer build. Whether `2.2` has followed `2.1` is
+  [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `T` makes
+  the edit to the compose file it ends at.
 - **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
   new build for a stack's services. An instance launched from an OCI
   image by hand gets the `↑` but no key: `incus rebuild` discards its

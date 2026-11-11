@@ -257,6 +257,11 @@ type TranslationSet struct {
 	ComposeUpdateImagesTitle      string
 	ConfirmComposeUpdateImages    string
 	NoNewerImages                 string
+	ComposeBumpTags               string
+	ComposeBumpTagsTitle          string
+	ConfirmComposeBumpTags        string
+	ComposeBumpTagsFailed         string
+	NoNewerTags                   string
 	ConfirmComposeStop            string
 	ConfirmComposeKill            string
 
@@ -632,6 +637,11 @@ func englishSet() TranslationSet {
 		ComposeUpdateImagesTitle:      "Update images",
 		ConfirmComposeUpdateImages:    "Are you sure you want to pull the newer images of %s and recreate them? Running instances will be replaced.",
 		NoNewerImages:                 "no service of %s has a newer image build",
+		ComposeBumpTags:               "move images to the newer tag incus-beacon found",
+		ComposeBumpTagsTitle:          "Move to newer tags",
+		ConfirmComposeBumpTags:        "Are you sure you want to edit the compose file to move %s, and recreate them? Running instances will be replaced.",
+		ComposeBumpTagsFailed:         "The compose file was left as it was: %v",
+		NoNewerTags:                   "incus-beacon found no newer tag for a service of %s",
 		ConfirmComposeStop:            "Are you sure you want to stop %s?",
 		ConfirmComposeKill:            "Are you sure you want to force stop %s?",
 
