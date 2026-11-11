@@ -5,14 +5,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/samber/lo"
 	"github.com/tallica/lazyincus/pkg/commands"
 	"github.com/tallica/lazyincus/pkg/i18n"
 	"github.com/tallica/lazyincus/pkg/utils"
 )
 
 // ServiceInfo is the service's lines, then each instance's Info tab under them.
-func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project *commands.ComposeProject,
+func ServiceInfo(row *commands.ServiceRow, loc Location, upstream commands.UpstreamStatus, project *commands.ComposeProject,
 	instanceInfo func(instance *commands.Instance, omit ...string) string,
 	width int, tr *i18n.TranslationSet,
 ) string {
@@ -33,8 +32,9 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output += line("Service", service.Name)
 	output += line("Image", service.ResolvedImage())
 
-	build, tag := BeaconLines(service.Beacon())
-	output += line("Newer build", lo.CoalesceOrEmpty(verdict, build))
+	verdict := service.Beacon()
+	build, tag := BeaconLines(verdict)
+	output += line("Newer build", newerBuildLine(upstream, verdict, build))
 	output += line("Newer tag", tag)
 	output += line("Replicas", ServiceReplicas(service))
 	output += line("Health", service.Health())

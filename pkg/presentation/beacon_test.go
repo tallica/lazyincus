@@ -83,3 +83,22 @@ func TestSinceTime(t *testing.T) {
 	assert.Equal(t, now.Add(-time.Hour).Format("15:04 MST"), sinceTime(now.Add(-time.Hour), now))
 	assert.Equal(t, LocalTime(now.AddDate(0, 0, -1)), sinceTime(now.AddDate(0, 0, -1), now))
 }
+
+// Either source finding a newer build wins the line; else g's answer does.
+func TestNewerBuildLine(t *testing.T) {
+	rebuilt := commands.BeaconVerdict{Status: commands.BeaconUpdateAvailable, Latest: "1.27@sha256:0123456789ab"}
+	current := commands.BeaconVerdict{Status: commands.BeaconCurrent}
+	newer := commands.UpstreamStatus{State: commands.UpstreamNewer}
+	none := commands.UpstreamStatus{State: commands.UpstreamCurrent}
+
+	line := func(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict) string {
+		build, _ := BeaconLines(verdict)
+		return newerBuildLine(upstream, verdict, build)
+	}
+
+	assert.Equal(t, "yes, G takes it", line(newer, current))
+	assert.Equal(t, "yes, G takes it (incus-beacon)", line(none, rebuilt))
+	assert.Equal(t, "none", line(none, current))
+	assert.Equal(t, "none (incus-beacon)", line(commands.UpstreamStatus{}, current))
+	assert.Empty(t, line(commands.UpstreamStatus{}, commands.BeaconVerdict{}))
+}

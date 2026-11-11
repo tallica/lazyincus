@@ -80,6 +80,22 @@ func BeaconLines(verdict commands.BeaconVerdict) (build, tag string) {
 	return withBeaconSource(what, verdict), ""
 }
 
+// newerBuildLine: either source finding one wins, as in the column and G; else g's answer.
+func newerBuildLine(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict, beaconLine string) string {
+	switch {
+	case upstream.State == commands.UpstreamNewer:
+		return newerBuildFound
+	case verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt():
+		return beaconLine
+	case upstream.State == commands.UpstreamCurrent:
+		return newerNone
+	case upstream.State == commands.UpstreamFailed:
+		return upstream.Err.Error()
+	}
+
+	return beaconLine
+}
+
 func withBeaconSource(what string, verdict commands.BeaconVerdict) string {
 	source := "incus-beacon"
 	if !verdict.Since.IsZero() {
