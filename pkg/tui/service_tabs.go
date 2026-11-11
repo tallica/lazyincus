@@ -35,14 +35,16 @@ func (m *Model) serviceInfoTask() mainTaskFunc {
 
 	locations := map[string]presentation.Location{}
 	hosts := map[string]string{}
+	upstreams := map[string]commands.UpstreamStatus{}
 
 	for _, instance := range row.Instances() {
 		locations[instance.Key()] = m.instanceLocation(instance)
 		hosts[instance.Key()] = m.publishHostFor(instance.Remote)
+		upstreams[instance.Key()] = commands.MostTelling(m.upstreams, instance.BaseImage())
 	}
 
 	instanceInfo := func(instance *commands.Instance, omit ...string) string {
-		return presentation.InstanceInfo(instance, locations[instance.Key()], hosts[instance.Key()], omit...)
+		return presentation.InstanceInfo(instance, locations[instance.Key()], hosts[instance.Key()], upstreams[instance.Key()], omit...)
 	}
 
 	return tickerTask(time.Second, func() string {

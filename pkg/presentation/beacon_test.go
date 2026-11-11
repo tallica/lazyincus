@@ -94,7 +94,7 @@ func TestNewerBuildLine(t *testing.T) {
 
 	line := func(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict) string {
 		build, _ := BeaconLines(verdict, "G")
-		return newerBuildLine(upstream, verdict, build)
+		return newerBuildLine(upstream, verdict, build, "G")
 	}
 
 	assert.Equal(t, "yes, G takes it", line(newer, current))

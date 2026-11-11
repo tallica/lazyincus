@@ -96,10 +96,10 @@ func BeaconLines(verdict commands.BeaconVerdict, key string) (build, tag string)
 }
 
 // newerBuildLine: either source finding one wins, as in the column and G; else g's answer.
-func newerBuildLine(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict, beaconLine string) string {
+func newerBuildLine(upstream commands.UpstreamStatus, verdict commands.BeaconVerdict, beaconLine, key string) string {
 	switch {
 	case upstream.State == commands.UpstreamNewer:
-		return newerBuildFound("G")
+		return newerBuildFound(key)
 	case verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt():
 		return beaconLine
 	case upstream.State == commands.UpstreamCurrent:
