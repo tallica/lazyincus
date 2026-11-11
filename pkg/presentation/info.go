@@ -99,6 +99,7 @@ func InstanceIdentity(instance *commands.Instance, loc Location, publishHost str
 	output += line("Type", InstanceType(instance))
 	output += line("Image", instance.Image())
 	output += line("Health", instance.HealthStatus())
+	output += line("Update", BeaconLine(instance.Beacon()))
 	output += line("Architecture", instance.Instance.Architecture)
 	output += line("Created", LocalTime(instance.Instance.CreatedAt))
 	output += line("Last used", LocalTime(instance.Instance.LastUsedAt))

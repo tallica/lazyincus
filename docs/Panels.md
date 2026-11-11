@@ -575,9 +575,8 @@ selection to whatever took its place.
 of the tag they were pulled by, on the session's remote and every other
 one a listed stack is on and that's connected. The image gets a `↑` ahead
 of its label, where a narrow panel doesn't cut it off. What runs it gets
-one too: an instance in its `image` column, or by its name where that
-isn't shown; a service or replica in its `update` column, after
-`↻`, or where an instance's goes without it; a stack after its
+one too: an instance, service or replica in its `update` column, after
+`↻`, else in its `image` column, else by its name; a stack after its
 status. A service's Info tab says what the registry said. Recreating with
 a pull, `U`, takes the new build. `G` on Stacks or Services does it for
 the services of the stack you tick, in one `up`; `--no-deps` keeps it to
@@ -602,10 +601,11 @@ with the credentials in your `~/.docker/config.json`; a registry only the
 daemon can reach shows its error on the Config tab. A tag that hasn't
 moved costs a HEAD, which Docker Hub doesn't count against its pull
 limit. `gui.checkImageUpdatesOnStart` checks at startup too. A newer tag,
-`2.1` to `2.2`, isn't looked for - see
-[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped);
+`2.1` to `2.2`, isn't looked for here - see
+[BACKLOG.md](../BACKLOG.md#not-lazydocker-shaped). incus-beacon finds
+them, [below](#incus-beacon);
 [Renovate](https://docs.renovatebot.com/modules/manager/docker-compose/)
-on the compose file's repository is one way to catch those.
+on the compose file's repository is another way.
 
 Which columns show, and in what order, is user-configurable via
 `gui.instanceColumns`. `service`, `health` and `image` read incus-compose
@@ -638,9 +638,9 @@ Main panel tabs, roughly what `incus info <name>` prints in one shot, split
 up:
 
 - **Info** — where the instance lives ([above](#where-an-item-lives)),
-  then what it is (name, description, status, type, image, health where it
-  has one, architecture, dates, addresses, proxy devices as ports, snapshot
-  count),
+  then what it is (name, description, status, type, image, health and
+  [update](#incus-beacon) where it has them, architecture, dates,
+  addresses, proxy devices as ports, snapshot count),
   then the counters from `InstanceFull.State`: CPU, memory, process count,
   disk, network. A gap sets those off rather than a heading — CPU and
   memory say what they are, and a ruled heading would weigh the same as the
@@ -664,6 +664,22 @@ up:
   shell-out). Images without a `ps` and VMs without the guest agent get the
   daemon's error instead of a list; the flag set that works is cached per
   instance, since busybox and util-linux `ps` disagree on all of them.
+
+### incus-beacon
+
+[incus-beacon](https://github.com/tallica/incus-beacon) checks each
+instance's image on the daemon's side and writes what it found to the
+instance's `user.incus-beacon.*` keys, which lazyincus reads and never
+writes. The Info tab's `Update` line is its verdict: the newer tag, or
+`<tag>@sha256:…` for the same tag rebuilt, `current`, or the error, with
+when it last changed. The `update` column says the same in a glyph,
+after `↻` and `g`'s `↑`: `↑1.31` for a newer tag, `↑` for a rebuild -
+one `↑` when `g` found it too - red `!` for an error, `?` for unknown,
+nothing when current. A service's is its most telling replica's. A
+rebuild is what `G` already applies; beacon's own check doesn't feed it,
+since `G` pulls and a pull can't move a tag. Beacon's keys from before
+0.5, `user.beacon.*`, aren't read: it moves them to the new names on its
+next write.
 
 ## Snapshots
 

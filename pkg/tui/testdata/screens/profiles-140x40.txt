@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Devices - Config──────────────────────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││NAME TYPE SETTINGS                                                                         │
-│web                              running  co…││eth0 nic  name=eth0 network=incusbr0                                                       │
-│db                               stopped  co…││root disk path=/ pool=default                                                              │
+│a-name-long-enough-to-be-cut-off running   c…││NAME TYPE SETTINGS                                                                         │
+│web                              running   c…││eth0 nic  name=eth0 network=incusbr0                                                       │
+│db                               stopped   c…││root disk path=/ pool=default                                                              │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │
 │                                             ││                                                                                           │

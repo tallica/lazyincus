@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Leases - State - ACLs - Forwards - Config─────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││State:          up                                                                         │
-│web                              running  co…││Type:           broadcast                                                                  │
-│db                               stopped  co…││MAC address:    10:66:6a:00:00:01                                                          │
+│a-name-long-enough-to-be-cut-off running   c…││State:          up                                                                         │
+│web                              running   c…││Type:           broadcast                                                                  │
+│db                               stopped   c…││MAC address:    10:66:6a:00:00:01                                                          │
 │                                             ││MTU:            1500                                                                       │
 │                                             ││                                                                                           │
 │                                             ││IP addresses:                                                                              │

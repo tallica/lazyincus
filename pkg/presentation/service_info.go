@@ -34,6 +34,7 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	output += line("Registry", verdict)
 	output += line("Replicas", ServiceReplicas(service))
 	output += line("Health", service.Health())
+	output += line("Update", BeaconLine(service.Beacon()))
 
 	if project != nil {
 		output += line("Healthcheck", ComposeHealthcheck(project, tr))
@@ -56,10 +57,10 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, verdict string, project
 	// heading of its own, and minus the lines the service or that heading
 	// has just said: where it lives and its image are the same for every
 	// replica, the name and which replica it is are the heading's, and a
-	// lone instance's health is what the service's rolls up to.
+	// lone instance's health and update are what the service's roll up to.
 	omit := []string{"Remote", "Project", "Stack", "Service", "Image", "Name"}
 	if len(service.Instances) == 1 {
-		omit = append(omit, "Health")
+		omit = append(omit, "Health", "Update")
 	}
 
 	for _, instance := range row.Instances() {

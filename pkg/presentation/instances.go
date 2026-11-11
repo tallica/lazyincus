@@ -42,6 +42,9 @@ var instanceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Insta
 	"snapshots": func(_ *config.GuiConfig, instance *commands.Instance) string {
 		return displayInstanceSnapshotCount(instance)
 	},
+	"update": func(guiConfig *config.GuiConfig, instance *commands.Instance) string {
+		return displayUpdate(guiConfig, false, false, instance.Beacon())
+	},
 }
 
 // GetInstanceDisplayStrings renders one row; updates are the registry
@@ -54,9 +57,14 @@ func GetInstanceDisplayStrings(
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
-		cell := instanceColumnRenderers[column](guiConfig, instance)
-		if column == marked {
-			cell = WithImageMarker(cell, updates, instance.BaseImage())
+		var cell string
+		switch column {
+		case "update":
+			cell = displayUpdate(guiConfig, false, imageNewer(updates, instance.BaseImage()), instance.Beacon())
+		case marked:
+			cell = WithImageMarker(instanceColumnRenderers[column](guiConfig, instance), updates, instance.BaseImage())
+		default:
+			cell = instanceColumnRenderers[column](guiConfig, instance)
 		}
 
 		cells = append(cells, cell)
@@ -65,11 +73,12 @@ func GetInstanceDisplayStrings(
 	return cells
 }
 
-// markedColumn is where a row says its image has a newer build: the image
-// column, or the name when that isn't shown.
+// markedColumn is where a row says its image has a newer build.
 func markedColumn(columns []string) string {
-	if lo.Contains(columns, "image") {
-		return "image"
+	for _, column := range []string{"update", "image"} {
+		if lo.Contains(columns, column) {
+			return column
+		}
 	}
 
 	return "name"
@@ -78,7 +87,7 @@ func markedColumn(columns []string) string {
 // WithImageMarker adds ↑ to a cell of a row whose images include one whose
 // tag has a newer build upstream.
 func WithImageMarker(cell string, updates map[string]commands.UpstreamStatus, fingerprints ...string) string {
-	if commands.MostTelling(updates, fingerprints...).State != commands.UpstreamNewer {
+	if !imageNewer(updates, fingerprints...) {
 		return cell
 	}
 
@@ -88,6 +97,10 @@ func WithImageMarker(cell string, updates map[string]commands.UpstreamStatus, fi
 	}
 
 	return cell + " " + marker
+}
+
+func imageNewer(updates map[string]commands.UpstreamStatus, fingerprints ...string) bool {
+	return commands.MostTelling(updates, fingerprints...).State == commands.UpstreamNewer
 }
 
 // BaseImages are the fingerprints the instances were created from.

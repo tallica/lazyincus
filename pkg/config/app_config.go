@@ -154,16 +154,16 @@ type GuiConfig struct {
 
 	// InstanceColumns controls which columns the Instances panel shows, and
 	// in what order. Valid values: "name", "status", "type", "ipv4", "ipv6",
-	// "project", "service", "health", "image", "snapshots". Unknown values
-	// are ignored; omitted values are simply not shown. "project" is added
-	// automatically whenever the list spans more than one project.
+	// "project", "service", "health", "image", "snapshots", "update". Unknown
+	// values are ignored; omitted values are simply not shown. "project" is
+	// added automatically whenever the list spans more than one project.
 	InstanceColumns []string `yaml:"instanceColumns,omitempty"`
 
 	// ServiceColumns controls which columns the Services panel shows, and in
 	// what order. Valid values: "name", "status", "update", "replicas",
 	// "type", "ipv4", "ipv6", "health", "image", "snapshots". Everything but
-	// "replicas" and "update" rolls the service's instances up the way the
-	// Instances panel renders one.
+	// "replicas" rolls the service's instances up the way the Instances panel
+	// renders one, "update" adding what only a service knows.
 	ServiceColumns []string `yaml:"serviceColumns,omitempty"`
 
 	// CheckImageUpdatesOnStart checks the OCI images instances were created
@@ -174,7 +174,7 @@ type GuiConfig struct {
 
 // DefaultInstanceColumns is the Instances panel's column set/order when the
 // user hasn't customized InstanceColumns.
-var DefaultInstanceColumns = []string{"name", "status", "health", "type", "ipv4", "snapshots"}
+var DefaultInstanceColumns = []string{"name", "status", "update", "health", "type", "ipv4", "snapshots"}
 
 // DefaultServiceColumns is the Services panel's column set/order when the
 // user hasn't customized ServiceColumns.

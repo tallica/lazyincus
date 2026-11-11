@@ -40,7 +40,7 @@ var serviceColumnRenderers = map[string]func(*config.GuiConfig, *commands.Compos
 		return displayServiceSnapshotCount(service)
 	},
 	"update": func(guiConfig *config.GuiConfig, service *commands.ComposeService) string {
-		return displayChanged(guiConfig, len(service.ChangedInstances()) > 0)
+		return displayUpdate(guiConfig, len(service.ChangedInstances()) > 0, false, service.Beacon())
 	},
 	"ipv4": func(_ *config.GuiConfig, service *commands.ComposeService) string {
 		return utils.ColoredString(displayServiceAddresses(service, "inet"), color.FgYellow)
@@ -76,22 +76,21 @@ func GetServiceRowDisplayStrings(
 	guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus,
 ) []string {
 	columns := serviceColumns(guiConfig)
-	marked := serviceMarkedColumn(columns)
+	marked := markedColumn(columns)
 
 	cells := make([]string, 0, len(columns))
 	for _, column := range columns {
 		var cell string
 		switch {
+		case column == "update":
+			cell = serviceRowUpdate(guiConfig, row, updates)
 		case row.Instance == nil:
 			cell = serviceColumnRenderers[column](guiConfig, row.Service)
-		case column == "update":
-			// Only the service knows the file's hash.
-			cell = displayChanged(guiConfig, row.Service.ConfigChanged(row.Instance))
 		default:
 			cell = replicaCell(guiConfig, column, row.Instance)
 		}
 
-		if column == marked {
+		if column == marked && column != "update" {
 			cell = WithImageMarker(cell, updates, BaseImages(row.Instances())...)
 		}
 
@@ -101,13 +100,17 @@ func GetServiceRowDisplayStrings(
 	return cells
 }
 
-// serviceMarkedColumn is where ↑ goes: update, else where Instances puts it.
-func serviceMarkedColumn(columns []string) string {
-	if lo.Contains(columns, "update") {
-		return "update"
+// serviceRowUpdate goes through the service, the only one knowing the file's hash.
+func serviceRowUpdate(guiConfig *config.GuiConfig, row *commands.ServiceRow, updates map[string]commands.UpstreamStatus) string {
+	changed := len(row.Service.ChangedInstances()) > 0
+	verdict := row.Service.Beacon()
+
+	if row.Instance != nil {
+		changed = row.Service.ConfigChanged(row.Instance)
+		verdict = row.Instance.Beacon()
 	}
 
-	return markedColumn(columns)
+	return displayUpdate(guiConfig, changed, imageNewer(updates, BaseImages(row.Instances())...), verdict)
 }
 
 // replicaCell renders a replica's row through the instances panel's own

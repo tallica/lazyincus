@@ -1,7 +1,7 @@
 ╭─[1]─Instances───────────────────────────────╮╭─Config────────────────────────────────────────────────────────────────────────────────────╮
-│a-name-long-enough-to-be-cut-off running  co…││Remote:       fake                                                                         │
-│web                              running  co…││Project:      default                                                                      │
-│db                               stopped  co…││Alias:                                                                                     │
+│a-name-long-enough-to-be-cut-off running   c…││Remote:       fake                                                                         │
+│web                              running   c…││Project:      default                                                                      │
+│db                               stopped   c…││Alias:                                                                                     │
 │                                             ││Fingerprint:  0123456789abcdef0123456789abcdef                                             │
 │                                             ││Type:         container                                                                    │
 │                                             ││Architecture:                                                                              │
