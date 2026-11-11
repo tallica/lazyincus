@@ -19,14 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - While the terminal isn't focused, lazyincus polls once a minute and the main panel's tab stops; focus back, it catches up at once. tmux needs `focus-events on`.
 
 ### Changed
-- The `oS.*Command` settings are split by shell quoting rules: a backslash inside single quotes, or before an ordinary character in double quotes, now stays.
-- The selected row is a bold dark-grey bar, and the inactive selection a darker one, in place of blue and none: easier to read coloured text on.
-- A selected row is bold only where its theme key lists `bold`; a config setting `inactiveSelectedLineBgColor` without it loses the bold it always had.
-- The interface is rebuilt on Bubble Tea in place of gocui. Panels, keys and screens are as before; the differences below are the ones to notice.
+- The interface is rebuilt on Bubble Tea in place of gocui. Panels, keys and screens are as before; the next four are the differences to notice.
 - In a prompt, `ctrl+y` (paste back the last deletion) and `insert` (overwrite) do nothing, and the cursor is a block rather than your terminal's own.
 - With `NO_COLOR` or a terminal without colour, the selected row is shown in reverse video and the focused panel's border in bold.
 - With no stack listed, focusing Stacks empties Snapshots, as focusing a stack always has, instead of keeping the last instance's.
 - A list filter that matches nothing shows the list's empty message in the main panel, rather than the item selected before.
+- The `oS.*Command` settings are split by shell quoting rules: a backslash inside single quotes, or before an ordinary character in double quotes, now stays.
+- The selected row is a bold dark-grey bar, and the inactive selection a darker one, in place of blue and none: easier to read coloured text on.
+- A selected row is bold only where its theme key lists `bold`; a config setting `inactiveSelectedLineBgColor` without it loses the bold it always had.
 - With every project in view, a refresh lists the instances once instead of four times, and the 2-second poll once instead of twice.
 - Internals: every panel's list now runs on one generic list, and refreshes read the daemon off the UI loop through captured sources. No change to what you see.
 - Built against the Incus 7.6 client (v7.6.0).
