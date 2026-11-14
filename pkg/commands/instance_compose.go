@@ -116,14 +116,17 @@ func (i *Instance) composeUnfreeze() error {
 	return i.markStopped(false)
 }
 
-// markStopped writes healthStoppedKey with a PATCH of that one key, as
-// incus-compose writes it: ic-healthd stamps its verdict into the same
-// config on a timer, and a read-modify-write would race it. The client has
-// no PATCH of its own, and its raw query adds neither the API version nor
-// the project.
 func (i *Instance) markStopped(stopped bool) error {
+	return i.patchConfig(map[string]string{healthStoppedKey: strconv.FormatBool(stopped)})
+}
+
+// patchConfig sends a PATCH of these keys alone: ic-healthd stamps its
+// verdict into the same config on a timer, and a read-modify-write would
+// race it. The client has no PATCH of its own, and its raw query adds
+// neither the API version nor the project.
+func (i *Instance) patchConfig(config map[string]string) error {
 	path := "/1.0/instances/" + url.PathEscape(i.Name) + "?" + url.Values{"project": {i.Project}}.Encode()
-	patch := map[string]any{"config": map[string]string{healthStoppedKey: strconv.FormatBool(stopped)}}
+	patch := map[string]any{"config": config}
 
 	return i.retryWhileBusy(func() error {
 		_, _, err := i.Client.RawQuery("PATCH", path, patch, "")

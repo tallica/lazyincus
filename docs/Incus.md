@@ -229,6 +229,33 @@ inferred.
   that Incus discards on stop). The message match can't be replaced with an
   `IsRunning()` pre-check: the daemon counts a *frozen* instance as running,
   ours only matches status `Running`.
+- **Rebuild**: `U` and `G` on Instances are `RebuildInstanceFromImage`, in
+  two forms. From the instance's own base image, the source is the client
+  itself, which it sends as a local fingerprint: nothing is pulled. From
+  the registry, it's a `ConnectOCI` server for the registry the image's
+  `update_source` names, with the reference as the alias - all
+  `getSourceImageConnectionInfo` reads of a public image, so nothing here
+  runs `skopeo`; the daemon pulls. incusd rebuilds only a stopped instance -
+  a frozen one is force-stopped first, as a clean stop of it never
+  finishes - and none with snapshots: `DeleteInstance`
+  (`internal/server/storage/backend.go`) refuses a root volume that has
+  any, on every driver, so a snapshot first can't be the way back. It pulls
+  before it wipes, so a failed pull leaves the old disk, which is started
+  again. A pull of a build already cached under another tag reuses that
+  image, its `update_source` and `image.id` with it: moved onto
+  `nginx:1.31-alpine` while `nginx:alpine` is the same build and cached,
+  the instance runs the right build but names `nginx:alpine` (seen on 7.6).
+  So after a pull lazyincus reads back the tag Incus recorded and, where
+  it's another, writes the one asked for to `user.incus-beacon.image`,
+  which beacon checks before anything else and `U` pulls by; one there
+  naming another repository is left alone. A cached OCI image expires
+  (`images.remote_cache_expiry`, 10 days by default) while instances made
+  from it run on, so with the image gone the registry comes from what
+  Incus copied onto the instance at creation: `image.description`
+  (`docker.io/library/nginx (OCI)`) for the registry and `image.id` for the
+  repository and tag. An incus-compose copy's `update_source` names the
+  Incus server, not the registry, which is one more reason its instances
+  are the Services panel's `U`.
 - **Logs**: `GetInstanceConsoleLog` returns an `io.ReadCloser` over the
   console ring buffer — pull-based, not a stream like Docker's
   `ContainerLogs(..., Follow: true)`, and **drain-on-read**: each read

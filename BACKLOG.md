@@ -146,10 +146,6 @@ Deliberately deferred (don't re-pitch unprompted):
   whether a tag has a newer build. Whether `2.2` has followed `2.1` is
   [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `G` makes
   the edit to the compose file it ends at.
-- **Updating a plain OCI instance** — `U` with a pull, or `G`, takes a
-  new build for a stack's services. An instance launched from an OCI
-  image by hand gets the `↑` but no key: `incus rebuild` discards its
-  root disk, which is no thing to put behind one keypress.
 - **A background image check** — lazyincus is opened for minutes at a
   time, not left running for days, so a check on a timer would rarely
   fire. `gui.checkImageUpdatesOnStart` and `g` cover it.
@@ -371,6 +367,21 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
   however old: a beacon that stopped running leaves them behind.
   `user.incus-beacon.since` is when a verdict last changed, not when it was
   last checked, so this wants beacon to record that first.
+- [ ] **A registry check that learns nothing.** `G` asks the registries
+  unless beacon has a verdict on every instance, counting ones `g` can't
+  check either: an OCI container whose cached image Incus has expired
+  sends `G` to check every other image in use and still knows nothing of
+  its own. Leave those out of the count.
+- [ ] **Checking every image for one gap.** When beacon is missing on a
+  single instance, `G` checks every image in use, the ones beacon covers
+  too. Check only the images it doesn't.
+- [ ] **What `G` leaves out unsaid.** An OCI container with something
+  newer whose registry can't be worked out, or whose image lookup fails,
+  drops out of `G`'s checklist while its row still shows `↑`. Name those
+  in the subtitle or the error, as "left out, with snapshots" does.
+- [ ] **`U` on a compose instance in Instances.** With `C` showing the
+  stacks' instances, `U` there says to use Services. It could open
+  Services' recreate menu for that service instead.
 
 ## Snapshots panel
 

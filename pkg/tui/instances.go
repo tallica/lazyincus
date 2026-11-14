@@ -33,7 +33,8 @@ func (m *Model) newInstances(p *panel) list[*commands.Instance] {
 			return spansProjects(standalone, instanceProject)
 		},
 		version: func(instance *commands.Instance) string {
-			return instance.Instance.Status + "-" + instance.ConfigFingerprint()
+			return instance.Instance.Status + "-" + instance.ConfigFingerprint() + "-" +
+				presentation.UpstreamVerdict(commands.MostTelling(m.upstreams, instance.BaseImage()), m.tr)
 		},
 		// The snapshots come with the instances.
 		filled: func() {
@@ -164,9 +165,10 @@ func (m *Model) instanceTask(content func(*commands.Instance) string) func() mai
 func (m *Model) instanceInfoTask() mainTaskFunc {
 	instance := m.instances.selected()
 	loc, host := m.instanceLocation(instance), m.publishHostFor(instance.Remote)
+	upstream := commands.MostTelling(m.upstreams, instance.BaseImage())
 
 	return tickerTask(time.Second, func() string {
-		return presentation.InstanceInfo(instance.Latest(), loc, host)
+		return presentation.InstanceInfo(instance.Latest(), loc, host, upstream)
 	})
 }
 

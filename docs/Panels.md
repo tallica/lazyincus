@@ -630,6 +630,24 @@ doesn't convey: `s`/`d` confirm before acting, `p` toggles between
 can't save `/etc/hosts` or `/etc/hostname` on an OCI app container
 ([docs/Incus.md](Incus.md), "Files").
 
+`U` recreates an OCI container from its image, the way `U` on Services
+recreates a service: from the image it runs, as it is, or after pulling
+the latest build of its tag, after a confirmation that says it can't be
+undone. Config, devices and volumes stay; a running instance is stopped
+and started again, and a paused one paused again after. `G` is Services'
+`G` for the OCI containers no stack owns: a checklist of those with a
+newer build, `g`'s or beacon's, or a newer tag
+[incus-beacon](#incus-beacon) found, from → to, each recreated on a pull
+of it in turn, one failing leaving the rest to go. It asks the registries
+first and after as Services' `G` does, and as there not when beacon has
+checked every one. Both are an Incus rebuild underneath: the
+registry is read off the instance's image, or off the image keys Incus
+copied onto the instance once the image has expired - then plain recreate
+isn't offered - and Incus refuses an instance with snapshots, which `U`
+says and `G` names in its subtitle ([docs/Incus.md](Incus.md),
+"Rebuild"). An instance a Services row claims is that panel's; a compose
+instance none does is Instances'.
+
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a
 stopped instance, so a running one is stopped, renamed and started again
@@ -671,22 +689,26 @@ up:
 
 [incus-beacon](https://github.com/tallica/incus-beacon) checks each
 instance's image on the daemon's side and writes what it found to the
-instance's `user.incus-beacon.*` keys, which lazyincus reads and never
-writes. The Info tab says what it found, with when that last changed -
-the time alone when that was today: a newer tag on its `Newer tag` line,
-a newer build of the same tag on `Newer build`, and `none` or an error on
-whichever beacon was asked - tags only with `track: semver`. A newer
-build either of them found is what `Newer build` says, as the column and
-`G` go by; otherwise `g`'s answer, when it has one, takes the line over
-beacon's. The `update` column says the same in a glyph, after `↻` and
-`g`'s `↑`: `↑1.31` for a newer tag, less a variant both tags share -
-`1.31-alpine` over `1.18-alpine` - `↑` for a rebuild - one `↑` when `g`
-found it too - red `!` for an error, `?` for unknown, nothing when
-current. A service's is its most telling replica's, and a stack's row has
-`↑` or `!` after its status, the tag left to the services. Beacon looks
-for a newer tag only with `track: semver`, and its settings belong in the
-service's `labels:`, as `incus-beacon.track: semver`, or on a profile
-([its instance
+instance's `user.incus-beacon.*` keys, which lazyincus reads, writing only
+`user.incus-beacon.image` after a pull Incus records under another tag
+([docs/Incus.md](Incus.md), "Rebuild"). The Info tab says what it found,
+with when that last changed - the time alone when that was today: a newer
+tag on its `Newer tag` line, a newer build of the same tag on `Newer
+build`, and `none` or an error on whichever beacon was asked - tags only
+with `track: semver`. A newer build either of them found is what `Newer
+build` says, as the column and `G` go by; otherwise `g`'s answer, when it
+has one, takes the line over beacon's. The `update` column says the same
+in a glyph, after `↻` and `g`'s `↑`: `↑1.31` for a newer tag, less a
+variant both tags share - `1.31-alpine` over `1.18-alpine` - `↑` for a
+rebuild - one `↑` when `g` found it too - red `!` for an error, `?` for
+unknown, nothing when current. A verdict about a tag the instance no
+longer runs - kept through a rebuild until beacon checks again - counts as
+none, and one about another image, which `user.incus-beacon.image` can
+name, is shown but not taken by `G` on Instances. A service's is its most
+telling replica's, and a stack's row has `↑` or `!` after its status, the
+tag left to the services. Beacon looks for a newer tag only with `track:
+semver`, and its settings belong in the service's `labels:`, as
+`incus-beacon.track: semver`, or on a profile ([its instance
 keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`
 and `G` recreate the instance, and a key set on it goes with it. Beacon's
 keys from before 0.5, `user.beacon.*`, aren't read: it moves them to the

@@ -17,6 +17,8 @@ const (
 	beaconTrackKey   = "user.incus-beacon.track"
 	// An incus-compose label; the plain key wins.
 	beaconTrackLabel = "user.label.incus-beacon.track"
+	beaconImageKey   = "user.incus-beacon.image"
+	beaconImageLabel = "user.label.incus-beacon.image"
 )
 
 const (
@@ -53,14 +55,9 @@ func (v BeaconVerdict) NewerTag() string {
 	return v.Latest
 }
 
-// CurrentTag is Current's tag, empty when it names none.
+// CurrentTag is Current's tag, latest when it names none.
 func (v BeaconVerdict) CurrentTag() string {
-	name := v.Current[strings.LastIndex(v.Current, "/")+1:]
-	if i := strings.LastIndex(name, ":"); i >= 0 {
-		return name[i+1:]
-	}
-
-	return ""
+	return imageTag(v.Current)
 }
 
 func (i *Instance) Beacon() BeaconVerdict {
@@ -80,7 +77,31 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 		verdict.Since = since
 	}
 
+	if outrun(verdict.Current, lo.CoalesceOrEmpty(trackedImage(config), config[composeImageKey], config[imageIDKey])) {
+		return BeaconVerdict{}
+	}
+
 	return verdict
+}
+
+// TracksAnotherImage is beacon told to check an image other than the one the instance runs.
+func (i *Instance) TracksAnotherImage() bool {
+	image, ok := strings.CutSuffix(i.config(imageDescriptionKey), " (OCI)")
+	tracked := trackedImage(i.Instance.ExpandedConfig)
+
+	return ok && tracked != "" && !sameRepository(tracked, image)
+}
+
+// trackedImage is the image beacon is told to check, as beacon reads it.
+func trackedImage(config map[string]string) string {
+	return lo.CoalesceOrEmpty(config[beaconImageKey], config[beaconImageLabel])
+}
+
+// outrun: a rebuild keeps beacon's keys about the tag it moved off.
+func outrun(checked, running string) bool {
+	checkedTag, runningTag := imageTag(checked), imageTag(running)
+
+	return checkedTag != "" && runningTag != "" && checkedTag != runningTag
 }
 
 // Beacon is the most telling of its instances' verdicts.

@@ -185,7 +185,7 @@ and never does while it's down.
 | `c` | Edit the selected item's config in `$EDITOR`, through `incus config edit` for an instance (on the Services panel, the replica's, asking which from a service's own row) and `incus ... edit` for an image, volume, network or profile; on the Stacks panel, the stack's compose file |
 | `D` | Images tab: prune the images no instance was created from, or only the cached ones (confirms first, naming each); on the Backups tab, delete all but the newest N backups; on the Stacks panel, remove the stack from the list |
 | `u` | Services panel: bring the service up; on Images, Volumes, Networks and Profiles, list the instances using it (`esc` brings back the rest and returns to where you were) |
-| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking) |
+| `U` | Stacks and Services panels: recreate, with or without pulling the latest image first (a menu, then a confirmation, whose `a` stops it asking); Instances panel: recreate an OCI container from its image the same two ways |
 | `C` | Instances panel: show / hide the stacks' instances alongside the standalone ones |
 | `e` | Show / hide what a list leaves out: stopped instances, on the Networks tab the host's unmanaged interfaces, and on the Snapshots panel every instance's snapshots rather than the selected one's; on the Stacks panel, edit the stack's remote and directory |
 | `m` | Jump to Logs tab |
@@ -200,7 +200,7 @@ and never does while it's down.
 | `f` | Services panel: kill the service, or force stop the selected replica (confirms first) |
 | `b` | Services panel: build the service |
 | `g` | Services panel: pull the service's image; on Images, check the OCI images in use for a newer build of their tag |
-| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build, or a newer tag [incus-beacon](docs/Panels.md#incus-beacon) found, to pull and recreate (checks first if `g` hasn't); `o` opens what changed |
+| `G` | Stacks and Services panels: pick which of the stack's services with a newer image build, or a newer tag [incus-beacon](docs/Panels.md#incus-beacon) found, to pull and recreate (checks first if `g` hasn't); `o` opens what changed; on Instances, the same over the OCI containers of no stack |
 | `u` `U` `S` `s` `r` `p` `d` `f` `b` `g` `M` | Stacks panel: the Services panel's compose verbs, run against the whole stack |
 | `y` | Copy to the clipboard, from a menu of what the item has: an instance's name and addresses, an image's fingerprint or alias, a network's name or addresses, a snapshot as `owner/snapshot`, a stack's project, directory or a published port's address, and so on |
 | `P` | Switch Incus project (re-scopes the instance list) |
@@ -413,8 +413,9 @@ them.
 **`G` on Stacks or Services acts on either**: one checklist of the services
 with a newer build or tag, recreated together on a pull, each newer tag
 written into the compose file first. Where beacon has checked every
-instance of the stack, `G` asks no registry. The details are in
-[docs/Panels.md](docs/Panels.md#incus-beacon).
+instance of the stack, `G` asks no registry. On Instances, `G` does the
+same for the OCI containers no stack owns, recreating each from its image.
+The details are in [docs/Panels.md](docs/Panels.md#incus-beacon).
 
 ## Supporting upstream
 
