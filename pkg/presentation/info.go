@@ -74,8 +74,9 @@ func SectionHeading(title string, width int) string {
 // their own: CPU and memory need no label to say what they are, and a
 // ruled heading here would carry the same weight as the replica headings
 // stacking whole instances, which are a level above it.
-func InstanceInfo(instance *commands.Instance, loc Location, publishHost string, omit ...string) string {
-	return InstanceIdentity(instance, loc, publishHost, omit...) + "\n\n" + InstanceStats(instance)
+// InstanceInfo is the Info tab; upstream is g's check of its image.
+func InstanceInfo(instance *commands.Instance, loc Location, publishHost string, upstream commands.UpstreamStatus, omit ...string) string {
+	return InstanceIdentity(instance, loc, publishHost, upstream, omit...) + "\n\n" + InstanceStats(instance)
 }
 
 // InstanceIdentity is what `incus info` prints before the counters, minus
@@ -83,7 +84,7 @@ func InstanceInfo(instance *commands.Instance, loc Location, publishHost string,
 // Fields an instance may not have - a description, a compose image, a
 // health verdict, addresses, proxy devices - are left out rather than
 // shown empty.
-func InstanceIdentity(instance *commands.Instance, loc Location, publishHost string, omit ...string) string {
+func InstanceIdentity(instance *commands.Instance, loc Location, publishHost string, upstream commands.UpstreamStatus, omit ...string) string {
 	line := func(label, value string) string {
 		if value == "" || lo.Contains(omit, label) {
 			return ""
@@ -98,8 +99,14 @@ func InstanceIdentity(instance *commands.Instance, loc Location, publishHost str
 	output += line("Status", strings.ToLower(instance.Instance.Status))
 	output += line("Type", InstanceType(instance))
 	output += line("Image", instance.Image())
-	build, tag := BeaconLines(instance.Beacon())
-	output += line("Newer build", build)
+	verdict := instance.Beacon()
+	beaconKey := updateKey(instance)
+	if instance.TracksAnotherImage() {
+		beaconKey = ""
+	}
+
+	build, tag := BeaconLines(verdict, beaconKey)
+	output += line("Newer build", newerBuildLine(upstream, verdict, build, updateKey(instance)))
 	output += line("Newer tag", tag)
 	output += line("Health", instance.HealthStatus())
 	output += line("Architecture", instance.Instance.Architecture)

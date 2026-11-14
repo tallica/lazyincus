@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,6 +30,13 @@ func beaconModel(t *testing.T, webStatus string) (*Model, string, *[]*exec.Cmd) 
 func beaconModelWith(t *testing.T, webStatus, latest, dbStatus string) (*Model, string, *[]*exec.Cmd) {
 	t.Helper()
 
+	return beaconModelWithWeb(t, webStatus, latest, dbStatus, nil)
+}
+
+// beaconModelWithWeb is beaconModelWith with webConfig added to web-1's config.
+func beaconModelWithWeb(t *testing.T, webStatus, latest, dbStatus string, webConfig map[string]string) (*Model, string, *[]*exec.Cmd) {
+	t.Helper()
+
 	stack := testStack(t, t.TempDir(), "default", "web", "db")
 	stack.Services[0].Image, stack.Services[1].Image = "nginx:1.27", "postgres:16"
 
@@ -39,6 +47,7 @@ func beaconModelWith(t *testing.T, webStatus, latest, dbStatus string) (*Model, 
 	web.ExpandedConfig["user.incus-beacon.status"] = webStatus
 	web.ExpandedConfig["user.incus-beacon.current"] = "docker.io/library/nginx:1.27"
 	web.ExpandedConfig["user.incus-beacon.latest"] = latest
+	maps.Copy(web.ExpandedConfig, webConfig)
 	db := composeFixture("default", "db-1", "db")
 	db.ExpandedConfig["user.incus-beacon.status"] = dbStatus
 	db.Config = map[string]string{"volatile.base_image": "db-image"}
@@ -115,6 +124,23 @@ func TestUpdateImagesTakesBeaconsRebuild(t *testing.T) {
 
 	press(m, "2", "G")
 	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 newer build (incus-beacon)"}, menuLabels(m))
+}
+
+// Not a rebuild beacon saw of an image its label sends it to check instead.
+func TestUpdateImagesLeavesBeaconsRebuildOfAnotherImage(t *testing.T) {
+	m, _, _ := beaconModelWithWeb(t, "update-available", "2@sha256:0123456789ab", "current", map[string]string{
+		"user.image_alias":              "docker.io/library/nginx:1.27",
+		"user.label.incus-beacon.image": "docker.io/library/caddy:2",
+		"user.incus-beacon.current":     "docker.io/library/caddy:2",
+	})
+
+	press(m, "2", "j")
+	assert.Contains(t, mainText(m), "Service:      web")
+	assert.Contains(t, mainText(m), "Newer build:  yes (incus-beacon)")
+	assert.NotContains(t, mainText(m), "G takes it")
+
+	press(m, "G")
+	assert.Nil(t, m.topMenu())
 }
 
 // With incus-beacon's verdict on every instance, G asks no registry,

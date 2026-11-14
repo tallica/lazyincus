@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `U` and `G` on Instances do for an OCI container what they do on Services: recreate it, as it is or after a pull, and take a newer build or incus-beacon's tag. Incus refuses one with snapshots. Where Incus records a pull under another tag, the one asked for goes to `user.incus-beacon.image`.
 - incus-beacon's verdict shows on the Info tab, in the `update` column, now on Instances too, and on the Stacks row: `↑1.31` for a newer tag, less a variant like `-alpine` both share, `!` for an error.
 - `make install` builds lazyincus into `~/go/bin`.
 - `U` on Stacks and Services is now a menu: recreate with the current images, or pull the latest first. Its confirmation takes `a` to stop asking, kept in `state.yml`.

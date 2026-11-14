@@ -109,6 +109,19 @@ type TranslationSet struct {
 	RestartingStatus             string
 	StartingStatus               string
 	StoppingStatus               string
+	RecreatingStatus             string
+	Recreate                     string
+	UpdateInstanceImages         string
+	NoNewerInstanceImages        string
+	UpdateInstancesSnapshots     string
+	UpdateInstancesLeftOut       string
+	ConfirmUpdateInstances       string
+	ConfirmRecreateCurrent       string
+	ConfirmRecreatePulled        string
+	RecreateNoSource             string
+	RecreateSnapshots            string
+	RecreateNotOCI               string
+	RecreateComposeInstance      string
 	PausingStatus                string
 	ResumingStatus               string
 	RemovingStatus               string
@@ -378,13 +391,26 @@ type TranslationSet struct {
 
 func englishSet() TranslationSet {
 	return TranslationSet{
-		RestartingStatus:    "restarting",
-		StartingStatus:      "starting",
-		StoppingStatus:      "stopping",
-		PausingStatus:       "pausing",
-		ResumingStatus:      "resuming",
-		RemovingStatus:      "removing",
-		ForceRemovingStatus: "stopping and deleting",
+		RestartingStatus:         "restarting",
+		StartingStatus:           "starting",
+		StoppingStatus:           "stopping",
+		RecreatingStatus:         "recreating",
+		Recreate:                 "recreate from its OCI image",
+		UpdateInstanceImages:     "update to a newer build or tag",
+		NoNewerInstanceImages:    "no OCI container here has a newer image build or tag to take",
+		UpdateInstancesSnapshots: "Incus only recreates an instance without snapshots, and every one here with something newer has some (%s): delete them from the Snapshots panel (d) first.",
+		UpdateInstancesLeftOut:   "left out, with snapshots: %s",
+		ConfirmUpdateInstances:   "Are you sure you want to recreate %s? Each root disk is replaced with a fresh pull, which can't be undone; config, devices and volumes stay. Running instances are stopped and started again, paused ones paused again after.",
+		ConfirmRecreateCurrent:   "Are you sure you want to recreate %s from the %s it runs? Its root disk is replaced with a fresh copy of the image, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again, a paused one paused again after.",
+		ConfirmRecreatePulled:    "Are you sure you want to recreate %s from a fresh pull of %s? Its root disk is replaced, which can't be undone; config, devices and volumes stay. A running instance is stopped and started again, a paused one paused again after.",
+		RecreateNoSource:         "%s can't be recreated: %v",
+		RecreateSnapshots:        "Incus only recreates an instance without snapshots, and %s has %d: delete them from the Snapshots panel (d) first.",
+		RecreateNotOCI:           "only an OCI container can be recreated from its image",
+		RecreateComposeInstance:  "a compose service's instance: U on Services recreates it",
+		PausingStatus:            "pausing",
+		ResumingStatus:           "resuming",
+		RemovingStatus:           "removing",
+		ForceRemovingStatus:      "stopping and deleting",
 
 		ErrorOccurred:                    "An error occurred! Please create an issue at https://github.com/tallica/lazyincus/issues",
 		CannotReachDaemonError:           "Can't reach the Incus daemon: %v\nCheck that it's running, and that --remote, INCUS_REMOTE or the CLI's default-remote names the one you meant.",

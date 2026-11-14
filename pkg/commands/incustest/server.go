@@ -4,6 +4,7 @@
 package incustest
 
 import (
+	"cmp"
 	"errors"
 	"io"
 	"maps"
@@ -50,6 +51,12 @@ type Server struct {
 	// InstancesError fails the instance listings alone, as for a client
 	// allowed the images but not the instances.
 	InstancesError error
+	// RebuildErrors fails RebuildInstanceFromImage for the instances named;
+	// OnRebuild, when set, is called with the name as each one starts.
+	RebuildErrors map[string]error
+	OnRebuild     func(name string)
+	// ImageErrors fails GetImage for the fingerprints named.
+	ImageErrors map[string]error
 	// Version is what GetServer reports, URL where GetConnectionInfo says
 	// the daemon is.
 	Version string
@@ -85,6 +92,10 @@ type state struct {
 	url string
 	// warnings are what GetWarnings returns, updated in place.
 	warnings []api.Warning
+	// rebuilds are RebuildInstanceFromImage's, as instance=alias, or fingerprint for a local image.
+	rebuilds []string
+	// imageLookups are GetImage's fingerprints, in order.
+	imageLookups []string
 }
 
 // New is a Server answering from fixture.
@@ -356,6 +367,72 @@ func (s *Server) GetImages() ([]api.Image, error) {
 	return inProject(s.images(), s.scope(), func(i api.Image) string { return i.Project }), nil
 }
 
+// GetImage is the image by fingerprint, wherever it lives.
+func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.imageLookups = append(shared.imageLookups, fingerprint)
+	shared.mutex.Unlock()
+
+	if err := s.ImageErrors[fingerprint]; err != nil {
+		return nil, "", err
+	}
+
+	for _, image := range s.images() {
+		if image.Fingerprint == fingerprint {
+			return &image, "", nil
+		}
+	}
+
+	return nil, "", api.StatusErrorf(http.StatusNotFound, "Image not found")
+}
+
+// RebuildInstanceFromImage records the rebuild, refusing a running instance as incusd does.
+func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, image api.Image, name string, req api.InstanceRebuildPost) (incus.RemoteOperation, error) {
+	refused := false
+
+	_, err := s.updateInstance(name, func(instance *api.InstanceFull) { refused = instance.Status != "Stopped" })
+	if err != nil {
+		return nil, err
+	}
+
+	if refused {
+		return nil, api.StatusErrorf(http.StatusBadRequest, "Instance must be stopped to be rebuilt")
+	}
+
+	if s.OnRebuild != nil {
+		s.OnRebuild(name)
+	}
+
+	if err := s.RebuildErrors[name]; err != nil {
+		return nil, err
+	}
+
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.rebuilds = append(shared.rebuilds, name+"="+cmp.Or(req.Source.Alias, image.Fingerprint))
+	shared.mutex.Unlock()
+
+	return doneRemoteOperation{}, nil
+}
+
+// Rebuilds are the rebuilds asked for so far, as instance=alias.
+func (s *Server) Rebuilds() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.rebuilds)
+}
+
+func (s *Server) ImageLookups() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.imageLookups)
+}
+
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {
 	if err := s.reachable(); err != nil {
 		return nil, err
@@ -613,6 +690,10 @@ type doneOperation struct{ incus.Operation }
 
 func (doneOperation) Wait() error { return nil }
 
+type doneRemoteOperation struct{ incus.RemoteOperation }
+
+func (doneRemoteOperation) Wait() error { return nil }
+
 func (s *Server) GetInstance(name string) (*api.Instance, string, error) {
 	instances, err := s.instances()
 	if err != nil {
@@ -672,14 +753,27 @@ func (s *Server) RawQuery(method, path string, data any, _ string) (*api.Respons
 
 // UpdateInstanceState starts or stops the instance in what the listings
 // return; other actions it ignores.
+// A clean stop of a frozen instance fails here; incusd's never finishes.
 func (s *Server) UpdateInstanceState(name string, state api.InstanceStatePut, _ string) (incus.Operation, error) {
-	status := map[string]string{"start": "Running", "stop": "Stopped"}[state.Action]
+	status := map[string]string{"start": "Running", "stop": "Stopped", "freeze": "Frozen", "unfreeze": "Running"}[state.Action]
 
-	return s.updateInstance(name, func(instance *api.InstanceFull) {
+	var refused error
+
+	op, err := s.updateInstance(name, func(instance *api.InstanceFull) {
+		if state.Action == "stop" && !state.Force && instance.Status == "Frozen" {
+			refused = api.StatusErrorf(http.StatusInternalServerError, "a frozen instance takes no clean stop")
+			return
+		}
+
 		if status != "" {
 			instance.Status = status
 		}
 	})
+	if refused != nil {
+		return nil, refused
+	}
+
+	return op, err
 }
 
 // RenameInstanceSnapshot renames the instance's snapshot in what the

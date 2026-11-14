@@ -34,7 +34,7 @@ func servicesWithUpdates(services []*commands.ComposeService, updates map[string
 		status := commands.MostTelling(updates, presentation.BaseImages(service.SortedInstances())...)
 		if status.State == commands.UpstreamNewer {
 			found = append(found, serviceUpdate{service: service.Name, status: status})
-		} else if verdict := service.Beacon(); verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() {
+		} else if verdict := service.Beacon(); verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() && !service.TracksAnotherImage() {
 			found = append(found, serviceUpdate{service: service.Name, rebuilt: verdict.Current})
 		}
 	}
@@ -83,20 +83,24 @@ func updateImages(m *Model, stack *commands.ComposeStack) tea.Cmd {
 
 // beaconCovers is incus-beacon having checked every instance of the services.
 func beaconCovers(services []*commands.ComposeService) bool {
-	covered := false
-
+	var instances []*commands.Instance
 	for _, service := range services {
-		for _, instance := range service.Instances {
-			switch instance.Beacon().Status {
-			case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
-				covered = true
-			default:
-				return false
-			}
+		instances = append(instances, service.Instances...)
+	}
+
+	return beaconCoversInstances(instances)
+}
+
+func beaconCoversInstances(instances []*commands.Instance) bool {
+	for _, instance := range instances {
+		switch instance.Beacon().Status {
+		case commands.BeaconCurrent, commands.BeaconUpdateAvailable:
+		default:
+			return false
 		}
 	}
 
-	return covered
+	return len(instances) > 0
 }
 
 // stackServiceList are the stack's services the services panel has, by name

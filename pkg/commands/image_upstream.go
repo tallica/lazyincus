@@ -127,14 +127,24 @@ func ociRef(source *api.ImageSource) string {
 		return ""
 	}
 
-	server, err := url.Parse(source.Server)
-	if err != nil || server.Host == "" {
+	registry := ociRegistry(source.Server)
+	if registry == "" {
 		return ""
 	}
 
 	repository, _, _ := strings.Cut(source.Alias, "@")
 
-	return server.Host + strings.TrimSuffix(server.Path, "/") + "/" + repository
+	return registry + "/" + repository
+}
+
+// ociRegistry is server as a reference names it: https://ghcr.io/ is ghcr.io.
+func ociRegistry(server string) string {
+	parsed, err := url.Parse(server)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+
+	return parsed.Host + strings.TrimSuffix(parsed.Path, "/")
 }
 
 // ociPlatforms maps Incus's architecture names onto OCI's.

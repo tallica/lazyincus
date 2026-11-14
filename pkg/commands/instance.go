@@ -395,6 +395,7 @@ func (i *Instance) HealthStatus() string {
 const (
 	composeImageKey     = "user.image_alias"
 	imageDescriptionKey = "image.description"
+	imageIDKey          = "image.id"
 	baseImageKey        = "volatile.base_image"
 )
 
