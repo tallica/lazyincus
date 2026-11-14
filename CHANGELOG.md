@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-14
+
 ### Fixed
 - After `U` or `G` on Instances, the Images panel lists the pulled image and the new user counts at once, not at the next poll, up to a minute later.
 - `U` or `G` on Instances no longer leaves incus-beacon unable to check a container whose new image a stack in its project had already pulled.
@@ -440,7 +442,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.17.1...HEAD
+[0.17.1]: https://github.com/tallica/lazyincus/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/tallica/lazyincus/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/tallica/lazyincus/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/tallica/lazyincus/compare/v0.15.0...v0.16.0
