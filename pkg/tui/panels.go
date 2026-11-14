@@ -215,7 +215,7 @@ func (m *Model) refill(p *panel, key func(item int) string, replace func() [][]s
 	p.selectRow(p.selected, m.listRows(p))
 }
 
-// selectRow clamps the selection and scrolls just enough to show it.
+// selectRow clamps the selection and scrolls just enough to show it, and to fill the rows.
 func (p *panel) selectRow(row, rows int) {
 	p.selected = max(min(row, p.count()-1), 0)
 	if p.selected < p.origin {
@@ -223,6 +223,9 @@ func (p *panel) selectRow(row, rows int) {
 	}
 	if rows > 0 && p.selected >= p.origin+rows {
 		p.origin = p.selected - rows + 1
+	}
+	if rows > 0 {
+		p.origin = min(p.origin, p.count()-rows)
 	}
 	p.origin = max(p.origin, 0)
 }
