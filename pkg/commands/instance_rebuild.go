@@ -142,7 +142,7 @@ func (i *Instance) rebuildFromOCI(source OCIRebuild) error {
 	return op.Wait()
 }
 
-// keepTag tells beacon the tag asked for where Incus recorded another: docs/Incus.md, "Rebuild".
+// keepTag tells beacon the tag asked for where Incus recorded another, or none: docs/Incus.md, "Rebuild".
 func (i *Instance) keepTag(asked OCIRebuild) error {
 	instance, _, err := i.Client.GetInstance(i.Name)
 	if err != nil {
@@ -160,7 +160,7 @@ func (i *Instance) keepTag(asked OCIRebuild) error {
 	}
 
 	stale := tracked != "" && imageTag(tracked) != want
-	swapped := tracked == "" && recorded != "" && imageTag(recorded) != want
+	swapped := tracked == "" && imageTag(recorded) != want
 
 	if !stale && !swapped {
 		return nil
