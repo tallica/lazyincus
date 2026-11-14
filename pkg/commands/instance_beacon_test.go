@@ -59,7 +59,7 @@ func TestBeaconCurrentTag(t *testing.T) {
 	for current, want := range map[string]string{
 		"docker.io/library/nginx:1.18-alpine": "1.18-alpine",
 		"registry.example:5000/nginx:1.18":    "1.18",
-		"registry.example:5000/nginx":         "",
+		"registry.example:5000/nginx":         "latest",
 		"":                                    "",
 	} {
 		assert.Equal(t, want, BeaconVerdict{Current: current}.CurrentTag(), current)
@@ -89,4 +89,11 @@ func TestBeaconVerdictOutrun(t *testing.T) {
 
 	config["user.image_alias"] = "docker.io/library/nginx:1.28-alpine"
 	assert.Equal(t, BeaconVerdict{}, beaconVerdict(config), "incus-compose's alias says what it runs")
+
+	config[beaconCurrentKey] = "docker.io/library/nginx:latest"
+	config["user.image_alias"] = "nginx"
+	assert.Equal(t, BeaconUpdateAvailable, beaconVerdict(config).Status, "an untagged image runs latest")
+
+	config["user.image_alias"] = "nginx:1.27"
+	assert.Equal(t, BeaconVerdict{}, beaconVerdict(config))
 }

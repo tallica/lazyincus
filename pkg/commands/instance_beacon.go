@@ -53,14 +53,9 @@ func (v BeaconVerdict) NewerTag() string {
 	return v.Latest
 }
 
-// CurrentTag is Current's tag, empty when it names none.
+// CurrentTag is Current's tag, latest when it names none.
 func (v BeaconVerdict) CurrentTag() string {
-	name := v.Current[strings.LastIndex(v.Current, "/")+1:]
-	if i := strings.LastIndex(name, ":"); i >= 0 {
-		return name[i+1:]
-	}
-
-	return ""
+	return imageTag(v.Current)
 }
 
 func (i *Instance) Beacon() BeaconVerdict {
@@ -89,11 +84,9 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 
 // outrun: a rebuild keeps beacon's keys about the tag it moved off.
 func outrun(checked, running string) bool {
-	if checked == "" || running == "" || strings.Contains(checked+running, "@") {
-		return false
-	}
+	checkedTag, runningTag := imageTag(checked), imageTag(running)
 
-	return checked[len(withoutTag(checked)):] != running[len(withoutTag(running)):]
+	return checkedTag != "" && runningTag != "" && checkedTag != runningTag
 }
 
 // Beacon is the most telling of its instances' verdicts.

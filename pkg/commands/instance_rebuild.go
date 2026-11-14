@@ -130,6 +130,19 @@ func sameRepository(a, b string) bool {
 	return a != "" && withoutTag(a) == withoutTag(b)
 }
 
+// imageTag is ref's tag, latest when it names none, empty for a digest.
+func imageTag(ref string) string {
+	if ref == "" || strings.Contains(ref, "@") {
+		return ""
+	}
+
+	if tag := ref[len(withoutTag(ref)):]; tag != "" {
+		return tag[1:]
+	}
+
+	return "latest"
+}
+
 func withoutTag(ref string) string {
 	if i := strings.LastIndex(ref, ":"); i > strings.LastIndex(ref, "/") {
 		return ref[:i]
