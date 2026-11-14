@@ -375,6 +375,10 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
 - [ ] **Checking every image for one gap.** When beacon is missing on a
   single instance, `G` checks every image in use, the ones beacon covers
   too. Check only the images it doesn't.
+- [ ] **What `G` leaves out unsaid.** An OCI container with something
+  newer whose registry can't be worked out, or whose image lookup fails,
+  drops out of `G`'s checklist while its row still shows `↑`. Name those
+  in the subtitle or the error, as "left out, with snapshots" does.
 - [ ] **`U` on a compose instance in Instances.** With `C` showing the
   stacks' instances, `U` there says to use Services. It could open
   Services' recreate menu for that service instead.
