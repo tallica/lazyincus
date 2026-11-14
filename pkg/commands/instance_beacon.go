@@ -75,7 +75,7 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 		verdict.Since = since
 	}
 
-	if outrun(verdict.Current, lo.CoalesceOrEmpty(config["user.image_alias"], config["image.id"])) {
+	if outrun(verdict.Current, lo.CoalesceOrEmpty(config[composeImageKey], config[imageIDKey])) {
 		return BeaconVerdict{}
 	}
 

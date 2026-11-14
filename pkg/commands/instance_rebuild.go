@@ -42,7 +42,7 @@ func (i *Instance) OCIRebuildSource() (source OCIRebuild, held bool, err error) 
 		return OCIRebuild{Server: image.UpdateSource.Server, Ref: ref}, true, nil
 	}
 
-	if source, ok := ociSourceFromConfig(i.config("image.description"), i.config("image.id")); ok {
+	if source, ok := ociSourceFromConfig(i.config(imageDescriptionKey), i.config(imageIDKey)); ok {
 		return source, err == nil, nil
 	}
 
