@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-14
+
 ### Added
 - `U` and `G` on Instances do for an OCI container what they do on Services: recreate it, as it is or after a pull, and take a newer build or incus-beacon's tag. Incus refuses one with snapshots. Where Incus records a pull under another tag, the one asked for goes to `user.incus-beacon.image`.
 - incus-beacon's verdict shows on the Info tab, in the `update` column, now on Instances too, and on the Stacks row: `↑1.31` for a newer tag, less a variant like `-alpine` both share, `!` for an error.
@@ -434,7 +436,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images, Networks, Volumes, Services/Project panels, custom/bulk commands, the Top tab (per-instance process list) and historical usage graphing, non-English translations, and Windows support are not yet implemented — see [BACKLOG.md](BACKLOG.md).
 - VM instances are untested beyond basic listing/start/stop/delete: freeze/unfreeze, exec, and delete-while-running haven't been verified against a real VM (only containers so far) — see [BACKLOG.md](BACKLOG.md).
 
-[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.16.1...HEAD
+[Unreleased]: https://github.com/tallica/lazyincus/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/tallica/lazyincus/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/tallica/lazyincus/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/tallica/lazyincus/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/tallica/lazyincus/compare/v0.14.0...v0.15.0
