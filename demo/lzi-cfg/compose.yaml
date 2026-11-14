@@ -1,0 +1,8 @@
+name: lzi-cfg
+services:
+  cache:
+    image: docker.io/library/redis:alpine
+    environment:
+      MAXMEMORY: "64mb"
+  queue:
+    image: docker.io/library/redis:alpine
