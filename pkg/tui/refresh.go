@@ -249,3 +249,10 @@ func (m *Model) instanceFetches() []fetch {
 func (m *Model) instanceFetchesIn(l *commands.Listing) []fetch {
 	return []fetch{m.fetchStacks(l), m.fetchInstances(l), m.fetchServices(l)}
 }
+
+// rebuildFetches adds the images, no event announcing a rebuild's pull: docs/Incus.md, "Rebuild".
+func (m *Model) rebuildFetches() []fetch {
+	l := m.incus.NewListing()
+
+	return append(m.instanceFetchesIn(l), m.images.fetchIn(m, l))
+}

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- After `U` or `G` on Instances, the Images panel lists the pulled image and the new user counts at once, not at the next poll, up to a minute later.
 - `U` or `G` on Instances no longer leaves incus-beacon unable to check a container whose new image a stack in its project had already pulled.
 
 ## [0.17.0] - 2026-11-14

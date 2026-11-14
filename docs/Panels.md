@@ -126,7 +126,7 @@ an `instance-updated` refreshes at most every 10s.
 | Services | whatever refreshes the instances | with the instances, every 2s |
 | Snapshots | an instance's come with the instances listing, a volume's with the volumes | with those lists |
 | Backups | whatever refreshes the volumes; the stack changing; a backup verb | as Images |
-| Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count | every 10s; once a minute while the stream is open |
+| Images | `image-created`/`-deleted`/`-updated`/`-refreshed`, `image-alias-*`; `instance-created`/`-deleted`/`-renamed`, for the used-by count; `U` or `G` on Instances ending | every 10s; once a minute while the stream is open |
 | Volumes | `storage-volume-created`/`-deleted`/`-renamed`/`-updated`/`-restored`, `storage-volume-snapshot-created`/`-deleted`/`-renamed`/`-updated`, `storage-pool-created`/`-deleted`/`-updated`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Networks | `network-created`/`-deleted`/`-renamed`/`-updated`, `network-forward-*`, `network-acl-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
 | Profiles | `profile-*`; `instance-created`/`-deleted`/`-renamed`, `instance-updated` | as Images |
@@ -153,6 +153,8 @@ Only a poll catches:
   the 2s poll;
 - a volume's usage and an image's last use - once a minute while the
   stream is open;
+- the image a rebuild run outside lazyincus pulled, and the used-by
+  counts it moved - once a minute while the stream is open;
 - a network's leases and state - their own tabs' tickers.
 
 The main-panel tabs. A tab that ticks reads again on its own; one drawn

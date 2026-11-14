@@ -241,6 +241,9 @@ inferred.
   (`internal/server/storage/backend.go`) refuses a root volume that has
   any, on every driver, so a snapshot first can't be the way back. It pulls
   before it wipes, so a failed pull leaves the old disk, which is started
+  again. incusd announces neither the rebuild nor that pull: no lifecycle
+  event, and no `image-created`, which only an instance create's pull
+  sends (`instances_post.go`), so after its own lazyincus lists the images
   again. A pull of a build already cached under another tag reuses that
   image, its `update_source` and `image.id` with it: moved onto
   `nginx:1.31-alpine` while `nginx:alpine` is the same build and cached,

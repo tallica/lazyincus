@@ -70,9 +70,9 @@ func (m *Model) confirmRecreate(instance *commands.Instance, image string, pull 
 	}
 
 	m.openConfirmation(m.tr.Confirm, fmt.Sprintf(message, m.qualifiedInstance(instance), image), func() tea.Cmd {
-		return m.inTransition(m.tr.RecreatingStatus, instance, "Recreating", func() error {
+		return m.inTransitionThen(m.tr.RecreatingStatus, instance, "Recreating", func() error {
 			return instance.Recreate(pull)
-		})
+		}, m.rebuildFetches)
 	})
 
 	return nil
