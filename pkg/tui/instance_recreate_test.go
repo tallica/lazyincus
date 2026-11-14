@@ -141,6 +141,22 @@ func TestRecreatingGoesByTheLatestListing(t *testing.T) {
 	require.ErrorIs(t, pressed.Recreate(nil), commands.ErrRebuildSnapshots)
 }
 
+// A paused instance takes no clean stop, so it's forced, and paused again after.
+func TestRecreatingAPausedInstance(t *testing.T) {
+	server := ociServer()
+	_, err := server.UpdateInstanceState("web", api.InstanceStatePut{Action: "freeze"}, "")
+	require.NoError(t, err)
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "U", "enter", "y")
+	assert.Equal(t, []string{"web=nginx-image"}, server.Rebuilds())
+	assert.Empty(t, m.popups)
+
+	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+	require.NoError(t, err)
+	assert.Equal(t, "Frozen", instances[0].Status)
+}
+
 func TestRecreatingNeedsAnOCIContainer(t *testing.T) {
 	m := start(t, options{server: instancesServer(nil, runningInstance("web", nil))}, 140, 40)
 

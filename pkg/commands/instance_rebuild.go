@@ -68,10 +68,12 @@ func (i *Instance) Recreate(pull *OCIRebuild) error {
 		return ErrRebuildSnapshots
 	}
 
-	running := i.Instance.Status == "Running"
+	paused := i.Instance.Status == "Frozen"
+	running := paused || i.Instance.Status == "Running"
 
 	if running {
-		if err := i.updateState("stop", 30, false); err != nil {
+		// Forced when frozen: docs/Incus.md, "Rebuild".
+		if err := i.updateState("stop", 30, paused); err != nil {
 			return err
 		}
 	}
@@ -84,7 +86,12 @@ func (i *Instance) Recreate(pull *OCIRebuild) error {
 	}
 
 	if running {
-		err = errors.Join(err, i.updateState("start", -1, false))
+		restarted := i.updateState("start", -1, false)
+		if restarted == nil && paused {
+			restarted = i.updateState("freeze", -1, false)
+		}
+
+		err = errors.Join(err, restarted)
 	}
 
 	return err

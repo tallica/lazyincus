@@ -235,8 +235,9 @@ inferred.
   the registry, it's a `ConnectOCI` server for the registry the image's
   `update_source` names, with the reference as the alias - all
   `getSourceImageConnectionInfo` reads of a public image, so nothing here
-  runs `skopeo`; the daemon pulls. incusd rebuilds only a stopped instance,
-  and none with snapshots: `DeleteInstance`
+  runs `skopeo`; the daemon pulls. incusd rebuilds only a stopped instance -
+  a frozen one is force-stopped first, as a clean stop of it never
+  finishes - and none with snapshots: `DeleteInstance`
   (`internal/server/storage/backend.go`) refuses a root volume that has
   any, on every driver, so a snapshot first can't be the way back. It pulls
   before it wipes, so a failed pull leaves the old disk, which is started

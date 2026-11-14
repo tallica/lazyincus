@@ -378,7 +378,7 @@ func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
 func (s *Server) RebuildInstanceFromImage(_ incus.ImageServer, image api.Image, name string, req api.InstanceRebuildPost) (incus.RemoteOperation, error) {
 	refused := false
 
-	_, err := s.updateInstance(name, func(instance *api.InstanceFull) { refused = instance.Status == "Running" })
+	_, err := s.updateInstance(name, func(instance *api.InstanceFull) { refused = instance.Status != "Stopped" })
 	if err != nil {
 		return nil, err
 	}
@@ -732,14 +732,27 @@ func (s *Server) RawQuery(method, path string, data any, _ string) (*api.Respons
 
 // UpdateInstanceState starts or stops the instance in what the listings
 // return; other actions it ignores.
+// A clean stop of a frozen instance fails here; incusd's never finishes.
 func (s *Server) UpdateInstanceState(name string, state api.InstanceStatePut, _ string) (incus.Operation, error) {
-	status := map[string]string{"start": "Running", "stop": "Stopped"}[state.Action]
+	status := map[string]string{"start": "Running", "stop": "Stopped", "freeze": "Frozen", "unfreeze": "Running"}[state.Action]
 
-	return s.updateInstance(name, func(instance *api.InstanceFull) {
+	var refused error
+
+	op, err := s.updateInstance(name, func(instance *api.InstanceFull) {
+		if state.Action == "stop" && !state.Force && instance.Status == "Frozen" {
+			refused = api.StatusErrorf(http.StatusInternalServerError, "a frozen instance takes no clean stop")
+			return
+		}
+
 		if status != "" {
 			instance.Status = status
 		}
 	})
+	if refused != nil {
+		return nil, refused
+	}
+
+	return op, err
 }
 
 // RenameInstanceSnapshot renames the instance's snapshot in what the
