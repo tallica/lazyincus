@@ -84,6 +84,14 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 	return verdict
 }
 
+// TracksAnotherImage is beacon told to check an image other than the one the instance runs.
+func (i *Instance) TracksAnotherImage() bool {
+	image, ok := strings.CutSuffix(i.config(imageDescriptionKey), " (OCI)")
+	tracked := trackedImage(i.Instance.ExpandedConfig)
+
+	return ok && tracked != "" && !sameRepository(tracked, image)
+}
+
 // trackedImage is the image beacon is told to check, as beacon reads it.
 func trackedImage(config map[string]string) string {
 	return lo.CoalesceOrEmpty(config[beaconImageKey], config[beaconImageLabel])

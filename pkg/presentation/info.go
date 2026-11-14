@@ -100,7 +100,12 @@ func InstanceIdentity(instance *commands.Instance, loc Location, publishHost str
 	output += line("Type", InstanceType(instance))
 	output += line("Image", instance.Image())
 	verdict := instance.Beacon()
-	build, tag := BeaconLines(verdict, updateKey(instance))
+	beaconKey := updateKey(instance)
+	if instance.TracksAnotherImage() {
+		beaconKey = ""
+	}
+
+	build, tag := BeaconLines(verdict, beaconKey)
 	output += line("Newer build", newerBuildLine(upstream, verdict, build, updateKey(instance)))
 	output += line("Newer tag", tag)
 	output += line("Health", instance.HealthStatus())

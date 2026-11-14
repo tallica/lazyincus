@@ -77,7 +77,7 @@ func (m *Model) listInstanceUpdates(candidates []*commands.Instance, recheck boo
 func instanceUpdates(candidates []*commands.Instance, upstreams map[string]commands.UpstreamStatus) (found, blocked []instanceUpdate) {
 	for _, instance := range candidates {
 		verdict := instance.Beacon()
-		rebuilt := verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt()
+		rebuilt := verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() && !instance.TracksAnotherImage()
 
 		status := commands.MostTelling(upstreams, instance.BaseImage())
 		newer := status.State == commands.UpstreamNewer

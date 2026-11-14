@@ -471,3 +471,22 @@ func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
 	_, tracked = trackedAfterG(t, true, "registry.example/mirror/nginx:1.27")
 	assert.Equal(t, "registry.example/mirror/nginx:1.27", tracked, "someone's own setting")
 }
+
+// A verdict about another image beacon was told to check is beacon's to
+// show, not G's to act on: recreating would pull the image it runs.
+func TestUpdatingOCIContainersTrackingAnotherImage(t *testing.T) {
+	server := ociServerWith(map[string]string{
+		"image.description":         "docker.io/library/nginx (OCI)",
+		"user.incus-beacon.image":   "docker.io/library/caddy:2",
+		"user.incus-beacon.current": "docker.io/library/caddy:2",
+		"user.incus-beacon.latest":  "2@sha256:0123456789ab",
+	})
+	m := start(t, options{server: server}, 140, 40)
+
+	assert.Contains(t, mainText(m), "Newer build:  yes (incus-beacon)")
+	assert.NotContains(t, mainText(m), "G takes it")
+
+	press(m, "G")
+	assert.Nil(t, m.topMenu())
+	assert.Contains(t, footer(m), "no OCI container here has a newer image build or tag to take")
+}

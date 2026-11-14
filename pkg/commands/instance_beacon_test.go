@@ -103,3 +103,17 @@ func TestBeaconVerdictOutrun(t *testing.T) {
 	}
 	assert.Equal(t, BeaconCurrent, beaconVerdict(config).Status, "beacon's image key over the tag Incus kept")
 }
+
+func TestInstanceTracksAnotherImage(t *testing.T) {
+	tracks := func(tracked string) bool {
+		return beaconInstance("web", map[string]string{
+			imageDescriptionKey: "docker.io/library/nginx (OCI)", beaconImageKey: tracked,
+		}).TracksAnotherImage()
+	}
+
+	assert.False(t, tracks(""))
+	assert.False(t, tracks("docker.io/library/nginx:1.31"))
+	assert.False(t, tracks("nginx:1.31"), "Docker's short name")
+	assert.True(t, tracks("docker.io/library/caddy:2"))
+	assert.True(t, tracks("registry.example/library/nginx:1.31"), "a mirror is another image")
+}
