@@ -298,7 +298,8 @@ service the file declares but nothing is running still gets one, in state
 `running`, `frozen`, whatever they are, or `partial` when replicas
 disagree. A service, replica or stack created from an older version of the
 compose file is marked `↻` until `u` recreates it ([needs incus-compose
-1.4.0](docs/Panels.md#changed-config)). The service instances of every
+1.4.0](docs/Panels.md#changed-config);
+[demo](https://asciinema.org/a/1272431)). The service instances of every
 listed stack on the active remote move out of the instances panel, which
 becomes **Standalone Instances** (`3`); a project no stack lists keeps its
 instances there, as does an instance of a service the compose file no
