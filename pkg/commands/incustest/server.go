@@ -55,6 +55,8 @@ type Server struct {
 	// OnRebuild, when set, is called with the name as each one starts.
 	RebuildErrors map[string]error
 	OnRebuild     func(name string)
+	// ImageErrors fails GetImage for the fingerprints named.
+	ImageErrors map[string]error
 	// Version is what GetServer reports, URL where GetConnectionInfo says
 	// the daemon is.
 	Version string
@@ -371,6 +373,10 @@ func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
 	shared.mutex.Lock()
 	shared.imageLookups = append(shared.imageLookups, fingerprint)
 	shared.mutex.Unlock()
+
+	if err := s.ImageErrors[fingerprint]; err != nil {
+		return nil, "", err
+	}
 
 	for _, image := range s.images() {
 		if image.Fingerprint == fingerprint {

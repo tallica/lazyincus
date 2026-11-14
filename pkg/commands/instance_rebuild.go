@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 
 	incus "github.com/lxc/incus/v7/client"
@@ -32,6 +33,10 @@ var ErrNoOCISource = errors.New("neither it nor its image says which registry it
 // OCIRebuildSource, and whether the image is still held: docs/Incus.md, "Rebuild".
 func (i *Instance) OCIRebuildSource() (source OCIRebuild, held bool, err error) {
 	image, _, err := i.Client.GetImage(i.BaseImage())
+	if err != nil && !api.StatusErrorCheck(err, http.StatusNotFound) {
+		return OCIRebuild{}, false, err
+	}
+
 	if err == nil && ociRef(image.UpdateSource) != "" {
 		ref, _, _ := strings.Cut(image.UpdateSource.Alias, "@")
 		return OCIRebuild{Server: image.UpdateSource.Server, Ref: ref}, true, nil

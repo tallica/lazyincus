@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"net/http"
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
@@ -192,6 +193,27 @@ func TestRecreatingWithTheImageGone(t *testing.T) {
 
 	press(m, "enter", "y")
 	assert.Equal(t, []string{"web=library/nginx:1.27"}, server.Rebuilds())
+}
+
+// Only an image the daemon says is gone counts as expired: any other error
+// is said, rather than quietly leaving out plain recreate.
+func TestRecreatingWhenTheImageLookupFails(t *testing.T) {
+	server := ociServer()
+	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+	require.NoError(t, err)
+	web := instances[0]
+	web.ExpandedConfig["image.description"] = "docker.io/library/nginx (OCI)"
+	web.ExpandedConfig["image.id"] = "library/nginx:1.27"
+	server = incustest.New(incustest.Server{
+		Version: "7.4", Instances: []api.InstanceFull{web}, Images: server.Images,
+		ImageErrors: map[string]error{"nginx-image": api.StatusErrorf(http.StatusForbidden, "not allowed")},
+	})
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "U")
+	assert.Nil(t, m.topMenu())
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "web can't be recreated: not allowed")
 }
 
 // G lists the OCI containers of no stack with something newer, beacon's
