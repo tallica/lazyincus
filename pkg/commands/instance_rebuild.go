@@ -60,12 +60,12 @@ func (i *Instance) recordedSource() (source OCIRebuild, held bool, err error) {
 	return OCIRebuild{}, false, ErrNoOCISource
 }
 
-// ociSourceFromConfig reads "docker.io/library/nginx (OCI)" and "library/nginx:1.27".
+// ociSourceFromConfig reads "docker.io/library/nginx (OCI)" and "library/nginx:1.27", or "nginx:1.27".
 func ociSourceFromConfig(description, id string) (OCIRebuild, bool) {
-	repository := withoutTag(id)
-	registry, ok := strings.CutSuffix(strings.TrimSuffix(description, " (OCI)"), "/"+repository)
+	image, ok := strings.CutSuffix(description, " (OCI)")
+	registry, _, found := strings.Cut(image, "/")
 
-	if !ok || registry == "" || repository == id || strings.ContainsAny(registry, "/ ") {
+	if !ok || !found || registry == "" || imageTag(id) == "" || withoutTag(id) == id || !sameRepository(image, registry+"/"+id) {
 		return OCIRebuild{}, false
 	}
 

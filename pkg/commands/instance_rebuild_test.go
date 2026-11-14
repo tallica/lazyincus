@@ -43,11 +43,16 @@ func TestOCISourceFromConfig(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "registry.example:5000/acme/api:2.0", source.Image())
 
+	source, ok = ociSourceFromConfig("docker.io/library/httpd (OCI)", "httpd:2.4-alpine")
+	assert.True(t, ok, "launched by its short name")
+	assert.Equal(t, OCIRebuild{Server: "https://docker.io", Ref: "httpd:2.4-alpine"}, source)
+
 	for name, keys := range map[string][2]string{
 		"no description":   {"", "library/nginx:1.27"},
 		"no tag":           {"docker.io/library/nginx (OCI)", "library/nginx"},
 		"another image":    {"docker.io/library/caddy (OCI)", "library/nginx:1.27"},
 		"not an OCI image": {"Alpine 3.22 amd64 (20261111_13:00)", "alpine/3.22"},
+		"a digest":         {"docker.io/library/nginx (OCI)", "library/nginx@sha256:0123"},
 	} {
 		_, ok := ociSourceFromConfig(keys[0], keys[1])
 		assert.False(t, ok, name)
