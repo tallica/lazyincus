@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - THIRD_PARTY_NOTICES.md in the release archives now carries the licence of every Go module the binary links.
 
 ### Fixed
+- Expanding a side panel with `=` shows the rows a scrolled list had hidden above, instead of blank space below.
 - Failing to reach the daemon at startup, or being refused its socket, now exits with status 1 instead of 0.
 - `ctrl+c` in a shell-out no longer kills the command: a typed `; up` tears its stack down on it, as in a terminal, instead of leaving it running.
 - `enter` on the main panel no longer stops `[`, `]` and the rest of its panel's keys working there.

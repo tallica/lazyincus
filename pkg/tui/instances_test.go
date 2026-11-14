@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
@@ -263,4 +264,26 @@ func TestASubprocessIsEchoedAndWaitsForEnter(t *testing.T) {
 	assert.Contains(t, text, "bye")
 	assert.Contains(t, text, "hi\n")
 	assert.True(t, strings.HasSuffix(text, m.tr.PressEnterToReturn))
+}
+
+// Expanding a list scrolled to its end brings back the rows above it
+// rather than leaving blank space below.
+func TestExpandingAListShowsTheRowsScrolledAbove(t *testing.T) {
+	instances := make([]api.InstanceFull, 0, 20)
+	for i := range 20 {
+		instances = append(instances, runningInstance(fmt.Sprintf("web-%02d", i), nil))
+	}
+	m := start(t, options{server: instancesServer(nil, instances...)}, 140, 40)
+	p := m.panelNamed(instancesView)
+
+	press(m, "1")
+	for range 19 {
+		press(m, "j")
+	}
+	require.Positive(t, p.origin, "the panel is too short for 20 rows")
+
+	press(m, "=")
+	assert.Zero(t, p.origin)
+	assert.Contains(t, strings.Join(screen(m), "\n"), "web-00")
+	assert.Equal(t, 19, p.selected)
 }

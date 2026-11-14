@@ -558,8 +558,10 @@ func (m *Model) fitLists() {
 	dims := m.dims()
 	for _, p := range m.visiblePanels() {
 		if d, ok := dims[p.windowName()]; ok {
-			w, _ := size(d)
+			w, h := size(d)
 			p.fit(w - 2)
+			// The layout may have grown it: =, a focus change, a resize.
+			p.selectRow(p.selected, h-2)
 		}
 	}
 }
