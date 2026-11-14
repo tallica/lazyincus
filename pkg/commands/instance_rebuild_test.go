@@ -11,6 +11,9 @@ func TestOCIRebuildRefs(t *testing.T) {
 
 	assert.Equal(t, "registry.example:5000/acme/api:2.0", source.Image())
 	assert.Equal(t, "registry.example:5000/acme/api:2.1", source.WithTag("2.1").Image(), "the port isn't a tag")
+
+	source.Server = "https://ghcr.io/"
+	assert.Equal(t, "ghcr.io/acme/api:2.0", source.Image())
 }
 
 // Beacon's tag is offered only for the very repository the instance runs,

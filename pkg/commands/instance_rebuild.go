@@ -18,7 +18,7 @@ type OCIRebuild struct {
 
 // Image is the reference written out in full, docker.io/library/nginx:1.27.
 func (r OCIRebuild) Image() string {
-	return strings.TrimPrefix(strings.TrimPrefix(r.Server, "https://"), "http://") + "/" + r.Ref
+	return ociRegistry(r.Server) + "/" + r.Ref
 }
 
 func (r OCIRebuild) WithTag(tag string) OCIRebuild {
