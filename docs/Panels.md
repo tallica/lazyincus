@@ -644,7 +644,8 @@ registry is read off the instance's image, or off the image keys Incus
 copied onto the instance once the image has expired - then plain recreate
 isn't offered - and Incus refuses an instance with snapshots, which `U`
 says and `G` names in its subtitle ([docs/Incus.md](Incus.md),
-"Rebuild"). A compose service's instance is the Services panel's.
+"Rebuild"). An instance a Services row claims is that panel's; a compose
+instance none does is Instances'.
 
 Rename has no key and isn't on the Services panel: a compose instance's
 name, `<service>-<n>`, is incus-compose's to choose. Incus renames only a

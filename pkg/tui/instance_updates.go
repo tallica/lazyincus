@@ -25,7 +25,7 @@ func (m *Model) updateInstanceImages() tea.Cmd {
 	var candidates []*commands.Instance
 
 	for _, instance := range m.instances.items {
-		if instance.ComposeService() == "" && instance.IsOCI() {
+		if !m.isStackInstance(instance) && instance.IsOCI() {
 			candidates = append(candidates, instance)
 		}
 	}

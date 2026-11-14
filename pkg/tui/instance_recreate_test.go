@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
+	"maps"
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
@@ -16,12 +17,19 @@ import (
 // ociServer runs web, an OCI container pulled as nginx:1.27, which
 // incus-beacon says has 1.31 out.
 func ociServer() *incustest.Server {
-	web := runningInstance("web", map[string]string{
+	return ociServerWith(nil)
+}
+
+// ociServerWith is ociServer with extra added to web's config.
+func ociServerWith(extra map[string]string) *incustest.Server {
+	config := map[string]string{
 		"volatile.container.oci":    "true",
 		"user.incus-beacon.status":  "update-available",
 		"user.incus-beacon.current": "docker.io/library/nginx:1.27",
 		"user.incus-beacon.latest":  "1.31",
-	})
+	}
+	maps.Copy(config, extra)
+	web := runningInstance("web", config)
 	web.Config = map[string]string{"volatile.base_image": "nginx-image"}
 
 	return incustest.New(incustest.Server{Version: "7.4", Instances: []api.InstanceFull{web}, Images: []api.Image{{
@@ -82,6 +90,31 @@ func TestRecreatingAnInstanceWithSnapshots(t *testing.T) {
 	assert.Nil(t, m.topMenu())
 	require.Len(t, m.popups, 1)
 	assert.Contains(t, ansi.Strip(m.popups[0].message), "Incus only recreates an instance without snapshots, and web has 1: delete them")
+	assert.Empty(t, server.Rebuilds())
+}
+
+// A compose instance no listed stack declares has no Services row, so U and
+// G on Instances take it; one a listed stack declares is Services'.
+func TestRecreatingAComposeInstance(t *testing.T) {
+	server := ociServerWith(map[string]string{"user.label.incus-compose.service": "web"})
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "U")
+	require.NotNil(t, m.topMenu())
+	press(m, "esc", "G")
+	require.NotNil(t, m.topMenu())
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
+	press(m, "esc")
+
+	m.stackServices = map[string]map[string]bool{"default": {"web": true}}
+	m.showStackInstances = true
+	m.rerenderInstances()
+
+	press(m, "U")
+	assert.Nil(t, m.topMenu())
+	assert.Contains(t, footer(m), "U on Services recreates it")
+	press(m, "G")
+	assert.Nil(t, m.topMenu())
 	assert.Empty(t, server.Rebuilds())
 }
 

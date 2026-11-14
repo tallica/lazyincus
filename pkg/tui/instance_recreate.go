@@ -8,10 +8,10 @@ import (
 	"github.com/tallica/lazyincus/pkg/commands"
 )
 
-// instanceRecreate is `U` on Instances; a compose instance is the Services panel's U.
+// instanceRecreate is `U` on Instances; a listed stack's instance is the Services panel's U.
 func (m *Model) instanceRecreate(instance *commands.Instance) tea.Cmd {
 	switch {
-	case instance.ComposeService() != "":
+	case m.isStackInstance(instance):
 		return m.withTransientStatus(m.tr.RecreateComposeInstance, 3*time.Second)
 	case !instance.IsOCI():
 		return m.withTransientStatus(m.tr.RecreateNotOCI, 3*time.Second)
