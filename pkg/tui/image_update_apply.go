@@ -34,7 +34,7 @@ func servicesWithUpdates(services []*commands.ComposeService, updates map[string
 		status := commands.MostTelling(updates, presentation.BaseImages(service.SortedInstances())...)
 		if status.State == commands.UpstreamNewer {
 			found = append(found, serviceUpdate{service: service.Name, status: status})
-		} else if verdict := service.Beacon(); verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() {
+		} else if verdict := service.Beacon(); verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt() && !service.TracksAnotherImage() {
 			found = append(found, serviceUpdate{service: service.Name, rebuilt: verdict.Current})
 		}
 	}

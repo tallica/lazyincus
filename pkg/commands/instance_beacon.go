@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"slices"
 	"strings"
 	"time"
 
@@ -86,10 +87,19 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 
 // TracksAnotherImage is beacon told to check an image other than the one the instance runs.
 func (i *Instance) TracksAnotherImage() bool {
-	image, ok := strings.CutSuffix(i.config(imageDescriptionKey), " (OCI)")
+	image, ok := i.ComposeImage(), true
+	if image == "" {
+		image, ok = strings.CutSuffix(i.config(imageDescriptionKey), " (OCI)")
+	}
+
 	tracked := trackedImage(i.Instance.ExpandedConfig)
 
 	return ok && tracked != "" && !sameRepository(tracked, image)
+}
+
+// TracksAnotherImage is any of its instances'.
+func (s *ComposeService) TracksAnotherImage() bool {
+	return slices.ContainsFunc(s.SortedInstances(), (*Instance).TracksAnotherImage)
 }
 
 // trackedImage is the image beacon is told to check, as beacon reads it.

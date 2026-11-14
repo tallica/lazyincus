@@ -704,10 +704,10 @@ rebuild - one `↑` when `g` found it too - red `!` for an error, `?` for
 unknown, nothing when current. A verdict about a tag the instance no
 longer runs - kept through a rebuild until beacon checks again - counts as
 none, and one about another image, which `user.incus-beacon.image` can
-name, is shown but not taken by `G` on Instances. A service's is its most
-telling replica's, and a stack's row has `↑` or `!` after its status, the
-tag left to the services. Beacon looks for a newer tag only with `track:
-semver`, and its settings belong in the service's `labels:`, as
+name, is shown but not taken by `G`. A service's is its most telling
+replica's, and a stack's row has `↑` or `!` after its status, the tag left
+to the services. Beacon looks for a newer tag only with `track: semver`,
+and its settings belong in the service's `labels:`, as
 `incus-beacon.track: semver`, or on a profile ([its instance
 keys](https://github.com/tallica/incus-beacon#instance-keys)): `u`, `U`
 and `G` recreate the instance, and a key set on it goes with it. Beacon's

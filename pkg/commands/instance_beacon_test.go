@@ -116,4 +116,10 @@ func TestInstanceTracksAnotherImage(t *testing.T) {
 	assert.False(t, tracks("nginx:1.31"), "Docker's short name")
 	assert.True(t, tracks("docker.io/library/caddy:2"))
 	assert.True(t, tracks("registry.example/library/nginx:1.31"), "a mirror is another image")
+
+	compose := beaconInstance("web-1", map[string]string{
+		imageDescriptionKey: "docker.io/library/caddy (OCI)", composeImageKey: "docker.io/library/nginx:1.27",
+		beaconImageLabel: "docker.io/library/nginx:1.31",
+	})
+	assert.False(t, compose.TracksAnotherImage(), "incus-compose's image over the description")
 }

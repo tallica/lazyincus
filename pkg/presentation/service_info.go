@@ -33,7 +33,13 @@ func ServiceInfo(row *commands.ServiceRow, loc Location, upstream commands.Upstr
 	output += line("Image", service.ResolvedImage())
 
 	verdict := service.Beacon()
-	build, tag := BeaconLines(verdict, "G")
+
+	beaconKey := "G"
+	if service.TracksAnotherImage() {
+		beaconKey = ""
+	}
+
+	build, tag := BeaconLines(verdict, beaconKey)
 	output += line("Newer build", newerBuildLine(upstream, verdict, build, "G"))
 	output += line("Newer tag", tag)
 	output += line("Replicas", ServiceReplicas(service))
