@@ -379,11 +379,6 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
   newer whose registry can't be worked out, or whose image lookup fails,
   drops out of `G`'s checklist while its row still shows `↑`. Name those
   in the subtitle or the error, as "left out, with snapshots" does.
-- [ ] **A tag move Incus records as another tag.** `G` on Instances
-  moving a container onto a build Incus already holds under another tag
-  leaves it naming that tag ([docs/Incus.md](docs/Incus.md), "Rebuild").
-  Check after the rebuild what the instance names, and say so when it
-  isn't what `G` asked for.
 - [ ] **`U` on a compose instance in Instances.** With `C` showing the
   stacks' instances, `U` there says to use Services. It could open
   Services' recreate menu for that service instead.

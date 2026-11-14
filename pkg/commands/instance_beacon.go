@@ -17,6 +17,8 @@ const (
 	beaconTrackKey   = "user.incus-beacon.track"
 	// An incus-compose label; the plain key wins.
 	beaconTrackLabel = "user.label.incus-beacon.track"
+	beaconImageKey   = "user.incus-beacon.image"
+	beaconImageLabel = "user.label.incus-beacon.image"
 )
 
 const (
@@ -75,11 +77,16 @@ func beaconVerdict(config map[string]string) BeaconVerdict {
 		verdict.Since = since
 	}
 
-	if outrun(verdict.Current, lo.CoalesceOrEmpty(config[composeImageKey], config[imageIDKey])) {
+	if outrun(verdict.Current, lo.CoalesceOrEmpty(trackedImage(config), config[composeImageKey], config[imageIDKey])) {
 		return BeaconVerdict{}
 	}
 
 	return verdict
+}
+
+// trackedImage is the image beacon is told to check, as beacon reads it.
+func trackedImage(config map[string]string) string {
+	return lo.CoalesceOrEmpty(config[beaconImageKey], config[beaconImageLabel])
 }
 
 // outrun: a rebuild keeps beacon's keys about the tag it moved off.

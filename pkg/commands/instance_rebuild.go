@@ -33,6 +33,16 @@ var ErrNoOCISource = errors.New("neither it nor its image says which registry it
 
 // OCIRebuildSource, and whether the image is still held: docs/Incus.md, "Rebuild".
 func (i *Instance) OCIRebuildSource() (source OCIRebuild, held bool, err error) {
+	source, held, err = i.recordedSource()
+	if tracked := trackedImage(i.Instance.ExpandedConfig); err == nil && imageTag(tracked) != "" && sameRepository(tracked, source.Image()) {
+		source = source.WithTag(imageTag(tracked))
+	}
+
+	return source, held, err
+}
+
+// recordedSource is the registry and tag Incus recorded for the instance's image.
+func (i *Instance) recordedSource() (source OCIRebuild, held bool, err error) {
 	image, _, err := i.Client.GetImage(i.BaseImage())
 	if err != nil && !api.StatusErrorCheck(err, http.StatusNotFound) {
 		return OCIRebuild{}, false, err
@@ -87,8 +97,8 @@ func (i *Instance) Recreate(pull *OCIRebuild) error {
 	var err error
 	if pull == nil {
 		err = i.rebuildFromBaseImage()
-	} else {
-		err = i.rebuildFromOCI(*pull)
+	} else if err = i.rebuildFromOCI(*pull); err == nil {
+		err = i.keepTag(*pull)
 	}
 
 	if running {
@@ -130,6 +140,33 @@ func (i *Instance) rebuildFromOCI(source OCIRebuild) error {
 	}
 
 	return op.Wait()
+}
+
+// keepTag tells beacon the tag asked for where Incus recorded another: docs/Incus.md, "Rebuild".
+func (i *Instance) keepTag(asked OCIRebuild) error {
+	instance, _, err := i.Client.GetInstance(i.Name)
+	if err != nil {
+		return err
+	}
+
+	recorded := ""
+	if image, _, err := i.Client.GetImage(instance.Config[baseImageKey]); err == nil {
+		recorded = ociRef(image.UpdateSource)
+	}
+
+	want, tracked := imageTag(asked.Ref), trackedImage(instance.ExpandedConfig)
+	if tracked != "" && !sameRepository(tracked, asked.Image()) {
+		return nil
+	}
+
+	stale := tracked != "" && imageTag(tracked) != want
+	swapped := tracked == "" && recorded != "" && imageTag(recorded) != want
+
+	if !stale && !swapped {
+		return nil
+	}
+
+	return i.patchConfig(map[string]string{beaconImageKey: asked.Image()})
 }
 
 // NewerTagFor is the newer tag, for the very image source names.

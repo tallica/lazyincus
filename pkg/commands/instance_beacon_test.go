@@ -96,4 +96,10 @@ func TestBeaconVerdictOutrun(t *testing.T) {
 
 	config["user.image_alias"] = "nginx:1.27"
 	assert.Equal(t, BeaconVerdict{}, beaconVerdict(config))
+
+	config = map[string]string{
+		beaconStatusKey: BeaconCurrent, beaconCurrentKey: "docker.io/library/nginx:1.31-alpine",
+		"image.id": "library/nginx:alpine", beaconImageKey: "docker.io/library/nginx:1.31-alpine",
+	}
+	assert.Equal(t, BeaconCurrent, beaconVerdict(config).Status, "beacon's image key over the tag Incus kept")
 }
