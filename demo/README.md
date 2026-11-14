@@ -12,10 +12,11 @@ feature each, to link from its CHANGELOG entry.
 | `demo-fixture.sh` | Builds and tears down what the walkthrough acts on |
 | `highlights.sh` | Cuts `docs/highlights.gif` from the recording |
 | `lzi-stack/`, `lzi-edge/` | The two compose stacks, one per remote |
-| `palette.sh`, `readonly.sh`, `operations.sh`, `snapshots.sh`, `inside.sh`, `backups.sh`, `typed.sh`, `changed.sh` | The short recordings, each with a fixture of its own |
+| `palette.sh`, `readonly.sh`, `operations.sh`, `snapshots.sh`, `inside.sh`, `backups.sh`, `typed.sh`, `changed.sh`, `updates.sh` | The short recordings, each with a fixture of its own |
 | `lzi-notes/` | The compose stack `backups.sh` backs up |
 | `lzi-feed/` | The compose stack `typed.sh` runs `;` on |
 | `lzi-cfg/` | The compose stack `changed.sh` edits |
+| `lzi-upd/` | The compose stack `updates.sh` moves to a newer tag |
 | `lib.sh` | What the recordings share: the tmux server, the keys and captions, the recorder |
 
 ## Before you start
@@ -127,6 +128,7 @@ One feature each, around a minute, paced to be read rather than skimmed:
 | `backups.sh` | `B`, a new backup, `verify`, and the volumes holding them | `REMOTE_A` | the `lzi-notes` stack, backed up once |
 | `typed.sh` | `:` and `;`: a snapshot taken with `tab`, recalled with `↑`, and a service restarted | `REMOTE_A` | `lzi-cli`: `ledger`, `ledger-replica`; and the `lzi-feed` stack |
 | `changed.sh` | `c` editing a compose file, `↻` on what it changed, and `u` recreating it; its vim plays at full length | `REMOTE_A`, with incus-compose 1.4.0 or later | the `lzi-cfg` stack: `cache`, with an environment setting, and `queue` |
+| `updates.sh` | incus-beacon's newer tag, taken by `U` and `G` on containers launched by hand, then by `G` on a stack, editing its compose file | `REMOTE_A`, running incus-beacon with events on | the `lzi-upd` stack: `gateway` on an older nginx tag beacon tracks, `sessions`; beside it `cdn`, a paused `edge` and `docs` with a snapshot, on the same tag |
 
 ```sh
 REMOTE_A=site-a demo/palette.sh
@@ -137,6 +139,7 @@ REMOTE_A=site-a demo/inside.sh
 REMOTE_A=site-a demo/backups.sh
 REMOTE_A=site-a demo/typed.sh
 REMOTE_A=site-a demo/changed.sh
+REMOTE_A=site-a demo/updates.sh
 ```
 
 Each writes `demo/<script>.cast`, `.gif` and `.mp4`, and takes the

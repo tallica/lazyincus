@@ -1,0 +1,8 @@
+name: lzi-upd
+services:
+  gateway:
+    image: docker.io/library/nginx:1.27-alpine
+    labels:
+      incus-beacon.track: semver
+  sessions:
+    image: docker.io/library/redis:alpine
