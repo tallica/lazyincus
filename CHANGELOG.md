@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `U` or `G` on Instances no longer leaves incus-beacon unable to check a container whose new image a stack in its project had already pulled.
+
 ## [0.17.0] - 2026-11-14
 
 ### Added

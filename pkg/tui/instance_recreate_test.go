@@ -440,7 +440,7 @@ func TestUpdatingOCIContainersMarksEachInTurn(t *testing.T) {
 // incusd reuses a build it already holds under another tag, and the tag
 // with it; the tag asked for is then kept where beacon and U read it.
 func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
-	trackedAfterG := func(t *testing.T, swap bool, tracked string) (*Model, string) {
+	trackedAfterG := func(t *testing.T, image, tracked string) (*Model, string) {
 		t.Helper()
 
 		server := ociServerWith(map[string]string{"user.incus-beacon.image": tracked})
@@ -453,12 +453,11 @@ func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
 		}, api.Image{
 			Fingerprint: "pulled-image", Project: "default",
 			UpdateSource: &api.ImageSource{Protocol: "oci", Server: "https://docker.io", Alias: "library/nginx:1.31"},
+		}, api.Image{
+			Fingerprint: "copied-image", Project: "default",
+			UpdateSource: &api.ImageSource{Protocol: "incus", Server: "https://incus.example:8443", Alias: "copied-image"},
 		}))
 		server.OnRebuild = func(name string) {
-			image := "pulled-image"
-			if swap {
-				image = "alpine-image"
-			}
 			_, _, err := server.RawQuery(http.MethodPatch, "/1.0/instances/"+name, map[string]any{
 				"config": map[string]string{"volatile.base_image": image},
 			}, "")
@@ -475,7 +474,7 @@ func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
 		return m, instance.ExpandedConfig["user.incus-beacon.image"]
 	}
 
-	m, tracked := trackedAfterG(t, true, "")
+	m, tracked := trackedAfterG(t, "alpine-image", "")
 	assert.Equal(t, "docker.io/library/nginx:1.31", tracked)
 
 	refreshNow(m)
@@ -483,13 +482,17 @@ func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
 	require.NotNil(t, m.topMenu())
 	assert.Equal(t, "docker.io/nginx:1.31", m.topMenu().subtitle, "U pulls the tag asked for, not the one Incus kept")
 
-	_, tracked = trackedAfterG(t, false, "")
+	_, tracked = trackedAfterG(t, "pulled-image", "")
 	assert.Empty(t, tracked, "nothing to keep when Incus names the tag")
 
-	_, tracked = trackedAfterG(t, false, "docker.io/library/nginx:1.27")
+	// incus-compose's copy from its cache project, which names no tag at all.
+	_, tracked = trackedAfterG(t, "copied-image", "")
+	assert.Equal(t, "docker.io/library/nginx:1.31", tracked, "kept when Incus names none")
+
+	_, tracked = trackedAfterG(t, "pulled-image", "docker.io/library/nginx:1.27")
 	assert.Equal(t, "docker.io/library/nginx:1.31", tracked, "an earlier one moved along")
 
-	_, tracked = trackedAfterG(t, true, "registry.example/mirror/nginx:1.27")
+	_, tracked = trackedAfterG(t, "alpine-image", "registry.example/mirror/nginx:1.27")
 	assert.Equal(t, "registry.example/mirror/nginx:1.27", tracked, "someone's own setting")
 }
 
