@@ -118,6 +118,29 @@ func TestRecreatingAComposeInstance(t *testing.T) {
 	assert.Empty(t, server.Rebuilds())
 }
 
+// Recreate goes by the instance as last listed, not as it was when the key
+// was pressed: G may reach it several rebuilds later.
+func TestRecreatingGoesByTheLatestListing(t *testing.T) {
+	server := ociServer()
+	m := start(t, options{server: server}, 140, 40)
+	pressed := m.instances.items[0]
+
+	_, err := server.UpdateInstanceState("web", api.InstanceStatePut{Action: "stop"}, "")
+	require.NoError(t, err)
+	refreshNow(m)
+
+	require.NoError(t, pressed.Recreate(nil))
+	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+	require.NoError(t, err)
+	assert.Equal(t, "Stopped", instances[0].Status, "a stopped instance isn't started after")
+
+	_, err = server.CreateInstanceSnapshot("web", api.InstanceSnapshotsPost{Name: "snap0"})
+	require.NoError(t, err)
+	refreshNow(m)
+
+	require.ErrorIs(t, pressed.Recreate(nil), commands.ErrRebuildSnapshots)
+}
+
 func TestRecreatingNeedsAnOCIContainer(t *testing.T) {
 	m := start(t, options{server: instancesServer(nil, runningInstance("web", nil))}, 140, 40)
 

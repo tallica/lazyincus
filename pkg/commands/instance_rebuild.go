@@ -61,6 +61,9 @@ var ErrRebuildSnapshots = errors.New("incus rebuilds no instance with snapshots"
 
 // Recreate rebuilds from the image it runs, or a fresh pull, stopping a running one for it.
 func (i *Instance) Recreate(pull *OCIRebuild) error {
+	// The key's copy, or G's from several rebuilds back.
+	i = i.Latest()
+
 	if len(i.Instance.Snapshots) > 0 {
 		return ErrRebuildSnapshots
 	}
