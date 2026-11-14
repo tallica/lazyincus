@@ -28,6 +28,9 @@ func TestBeaconNewerTagFor(t *testing.T) {
 	assert.Empty(t, verdict("docker.io/library/caddy:1.27", "1.31").NewerTagFor(source), "another image")
 	assert.Empty(t, verdict("docker.io/library/nginx:1.27", "1.31\nx: y").NewerTagFor(source), "not a tag")
 	assert.Empty(t, verdict("docker.io/library/nginx:1.27", "1.27@sha256:0123456789ab").NewerTagFor(source), "a rebuild")
+
+	short := OCIRebuild{Server: "https://docker.io", Ref: "nginx:1.27"}
+	assert.Equal(t, "1.31", verdict("docker.io/library/nginx:1.27", "1.31").NewerTagFor(short), "Incus may keep the short name")
 }
 
 // An image Incus has expired leaves the keys it copied onto the instance.

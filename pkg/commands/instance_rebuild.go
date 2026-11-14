@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/name"
 	incus "github.com/lxc/incus/v7/client"
 	"github.com/lxc/incus/v7/shared/api"
 )
@@ -140,8 +141,12 @@ func (v BeaconVerdict) NewerTagFor(source OCIRebuild) string {
 	return ""
 }
 
+// sameRepository normalises as Docker does: docker.io/nginx is docker.io/library/nginx.
 func sameRepository(a, b string) bool {
-	return a != "" && withoutTag(a) == withoutTag(b)
+	refA, errA := name.ParseReference(a, name.WeakValidation)
+	refB, errB := name.ParseReference(b, name.WeakValidation)
+
+	return errA == nil && errB == nil && refA.Context().Name() == refB.Context().Name()
 }
 
 // imageTag is ref's tag, latest when it names none, empty for a digest.
