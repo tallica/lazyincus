@@ -149,9 +149,30 @@ func TestRecreatingAPausedInstance(t *testing.T) {
 	require.NoError(t, err)
 	m := start(t, options{server: server}, 140, 40)
 
-	press(m, "U", "enter", "y")
+	press(m, "U", "enter")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "a paused one paused again after")
+
+	press(m, "y")
 	assert.Equal(t, []string{"web=nginx-image"}, server.Rebuilds())
 	assert.Empty(t, m.popups)
+
+	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
+	require.NoError(t, err)
+	assert.Equal(t, "Frozen", instances[0].Status)
+}
+
+// A failed rebuild leaves the old disk, which is started and paused again.
+func TestRecreatingAPausedInstanceThatFails(t *testing.T) {
+	server := ociServer()
+	server.RebuildErrors = map[string]error{"web": errors.New("manifest unknown")}
+	_, err := server.UpdateInstanceState("web", api.InstanceStatePut{Action: "freeze"}, "")
+	require.NoError(t, err)
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "U", "j", "enter", "y")
+	require.Len(t, m.popups, 1)
+	assert.Contains(t, ansi.Strip(m.popups[0].message), "manifest unknown")
 
 	instances, err := server.GetInstancesFull(api.InstanceTypeAny)
 	require.NoError(t, err)
@@ -472,6 +493,29 @@ func TestRecreatingOntoABuildCachedUnderAnotherTag(t *testing.T) {
 	assert.Equal(t, "registry.example/mirror/nginx:1.27", tracked, "someone's own setting")
 }
 
+// U's pull keeps the tag it asked for as G's does.
+func TestRecreatingWithAPullOntoABuildCachedUnderAnotherTag(t *testing.T) {
+	server := ociServer()
+	server.SetImages(append(server.Images, api.Image{
+		Fingerprint: "alpine-image", Project: "default",
+		UpdateSource: &api.ImageSource{Protocol: "oci", Server: "https://docker.io", Alias: "nginx:alpine"},
+	}))
+	server.OnRebuild = func(name string) {
+		_, _, err := server.RawQuery(http.MethodPatch, "/1.0/instances/"+name, map[string]any{
+			"config": map[string]string{"volatile.base_image": "alpine-image"},
+		}, "")
+		assert.NoError(t, err)
+	}
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "U", "j", "enter", "y")
+	require.Equal(t, []string{"web=library/nginx:1.27"}, server.Rebuilds())
+
+	instance, _, err := server.GetInstance("web")
+	require.NoError(t, err)
+	assert.Equal(t, "docker.io/library/nginx:1.27", instance.ExpandedConfig["user.incus-beacon.image"])
+}
+
 // A verdict about another image beacon was told to check is beacon's to
 // show, not G's to act on: recreating would pull the image it runs.
 func TestUpdatingOCIContainersTrackingAnotherImage(t *testing.T) {
@@ -489,4 +533,16 @@ func TestUpdatingOCIContainersTrackingAnotherImage(t *testing.T) {
 	press(m, "G")
 	assert.Nil(t, m.topMenu())
 	assert.Contains(t, footer(m), "no OCI container here has a newer image build or tag to take")
+}
+
+// A container whose image can't be looked up drops out of G, the rest
+// listed (BACKLOG: what G leaves out unsaid).
+func TestUpdatingOCIContainersPastAFailedLookup(t *testing.T) {
+	server := twoOCIServer(nil)
+	server.ImageErrors = map[string]error{"api-image": api.StatusErrorf(http.StatusForbidden, "not allowed")}
+	m := start(t, options{server: server}, 140, 40)
+
+	press(m, "G")
+	require.NotNil(t, m.topMenu())
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
 }
