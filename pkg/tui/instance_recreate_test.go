@@ -256,6 +256,19 @@ func twoOCIServer(rebuildErrors map[string]error) *incustest.Server {
 	})
 }
 
+// G looks up where an image came from only for a container with something
+// newer: each lookup is a request.
+func TestUpdatingOCIContainersLooksUpOnlyWhatIsNewer(t *testing.T) {
+	server := twoOCIServer(nil)
+	server.Instances[0].ExpandedConfig["user.incus-beacon.status"] = "current" // api
+	m := start(t, options{server: server}, 140, 40)
+
+	before := len(server.ImageLookups())
+	press(m, "G")
+	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
+	assert.Equal(t, []string{"nginx-image"}, server.ImageLookups()[before:])
+}
+
 // One container failing leaves the others recreated, the error naming it.
 func TestUpdatingOCIContainersPastAFailure(t *testing.T) {
 	server := twoOCIServer(map[string]error{"api": errors.New("registry said 401")})

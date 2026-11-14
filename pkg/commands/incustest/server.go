@@ -92,6 +92,8 @@ type state struct {
 	warnings []api.Warning
 	// rebuilds are RebuildInstanceFromImage's, as instance=alias, or fingerprint for a local image.
 	rebuilds []string
+	// imageLookups are GetImage's fingerprints, in order.
+	imageLookups []string
 }
 
 // New is a Server answering from fixture.
@@ -365,6 +367,11 @@ func (s *Server) GetImages() ([]api.Image, error) {
 
 // GetImage is the image by fingerprint, wherever it lives.
 func (s *Server) GetImage(fingerprint string) (*api.Image, string, error) {
+	shared := s.shared()
+	shared.mutex.Lock()
+	shared.imageLookups = append(shared.imageLookups, fingerprint)
+	shared.mutex.Unlock()
+
 	for _, image := range s.images() {
 		if image.Fingerprint == fingerprint {
 			return &image, "", nil
@@ -410,6 +417,14 @@ func (s *Server) Rebuilds() []string {
 	defer shared.mutex.Unlock()
 
 	return slices.Clone(shared.rebuilds)
+}
+
+func (s *Server) ImageLookups() []string {
+	shared := s.shared()
+	shared.mutex.Lock()
+	defer shared.mutex.Unlock()
+
+	return slices.Clone(shared.imageLookups)
 }
 
 func (s *Server) GetImagesAllProjects() ([]api.Image, error) {

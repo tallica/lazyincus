@@ -76,23 +76,31 @@ func (m *Model) listInstanceUpdates(candidates []*commands.Instance, recheck boo
 // instanceUpdates: blocked are those with snapshots, which Incus won't recreate.
 func instanceUpdates(candidates []*commands.Instance, upstreams map[string]commands.UpstreamStatus) (found, blocked []instanceUpdate) {
 	for _, instance := range candidates {
+		verdict := instance.Beacon()
+		rebuilt := verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt()
+
+		status := commands.MostTelling(upstreams, instance.BaseImage())
+		newer := status.State == commands.UpstreamNewer
+		if !newer {
+			status = commands.UpstreamStatus{}
+		}
+
+		// Each lookup is a request to the daemon: only for what has something newer.
+		if verdict.NewerTag() == "" && !rebuilt && !newer {
+			continue
+		}
+
 		source, _, err := instance.OCIRebuildSource()
 		if err != nil {
 			continue
 		}
 
-		tag := instance.BeaconNewerTag(source)
-		verdict := instance.Beacon()
-		rebuilt := verdict.Status == commands.BeaconUpdateAvailable && verdict.Rebuilt()
-
-		if tag == "" && !rebuilt && commands.MostTelling(upstreams, instance.BaseImage()).State != commands.UpstreamNewer {
+		tag := verdict.NewerTagFor(source)
+		if tag == "" && !rebuilt && !newer {
 			continue
 		}
 
-		update := instanceUpdate{instance: instance, source: source, tag: tag}
-		if status := commands.MostTelling(upstreams, instance.BaseImage()); status.State == commands.UpstreamNewer {
-			update.status = status
-		}
+		update := instanceUpdate{instance: instance, source: source, tag: tag, status: status}
 		if len(instance.Instance.Snapshots) > 0 {
 			blocked = append(blocked, update)
 		} else {

@@ -126,10 +126,9 @@ func (i *Instance) rebuildFromOCI(source OCIRebuild) error {
 	return op.Wait()
 }
 
-// BeaconNewerTag is beacon's newer tag for the very image the instance runs.
-func (i *Instance) BeaconNewerTag(source OCIRebuild) string {
-	verdict := i.Beacon()
-	if tag := verdict.NewerTag(); validTag.MatchString(tag) && sameRepository(verdict.Current, source.Image()) {
+// NewerTagFor is the newer tag, for the very image source names.
+func (v BeaconVerdict) NewerTagFor(source OCIRebuild) string {
+	if tag := v.NewerTag(); validTag.MatchString(tag) && sameRepository(v.Current, source.Image()) {
 		return tag
 	}
 

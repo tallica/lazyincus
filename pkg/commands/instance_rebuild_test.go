@@ -15,18 +15,16 @@ func TestOCIRebuildRefs(t *testing.T) {
 
 // Beacon's tag is offered only for the very repository the instance runs,
 // and only when it is a tag.
-func TestBeaconNewerTagForARebuild(t *testing.T) {
+func TestBeaconNewerTagFor(t *testing.T) {
 	source := OCIRebuild{Server: "https://docker.io", Ref: "library/nginx:1.27"}
-	instance := func(current, latest string) *Instance {
-		return beaconInstance("web", map[string]string{
-			beaconStatusKey: BeaconUpdateAvailable, beaconCurrentKey: current, beaconLatestKey: latest,
-		})
+	verdict := func(current, latest string) BeaconVerdict {
+		return BeaconVerdict{Status: BeaconUpdateAvailable, Current: current, Latest: latest}
 	}
 
-	assert.Equal(t, "1.31", instance("docker.io/library/nginx:1.27", "1.31").BeaconNewerTag(source))
-	assert.Empty(t, instance("docker.io/library/caddy:1.27", "1.31").BeaconNewerTag(source), "another image")
-	assert.Empty(t, instance("docker.io/library/nginx:1.27", "1.31\nx: y").BeaconNewerTag(source), "not a tag")
-	assert.Empty(t, instance("docker.io/library/nginx:1.27", "1.27@sha256:0123456789ab").BeaconNewerTag(source), "a rebuild")
+	assert.Equal(t, "1.31", verdict("docker.io/library/nginx:1.27", "1.31").NewerTagFor(source))
+	assert.Empty(t, verdict("docker.io/library/caddy:1.27", "1.31").NewerTagFor(source), "another image")
+	assert.Empty(t, verdict("docker.io/library/nginx:1.27", "1.31\nx: y").NewerTagFor(source), "not a tag")
+	assert.Empty(t, verdict("docker.io/library/nginx:1.27", "1.27@sha256:0123456789ab").NewerTagFor(source), "a rebuild")
 }
 
 // An image Incus has expired leaves the keys it copied onto the instance.
