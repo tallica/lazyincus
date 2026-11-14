@@ -549,3 +549,28 @@ func TestUpdatingOCIContainersPastAFailedLookup(t *testing.T) {
 	require.NotNil(t, m.topMenu())
 	assert.Equal(t, []string{"web docker.io/library/nginx:1.27 → 1.31"}, menuLabels(m))
 }
+
+// incusd announces neither a rebuild nor its pull, so the images are asked
+// for after one.
+func TestRecreatingRefreshesTheImages(t *testing.T) {
+	server := ociServer()
+	server.OnRebuild = func(name string) {
+		server.SetImages(append(server.Images, api.Image{
+			Fingerprint: "pulled-image", Project: "default",
+			UpdateSource: &api.ImageSource{Protocol: "oci", Server: "https://docker.io", Alias: "library/nginx:1.27"},
+		}))
+		_, _, err := server.RawQuery(http.MethodPatch, "/1.0/instances/"+name, map[string]any{
+			"config": map[string]string{"volatile.base_image": "pulled-image"},
+		}, "")
+		assert.NoError(t, err)
+	}
+	m := start(t, options{server: server}, 140, 40)
+	require.Len(t, rowsOf(m, "images"), 1)
+
+	press(m, "U", "j", "enter", "y")
+	require.Equal(t, []string{"web=library/nginx:1.27"}, server.Rebuilds())
+
+	rows := rowsOf(m, "images")
+	require.Len(t, rows, 2, "the pulled image listed without waiting for a poll")
+	assert.Contains(t, rows[0]+rows[1], "pulled-image")
+}

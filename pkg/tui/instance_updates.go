@@ -219,6 +219,6 @@ func (m *Model) recreateInTurn(chosen []instanceUpdate, failed []error, recheck 
 			failed = append(failed, fmt.Errorf("%s: %w", update.instance.Name, err))
 		}
 
-		return tea.Batch(refreshEnding([]func(){end}, m.instanceFetches()...), m.recreateInTurn(chosen[1:], failed, recheck))
+		return tea.Batch(refreshEnding([]func(){end}, m.rebuildFetches()...), m.recreateInTurn(chosen[1:], failed, recheck))
 	})
 }

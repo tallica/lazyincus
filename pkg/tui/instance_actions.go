@@ -36,6 +36,10 @@ func (m *Model) qualifiedInstance(instance *commands.Instance) string {
 
 // inTransition: the row's mark comes off once the refresh after action lands.
 func (m *Model) inTransition(waiting string, instance *commands.Instance, status string, action func() error) tea.Cmd {
+	return m.inTransitionThen(waiting, instance, status, action, m.instanceFetches)
+}
+
+func (m *Model) inTransitionThen(waiting string, instance *commands.Instance, status string, action func() error, fetches func() []fetch) tea.Cmd {
 	end := instance.BeginTransition(status)
 	m.rerenderInstances()
 
@@ -47,7 +51,7 @@ func (m *Model) inTransition(waiting string, instance *commands.Instance, status
 			return nil
 		}
 
-		return refreshEnding([]func(){end}, m.instanceFetches()...)
+		return refreshEnding([]func(){end}, fetches()...)
 	})
 }
 
