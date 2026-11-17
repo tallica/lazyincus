@@ -42,7 +42,10 @@ jobs:
           sudo incus admin init --auto
           # The runner's user isn't in incus-admin until a new login.
           sudo chmod 666 /var/lib/incus/unix.socket
-          incus version
+          # admin init leaves ~/.config/incus root's, 0750, sudo -H or not.
+          mkdir -p "$RUNNER_TEMP/incus"
+          echo "INCUS_CONF=$RUNNER_TEMP/incus" >> "$GITHUB_ENV"
+          INCUS_CONF="$RUNNER_TEMP/incus" incus version
 
       - name: Allow the suite onto this daemon
         run: |
