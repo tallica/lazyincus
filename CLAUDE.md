@@ -70,7 +70,8 @@ verbs are exercised for real, and with a VM alongside the containers.
   missed one costs production.
 - **The tests see the screen, not the daemon.** The screen and refresh
   tests in `pkg/tui` drive the real model with key and size messages over
-  `incustest`'s stand-in daemon; anything that talks to a real one still
+  `incustest`'s stand-in daemon. What only a real daemon can answer is
+  `e2e/`'s ([End-to-end](#end-to-end)), and what that doesn't reach yet
   wants driving live — see [Verifying in a live TUI](#verifying-in-a-live-tui).
 
 ## Source of the port
@@ -228,6 +229,20 @@ that moves the layout on purpose rewrites them with
 `go test ./pkg/tui -update`; read the diff before keeping it. CI runs the
 tests under `-race` (`go test -race ./...`), which `make test` doesn't:
 run that too when a change touches timing.
+
+### End-to-end
+
+`e2e/` is a module of its own, so its dependencies stay out of `go.mod`
+and THIRD_PARTY_NOTICES.md; `make vet` and `make lint` cover it, `make
+test` doesn't. `e2e/daemon` checks the facts docs/Incus.md states against
+a real daemon, one test each, named after the entry. `make e2e` runs it on
+the remote `LAZYINCUS_E2E_REMOTE` names, which must also be a line of
+`~/.config/lazyincus/e2e-remotes`; without the variable everything skips,
+and with a remote the file doesn't list nothing runs. Each run works in a
+project of its own, `e2e-<random>`, deleted at the end, and sweeps any
+left by a run that died. `.github/workflows/e2e.yml` runs it against
+Incus `stable` when the repository's owner starts it by hand (`gh
+workflow run e2e.yml`).
 
 ### Releasing
 
