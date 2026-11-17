@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -42,6 +43,8 @@ type IncusCommand struct {
 	// what its GetServer() said at connect time, empty if that failed.
 	remoteName    string
 	serverVersion string
+	// noOCI: the server lacks instance_oci (Incus 6.0), so no compose stack runs there.
+	noOCI bool
 
 	connMutex sync.Mutex
 	connected bool
@@ -63,6 +66,8 @@ const dialTimeout = 5 * time.Second
 // on a transport we don't have yet, and the call is the only thing left to
 // bound.
 const connectTimeout = 10 * time.Second
+
+const apiExtensionOCI = "instance_oci"
 
 // NewIncusCommand connects to the CLI's configured default remote via
 // Incus's own cliconfig. Resolving the socket path ourselves would miss
@@ -137,9 +142,10 @@ func connectCommand(log *zerolog.Logger, osCommand *OSCommand, cfg *config.AppCo
 // connected - to a remote, or to incustest's stand-in.
 func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, cfg *config.AppConfig, client incus.InstanceServer, remote string) *IncusCommand {
 	// Best-effort: the footer just shows no version without it.
-	version := ""
+	version, noOCI := "", false
 	if server, _, err := client.GetServer(); err == nil {
 		version = server.Environment.ServerVersion
+		noOCI = !slices.Contains(server.APIExtensions, apiExtensionOCI)
 	} else if log != nil {
 		log.Warn().Err(err).Send()
 	}
@@ -153,6 +159,7 @@ func NewIncusCommandWithClient(log *zerolog.Logger, osCommand *OSCommand, cfg *c
 		unscoped:      client.UseProject(""),
 		remoteName:    remote,
 		serverVersion: version,
+		noOCI:         noOCI,
 		projectName:   clientProjectName(client),
 		// Every project by default: a server with one project looks the same
 		// either way, and on a server with several, scoping to whichever one
@@ -293,6 +300,14 @@ func (c *IncusCommand) ServerVersion() string {
 	return c.serverVersion
 }
 
+// SupportsOCI is true unless the server said otherwise at connect time.
+func (c *IncusCommand) SupportsOCI() bool {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+
+	return !c.noOCI
+}
+
 // PublishHost is where a port the daemon's host publishes is reached from
 // here - the remote's own host - or empty when its URL doesn't say: a unix
 // socket, or loopback, which is a tunnel to the API alone.
@@ -305,13 +320,13 @@ func (c *IncusCommand) PublishHost() string {
 // its identity, so whoever holds it follows.
 func (c *IncusCommand) UseRemote(other *IncusCommand) {
 	scope := other.scope()
-	remote, version := other.RemoteName(), other.ServerVersion()
+	remote, version, noOCI := other.RemoteName(), other.ServerVersion(), !other.SupportsOCI()
 	unscoped := other.unscopedClient()
 
 	c.clientMutex.Lock()
 	c.base, c.client, c.projectName, c.allProjects = scope.base, scope.client, scope.project, true
 	c.unscoped = unscoped
-	c.remoteName, c.serverVersion = remote, version
+	c.remoteName, c.serverVersion, c.noOCI = remote, version, noOCI
 	c.clientMutex.Unlock()
 
 	c.setConnected(true)

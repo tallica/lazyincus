@@ -148,9 +148,9 @@ order:
 - **Stacks** — compose project directories: the working directory's, or
   `-P`'s, and every one added with `a`, saved in `state.yml`, each pinned
   to the Incus remote it was added for. Present only when `incus-compose`
-  is on `PATH`, and then it's `[1]`. The only list that spans remotes:
-  everything else is the session's, which `R` or `space` on a stack
-  switches.
+  is on `PATH` and the session's server runs OCI images, and then it's
+  `[1]`. The only list that spans remotes: everything else is the
+  session's, which `R` or `space` on a stack switches.
 - **Services** — the selected stack's services, one row each, with a
   replicated service's instances under it; there whenever Stacks is. A
   service is its instances, so the two panels share statuses, columns and

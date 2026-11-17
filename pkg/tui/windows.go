@@ -219,7 +219,7 @@ func (m *Model) stacksSwap(from, to string) bool {
 }
 
 func (m *Model) landOffStacks() {
-	if !m.stacksAway() {
+	if !m.stacksAway() && !m.composeUnavailable() {
 		return
 	}
 

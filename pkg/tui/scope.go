@@ -99,9 +99,9 @@ func (m *Model) moveToRemote(name string, command *commands.IncusCommand, projec
 	// read again from the new remote; the stacks read then confirms it.
 	if !m.composeUnavailable() {
 		m.stacksHere = m.sources().stacksHereIn(m.stacks.items)
-		m.landOffStacks()
-		m.leaveHiddenView()
 	}
+	m.landOffStacks()
+	m.leaveHiddenView()
 
 	m.landing = true
 

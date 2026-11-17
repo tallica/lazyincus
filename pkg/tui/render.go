@@ -300,6 +300,10 @@ func (m *Model) incusStatus() string {
 		label += " \x1b[33m" + m.tr.ReadOnly + reset
 	}
 
+	if m.composeAvailable && !m.incus.SupportsOCI() {
+		label += " \x1b[33m" + m.tr.NoStacksHere + reset
+	}
+
 	if m.incus.IsConnected() {
 		label += " \x1b[32m●" + reset
 	} else {

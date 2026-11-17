@@ -320,6 +320,7 @@ type TranslationSet struct {
 	ReadOnly        string
 	ReadOnlyRemote  string
 	ReadOnlySession string
+	NoStacksHere    string
 
 	RemoteChangedSinceAsked string
 
@@ -710,6 +711,7 @@ func englishSet() TranslationSet {
 		ReadOnly:        "read-only",
 		ReadOnlyRemote:  "%s is read-only in the config, so lazyincus changes nothing there.",
 		ReadOnlySession: "lazyincus was started with --read-only, so it changes nothing.",
+		NoStacksHere:    "no OCI, no stacks",
 
 		RemoteChangedSinceAsked: "That was asked on %s and the session is on %s now, so nothing was sent.",
 

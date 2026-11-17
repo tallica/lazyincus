@@ -337,7 +337,7 @@ func (m *Model) newPanels() []*panel {
 }
 
 func (m *Model) composeUnavailable() bool {
-	return !m.composeAvailable
+	return !m.composeAvailable || !m.incus.SupportsOCI()
 }
 
 func (m *Model) backupsAway() bool {

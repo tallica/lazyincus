@@ -61,6 +61,8 @@ type Server struct {
 	// the daemon is.
 	Version string
 	URL     string
+	// NoOCI makes it an Incus 6.0, without the instance_oci extension.
+	NoOCI bool
 
 	// project is what UseProject scoped this copy to.
 	project string
@@ -287,7 +289,7 @@ func (s *Server) GetConnectionInfo() (*incus.ConnectionInfo, error) {
 	return &incus.ConnectionInfo{Project: s.scope(), URL: url}, nil
 }
 
-// GetServer reports Version.
+// GetServer reports Version, and OCI support unless NoOCI.
 func (s *Server) GetServer() (*api.Server, string, error) {
 	if err := s.reachable(); err != nil {
 		return nil, "", err
@@ -295,6 +297,9 @@ func (s *Server) GetServer() (*api.Server, string, error) {
 
 	server := &api.Server{}
 	server.Environment.ServerVersion = s.Version
+	if !s.NoOCI {
+		server.APIExtensions = []string{"instance_oci"}
+	}
 
 	return server, "", nil
 }
