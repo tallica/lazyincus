@@ -24,7 +24,8 @@ jobs:
           go-version-file: e2e/go.mod
           cache-dependency-path: e2e/go.sum
 
-      - name: Install Incus (Zabbly ${{ matrix.lane }})
+      - name: Add Zabbly's ${{ matrix.lane }} channel
+        id: zabbly
         run: |
           sudo mkdir -p /etc/apt/keyrings
           sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
@@ -38,7 +39,21 @@ jobs:
           Signed-By: /etc/apt/keyrings/zabbly.asc
           EOF
           sudo apt-get update
-          sudo apt-get install -y incus
+          echo "version=$(apt-cache policy incus-base | awk '/Candidate:/ { print $2 }')" >> "$GITHUB_OUTPUT"
+
+      # The packages, downloaded once per Incus build; dpkg still installs them.
+      - uses: actions/cache@v6
+        with:
+          # Not apt's partial/ and lock, which it leaves root's.
+          path: ~/incus-debs/*.deb
+          key: incus-debs-${{ matrix.lane }}-${{ steps.zabbly.outputs.version }}-ubuntu-24.04
+
+      # incus-base: no VM support, so no QEMU, which the suite doesn't use.
+      - name: Install Incus ${{ steps.zabbly.outputs.version }}
+        run: |
+          mkdir -p ~/incus-debs/partial
+          sudo apt-get install -y -o Dir::Cache::Archives="$HOME/incus-debs" \
+            -o APT::Keep-Downloaded-Packages=true incus-base
           sudo incus admin init --auto
           # The runner's user isn't in incus-admin until a new login.
           sudo chmod 666 /var/lib/incus/unix.socket
