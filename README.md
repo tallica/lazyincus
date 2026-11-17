@@ -49,7 +49,9 @@ and [BACKLOG.md](BACKLOG.md) for the panel-by-panel comparison.
 - Go 1.27+ to build from source.
 - Optional: [incus-compose](https://incus-compose.org), if you run compose
   stacks on Incus — see [Compose stacks](#compose-stacks) below. Not in
-  Homebrew core; on macOS, `brew install tallica/tap/incus-compose`.
+  Homebrew core; on macOS, `brew install tallica/tap/incus-compose`. It
+  needs Incus 7.0.1 (LTS) or 7.2 and newer; on 6.0 LTS, which runs no OCI
+  images, lazyincus shows no stacks.
 - Optional: [incus-beacon](https://github.com/tallica/incus-beacon#install--run),
   installed on the Incus server rather than here, if you want newer image
   tags found — see [Image updates](#image-updates) below.

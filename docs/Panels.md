@@ -184,19 +184,21 @@ list has focus, so a tab being read follows too.
 
 ## Stacks
 
-One row per compose stack, a stack being a directory with a compose file in
-it: the local one, and every one saved with `a`. Stacks and Services are
-there whenever `incus-compose` is on `PATH` — `NewModel` asks
+One row per compose stack, a stack being a directory with a compose file
+in it: the local one, and every one saved with `a`. Stacks and Services
+are there whenever `incus-compose` is on `PATH` — `NewModel` asks
 `exec.LookPath` once — and then Stacks is `[1]`, with the focus when a
 stack is on the session's remote, and Services `[2]`. Without it neither
-panel exists and the layout is what it always was. A panel's `hidden` func
-(`composeUnavailable`) removes them, and the layout gives a hidden panel no
-box.
+panel exists and the layout is what it always was. Nor do they on a
+session's server that runs no OCI images (Incus 6.0 LTS, without the
+`instance_oci` extension), where no stack can run; the footer says `no
+OCI, no stacks` instead. A panel's `hidden` func (`composeUnavailable`)
+removes them, and the layout gives a hidden panel no box.
 
 That gate means panel numbering can't index `newPanels()` — a hidden first
-panel would leave a hole at `[1]`. `visiblePanels` is what the number keys,
-the title prefixes, `windowNames` and the startup focus all run over
-instead; it's fixed for the session.
+panel would leave a hole at `[1]`. `visiblePanels` is what the number
+keys, the title prefixes, `windowNames` and the startup focus all run over
+instead; it changes only when `R` moves to a server with or without OCI.
 
 A remote with no stack listed on it - every stack pinned elsewhere, or none
 at all - keeps both panels but collapses them to their titles

@@ -142,3 +142,31 @@ func TestProjectsMenuAfterARemoteSwitch(t *testing.T) {
 
 	assert.Nil(t, m.topMenu())
 }
+
+// Incus 6.0 runs no OCI image, so no stack: Stacks and Services go, and the footer says why.
+func TestARemoteWithoutOCIHasNoStacks(t *testing.T) {
+	t.Setenv("INCUS_REMOTE", "fake")
+
+	lts := incustest.New(incustest.Server{Version: "6.0.7", NoOCI: true})
+	pinned := testStack(t, t.TempDir(), "default", "web")
+	pinned.Remote = "fake"
+
+	m := start(t, options{
+		compose: true, savedStacks: []*commands.ComposeStack{pinned}, remotes: map[string]*incustest.Server{"lts": lts},
+		server: incustest.New(incustest.Server{Instances: []api.InstanceFull{composeFixture("default", "web", "web")}}),
+	}, 140, 40)
+	assert.Equal(t, "stacks", m.currentView())
+
+	run(m, m.switchToRemote("lts"))
+
+	assert.Equal(t, "instances", m.currentView())
+	assert.True(t, m.panelNamed(stacksView).isHidden())
+	assert.True(t, m.panelNamed(servicesView).isHidden())
+	assert.Contains(t, screen(m)[39], m.tr.NoStacksHere)
+	assert.NotContains(t, strings.Join(screen(m), "\n"), m.tr.StacksTitle)
+
+	run(m, m.switchToRemote("fake"))
+
+	assert.False(t, m.panelNamed(stacksView).isHidden())
+	assert.NotContains(t, screen(m)[39], m.tr.NoStacksHere)
+}
