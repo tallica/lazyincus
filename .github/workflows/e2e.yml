@@ -1,0 +1,60 @@
+name: e2e
+
+# The e2e/ suite against a real Incus, run by hand only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    # Dispatch already needs write access; this narrows it to the owner.
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [stable]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: e2e/go.mod
+          cache-dependency-path: e2e/go.sum
+
+      - name: Install Incus (Zabbly ${{ matrix.lane }})
+        run: |
+          sudo mkdir -p /etc/apt/keyrings
+          sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+          sudo tee /etc/apt/sources.list.d/zabbly-incus.sources <<EOF
+          Enabled: yes
+          Types: deb
+          URIs: https://pkgs.zabbly.com/incus/${{ matrix.lane }}
+          Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+          Components: main
+          Architectures: $(dpkg --print-architecture)
+          Signed-By: /etc/apt/keyrings/zabbly.asc
+          EOF
+          sudo apt-get update
+          sudo apt-get install -y incus
+          sudo incus admin init --auto
+          # The runner's user isn't in incus-admin until a new login.
+          sudo chmod 666 /var/lib/incus/unix.socket
+          incus version
+
+      - name: Allow the suite onto this daemon
+        run: |
+          mkdir -p ~/.config/lazyincus
+          echo local > ~/.config/lazyincus/e2e-remotes
+
+      - name: Vet
+        working-directory: e2e
+        run: go vet ./...
+
+      - name: Test
+        working-directory: e2e
+        env:
+          LAZYINCUS_E2E_REMOTE: local
+        run: go test -count=1 -v ./...

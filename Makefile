@@ -1,4 +1,4 @@
-.PHONY: run build install test vet lint audit notices notices-check release-check release-snapshot clean
+.PHONY: run build install test vet lint e2e audit notices notices-check release-check release-snapshot clean
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo unversioned)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null)
@@ -20,9 +20,16 @@ test:
 
 vet:
 	go vet ./...
+	cd e2e && go vet ./...
 
 lint:
 	golangci-lint run
+	cd e2e && golangci-lint run --config ../.golangci.yml
+
+# Against a real daemon: LAZYINCUS_E2E_REMOTE names it, and it must also be
+# listed in ~/.config/lazyincus/e2e-remotes. Creates and deletes things.
+e2e:
+	cd e2e && go test -count=1 -v ./...
 
 # Vulnerabilities the code can reach, from the Go vulnerability database.
 audit:
