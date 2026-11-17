@@ -44,7 +44,8 @@ jobs:
       # The packages, downloaded once per Incus build; dpkg still installs them.
       - uses: actions/cache@v6
         with:
-          path: ~/incus-debs
+          # Not apt's partial/ and lock, which it leaves root's.
+          path: ~/incus-debs/*.deb
           key: incus-debs-${{ matrix.lane }}-${{ steps.zabbly.outputs.version }}-ubuntu-24.04
 
       # incus-base: no VM support, so no QEMU, which the suite doesn't use.
