@@ -124,12 +124,6 @@ own merits.
   cursor for a row to be chosen with.
 - **Switching remote is for the session**: `R` and `--remote` write
   nothing, leaving `incus remote switch` as the persistent path.
-- [ ] **Health checks crowd out the operations history** — ic-healthd
-      execs its check in every replica on a timer, each an `Executing
-      command` operation, so `W`'s 100 ended operations cover minutes on a
-      stack with healthchecks, and a failure worth reading sinks under
-      them. Keeping successful execs out of the kept history, while still
-      listing them under way, would fix it.
 - [ ] **`--server-url` without a configured remote** — incus-compose
       connects with `--server-url`, `--client-cert-file`, `--client-key-file`
       and `--server-fingerprint` (each also an `INCUS_*` variable), no
@@ -142,6 +136,9 @@ own merits.
 
 Deliberately deferred (don't re-pitch unprompted):
 
+- **Leaving successful execs out of `W`'s history** — ic-healthd's checks
+  and the Top tab's `ps` crowd it, but they stay listed: `f` shows the
+  failed alone.
 - **Looking for newer image tags itself** — `g` on Images says only
   whether a tag has a newer build. Whether `2.2` has followed `2.1` is
   [incus-beacon](../docs/Panels.md#incus-beacon)'s to find, and `G` makes
