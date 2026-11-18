@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"context"
 	"errors"
 	"maps"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -69,12 +67,7 @@ func newTestModel(tb testing.TB, opts options) *Model {
 	}
 	incus := commands.NewIncusCommandWithClient(log, osCommand, appConfig, server, "fake")
 
-	m := NewModel(incus, osCommand, tr, appConfig)
-	// Ticks never fire on their own: a test sends the message itself.
-	m.after = func(time.Duration, tea.Msg) tea.Cmd { return nil }
-	m.streamEvents = false
-	m.runTask = runTaskHere
-	m.checkUpstreams = func(context.Context, []commands.UpstreamTarget) map[string]commands.UpstreamStatus { return nil }
+	m := headless(NewModel(incus, osCommand, tr, appConfig))
 	// Whatever this machine has installed, the panels are the test's.
 	m.composeAvailable = opts.compose
 	if opts.home != "" {
@@ -102,106 +95,9 @@ func start(tb testing.TB, opts options, width, height int) *Model {
 	return m
 }
 
-// run runs cmd and every Cmd its messages lead to, in order, as the program
-// would but on this goroutine.
-func run(m *Model, cmd tea.Cmd) {
-	if cmd == nil {
-		return
-	}
-
-	switch msg := cmd().(type) {
-	case nil:
-	case tea.BatchMsg:
-		for _, cmd := range msg {
-			run(m, cmd)
-		}
-	default:
-		_, next := m.Update(msg)
-		run(m, next)
-	}
-}
-
-// runTaskHere runs a main task's first pass on the Cmd's goroutine, its
-// writes the messages that follow: a ticker stops after its first.
-func runTaskHere(task func(ctx context.Context, send func(tea.Msg))) tea.Cmd {
-	return func() tea.Msg {
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-
-		var writes tea.BatchMsg
-		task(ctx, func(msg tea.Msg) {
-			writes = append(writes, func() tea.Msg { return msg })
-		})
-
-		return writes
-	}
-}
-
 // refreshNow is a keypress's refresh of the instances, run to the end.
 func refreshNow(m *Model) {
 	run(m, refresh(m.fetchInstances(nil)))
-}
-
-// press types keys by name, as Update would take them from KeyPressMsg.
-func press(m *Model, keys ...string) {
-	for _, key := range keys {
-		_, cmd := m.Update(keyPress(key))
-		run(m, cmd)
-	}
-}
-
-var namedKeys = map[string]rune{
-	"esc": tea.KeyEscape, "enter": tea.KeyEnter, "tab": tea.KeyTab, "space": tea.KeySpace,
-	"backspace": tea.KeyBackspace, "delete": tea.KeyDelete,
-	"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
-	"home": tea.KeyHome, "end": tea.KeyEnd, "pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown,
-}
-
-// keyPress is the KeyPressMsg whose String is name: "x", "esc", "ctrl+u".
-func keyPress(name string) tea.KeyPressMsg {
-	msg := tea.KeyPressMsg{}
-	rest := name
-	for _, mod := range []struct {
-		prefix string
-		mod    tea.KeyMod
-	}{{"ctrl+", tea.ModCtrl}, {"alt+", tea.ModAlt}, {"shift+", tea.ModShift}} {
-		if after, ok := strings.CutPrefix(rest, mod.prefix); ok && after != "" {
-			msg.Mod |= mod.mod
-			rest = after
-		}
-	}
-
-	if code, ok := namedKeys[rest]; ok {
-		msg.Code = code
-		// A terminal types space as it does any rune.
-		if code == tea.KeySpace && msg.Mod == 0 {
-			msg.Text = " "
-		}
-	} else {
-		msg.Code = []rune(rest)[0]
-		if msg.Mod == 0 {
-			msg.Text = rest
-		}
-	}
-
-	if msg.String() != name {
-		panic("no KeyPressMsg reads " + name)
-	}
-
-	return msg
-}
-
-// screen is m's screen as plain text, each line padded to the width.
-func screen(m *Model) []string {
-	lines := strings.Split(ansi.Strip(m.render()), "\n")
-	for len(lines) < m.height {
-		lines = append(lines, "")
-	}
-	for i, line := range lines {
-		lines[i] = fit(line, m.width)[:len(fit(line, m.width))-len(reset)]
-	}
-
-	return lines
 }
 
 func TestScreenFillsTheTerminal(t *testing.T) {

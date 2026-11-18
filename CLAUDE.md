@@ -235,14 +235,16 @@ run that too when a change touches timing.
 `e2e/` is a module of its own, so its dependencies stay out of `go.mod`
 and THIRD_PARTY_NOTICES.md; `make vet` and `make lint` cover it, `make
 test` doesn't. `e2e/daemon` checks the facts docs/Incus.md states against
-a real daemon, one test each, named after the entry. `make e2e` runs it on
-the remote `LAZYINCUS_E2E_REMOTE` names, which must also be a line of
-`~/.config/lazyincus/e2e-remotes`; without the variable everything skips,
-and with a remote the file doesn't list nothing runs. Each run works in a
-project of its own, `e2e-<random>`, deleted at the end, and sweeps any
-left by a run that died. `.github/workflows/e2e.yml` runs it against
-Incus `stable` and the `lts-7.0` LTS, the latter reporting only, when
-the repository's owner starts it by hand (`gh workflow run e2e.yml`).
+a real daemon, one test each, named after the entry; `e2e/tui` drives the
+model over one, through `tui.Headless`, reading the screen as the screen
+tests do. `make e2e` runs both on the remote `LAZYINCUS_E2E_REMOTE`
+names, which must also be a line of `~/.config/lazyincus/e2e-remotes`;
+without the variable everything skips, and with a remote the file doesn't
+list nothing runs. Each run works in a project of its own,
+`e2e-<random>`, deleted at the end, and sweeps any left by a run that
+died. `.github/workflows/e2e.yml` runs it against Incus `stable` and the
+`lts-7.0` LTS, the latter reporting only, when the repository's owner
+starts it by hand (`gh workflow run e2e.yml`).
 
 ### Releasing
 

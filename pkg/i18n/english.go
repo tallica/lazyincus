@@ -482,7 +482,7 @@ func englishSet() TranslationSet {
 		RenamingStatus:               "renaming",
 		RenameSnapshotPrompt:         "Rename snapshot %s of %s",
 		NewInstanceFromSnapshot:      "new instance from snapshot",
-		NewInstancePrompt:            "New instance from %s/%s",
+		NewInstancePrompt:            "New instance from snapshot %s of %s",
 		NewInstanceHint:              "enter to create · esc to cancel",
 		CopyingStatus:                "copying",
 		CannotCopyVolumeSnapshot:     "Only an instance's snapshot makes a new instance.",

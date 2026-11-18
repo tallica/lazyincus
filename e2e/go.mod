@@ -9,11 +9,20 @@ require (
 )
 
 require (
+	charm.land/bubbles/v2 v2.2.1 // indirect
+	charm.land/bubbletea/v2 v2.1.1 // indirect
+	charm.land/lipgloss/v2 v2.1.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/apex/log v1.9.0 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/charmbracelet/colorprofile v0.4.3 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
 	github.com/charmbracelet/x/ansi v0.11.9 // indirect
+	github.com/charmbracelet/x/term v0.2.2 // indirect
+	github.com/charmbracelet/x/termios v0.1.1 // indirect
+	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/log v0.2.0 // indirect
@@ -33,6 +42,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
+	github.com/jesseduffield/lazycore v0.0.0-20221023210126-718a4caea996 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/klauspost/pgzip v1.3.0 // indirect
@@ -43,6 +53,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/moby/sys/user v0.5.0 // indirect
 	github.com/moby/sys/userns v0.2.1 // indirect
+	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
@@ -51,6 +62,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.12 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rootless-containers/proto/go-proto v0.0.0-20260207013450-f6ee952d53d9 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sahilm/fuzzy v0.1.3 // indirect
@@ -58,6 +70,7 @@ require (
 	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/urfave/cli v1.22.17 // indirect
 	github.com/vbatts/go-mtree v0.7.0 // indirect
+	github.com/xo/terminfo v1.0.0 // indirect
 	github.com/zitadel/oidc/v3 v3.51.16 // indirect
 	github.com/zitadel/schema v1.3.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

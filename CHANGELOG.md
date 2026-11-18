@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - On Incus 6.0, which can't run OCI images, Stacks and Services are hidden and the footer says `no OCI, no stacks`.
 
+### Fixed
+- A new instance from a snapshot no longer puts the project between the instance and the snapshot in its prompt's title.
+
 ## [0.17.1] - 2026-11-14
 
 ### Fixed

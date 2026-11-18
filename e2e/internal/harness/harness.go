@@ -31,6 +31,8 @@ const (
 // Run is one test binary's connection and project.
 type Run struct {
 	Command *commands.IncusCommand
+	Config  *config.AppConfig
+	OS      *commands.OSCommand
 	Remote  string
 	Project string
 
@@ -112,15 +114,14 @@ func setUp(remote string) (*Run, error) {
 		return nil, err
 	}
 
-	command, err := connect(remote)
+	run, err := connect(remote)
 	if err != nil {
 		return nil, err
 	}
 
-	defaults := command.Client().UseProject("default")
-	sweep(defaults)
+	run.Default = run.Command.Client().UseProject("default")
+	sweep(run.Default)
 
-	run := &Run{Command: command, Remote: remote, Default: defaults}
 	if err := run.createProject(); err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func setUp(remote string) (*Run, error) {
 	return run, nil
 }
 
-func connect(remote string) (*commands.IncusCommand, error) {
+func connect(remote string) (*Run, error) {
 	dir, err := os.MkdirTemp("", "lazyincus-e2e-")
 	if err != nil {
 		return nil, err
@@ -145,7 +146,9 @@ func connect(remote string) (*commands.IncusCommand, error) {
 
 	log := zerolog.Nop()
 
-	command, err := commands.NewIncusCommand(&log, commands.NewOSCommand(&log, cfg), cfg)
+	osCommand := commands.NewOSCommand(&log, cfg)
+
+	command, err := commands.NewIncusCommand(&log, osCommand, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +157,7 @@ func connect(remote string) (*commands.IncusCommand, error) {
 		return nil, fmt.Errorf("connected to %q, %s says %q", command.RemoteName(), remoteEnv, remote)
 	}
 
-	return command, nil
+	return &Run{Command: command, Config: cfg, OS: osCommand, Remote: remote}, nil
 }
 
 // sweep deletes the projects of runs that died before their own cleanup.
