@@ -44,11 +44,15 @@ func open(t *testing.T, run *harness.Run, name string) *tui.Headless {
 	return h
 }
 
+// sideWidth is the side column's, read off the top border: "…╮╭…".
+func sideWidth(lines []string) int {
+	return len([]rune(strings.SplitAfter(lines[0], "╮")[0]))
+}
+
 // row is the fields of name's line in the side column, or nil when it isn't listed.
 func row(h *tui.Headless, name string) []string {
 	lines := h.Screen()
-	// The top border is the side panel's, then main's: "…╮╭…".
-	width := len([]rune(strings.SplitAfter(lines[0], "╮")[0]))
+	width := sideWidth(lines)
 
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "│") {
@@ -62,6 +66,29 @@ func row(h *tui.Headless, name string) []string {
 	}
 
 	return nil
+}
+
+// mainText is the main panel's column, without the side panels beside it.
+func mainText(h *tui.Headless) string {
+	lines := h.Screen()
+	width := sideWidth(lines)
+
+	main := make([]string, 0, len(lines))
+	for _, line := range lines {
+		main = append(main, string([]rune(line)[width:]))
+	}
+
+	return strings.Join(main, "\n")
+}
+
+// waitForTab waits for the main panel to show text, leaving the tab and
+// coming back to read it again: headless runs a tab's first pass only.
+func waitForTab(t *testing.T, h *tui.Headless, text string, away, back string) {
+	t.Helper()
+	waitForScreen(t, h, text+" on main", func() bool {
+		h.Press(away, back)
+		return strings.Contains(mainText(h), text)
+	})
 }
 
 func waitForRow(t *testing.T, h *tui.Headless, name, want string) {

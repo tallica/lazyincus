@@ -338,3 +338,14 @@ func (r *Run) InstanceNames(t *testing.T) []string {
 
 	return names
 }
+
+func (r *Run) PoolDriver(t *testing.T) string {
+	t.Helper()
+
+	pool, _, err := r.Default.GetStoragePool(r.Pool)
+	if err != nil {
+		t.Fatalf("reading pool %s: %v", r.Pool, err)
+	}
+
+	return pool.Driver
+}
