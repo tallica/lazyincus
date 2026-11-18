@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On Incus 6.0, which can't run OCI images, Stacks and Services are hidden and the footer says `no OCI, no stacks`.
 
 ### Fixed
+- A network's Leases tab keeps each host on one line: IPv6 moves to the last column, cut at the panel's edge rather than wrapped.
 - A new instance from a snapshot no longer puts the project between the instance and the snapshot in its prompt's title.
 
 ## [0.17.1] - 2026-11-14

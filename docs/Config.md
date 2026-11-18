@@ -79,7 +79,7 @@ where its key lists `bold`.
 | `theme.inactiveSelectedLineBgColor` | []string | `["#3b3b3b", bold]`; light: `["#eeeeee"]` | Background of the selected row of the list the main panel is showing, while the main panel or a popup has the focus: color names, hex values or attributes, as `selectedLineBgColor` takes. `[default]` is the terminal's own background. |
 | `theme.optionsTextColor` | []string | `[blue]` | Color of the keybinding hints in the bottom line. |
 | `returnImmediately` | bool | `false` | Skip the "press enter to return to lazyincus" prompt after a subprocess (e.g. `incus exec`) finishes. A compose verb or `:` line that fails then says so in a popup, even with nothing failing on the daemon. |
-| `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content. |
+| `wrapMainPanel` | bool | `true` | Word-wrap the main panel's content, all but a network's [Leases](Panels.md#networks). |
 | `expandFocusedSidePanel` | bool | `false` | Start with the focused side panel given the space the others aren't using, collapsing them to their title and first row; `=` toggles it during a session. Falls back to an even split when the terminal is too short to fit them all collapsed. |
 | `showAllSnapshots` | bool | `false` | Start with the Snapshots panel listing every instance's snapshots rather than the selected instance's; `e` on that panel toggles it during a session. |
 | `collapseStacksElsewhere` | bool | `true` | On a remote with no stack listed, collapse Stacks and Services to their titles, drop the Backups tab and start the focus on Instances; focusing either swaps them back. `false` keeps the even split, the tab and the focus on Stacks. |
