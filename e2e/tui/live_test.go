@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,12 +33,15 @@ func runLive(t *testing.T, run *harness.Run) *live {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 
+	// The emulator is the terminal both ways: it reads the program's output,
+	// and its replies to queries and our keys are the program's input.
+	input := newInbox()
+	go func() { _, _ = io.Copy(input, term) }()
+
 	log := zerolog.Nop()
 	go func() {
-		// The emulator is the terminal both ways: it reads the program's
-		// output, and answers its queries and sends our keys as its input.
 		done <- tui.Run(run.Command, run.OS, i18n.NewTranslationSet(&log, "en"), run.Config,
-			tea.WithContext(ctx), tea.WithInput(term), tea.WithOutput(onlcr{term}),
+			tea.WithContext(ctx), tea.WithInput(input), tea.WithOutput(onlcr{term}),
 			tea.WithWindowSize(width, height), tea.WithoutSignals())
 	}()
 
@@ -49,6 +53,7 @@ func runLive(t *testing.T, run *harness.Run) *live {
 			t.Error("the program didn't stop")
 		}
 		_ = term.Close()
+		input.close()
 	})
 
 	l := &live{term: term}
@@ -59,6 +64,56 @@ func runLive(t *testing.T, run *harness.Run) *live {
 	})
 
 	return l
+}
+
+// inbox is a pipe whose writes never wait for a read. The emulator writes
+// keys and replies holding its lock, which the program's output needs: a
+// plain pipe deadlocks once the program stops reading to write.
+type inbox struct {
+	mu     sync.Mutex
+	ready  *sync.Cond
+	buf    bytes.Buffer
+	closed bool
+}
+
+func newInbox() *inbox {
+	in := &inbox{}
+	in.ready = sync.NewCond(&in.mu)
+
+	return in
+}
+
+func (in *inbox) Write(p []byte) (int, error) {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+
+	in.buf.Write(p)
+	in.ready.Broadcast()
+
+	return len(p), nil
+}
+
+func (in *inbox) Read(p []byte) (int, error) {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+
+	for in.buf.Len() == 0 && !in.closed {
+		in.ready.Wait()
+	}
+
+	if in.buf.Len() == 0 {
+		return 0, io.EOF
+	}
+
+	return in.buf.Read(p)
+}
+
+func (in *inbox) close() {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+
+	in.closed = true
+	in.ready.Broadcast()
 }
 
 // onlcr does what a cooked TTY would: Bubble Tea, its input no TTY,
