@@ -241,8 +241,8 @@ the remote `LAZYINCUS_E2E_REMOTE` names, which must also be a line of
 and with a remote the file doesn't list nothing runs. Each run works in a
 project of its own, `e2e-<random>`, deleted at the end, and sweeps any
 left by a run that died. `.github/workflows/e2e.yml` runs it against
-Incus `stable` when the repository's owner starts it by hand (`gh
-workflow run e2e.yml`).
+Incus `stable` and the `lts-7.0` LTS, the latter reporting only, when
+the repository's owner starts it by hand (`gh workflow run e2e.yml`).
 
 ### Releasing
 

@@ -13,10 +13,12 @@ jobs:
     if: github.actor == github.repository_owner
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # lts reports only until it has run reliably green.
+    continue-on-error: ${{ matrix.lane == 'lts-7.0' }}
     strategy:
       fail-fast: false
       matrix:
-        lane: [stable]
+        lane: [stable, lts-7.0]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
