@@ -252,7 +252,9 @@ lint and govulncheck on every push to master, pull request and `v*` tag
 (its Prettier job is off here). `vuln.yml` runs govulncheck weekly on its
 own, and `pr.yml` checks commit messages and the PR title against
 Conventional Commits. On a tag the `release` job waits for the checks and
-publishes nothing unless they pass.
+publishes nothing unless they pass. e2e isn't one of them, being run by
+hand: start it on the commit to be tagged (`gh workflow run e2e.yml`)
+and tag once its `stable` lane passes.
 Then GoReleaser builds macOS and Linux binaries for amd64 and arm64,
 archives each with the markdown and LICENSE, and publishes them with a
 `checksums.txt`. The release notes are the tag's `CHANGELOG.md` section
