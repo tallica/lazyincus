@@ -964,7 +964,9 @@ They outnumber Incus's own networks on most hosts and have nothing to do.
 The tabs are Leases, State, ACLs, Forwards and Config. Leases is a host a
 row, IPv4 and IPv6 side by side, the gateway first: the daemon lists an
 entry per address, which would give a dual-stack instance two half-rows.
-Asking for them takes a request per project using the network (see
+It never wraps, whatever `wrapMainPanel` says, so a row stays one line;
+IPv6, the widest, comes last, to be what a narrow panel cuts. Asking for
+them takes a request per project using the network (see
 [docs/Incus.md](Incus.md)). State is `incus network info`, with a bridge's
 ports named by the instance and NIC on the other end. Both are ticker
 tabs, leases every 5s and state every 2s: an instance starting takes a

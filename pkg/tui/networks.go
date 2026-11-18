@@ -42,7 +42,7 @@ func (m *Model) networkMainTabs() []mainTab {
 	wrap := m.cfg.UserConfig.Gui.WrapMainPanel
 
 	return []mainTab{
-		{key: "leases", title: m.tr.LeasesTitle, task: m.networkTicker(5*time.Second, m.networkLeases), wrap: wrap},
+		{key: "leases", title: m.tr.LeasesTitle, task: m.networkTicker(5*time.Second, m.networkLeases)},
 		{key: "state", title: m.tr.StateTitle, task: m.networkTicker(2*time.Second, m.networkState), wrap: wrap},
 		{key: "acls", title: m.tr.ACLsTitle, task: m.networkTask(m.networkACLs), wrap: wrap},
 		{key: "forwards", title: m.tr.ForwardsTitle, task: m.networkTask(m.networkForwards), wrap: wrap},

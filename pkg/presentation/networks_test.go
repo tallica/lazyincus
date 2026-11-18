@@ -27,10 +27,10 @@ func TestGetNetworkLeaseRows(t *testing.T) {
 
 	// One row a host, both families on it, the gateway ahead of the rest.
 	assert.Equal(t, [][]string{
-		{"HOSTNAME", "IPV4", "IPV6", "MAC", "TYPE"},
-		{"incusbr0.gw", "10.0.0.1", "", "", "gateway"},
-		{"db", "10.0.0.10", "fd42::1", "10:66:6a:00:00:01", "static"},
-		{"web", "10.0.0.20", "fd42::20", "10:66:6a:00:00:02", "dynamic"},
+		{"HOSTNAME", "IPV4", "TYPE", "MAC", "IPV6"},
+		{"incusbr0.gw", "10.0.0.1", "gateway", "", ""},
+		{"db", "10.0.0.10", "static", "10:66:6a:00:00:01", "fd42::1"},
+		{"web", "10.0.0.20", "dynamic", "10:66:6a:00:00:02", "fd42::20"},
 	}, plain)
 }
 

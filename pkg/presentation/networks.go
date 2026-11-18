@@ -78,15 +78,15 @@ func GetNetworkLeaseRows(leases []api.NetworkLease) [][]string {
 	})
 
 	rows := make([][]string, 0, 1+len(hosts))
-	rows = append(rows, []string{"HOSTNAME", "IPV4", "IPV6", "MAC", "TYPE"})
+	rows = append(rows, []string{"HOSTNAME", "IPV4", "TYPE", "MAC", "IPV6"})
 
 	for _, h := range hosts {
 		rows = append(rows, []string{
 			h.name,
 			utils.ColoredString(strings.Join(h.ipv4, ", "), color.FgGreen),
-			utils.ColoredString(strings.Join(h.ipv6, ", "), color.FgGreen),
-			utils.ColoredString(h.hwaddr, color.FgCyan),
 			displayLeaseType(h.kind),
+			utils.ColoredString(h.hwaddr, color.FgCyan),
+			utils.ColoredString(strings.Join(h.ipv6, ", "), color.FgGreen),
 		})
 	}
 
