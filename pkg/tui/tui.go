@@ -216,7 +216,8 @@ func terminalProfile(detected colorprofile.Profile, term string) colorprofile.Pr
 	return detected
 }
 
-func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig) error {
+// Run: opts come after its own, so they win; e2e runs the program on an emulator.
+func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.TranslationSet, cfg *config.AppConfig, opts ...tea.ProgramOption) error {
 	// fatih/color decides once, from stdout, whether to colour; Bubble Tea
 	// owns the terminal, so the answer is always yes.
 	color.NoColor = false
@@ -227,7 +228,7 @@ func Run(incus *commands.IncusCommand, osCommand *commands.OSCommand, tr *i18n.T
 
 	m := NewModel(incus, osCommand, tr, cfg)
 	profile := terminalProfile(colorprofile.Detect(os.Stdout, os.Environ()), os.Getenv("TERM"))
-	program := tea.NewProgram(m, tea.WithColorProfile(profile))
+	program := tea.NewProgram(m, append([]tea.ProgramOption{tea.WithColorProfile(profile)}, opts...)...)
 	stop := quitOnHangup(program)
 	_, err := program.Run()
 	stop()
