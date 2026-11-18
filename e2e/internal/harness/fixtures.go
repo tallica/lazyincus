@@ -126,6 +126,69 @@ func (r *Run) Volume(t *testing.T) string {
 	return name
 }
 
+// Snapshot snapshots the instance; it goes with the instance.
+func (r *Run) Snapshot(t *testing.T, instance string) string {
+	t.Helper()
+
+	name := "s-" + Suffix()
+
+	op, err := r.Client.CreateInstanceSnapshot(instance, api.InstanceSnapshotsPost{Name: name})
+	if err == nil {
+		err = op.Wait()
+	}
+
+	if err != nil {
+		t.Fatalf("snapshotting %s: %v", instance, err)
+	}
+
+	return name
+}
+
+// Profile creates an empty profile in the run's project, deleted when t ends.
+func (r *Run) Profile(t *testing.T) string {
+	t.Helper()
+
+	name := "p-" + Suffix()
+
+	if err := r.Client.CreateProfile(api.ProfilesPost{Name: name}); err != nil {
+		t.Fatalf("creating profile %s: %v", name, err)
+	}
+
+	t.Cleanup(func() {
+		err := r.Client.DeleteProfile(name)
+		if err != nil && !api.StatusErrorCheck(err, http.StatusNotFound) {
+			t.Errorf("deleting profile %s: %v", name, err)
+		}
+	})
+
+	return name
+}
+
+// Bridge creates a managed network with no addresses, so it clashes with nothing on
+// the host. The run's project has no networks of its own: it's the default's.
+func (r *Run) Bridge(t *testing.T) string {
+	t.Helper()
+
+	name := "e2e" + Suffix()
+
+	err := r.Default.CreateNetwork(api.NetworksPost{
+		Name: name, Type: "bridge",
+		NetworkPut: api.NetworkPut{Config: map[string]string{"ipv4.address": "none", "ipv6.address": "none"}},
+	})
+	if err != nil {
+		t.Fatalf("creating network %s: %v", name, err)
+	}
+
+	t.Cleanup(func() {
+		err := r.Default.DeleteNetwork(name)
+		if err != nil && !api.StatusErrorCheck(err, http.StatusNotFound) {
+			t.Errorf("deleting network %s: %v", name, err)
+		}
+	})
+
+	return name
+}
+
 func (r *Run) Attach(t *testing.T, instance, volume, path string) {
 	t.Helper()
 
@@ -233,4 +296,45 @@ func (e *Events) Actions() string {
 	}
 
 	return strings.Join(actions, ", ")
+}
+
+func (r *Run) SetConfig(t *testing.T, instance, key, value string) {
+	t.Helper()
+
+	current, etag, err := r.Client.GetInstance(instance)
+	if err == nil {
+		put := current.Writable()
+		put.Config[key] = value
+
+		var op incus.Operation
+		if op, err = r.Client.UpdateInstance(instance, put, etag); err == nil {
+			err = op.Wait()
+		}
+	}
+
+	if err != nil {
+		t.Fatalf("setting %s on %s: %v", key, instance, err)
+	}
+}
+
+func (r *Run) ConfigKey(t *testing.T, instance, key string) string {
+	t.Helper()
+
+	current, _, err := r.Client.GetInstance(instance)
+	if err != nil {
+		t.Fatalf("reading %s: %v", instance, err)
+	}
+
+	return current.Config[key]
+}
+
+func (r *Run) InstanceNames(t *testing.T) []string {
+	t.Helper()
+
+	names, err := r.Client.GetInstanceNames(api.InstanceTypeAny)
+	if err != nil {
+		t.Fatalf("listing instances: %v", err)
+	}
+
+	return names
 }
