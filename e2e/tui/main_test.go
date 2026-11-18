@@ -50,8 +50,9 @@ func sideWidth(lines []string) int {
 }
 
 // row is the fields of name's line in the side column, or nil when it isn't listed.
-func row(h *tui.Headless, name string) []string {
-	lines := h.Screen()
+func row(h *tui.Headless, name string) []string { return rowIn(h.Screen(), name) }
+
+func rowIn(lines []string, name string) []string {
 	width := sideWidth(lines)
 
 	for _, line := range lines {
