@@ -136,13 +136,21 @@ func TestANewInstanceFromASnapshotIsCopiedAndFocused(t *testing.T) {
 	}
 
 	run(m, onSnapshot((*Model).snapshotNewInstance)(m))
-	assert.Equal(t, "New instance from web/daily-b", m.topPrompt().title)
+	assert.Equal(t, "New instance from snapshot daily-b of web", m.topPrompt().title)
 	press(m, "enter")
 
 	assert.Equal(t, []string{"incus", "--project", "default", "copy", "web/daily-b", "web-daily-b"}, ran)
 	assert.Equal(t, "instances", m.currentView())
 	assert.Equal(t, "web-daily-b", m.instances.selected().Name)
 	assert.Equal(t, "Snapshots (web-daily-b)", m.snapshotsTitle())
+}
+
+func TestANewInstancePromptNamesTheProjectAfterTheInstance(t *testing.T) {
+	m := onWebsNewest(t, options{})
+	m.instances.span = true
+
+	run(m, onSnapshot((*Model).snapshotNewInstance)(m))
+	assert.Equal(t, "New instance from snapshot daily-b of web in project default", m.topPrompt().title)
 }
 
 func TestANewInstanceFromASnapshotSaysWhyItFailed(t *testing.T) {

@@ -119,7 +119,7 @@ func (m *Model) snapshotNewInstance(snapshot *commands.Snapshot) tea.Cmd {
 		return nil
 	}
 
-	title := fmt.Sprintf(m.tr.NewInstancePrompt, m.snapshotOwnerName(snapshot), snapshot.Name)
+	title := fmt.Sprintf(m.tr.NewInstancePrompt, snapshot.Name, m.snapshotOwnerName(snapshot))
 	m.openTextPrompt(title, m.tr.NewInstanceHint, snapshot.Owner+"-"+snapshot.Name, func(m *Model, name string) tea.Cmd {
 		cmd := m.instanceCmd(snapshot.Instance, "copy", snapshot.Owner+"/"+snapshot.Name, name)
 		run := m.runIncus
