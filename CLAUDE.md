@@ -241,8 +241,8 @@ the remote `LAZYINCUS_E2E_REMOTE` names, which must also be a line of
 and with a remote the file doesn't list nothing runs. Each run works in a
 project of its own, `e2e-<random>`, deleted at the end, and sweeps any
 left by a run that died. `.github/workflows/e2e.yml` runs it against
-Incus `stable` when the repository's owner starts it by hand (`gh
-workflow run e2e.yml`).
+Incus `stable` and the `lts-7.0` LTS, the latter reporting only, when
+the repository's owner starts it by hand (`gh workflow run e2e.yml`).
 
 ### Releasing
 
@@ -252,7 +252,9 @@ lint and govulncheck on every push to master, pull request and `v*` tag
 (its Prettier job is off here). `vuln.yml` runs govulncheck weekly on its
 own, and `pr.yml` checks commit messages and the PR title against
 Conventional Commits. On a tag the `release` job waits for the checks and
-publishes nothing unless they pass.
+publishes nothing unless they pass. e2e isn't one of them, being run by
+hand: start it on the commit to be tagged (`gh workflow run e2e.yml`)
+and tag once its `stable` lane passes.
 Then GoReleaser builds macOS and Linux binaries for amd64 and arm64,
 archives each with the markdown and LICENSE, and publishes them with a
 `checksums.txt`. The release notes are the tag's `CHANGELOG.md` section

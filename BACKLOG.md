@@ -393,10 +393,6 @@ hold them; both are in [docs/Panels.md](docs/Panels.md#backups).
       golden. A few screens kept with their escapes (the normal layout, a
       menu, an error popup) would catch it. Wanted before the frame below,
       which re-emits all of it.
-- [ ] **An `lts` lane for e2e** - `e2e.yml` tests Incus `stable` only.
-      7.0 is the LTS incus-compose supports ([README](README.md)), so
-      add Zabbly's `lts-7.0` to the matrix: one more entry, reporting
-      until it has run green, then counted like `stable`.
 
 Probably won't do:
 
