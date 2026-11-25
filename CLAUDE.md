@@ -306,9 +306,10 @@ cached images deleted first.
 
 ### Checking for races
 
-Most of the concurrency lives in paths no test reaches: the pollers, the
-event stream against a real daemon, the main-panel tasks, the messages
-they hand results to. A change that touches any of them gets a race-enabled
+Most of the concurrency lives in paths only `e2e/tui`'s live tests reach,
+and only partly - the pollers, the event stream against a real daemon,
+the main-panel tasks, the messages they hand results to; e2e.yml runs
+them under `-race`. A change that touches any of them gets a race-enabled
 build driven like the one above:
 
 ```sh
