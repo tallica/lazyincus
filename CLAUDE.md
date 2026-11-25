@@ -237,14 +237,15 @@ and THIRD_PARTY_NOTICES.md; `make vet` and `make lint` cover it, `make
 test` doesn't. `e2e/daemon` checks the facts docs/Incus.md states against
 a real daemon, one test each, named after the entry; `e2e/tui` drives the
 model over one, through `tui.Headless`, reading the screen as the screen
-tests do. `make e2e` runs both on the remote `LAZYINCUS_E2E_REMOTE`
-names, which must also be a line of `~/.config/lazyincus/e2e-remotes`;
-without the variable everything skips, and with a remote the file doesn't
-list nothing runs. Each run works in a project of its own,
-`e2e-<random>`, deleted at the end, and sweeps any left by a run that
-died. `.github/workflows/e2e.yml` runs it against Incus `stable` and the
-`lts-7.0` LTS, the latter reporting only, when the repository's owner
-starts it by hand (`gh workflow run e2e.yml`).
+tests do, and runs the whole program on an `x/vt` emulator for what only
+its event stream and pollers show. `make e2e` runs both on the remote
+`LAZYINCUS_E2E_REMOTE` names, which must also be a line of
+`~/.config/lazyincus/e2e-remotes`; without the variable everything skips,
+and with a remote the file doesn't list nothing runs. Each run works in a
+project of its own, `e2e-<random>`, deleted at the end, and sweeps any
+left by a run that died. `.github/workflows/e2e.yml` runs it against
+Incus `stable` and the `lts-7.0` LTS, the latter reporting only, when the
+repository's owner starts it by hand (`gh workflow run e2e.yml`).
 
 ### Releasing
 
@@ -305,9 +306,10 @@ cached images deleted first.
 
 ### Checking for races
 
-Most of the concurrency lives in paths no test reaches: the pollers, the
-event stream against a real daemon, the main-panel tasks, the messages
-they hand results to. A change that touches any of them gets a race-enabled
+Most of the concurrency lives in paths only `e2e/tui`'s live tests reach,
+and only partly - the pollers, the event stream against a real daemon,
+the main-panel tasks, the messages they hand results to; e2e.yml runs
+them under `-race`. A change that touches any of them gets a race-enabled
 build driven like the one above:
 
 ```sh

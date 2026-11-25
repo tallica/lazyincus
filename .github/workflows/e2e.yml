@@ -77,4 +77,5 @@ jobs:
         working-directory: e2e
         env:
           LAZYINCUS_E2E_REMOTE: local
-        run: go test -count=1 -v ./...
+        # A hang panics with every goroutine's stack, before the job's limit.
+        run: go test -race -count=1 -v -timeout 12m ./...

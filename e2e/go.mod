@@ -3,6 +3,9 @@ module github.com/tallica/lazyincus/e2e
 go 1.27.4
 
 require (
+	charm.land/bubbletea/v2 v2.1.1
+	github.com/charmbracelet/x/ansi v0.11.9
+	github.com/charmbracelet/x/vt v0.1.0
 	github.com/lxc/incus/v7 v7.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/tallica/lazyincus v0.0.0
@@ -10,7 +13,6 @@ require (
 
 require (
 	charm.land/bubbles/v2 v2.2.1 // indirect
-	charm.land/bubbletea/v2 v2.1.1 // indirect
 	charm.land/lipgloss/v2 v2.1.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/apex/log v1.9.0 // indirect
@@ -19,7 +21,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
-	github.com/charmbracelet/x/ansi v0.11.9 // indirect
+	github.com/charmbracelet/x/exp/ordered v0.1.0 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect

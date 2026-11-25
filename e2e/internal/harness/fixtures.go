@@ -2,6 +2,7 @@ package harness
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -348,4 +349,30 @@ func (r *Run) PoolDriver(t *testing.T) string {
 	}
 
 	return pool.Driver
+}
+
+// SlowStop makes a clean stop of the running alpine container take seconds:
+// openrc runs local.d's stop scripts on the way down.
+func (r *Run) SlowStop(t *testing.T, name string, seconds int) {
+	t.Helper()
+
+	r.Exec(t, name, "sh", "-c", fmt.Sprintf(
+		`printf '#!/bin/sh\nsleep %d\n' > /etc/local.d/slow.stop && chmod +x /etc/local.d/slow.stop &&
+		rc-update add local default && rc-service local start`, seconds))
+}
+
+// Stop starts a clean stop without waiting for it; what it returns waits.
+// The waiting starts now: the daemon drops an operation seconds after it ends.
+func (r *Run) Stop(t *testing.T, name string) func() error {
+	t.Helper()
+
+	op, err := r.Client.UpdateInstanceState(name, api.InstanceStatePut{Action: "stop", Timeout: -1}, "")
+	if err != nil {
+		t.Fatalf("stopping %s: %v", name, err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- op.Wait() }()
+
+	return func() error { return <-done }
 }
